@@ -22,7 +22,7 @@ client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`)
 })
 
-console.log(search.search('blitz 7k'))
+//console.log(search.search('blitz 7k'))
 
 try {
 
