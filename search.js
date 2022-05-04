@@ -109,7 +109,7 @@ function getFiles(cards, limit) {
     for (const [key, value] of Object.entries(cards)) {
 
         let attachment = new MessageAttachment(host + value.node.imageUrl)
-        let embed = new MessageEmbed().setThumbnail(host + value.node.imageUrl)
+        let embed = new MessageEmbed().setImage(host + value.node.imageUrl)
         files.push(attachment)
         embeds.push(embed)
         if (files.length === limit) break
