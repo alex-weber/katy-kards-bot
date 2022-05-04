@@ -1,30 +1,107 @@
-module.exports.search = function getVariables (str) {
+const axios = require("axios")
+const query = require("./query")
+const dictionary = require('./dictionary')
+const translator = require('./translator.js')
+//const getLanguage = require('./language.js')
 
-    let variables = {
-        language: 'ru'
-    }
-    const words = str.split(' ')
+function getVariables (variables) {
+
+    const words = variables.q.split(' ')
     if (words.length < 2) return false
-
-    words.forEach(setParams)
-
-    function setParams(word, index, arr) {
-        let kredits = setAttribute(word)
-        if (kredits) variables['kredits'] = kredits
+    //unset variables q
+    variables.q = ''
+    for (let i = 0; i < words.length; i++) {
+        variables = setAttribute(translator.translate('en', words[i]), variables)
     }
 
-    function setAttribute(word) {
-        let kredits = false
+    function setAttribute(word, variables) {
 
-        switch (word) {
-            case word.endsWith('k'):
-                kredits = parseInt(word.substring(0, word.length - 1))
-                if (!isNaN(kredits)) return kredits
+        if (typeof word !== 'string') return variables;
+
+        let nationID = getAttribute(word, dictionary.nation)
+        if (nationID) {
+            variables.nationIds = [nationID]
         }
+        let type =  getAttribute(word, dictionary.type)
+        if (type) {
+            variables.type = [type]
+        }
+        let rarity =  getAttribute(word, dictionary.rarity)
+        if (rarity) {
+            variables.rarity = [rarity]
+        }
+        //let searchString = getAttribute(word)
+        if (word.endsWith('k') || word.endsWith('к') ) {
+            let kredits = parseInt(word.substring(0, word.length - 1))
+            //console.log(kredits)
+            if (!isNaN(kredits)) {
+                variables.kredits = [kredits]
+            }
+        }
+        //console.log(word, nationID)
 
-        return kredits
-
+        return variables
     }
 
     return variables
 }
+
+function getAttribute(word, attributes) {
+    let result = false;
+
+    for (const [key, value] of Object.entries(attributes)) {
+        //console.log(typeof value === 'string')
+       if ( key.slice(0,3) === word.slice(0,3) ||
+            (typeof value === 'string' &&  value.slice(0,3) === word.slice(0,3)) )
+       {
+           result = value
+           //console.log(key, value)
+           break
+       }
+    }
+
+    return result
+}
+
+/**
+ *
+ * @param variables
+ * @returns {Promise<*>}
+ */
+async function getCards(variables) {
+    //search on kards.com
+    let response = await axios.post('https://api.kards.com/graphql', {
+        "operationName": "getCards",
+        "variables": variables,
+        "query": query
+    })
+    const counter = response.data.data.cards.pageInfo.count
+    if (!counter) {
+        variables = getVariables(variables)
+        response = await getCards(variables)
+    }
+
+    return response
+
+}
+
+/**
+ *
+ * @param cards
+ * @param limit
+ * @returns {*[]}
+ */
+function getFiles(cards, limit) {
+
+    let files = []
+    for (const [key, value] of Object.entries(cards)) {
+        files.push('https://www.kards.com' + value.node.imageUrl)
+        if (files.length === limit) break
+    }
+
+    return files
+
+}
+
+
+module.exports = { getCards, getFiles, getVariables }
