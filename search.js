@@ -2,6 +2,7 @@ const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
+const { MessageAttachment, MessageEmbed } = require('discord.js');
 //const getLanguage = require('./language.js')
 
 function getVariables (variables) {
@@ -103,8 +104,10 @@ async function getCards(variables) {
 function getFiles(cards, limit) {
 
     let files = []
+
     for (const [key, value] of Object.entries(cards)) {
-        files.push('https://www.kards.com' + value.node.imageUrl)
+        let attachment = new MessageAttachment('https://www.kards.com' + value.node.imageUrl)
+        files.push(attachment)
         if (files.length === limit) break
     }
 
