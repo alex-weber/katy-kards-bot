@@ -21,14 +21,20 @@ function getVariables (variables) {
         let nationID = getAttribute(word, dictionary.nation)
         if (nationID) {
             variables.nationIds = [nationID]
+
+            return  variables
         }
-        let type =  getAttribute(word, dictionary.type)
+        let type = getAttribute(word, dictionary.type)
         if (type) {
             variables.type = [type]
+
+            return  variables
         }
-        let rarity =  getAttribute(word, dictionary.rarity)
+        let rarity = getAttribute(word, dictionary.rarity)
         if (rarity) {
             variables.rarity = [rarity]
+
+            return  variables
         }
         //let searchString = getAttribute(word)
         if (word.endsWith('k') || word.endsWith('к') ) {
@@ -36,13 +42,16 @@ function getVariables (variables) {
             //console.log(kredits)
             if (!isNaN(kredits)) {
                 variables.kredits = [kredits]
+
+                return  variables
             }
         }
-        //console.log(word, nationID)
+        //so when no nation | type | rarity found, add the word as the search string
+        variables.q = word
 
         return variables
     }
-
+    //return it anyway
     return variables
 }
 

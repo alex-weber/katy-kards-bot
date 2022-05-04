@@ -27,7 +27,7 @@ pool.query('SELECT * FROM public.card LIMIT 1', (err, res) => {
 
 let variables = {
     "language": 'ru',
-    "q": 'охват',
+    "q": 'sov 2k inf ambush',
     "showSpawnables": true,
 }
 
