@@ -104,14 +104,18 @@ async function getCards(variables) {
 function getFiles(cards, limit) {
 
     let files = []
-
+    let embeds = []
+    let host = 'https://www.kards.com'
     for (const [key, value] of Object.entries(cards)) {
-        let attachment = new MessageAttachment('https://www.kards.com' + value.node.imageUrl)
+
+        let attachment = new MessageAttachment(host + value.node.imageUrl)
+        let embed = new MessageEmbed().setThumbnail(host + value.node.imageUrl)
         files.push(attachment)
+        embeds.push(embed)
         if (files.length === limit) break
     }
 
-    return files
+    return embeds
 
 }
 

@@ -57,7 +57,7 @@ try {
                         //attach found cards
                         const files = search.getFiles(cards, limit)
                         //reply to user
-                        msg.reply({content: content, files: files})
+                        msg.reply({content: content, embeds: files})
 
                     }
                     //reply that no cards are found
