@@ -104,20 +104,20 @@ async function getCards(variables) {
 function getFiles(cards, limit) {
 
     let files = []
-    let embeds = []
+    //let embeds = []
     let host = 'https://www.kards.com'
     for (const [key, value] of Object.entries(cards)) {
 
         let attachment = new MessageAttachment(host + value.node.imageUrl)
-        let embed = new MessageEmbed().setImage(host + value.node.imageUrl)
+        //let embed = new MessageEmbed().setImage(host + value.node.imageUrl)
         files.push(attachment)
-        embeds.push(embed)
+        //embeds.push(embed)
         if (files.length === limit) break
     }
 
-    return embeds
+    return files
 
 }
 
 
-module.exports = { getCards, getFiles, getVariables }
+module.exports = { getCards, getFiles }
