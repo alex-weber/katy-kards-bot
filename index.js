@@ -49,12 +49,10 @@ try {
                     const counter = res.data.data.cards.pageInfo.count
                     let content = translator.translate(language, 'search') + ': '
                     if (counter > 0) {
+                        content += counter
                         //warn that there are more cards found
                         if (counter > limit) {
-                            content +=
-                                counter +
-                                translator.translate(language, 'limit') +
-                                limit
+                            content += translator.translate(language, 'limit') + limit
                         }
                         //attach found cards
                         const files = search.getFiles(cards, limit)
