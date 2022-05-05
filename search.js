@@ -4,12 +4,11 @@ const dictionary = require('./dictionary')
 const translator = require('./translator.js')
 const { MessageAttachment, MessageEmbed } = require('discord.js');
 //const getLanguage = require('./language.js')
-let advanced = false
 
 function getVariables (variables) {
 
     const words = variables.q.split(' ')
-    if (words.length < 2) return false
+    if (words.length < 2) return variables
     //unset variables q
     variables.q = ''
     for (let i = 0; i < words.length; i++) {
@@ -79,7 +78,7 @@ function getAttribute(word, attributes) {
  * @param variables
  * @returns {Promise<*>}
  */
-async function getCards(variables) {
+async function getCards(variables, advanced = false) {
     //search on kards.com
     let response = await axios.post('https://api.kards.com/graphql', {
         "operationName": "getCards",
@@ -88,9 +87,8 @@ async function getCards(variables) {
     })
     let counter = response.data.data.cards.pageInfo.count
     if (!counter && !advanced) {
-        advanced = true
         variables = getVariables(variables)
-        response = await getCards(variables)
+        response = await getCards(variables, true)
     }
 
     return response
