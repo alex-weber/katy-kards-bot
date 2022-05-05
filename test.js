@@ -27,15 +27,16 @@ pool.query('SELECT * FROM public.card LIMIT 1', (err, res) => {
 
 let variables = {
     "language": 'ru',
-    "q": 'sov 2k inf ambush',
+    "q": 'sov 9k inf ',
     "showSpawnables": true,
 }
 
 search.getCards(variables).then(res => {
     const cards = res.data.data.cards.edges
+    const counter = res.data.data.cards.pageInfo.count
 
     const files = search.getFiles(cards, 3)
-    console.log(files)
+    console.log(counter, files)
 })
 
 

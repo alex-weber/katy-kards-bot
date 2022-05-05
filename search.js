@@ -4,6 +4,7 @@ const dictionary = require('./dictionary')
 const translator = require('./translator.js')
 const { MessageAttachment, MessageEmbed } = require('discord.js');
 //const getLanguage = require('./language.js')
+let advanced = false
 
 function getVariables (variables) {
 
@@ -85,13 +86,18 @@ async function getCards(variables) {
         "variables": variables,
         "query": query
     })
-    const counter = response.data.data.cards.pageInfo.count
-    if (!counter) {
+    let counter = response.data.data.cards.pageInfo.count
+    if (!counter && !advanced) {
+        advanced = true
         variables = getVariables(variables)
         response = await getCards(variables)
     }
 
     return response
+
+}
+
+function avdancedSearch(variables) {
 
 }
 
