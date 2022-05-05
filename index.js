@@ -6,6 +6,7 @@ const translator = require('./translator.js')
 const stats = require('./stats')
 const search = require('./search')
 const limit = 10
+const getLanguage = require('./language.js')
 
 app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
@@ -37,7 +38,7 @@ try {
         else if (msg.content.startsWith('!') && msg.content.length > 2) {
             //remove the "!" sign and whitespaces from the beginning
             let str = msg.content.substring(1).trim()
-            let language = 'ru'
+            let language = getLanguage(str)
             let variables = {
                 "language": language,
                 "q": str,
