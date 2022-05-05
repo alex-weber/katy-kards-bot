@@ -97,10 +97,6 @@ async function getCards(variables) {
 
 }
 
-function avdancedSearch(variables) {
-
-}
-
 /**
  *
  * @param cards

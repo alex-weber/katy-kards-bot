@@ -49,7 +49,7 @@ module.exports.translate = function (language, msg) {
             if (msg === 'search') return 'Cards found'
             if (msg === 'stats') return 'Last 24 hours'
             if (msg === 'error') return 'Oops... Something went wrong...'
-            if (msg === 'limit') return ', but showing only the first'
+            if (msg === 'limit') return ', but showing only the first '
             if (msg === 'noresult') return 'No cards found...'
 
             for (const [key, value] of Object.entries(reservedWords)) {

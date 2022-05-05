@@ -5,7 +5,7 @@ const port = process.env.PORT
 const translator = require('./translator.js')
 const stats = require('./stats')
 const search = require('./search')
-const limit = 10
+const limit = process.env.LIMIT || 10
 const getLanguage = require('./language.js')
 
 app.get('/', (req, res) => res.send('Bot is online.'))
