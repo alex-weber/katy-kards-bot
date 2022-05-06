@@ -47,20 +47,21 @@ try {
             }
             search.getCards(variables)
                 .then(res => {
-                    const cards = res.data.data.cards.edges
-                    const counter = res.data.data.cards.pageInfo.count
-                    let content = translator.translate(language, 'search') + ': '
-                    if (counter > 0) {
-                        content += counter
-                        //warn that there are more cards found
-                        if (counter > limit) {
-                            content += translator.translate(language, 'limit') + limit
+                    if (res) {
+                        const cards = res.data.data.cards.edges
+                        const counter = res.data.data.cards.pageInfo.count
+                        let content = translator.translate(language, 'search') + ': '
+                        if (counter > 0) {
+                            content += counter
+                            //warn that there are more cards found
+                            if (counter > limit) {
+                                content += translator.translate(language, 'limit') + limit
+                            }
+                            //attach found cards
+                            const files = search.getFiles(cards, limit)
+                            //reply to user
+                            msg.reply({content: content, files: files})
                         }
-                        //attach found cards
-                        const files = search.getFiles(cards, limit)
-                        //reply to user
-                        msg.reply({content: content, files: files})
-
                     }
                     //reply that no cards are found
                     else msg.reply(translator.translate(language, 'noresult'))

@@ -79,19 +79,23 @@ function getAttribute(word, attributes) {
  * @returns {Promise<*>}
  */
 async function getCards(variables, advanced = false) {
-    console.log(advanced)
+    //console.log(variables)
     //search on kards.com
     let response = await axios.post('https://api.kards.com/graphql', {
         "operationName": "getCards",
         "variables": variables,
         "query": query
+    }).catch(error => {
+        console.error(error.errno, error.data)
     })
-    let counter = response.data.data.cards.pageInfo.count
-    if (!counter && !advanced) {
-        variables = getVariables(variables)
-        console.log(variables)
-        response = await getCards(variables, true)
+    if (response) {
+        let counter = response.data.data.cards.pageInfo.count
+        if (!counter && !advanced) {
+            variables = getVariables(variables)
+            response = await getCards(variables, true)
+        }
 
+        return response
     }
 
     return response

@@ -26,17 +26,22 @@ pool.query('SELECT * FROM public.card LIMIT 1', (err, res) => {
 })*/
 
 let variables = {
-    "language": 'ru',
+    "language": 'en',
     "q": 'destruction',
     "showSpawnables": true,
 }
 
 search.getCards(variables).then(res => {
-    const cards = res.data.data.cards.edges
-    const counter = res.data.data.cards.pageInfo.count
+    if (!res) {
+        console.log('no res');
+    }
+    else {
+        const cards = res.data.data.cards.edges
+        const counter = res.data.data.cards.pageInfo.count
 
-    const files = search.getFiles(cards, 3)
-    console.log(counter, files)
+        const files = search.getFiles(cards, 3)
+        console.log(counter, files)
+    }
 })
 
 
