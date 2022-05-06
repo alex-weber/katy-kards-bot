@@ -32,7 +32,7 @@ try {
             msg.reply(translator.translate('en', 'help'))
         }
         //show stats
-        else if (msg.content === '!!') {
+        if (msg.content === '!!') {
             stats.getStats().then(res => {
                 msg.reply(res)
             }).catch(error => {
@@ -40,7 +40,7 @@ try {
             })
         }
         //else search on KARDS website
-        else if (msg.content.startsWith('!') && msg.content.length > 2) {
+        if (msg.content.startsWith('!') && msg.content.length > 2) {
             //remove the "!" sign and whitespaces from the beginning
             let str = msg.content.substring(1).trim()
             let language = getLanguage(str)
