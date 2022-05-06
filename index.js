@@ -40,7 +40,7 @@ try {
             })
         }
         //else search on KARDS website
-        if (msg.content.startsWith('!') && msg.content.length > 2) {
+        else if (msg.content.startsWith('!') && msg.content.length > 2) {
             //remove the "!" sign and whitespaces from the beginning
             let str = msg.content.substring(1).trim()
             let language = getLanguage(str)
