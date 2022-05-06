@@ -25,7 +25,7 @@ pool.query('SELECT * FROM public.card LIMIT 1', (err, res) => {
     pool.end()
 })*/
 
-let variables = {
+/*let variables = {
     "language": 'en',
     "q": 'destruction',
     "showSpawnables": true,
@@ -42,10 +42,11 @@ search.getCards(variables).then(res => {
         const files = search.getFiles(cards, 10)
         console.log(counter, files)
     }
-})
+})*/
 
 
-
+const limit = "5" || 10
+console.log(limit+1)
 
 
 
