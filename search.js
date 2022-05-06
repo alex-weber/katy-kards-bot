@@ -2,7 +2,7 @@ const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
-const { MessageAttachment, MessageEmbed } = require('discord.js');
+const { MessageAttachment} = require('discord.js');
 //const getLanguage = require('./language.js')
 
 function getVariables (variables) {
@@ -79,14 +79,15 @@ function getAttribute(word, attributes) {
  * @returns {Promise<*>}
  */
 async function getCards(variables, advanced = false) {
-    //console.log(variables)
+    console.log(variables)
     //search on kards.com
     let response = await axios.post('https://api.kards.com/graphql', {
         "operationName": "getCards",
         "variables": variables,
         "query": query
     }).catch(error => {
-        console.error(error.errno, error.data)
+        console.log(error.errno, error.data)
+
     })
     if (response) {
         let counter = response.data.data.cards.pageInfo.count

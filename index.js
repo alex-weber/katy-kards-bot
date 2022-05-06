@@ -5,7 +5,7 @@ const port = process.env.PORT
 const translator = require('./translator.js')
 const stats = require('./stats')
 const search = require('./search')
-const limit = process.env.LIMIT || 10
+const limit = 10
 const getLanguage = require('./language.js')
 
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -32,7 +32,7 @@ try {
             stats.getStats().then(res => {
                 msg.reply(res)
             }).catch(error => {
-                console.error(error)
+                console.log(error)
             })
         }
         //else search on KARDS website
@@ -78,5 +78,5 @@ try {
     client.login(process.env.DISCORD_TOKEN)
 //end of global try
 } catch (error) {
-    console.error(error)
+    console.log(error)
 }

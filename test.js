@@ -39,7 +39,7 @@ search.getCards(variables).then(res => {
         const cards = res.data.data.cards.edges
         const counter = res.data.data.cards.pageInfo.count
 
-        const files = search.getFiles(cards, 3)
+        const files = search.getFiles(cards, 10)
         console.log(counter, files)
     }
 })
