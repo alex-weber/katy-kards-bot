@@ -52,7 +52,8 @@ module.exports.translate = function (language, msg) {
             if (msg === 'limit') return ', but showing only the first '
             if (msg === 'noresult') return 'No cards found...'
             if (msg === 'help') {
-                return '!! - Steam players online and stats\n\n' +
+                return 'Welcome to help\n\n'+
+                    '!! - Steam players online and stats\n\n' +
                     '!leo - will find the Leopold\n' +
                     '!usa infantry blitz 3k - show cards with all the attributes'
             }

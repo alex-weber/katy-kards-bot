@@ -30,8 +30,6 @@ try {
         //help
         if (msg.content === '!help') {
             msg.reply(translator.translate('en', 'help'))
-
-            return
         }
         //show stats
         else if (msg.content === '!!') {
