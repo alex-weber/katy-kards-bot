@@ -26,6 +26,11 @@ client.on('ready', () => {
 try {
 
     client.on('messageCreate', msg => {
+
+        //help
+        if (msg.content === '!help') {
+            msg.reply(translator.translate('en', 'help'))
+        }
         //show stats
         if (msg.content === '!!') {
             stats.getStats().then(res => {
