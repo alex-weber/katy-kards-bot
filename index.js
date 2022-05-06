@@ -32,7 +32,7 @@ try {
             msg.reply(translator.translate('en', 'help'))
         }
         //show stats
-        if (msg.content === '!!') {
+        else if (msg.content === '!!') {
             stats.getStats().then(res => {
                 msg.reply(res)
             }).catch(error => {
