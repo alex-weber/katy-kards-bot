@@ -1,8 +1,10 @@
 const axios = require("axios");
 const translator = require("./translator");
 
-
-
+/**
+ *
+ * @returns {Promise<string>}
+ */
 async function formatStats() {
 
     const statsURL = 'https://steamcharts.com/app/544810/chart-data.json'
@@ -23,24 +25,28 @@ async function formatStats() {
 
 }
 
+/**
+ *
+ * @returns {Promise<string>}
+ */
 async function getPlayers() {
 
     const steamURL = 'https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=544810'
     const response = await axios.get(steamURL)
-    let language = 'en'
-    let output = translator.translate(language, 'online') + ': '
+    let output = translator.translate('en', 'online') + ': '
     const players = response.data.response.player_count
     output += players + '\n\n'
 
     return output
 }
 
-
+/**
+ *
+ * @returns {Promise<string>}
+ */
 async function getStats() {
 
     return  await getPlayers() + await formatStats()
-
 }
-
-
+//export
 module.exports = { getStats }

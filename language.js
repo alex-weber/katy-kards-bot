@@ -1,6 +1,6 @@
 const getLanguage = function (str) {
     let language = 'en'
-    const firstLetter = str.substring(0,1)
+    const firstLetter = str.slice(0,1)
     const lastLetter = str.slice(-1);
     //console.log(str)
     //check if russian

@@ -40,9 +40,7 @@ module.exports.translate = function (language, msg) {
             if (msg === 'limit') return ', но покажу всего '
             if (msg === 'noresult') return 'карт не найдено...'
 
-
             break
-
 
         case 'en':
             if (msg === 'online') return 'Players online'
@@ -66,7 +64,5 @@ module.exports.translate = function (language, msg) {
             }
 
             return msg
-
     }
-
-};
+}

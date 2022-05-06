@@ -2,14 +2,19 @@ const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
-const { MessageAttachment} = require('discord.js');
-//const getLanguage = require('./language.js')
+const { MessageAttachment } = require('discord.js')
 
+/**
+ *
+ * @param variables
+ * @returns {*}
+ */
 function getVariables (variables) {
 
     const words = variables.q.split(' ')
+    //allow to search with at least 2 attributes
     if (words.length < 2) return variables
-    //unset variables q
+    //unset the search string
     variables.q = ''
     for (let i = 0; i < words.length; i++) {
         variables = setAttribute(translator.translate('en', words[i]), variables)
@@ -37,10 +42,8 @@ function getVariables (variables) {
 
             return  variables
         }
-        //let searchString = getAttribute(word)
         if (word.endsWith('k') || word.endsWith('к') ) {
             let kredits = parseInt(word.substring(0, word.length - 1))
-            //console.log(kredits)
             if (!isNaN(kredits)) {
                 variables.kredits = [kredits]
 
@@ -56,6 +59,12 @@ function getVariables (variables) {
     return variables
 }
 
+/**
+ *
+ * @param word
+ * @param attributes
+ * @returns {boolean}
+ */
 function getAttribute(word, attributes) {
     let result = false;
 
@@ -65,29 +74,31 @@ function getAttribute(word, attributes) {
             (typeof value === 'string' &&  value.slice(0,3) === word.slice(0,3)) )
        {
            result = value
-           //console.log(key, value)
            break
        }
     }
 
     return result
 }
-
 /**
  *
  * @param variables
- * @returns {Promise<*>}
+ * @param advanced
+ * @returns {Promise<AxiosResponse<any>>}
  */
 async function getCards(variables, advanced = false) {
+    //log request
     console.log(variables)
     //search on kards.com
-    let response = await axios.post('https://api.kards.com/graphql', {
+    let response = await axios.post(
+        'https://api.kards.com/graphql',
+        {
         "operationName": "getCards",
         "variables": variables,
         "query": query
-    }).catch(error => {
+        }
+    ).catch(error => {
         console.log(error.errno, error.data)
-
     })
     if (response) {
         let counter = response.data.data.cards.pageInfo.count
@@ -100,7 +111,6 @@ async function getCards(variables, advanced = false) {
     }
 
     return response
-
 }
 
 /**
@@ -112,20 +122,14 @@ async function getCards(variables, advanced = false) {
 function getFiles(cards, limit) {
 
     let files = []
-    //let embeds = []
     let host = 'https://www.kards.com'
     for (const [key, value] of Object.entries(cards)) {
-
         let attachment = new MessageAttachment(host + value.node.imageUrl)
-        //let embed = new MessageEmbed().setImage(host + value.node.imageUrl)
         files.push(attachment)
-        //embeds.push(embed)
         if (files.length === limit) break
     }
 
     return files
-
 }
-
-
+//export
 module.exports = { getCards, getFiles }
