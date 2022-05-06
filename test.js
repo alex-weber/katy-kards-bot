@@ -27,7 +27,7 @@ pool.query('SELECT * FROM public.card LIMIT 1', (err, res) => {
 
 let variables = {
     "language": 'en',
-    "q": 'jap fighter fury ambush',
+    "q": 'jap fighter elite fury',
     //attack: 0,
     //defense:4,
     "showSpawnables": true,

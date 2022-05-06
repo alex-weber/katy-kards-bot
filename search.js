@@ -38,7 +38,7 @@ function getVariables (variables) {
         }
         let rarity = getAttribute(word, dictionary.rarity)
         if (rarity) {
-            variables.rarity = [rarity]
+            variables.rarity = [rarity.charAt(0).toUpperCase() + rarity.slice(1)]
 
             return  variables
         }
