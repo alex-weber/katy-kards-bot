@@ -38,11 +38,11 @@ try {
         //not a bot command
         if (!msg.content.startsWith('!')) {
             //log the message and quit
-            console.log(msg.author.username + ' : ' + msg.content)
+            console.log(msg.author.username + '  ' + msg.author.id + ' wrote something')
 
             return
         }
-
+        console.log('received a bot command: ' + msg.content)
         //remove the "!" sign and whitespaces from the beginning
         const str = msg.content.slice(1).trim().toLowerCase()
         //language
