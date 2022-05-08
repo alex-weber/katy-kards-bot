@@ -39,6 +39,14 @@ module.exports.translate = function (language, msg) {
             if (msg === 'error') return 'shit..ошибочка вышла!'
             if (msg === 'limit') return ', но покажу всего '
             if (msg === 'noresult') return 'карт не найдено...'
+            if (msg === 'langChange') return 'Язык поиска: '
+            if (msg === 'help') {
+                return 'Приветствую!\n\n'+
+                    '!! - Количество игроков онлайн и статистика\n\n' +
+                    '!leo - Найдет Леопольда\n' +
+                    '!сша пехота 3к блиц - Найдет карты с соответствующими параметрами\n' +
+                    '!en [de|es|ft|it|pl|pt|ru|zh] - Сменить язык поиска'
+            }
 
             break
 
@@ -49,6 +57,14 @@ module.exports.translate = function (language, msg) {
             if (msg === 'error') return 'Scheiße, ein Fehler!'
             if (msg === 'limit') return ', ich zeige aber nur '
             if (msg === 'noresult') return 'nichts gefunden...'
+            if (msg === 'langChange') return 'Suchsprache: '
+            if (msg === 'help') {
+                return 'Willkommen!\n\n'+
+                    '!! - Steam Spieler online and Statistiken\n\n' +
+                    '!leo - findet den Leopold\n' +
+                    '!usa infantry blitz 3k - findet alle Karten mit den Attributen\n' +
+                    '!en [de|es|ft|it|pl|pt|ru|zh] - Suchsprache ändern'
+            }
 
             break
 
@@ -59,11 +75,13 @@ module.exports.translate = function (language, msg) {
             if (msg === 'error') return 'Oops... Something went wrong...'
             if (msg === 'limit') return ', but showing only the first '
             if (msg === 'noresult') return 'No cards found...'
+            if (msg === 'langChange') return 'Search language: '
             if (msg === 'help') {
                 return 'Welcome to help\n\n'+
                     '!! - Steam players online and stats\n\n' +
                     '!leo - will find the Leopold\n' +
-                    '!usa infantry blitz 3k - show cards with all the attributes'
+                    '!usa infantry blitz 3k - show cards with all the attributes\n' +
+                    '!en [de|es|ft|it|pl|pt|ru|zh] - change the search language'
             }
 
             for (const [key, value] of Object.entries(reservedWords)) {

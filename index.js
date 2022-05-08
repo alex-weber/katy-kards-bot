@@ -58,6 +58,17 @@ try {
         else if (languages.includes(str.slice(0,2))) {
             language = str.slice(0,2)
             await db.set(msg.author.id, language)
+            msg.reply(
+                translator.translate(language,
+                    'langChange' + language.toUpperCase()
+                )
+            ).then(() =>  {
+                console.log(
+                    'lang changed to ' +
+                    language.toUpperCase() + ' for ' +
+                    msg.author.username
+                )
+            })
         }
         //else search on KARDS website
         else if (msg.content.startsWith('!') && msg.content.length > 2) {
