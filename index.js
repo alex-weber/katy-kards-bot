@@ -57,7 +57,11 @@ try {
             })
         }
         //switch language
-        else if (languages.includes(str.slice(0,2))) {
+        else if (
+            msg.content.startsWith('!') &&
+            msg.content.length === 3 &&
+            languages.includes(str.slice(0,2)))
+        {
             language = str.slice(0,2)
             await db.set(msg.author.id, language)
             msg.reply(
