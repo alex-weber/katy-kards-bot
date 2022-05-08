@@ -3,7 +3,7 @@ const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
 const { MessageAttachment } = require('discord.js')
-
+const host = 'https://www.kards.com'
 /**
  *
  * @param variables
@@ -122,7 +122,6 @@ async function getCards(variables, advanced = false) {
 function getFiles(cards, limit) {
 
     let files = []
-    let host = 'https://www.kards.com'
     for (const [key, value] of Object.entries(cards)) {
         let attachment = new MessageAttachment(host + value.node.imageUrl)
         files.push(attachment)

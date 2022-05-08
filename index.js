@@ -6,13 +6,14 @@ const translator = require('./translator.js')
 const stats = require('./stats')
 const search = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
-const getLanguage = require('./language.js')
+const { getLanguageByInput, languages }= require('./language.js')
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents} = require('discord.js');
+const {setLanguage, getLanguage} = require("./db");
 const client = new Client({
     intents: [
         Intents.FLAGS.GUILDS,
@@ -24,7 +25,13 @@ client.on('ready', () => {
 })
 //main block
 try {
-    client.on('messageCreate', msg => {
+    client.on('messageCreate', async msg =>  {
+
+        //remove the "!" sign and whitespaces from the beginning
+        const str = msg.content.slice(1).trim().toLowerCase()
+        //language
+        let language = getLanguageByInput(str)
+
         //show help
         if (msg.content === '!help') {
             msg.reply(translator.translate('en', 'help'))
@@ -37,11 +44,16 @@ try {
                 console.log(error)
             })
         }
+        //switch language
+        else if (languages.includes(str.slice(0,2))) {
+            language = str.slice(0,2)
+            setLanguage(msg.author, str).then(res => {
+                console.log(res.rowCount, 'language set to ' + language)
+            })
+        }
         //else search on KARDS website
         else if (msg.content.startsWith('!') && msg.content.length > 2) {
-            //remove the "!" sign and whitespaces from the beginning
-            let str = msg.content.substring(1).trim().toLowerCase()
-            let language = getLanguage(str)
+
             let variables = {
                 "language": language,
                 "q": str,
@@ -60,7 +72,7 @@ try {
                             if (counter > limit) {
                                 content += translator.translate(language, 'limit') + limit
                             }
-                            //attach found cards
+                            //attach found images
                             const files = search.getFiles(cards, limit)
                             //reply to user
                             msg.reply({content: content, files: files})
