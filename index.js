@@ -21,7 +21,6 @@ app.listen(port, () =>
 
 // ================= DISCORD JS ===================
 const {Client, Intents} = require('discord.js');
-const {setLanguage, getLanguage} = require("./db");
 const client = new Client({
     intents: [
         Intents.FLAGS.GUILDS,
