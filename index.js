@@ -2,6 +2,7 @@
 const express = require('express')
 const app = express()
 const port = process.env.PORT
+//custom modules
 const translator = require('./translator.js')
 const stats = require('./stats')
 const search = require('./search')
@@ -39,12 +40,13 @@ try {
         //language
         let language = await db.get(msg.author.id)
         if (!language) {
+            //try to find the language and store it in the DB
             language = getLanguageByInput(str)
             await db.set(msg.author.id, language)
         }
         //show help
         if (msg.content === '!help') {
-            msg.reply(translator.translate(language, 'help'))
+            await msg.reply(translator.translate(language, 'help'))
         }
         //show stats
         else if (msg.content === '!!') {
@@ -109,8 +111,8 @@ try {
     }) // end of onMessageCreate
 
     //start bot session
-    client.login(process.env.DISCORD_TOKEN).then(res => {
-        console.log('started client')
+    client.login(process.env.DISCORD_TOKEN).then( () => {
+        console.log('client started')
     })
 
 //end of global try

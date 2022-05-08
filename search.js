@@ -20,6 +20,12 @@ function getVariables (variables) {
         variables = setAttribute(translator.translate('en', words[i]), variables)
     }
 
+    /**
+     *
+     * @param word
+     * @param variables
+     * @returns {*}
+     */
     function setAttribute(word, variables) {
 
         if (typeof word !== 'string') return variables;
@@ -63,10 +69,10 @@ function getVariables (variables) {
  *
  * @param word
  * @param attributes
- * @returns {boolean}
+ * @returns {String}
  */
 function getAttribute(word, attributes) {
-    let result = false;
+    let result = '';
 
     for (const [key, value] of Object.entries(attributes)) {
        if ( key.slice(0,3) === word.slice(0,3) ||
@@ -121,7 +127,7 @@ async function getCards(variables, advanced = false) {
 function getFiles(cards, limit) {
 
     let files = []
-    for (const [key, value] of Object.entries(cards)) {
+    for (const [, value] of Object.entries(cards)) {
         let attachment = new MessageAttachment(host + value.node.imageUrl)
         files.push(attachment)
         if (files.length === limit) break
