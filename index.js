@@ -1,12 +1,13 @@
 //globals
 const express = require('express')
 const app = express()
-const port = process.env.PORT
+const port = parseInt(process.env.PORT) || 3000
 //custom modules
 const translator = require('./translator.js')
 const stats = require('./stats')
 const search = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
+const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages }= require('./language.js')
 //database
 const JSONING = require('jsoning')
@@ -29,7 +30,7 @@ const client = new Client({
 })
 //login event
 client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`)
+    console.log(`Logged in as ${client.user.tag}!`, 'Server count: ' + client.guilds.cache.size)
 })
 //main block
 try {
@@ -42,7 +43,7 @@ try {
 
             return
         }
-        console.log('received a bot command: ' + msg.content)
+        console.log('received a bot command: ' + msg.content + ' from ' + msg.author.username)
         //remove the "!" sign and whitespaces from the beginning
         const str = msg.content.slice(1).trim().toLowerCase()
         //language
@@ -53,7 +54,7 @@ try {
             await db.set(msg.author.id, language)
         }
         //show help
-        if (msg.content === '!help') {
+        if (str === 'help') {
             await msg.reply(translator.translate(language, 'help'))
         }
         //show stats
@@ -65,28 +66,21 @@ try {
             })
         }
         //switch language
-        else if (
-            msg.content.startsWith('!') &&
-            msg.content.length === 3 &&
-            languages.includes(str.slice(0,2)))
+        else if (msg.content.length === 3 && languages.includes(str.slice(0,2)))
         {
             language = str.slice(0,2)
             await db.set(msg.author.id, language)
             msg.reply(
-                translator.translate(language, 'langChange') +
-                language.toUpperCase()
-
-            ).then(() =>  {
-                console.log(
-                    'lang changed to ' +
-                    language.toUpperCase() + ' for ' +
-                    msg.author.username
-                )
+                translator.translate(language, 'langChange') + language.toUpperCase()
+            ).then( () =>  {
+                console.log('lang changed to ' + language.toUpperCase() + ' for ' + msg.author.username)
             })
         }
+        else if (str.length < minStrLen) {
+            await msg.reply('Minimum ' + minStrLen + ' chars, please')
+        }
         //else search on KARDS website
-        else if (msg.content.startsWith('!') && msg.content.length > 2) {
-
+        else {
             let variables = {
                 "language": language,
                 "q": str,
@@ -94,26 +88,28 @@ try {
             }
             search.getCards(variables)
                 .then(res => {
-                    if (res) { //if the server responds with 200
-                        const cards = res.data.data.cards.edges
-                        const counter = res.data.data.cards.pageInfo.count
-                        let content = translator.translate(language, 'search') + ': '
-                        //if any cards are found - attach them
-                        if (counter > 0) {
-                            content += counter
-                            //warn that there are more cards found
-                            if (counter > limit) {
-                                content += translator.translate(language, 'limit') + limit
-                            }
-                            //attach found images
-                            const files = search.getFiles(cards, limit)
-                            //reply to user
-                            msg.reply({content: content, files: files})
-                        }
-                        else msg.reply(translator.translate(language, 'noresult'))
+                    if (!res) {
+                        msg.reply(translator.translate(language, 'error'))
+
+                        return
                     }
-                    //reply that no cards are found
-                    else msg.reply(translator.translate(language, 'noresult'))
+                    const cards = res.data.data.cards.edges
+                    const counter = res.data.data.cards.pageInfo.count
+                    if (!counter) {
+                        msg.reply(translator.translate(language, 'noresult'))
+
+                        return
+                    }
+                    //if any cards are found - attach them
+                    let content = translator.translate(language, 'search') + ': ' + counter
+                    //warn that there are more cards found
+                    if (counter > limit) {
+                        content += translator.translate(language, 'limit') + limit
+                    }
+                    //attach found images
+                    const files = search.getFiles(cards, limit)
+                    //reply to user
+                    msg.reply({content: content, files: files})
                 })
                 .catch(error => {
                     msg.reply(translator.translate(language, 'error'))
@@ -126,7 +122,6 @@ try {
     client.login(process.env.DISCORD_TOKEN).then( () => {
         console.log('client started')
     })
-
 //end of global try
 } catch (error) {
     console.log(error)
