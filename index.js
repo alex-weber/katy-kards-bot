@@ -7,10 +7,18 @@ const stats = require('./stats')
 const search = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 const { getLanguageByInput, languages }= require('./language.js')
+//database
+const JSONING = require('jsoning');
+const db = new JSONING("database.json");
 
 //start server
-app.get('/', (req, res) => res.send('Bot is online.'))
-app.listen(port, () => console.log(`Bot is listening at :${port}`))
+app.get('/', (
+    req,
+    res) =>
+    res.send('Bot is online.'))
+app.listen(port, () =>
+    console.log(`Bot is listening at :${port}`))
+
 // ================= DISCORD JS ===================
 const {Client, Intents} = require('discord.js');
 const {setLanguage, getLanguage} = require("./db");
@@ -30,8 +38,11 @@ try {
         //remove the "!" sign and whitespaces from the beginning
         const str = msg.content.slice(1).trim().toLowerCase()
         //language
-        let language = getLanguageByInput(str)
-
+        let language = await db.get(msg.author.id)
+        if (!language) {
+            language = getLanguageByInput(str)
+            await db.set(msg.author.id, language)
+        }
         //show help
         if (msg.content === '!help') {
             msg.reply(translator.translate('en', 'help'))
@@ -47,9 +58,7 @@ try {
         //switch language
         else if (languages.includes(str.slice(0,2))) {
             language = str.slice(0,2)
-            setLanguage(msg.author, str).then(res => {
-                console.log(res.rowCount, 'language set to ' + language)
-            })
+            await db.set(msg.author.id, language)
         }
         //else search on KARDS website
         else if (msg.content.startsWith('!') && msg.content.length > 2) {
@@ -76,7 +85,8 @@ try {
                             const files = search.getFiles(cards, limit)
                             //reply to user
                             msg.reply({content: content, files: files})
-                        } else msg.reply(translator.translate(language, 'noresult'))
+                        }
+                        else msg.reply(translator.translate(language, 'noresult'))
                     }
                     //reply that no cards are found
                     else msg.reply(translator.translate(language, 'noresult'))
@@ -89,10 +99,11 @@ try {
     }) // end of onMessageCreate
 
     //start bot session
-    client.login(process.env.DISCORD_TOKEN)
+    client.login(process.env.DISCORD_TOKEN).then(res => {
+        console.log('started client')
+    })
 
 //end of global try
 } catch (error) {
     console.log(error)
-
 }

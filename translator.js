@@ -42,7 +42,17 @@ module.exports.translate = function (language, msg) {
 
             break
 
-        case 'en':
+        case 'de':
+            if (msg === 'online') return 'Steam Spieler online'
+            if (msg === 'search') return 'Suchergebnisse'
+            if (msg === 'stats') return 'letzte 24 Stunden'
+            if (msg === 'error') return 'Scheiße, ein Fehler!'
+            if (msg === 'limit') return ', ich zeige aber nur '
+            if (msg === 'noresult') return 'nichts gefunden...'
+
+            break
+
+        default:
             if (msg === 'online') return 'Players online'
             if (msg === 'search') return 'Cards found'
             if (msg === 'stats') return 'Last 24 hours'
