@@ -35,6 +35,9 @@ client.on('ready', () => {
 try {
     client.on('messageCreate', async msg =>  {
 
+        //not a bot command
+        if (!msg.content.startsWith('!')) return
+
         //remove the "!" sign and whitespaces from the beginning
         const str = msg.content.slice(1).trim().toLowerCase()
         //language
