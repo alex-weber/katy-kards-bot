@@ -14,12 +14,8 @@ const JSONING = require('jsoning')
 const db = new JSONING("database.json")
 
 //start server
-app.get('/', (
-    req,
-    res) =>
-    res.send('Bot is online.'))
-app.listen(port, () =>
-    console.log(`Bot is listening at :${port}`))
+app.get('/', (req, res) => res.send('Bot is online.'))
+app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
 const {Client, Intents} = require('discord.js')
@@ -35,7 +31,6 @@ client.on('ready', () => {
 //main block
 try {
     client.on('messageCreate', async msg =>  {
-
         //not a bot command
         if (!msg.content.startsWith('!')) {
             //log the message and quit
@@ -46,7 +41,6 @@ try {
         console.log('received a bot command: ' + msg.content + ' from ' + msg.author.username)
         //remove the "!" sign and whitespaces from the beginning
         const str = msg.content.slice(1).trim().toLowerCase()
-        //language
         let language = await db.get(msg.author.id)
         if (!language) {
             //try to find the language and store it in the DB
@@ -59,11 +53,7 @@ try {
         }
         //show stats
         else if (msg.content === '!!') {
-            stats.getStats().then(res => {
-                msg.reply(res)
-            }).catch(error => {
-                console.log(error)
-            })
+            stats.getStats().then(res => { msg.reply(res) }).catch(error => { console.log(error) })
         }
         //switch language
         else if (msg.content.length === 3 && languages.includes(str.slice(0,2)))
@@ -73,7 +63,9 @@ try {
             msg.reply(
                 translator.translate(language, 'langChange') + language.toUpperCase()
             ).then( () =>  {
-                console.log('lang changed to ' + language.toUpperCase() + ' for ' + msg.author.username)
+                console.log('lang changed to ' +
+                    language.toUpperCase() + ' for ' +
+                    msg.author.username)
             })
         }
         else if (str.length < minStrLen) {
@@ -110,19 +102,13 @@ try {
                     const files = search.getFiles(cards, limit)
                     //reply to user
                     msg.reply({content: content, files: files})
-                })
-                .catch(error => {
+                }).catch(error => {
                     msg.reply(translator.translate(language, 'error'))
                     console.error(error)
                 })
         } //end of search
     }) // end of onMessageCreate
-
     //start bot session
-    client.login(process.env.DISCORD_TOKEN).then( () => {
-        console.log('client started')
-    })
+    client.login(process.env.DISCORD_TOKEN).then( () => { console.log('client started') })
 //end of global try
-} catch (error) {
-    console.log(error)
-}
+} catch (error) { console.log(error) }

@@ -28,7 +28,7 @@ function getVariables (variables) {
      */
     function setAttribute(word, variables) {
 
-        if (typeof word !== 'string') return variables;
+        if (typeof word !== 'string') return variables
 
         let nationID = getAttribute(word, dictionary.nation)
         if (nationID) {
@@ -72,7 +72,7 @@ function getVariables (variables) {
  * @returns {String}
  */
 function getAttribute(word, attributes) {
-    let result = '';
+    let result = ''
 
     for (const [key, value] of Object.entries(attributes)) {
        if ( key.slice(0,3) === word.slice(0,3) ||

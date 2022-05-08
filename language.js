@@ -6,7 +6,6 @@ const getLanguageByInput = function (str) {
     const cyrillicPattern = /^[\u0400-\u04FF]+$/
     if ( cyrillicPattern.test(firstLetter) || cyrillicPattern.test(lastLetter) ) language = 'ru'
 
-
     return language
 }
 //all supported languages on kards.com
