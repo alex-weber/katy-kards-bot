@@ -11,7 +11,7 @@ async function formatStats() {
     let output = ''
     const response = await axios.get(statsURL)
     const body = response.data
-    const offset = 3600*3000;//manually add to get the Moscow time
+    const offset = 0 //no Moscow time, use GMT
     for (let i = 1; i < 25; i++) {
         let date = new Date(body[body.length - i][0] + offset)
         let players = body[body.length - i][1];
@@ -22,7 +22,6 @@ async function formatStats() {
     }
 
     return output
-
 }
 
 /**
@@ -46,7 +45,7 @@ async function getPlayers() {
  */
 async function getStats() {
 
-    return  await getPlayers() + await formatStats()
+    return await getPlayers() + await formatStats()
 }
 //export
 module.exports = { getStats }

@@ -8,8 +8,8 @@ const search = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 const { getLanguageByInput, languages }= require('./language.js')
 //database
-const JSONING = require('jsoning');
-const db = new JSONING("database.json");
+const JSONING = require('jsoning')
+const db = new JSONING("database.json")
 
 //start server
 app.get('/', (
@@ -20,7 +20,7 @@ app.listen(port, () =>
     console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
-const {Client, Intents} = require('discord.js');
+const {Client, Intents} = require('discord.js')
 const client = new Client({
     intents: [
         Intents.FLAGS.GUILDS,
@@ -44,7 +44,7 @@ try {
         }
         //show help
         if (msg.content === '!help') {
-            msg.reply(translator.translate('en', 'help'))
+            msg.reply(translator.translate(language, 'help'))
         }
         //show stats
         else if (msg.content === '!!') {

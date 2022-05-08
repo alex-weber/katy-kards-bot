@@ -69,7 +69,6 @@ function getAttribute(word, attributes) {
     let result = false;
 
     for (const [key, value] of Object.entries(attributes)) {
-        //console.log(typeof value === 'string')
        if ( key.slice(0,3) === word.slice(0,3) ||
             (typeof value === 'string' &&  value.slice(0,3) === word.slice(0,3)) )
        {
