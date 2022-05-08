@@ -59,9 +59,9 @@ try {
             language = str.slice(0,2)
             await db.set(msg.author.id, language)
             msg.reply(
-                translator.translate(language,
-                    'langChange' + language.toUpperCase()
-                )
+                translator.translate(language, 'langChange') +
+                language.toUpperCase()
+
             ).then(() =>  {
                 console.log(
                     'lang changed to ' +
