@@ -34,7 +34,7 @@ client.on('ready', () => {
 try {
     client.on('messageCreate', async msg =>  {
         //not a bot command
-        if (!msg.content.startsWith('!') || msg.content.type !== 'text' || message.author.bot) {
+        if (!msg.content.startsWith('!')) {
             //log the message and quit
             console.log(msg.author.username + '  ' + msg.author.id + 'wrote something')
 
