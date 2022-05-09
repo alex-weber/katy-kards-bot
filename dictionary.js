@@ -26,5 +26,9 @@ module.exports = {
         'special',
         'elite'
     ],
+    synonyms: {
+        milkshake: '34th infantry regiment',
+        sexy: '47th infantry regiment',
+    }
 
 }
