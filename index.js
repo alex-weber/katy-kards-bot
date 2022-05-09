@@ -73,13 +73,14 @@ try {
         else if (str.length < minStrLen) {
             await msg.reply('Minimum ' + minStrLen + ' chars, please')
         }
-        //check for synonyms
-        else if (str in dictionary.synonyms) {
-            str = dictionary.synonyms[str]
-            console.log('synonym found for ' + str)
-        }
+
         //else search on KARDS website
         else {
+            //check for synonyms
+            if (str in dictionary.synonyms) {
+                str = dictionary.synonyms[str]
+                console.log('synonym found for ' + str)
+            }
             let variables = {
                 "language": language,
                 "q": str,
