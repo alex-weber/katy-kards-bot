@@ -38,7 +38,7 @@ module.exports.translate = function (language, msg) {
             if (msg === 'stats') return 'последние 24 часа'
             if (msg === 'error') return 'shit..ошибочка вышла!'
             if (msg === 'limit') return ', но покажу всего '
-            if (msg === 'noresult') return 'карт не найдено...'
+            if (msg === 'noresult') return 'Язык поиска: ' + language.toUpperCase() + ', карт не найдено...'
             if (msg === 'langChange') return 'Язык поиска: '
             if (msg === 'help') {
                 return 'Приветствую!\n\n'+
@@ -56,7 +56,7 @@ module.exports.translate = function (language, msg) {
             if (msg === 'stats') return 'letzte 24 Stunden'
             if (msg === 'error') return 'Scheiße, ein Fehler!'
             if (msg === 'limit') return ', ich zeige aber nur '
-            if (msg === 'noresult') return 'nichts gefunden...'
+            if (msg === 'noresult') return 'Suchsprache: '+ language.toUpperCase() + ', nichts gefunden...'
             if (msg === 'langChange') return 'Suchsprache: '
             if (msg === 'help') {
                 return 'Willkommen!\n\n'+
@@ -74,7 +74,7 @@ module.exports.translate = function (language, msg) {
             if (msg === 'stats') return 'Last 24 hours'
             if (msg === 'error') return 'Oops... Something went wrong...'
             if (msg === 'limit') return ', but showing only the first '
-            if (msg === 'noresult') return 'No cards found...'
+            if (msg === 'noresult') return 'Search language: '+ language.toUpperCase() + '. No cards found...'
             if (msg === 'langChange') return 'Search language: '
             if (msg === 'help') {
                 return 'Welcome to help\n\n'+
