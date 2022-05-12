@@ -63,6 +63,7 @@ module.exports.translate = function (language, msg) {
                     '**!!** - *Steam Spieler online and Statistiken*\n\n' +
                     '**!leo** - *findet den Leopold*\n' +
                     '**!usa infantry blitz 3k** - *findet alle Karten mit den Attributen*\n' +
+                    'Nationen: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     '**!de** [en|es|ft|it|pl|pt|ru|zh] - Suchsprache ändern'
             }
 
@@ -81,6 +82,7 @@ module.exports.translate = function (language, msg) {
                     '**!!** - *Steam players online and stats*\n\n' +
                     '**!leo** - *will find the Leopold*\n' +
                     '**!usa infantry blitz 3k** - *find cards with all the attributes*\n' +
+                    'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     '**!en** [de|es|ft|it|pl|pt|ru|zh] - change the search language'
             }
 
