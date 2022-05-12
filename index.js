@@ -14,6 +14,15 @@ const dictionary = require('./dictionary')
 const JSONING = require('jsoning')
 const db = new JSONING("database.json")
 
+try {
+    const Keyv = require('keyv')
+    const keyv = new Keyv(process.env.DATABASE_URL)
+    keyv.on('error', err => console.error('Keyv connection error:', err))
+    console.log(keyv)
+} catch (e) {
+    console.log(e)
+}
+
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
@@ -29,6 +38,7 @@ const client = new Client({
 //login event
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`, 'Server count: ' + client.guilds.cache.size)
+    client.user.setActivity('KARDS search and stats')
 })
 //main block
 try {

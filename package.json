@@ -11,11 +11,13 @@
   "author": "tortunbator",
   "license": "ISC",
   "dependencies": {
+    "@keyv/postgres": "^1.2.1",
     "axios": "^0.26.0",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
     "jsoning": "^0.13.23",
+    "keyv": "^4.2.6",
     "pg": "^8.7.3"
   },
   "engines": {
