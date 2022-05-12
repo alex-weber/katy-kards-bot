@@ -13,6 +13,7 @@ const dictionary = require('./dictionary')
 //database
 const JSONING = require('jsoning')
 const db = new JSONING("database.json")
+const helpEmbed = require('./help')
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -49,6 +50,9 @@ try {
             //try to find the language and store it in the DB
             language = getLanguageByInput(str)
             await db.set(msg.author.id, language)
+        }
+        if (str === 'newhelp') {
+            await msg.reply({ embeds : [helpEmbed] })
         }
         //show help
         if (str === 'help') {

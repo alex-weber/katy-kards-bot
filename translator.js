@@ -80,7 +80,7 @@ module.exports.translate = function (language, msg) {
                 return 'Welcome to help\n\n'+
                     '!! - Steam players online and stats\n\n' +
                     '!leo - will find the Leopold\n' +
-                    '!usa infantry blitz 3k - show cards with all the attributes\n' +
+                    '!usa infantry blitz 3k - find cards with all the attributes\n' +
                     '!en [de|es|ft|it|pl|pt|ru|zh] - change the search language'
             }
 
