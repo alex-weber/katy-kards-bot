@@ -14,15 +14,6 @@ const dictionary = require('./dictionary')
 const JSONING = require('jsoning')
 const db = new JSONING("database.json")
 
-try {
-    const Keyv = require('keyv')
-    const keyv = new Keyv(process.env.HEROKU_POSTGRESQL_BLUE_URL)
-    keyv.on('error', err => console.error('Keyv connection error:', err))
-    console.log(keyv)
-} catch (e) {
-    console.log(e)
-}
-
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
