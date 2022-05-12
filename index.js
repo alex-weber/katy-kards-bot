@@ -16,7 +16,7 @@ const db = new JSONING("database.json")
 
 try {
     const Keyv = require('keyv')
-    const keyv = new Keyv(process.env.DATABASE_URL)
+    const keyv = new Keyv(process.env.HEROKU_POSTGRESQL_BLUE_URL)
     keyv.on('error', err => console.error('Keyv connection error:', err))
     console.log(keyv)
 } catch (e) {
