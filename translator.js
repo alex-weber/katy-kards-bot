@@ -60,10 +60,10 @@ module.exports.translate = function (language, msg) {
             if (msg === 'langChange') return 'Suchsprache: '
             if (msg === 'help') {
                 return 'Willkommen!\n\n'+
-                    '!! - Steam Spieler online and Statistiken\n\n' +
-                    '!leo - findet den Leopold\n' +
-                    '!usa infantry blitz 3k - findet alle Karten mit den Attributen\n' +
-                    '!en [de|es|ft|it|pl|pt|ru|zh] - Suchsprache ändern'
+                    '**!!** - *Steam Spieler online and Statistiken*\n\n' +
+                    '**!leo** - *findet den Leopold*\n' +
+                    '**!usa infantry blitz 3k** - *findet alle Karten mit den Attributen*\n' +
+                    '**!de** [en|es|ft|it|pl|pt|ru|zh] - Suchsprache ändern'
             }
 
             break
@@ -77,11 +77,11 @@ module.exports.translate = function (language, msg) {
             if (msg === 'noresult') return 'Search language: '+ language.toUpperCase() + '. No cards found...'
             if (msg === 'langChange') return 'Search language: '
             if (msg === 'help') {
-                return 'Welcome to help\n\n'+
-                    '!! - Steam players online and stats\n\n' +
-                    '!leo - will find the Leopold\n' +
-                    '!usa infantry blitz 3k - find cards with all the attributes\n' +
-                    '!en [de|es|ft|it|pl|pt|ru|zh] - change the search language'
+                return 'Welcome!\n\n'+
+                    '**!!** - *Steam players online and stats*\n\n' +
+                    '**!leo** - *will find the Leopold*\n' +
+                    '**!usa infantry blitz 3k** - *find cards with all the attributes*\n' +
+                    '**!en** [de|es|ft|it|pl|pt|ru|zh] - change the search language'
             }
 
             for (const [key, value] of Object.entries(reservedWords)) {
