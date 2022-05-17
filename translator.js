@@ -45,7 +45,7 @@ module.exports.translate = function (language, msg) {
                     '**!!** - *Количество игроков онлайн и статистика*\n\n' +
                     '**!leo** - *Найдет Леопольда*\n' +
                     '**!сша пехота 3к блиц** - *Найдет карты с соответствующими параметрами*\n' +
-                    '**!en** [de|es|ft|it|pl|pt|ru|zh] - *Сменить язык поиска*'
+                    '**!en** [de|es|ft|it|pl|pt|ru|tw|zh] - *Сменить язык поиска*'
             }
 
             break
@@ -64,7 +64,7 @@ module.exports.translate = function (language, msg) {
                     '**!leo** - *findet den Leopold*\n' +
                     '**!usa infantry blitz 3k** - *findet alle Karten mit den Attributen*\n' +
                     'Nationen: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
-                    '**!de** [en|es|ft|it|pl|pt|ru|zh] - Suchsprache ändern'
+                    '**!de** [en|es|ft|it|pl|pt|ru|tw|zh] - Suchsprache ändern'
             }
 
             break
@@ -83,7 +83,7 @@ module.exports.translate = function (language, msg) {
                     '**!leo** - *will find the Leopold*\n' +
                     '**!usa infantry blitz 3k** - *find cards with all the attributes*\n' +
                     'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
-                    '**!en** [de|es|ft|it|pl|pt|ru|zh] - change the search language'
+                    '**!en** [ de | es | ft | it | pl | pt | ru | tw | zh ] - change the search language'
             }
 
             for (const [key, value] of Object.entries(reservedWords)) {
