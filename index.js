@@ -37,7 +37,10 @@ try {
         //not a bot command
         if (!msg.content.startsWith('!')) {
             //log the message and quit
-            console.log(msg.author.username + '  ' + msg.author.id + ' wrote something')
+            console.log(
+                'guildId: ' + msg.guildId +
+                ' channelId: ' + msg.channelId + '  ' +
+            msg.author.username + '  ' + ' wrote something')
 
             return
         }
