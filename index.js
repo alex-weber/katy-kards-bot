@@ -65,6 +65,8 @@ try {
         else if (msg.content.length === 3 && languages.includes(str.slice(0,2)))
         {
             language = str.slice(0,2)
+            //for traditional chinese
+            if (language === 'tw') language = 'zh-Hant'
             await db.set(msg.author.id, language)
             msg.reply(
                 translator.translate(language, 'langChange') + language.toUpperCase()

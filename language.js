@@ -9,6 +9,6 @@ const getLanguageByInput = function (str) {
     return language
 }
 //all supported languages on kards.com
-const languages = ['de', 'en', 'es', 'fr', 'it', 'pl', 'pt', 'ru', 'zh']
+const languages = ['de', 'en', 'es', 'fr', 'it', 'pl', 'pt', 'ru', 'tw', 'zh']
 
 module.exports = { getLanguageByInput, languages }
