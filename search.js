@@ -73,6 +73,8 @@ function getVariables (variables) {
  */
 function getAttribute(word, attributes) {
     let result = ''
+    //do not search if the word is shorter than 3 chars
+    if (word.length < 3) return result
 
     for (const [key, value] of Object.entries(attributes)) {
        if ( key.slice(0,3) === word.slice(0,3) ||

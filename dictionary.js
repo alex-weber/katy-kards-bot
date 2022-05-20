@@ -29,6 +29,10 @@ module.exports = {
     synonyms: {
         milkshake: '34th infantry regiment',
         sexy: '47th infantry regiment',
+        chocco: '32nd infantry regiment',
+        milktruck: '332nd engineer regiment',
+        beefwagon: 'befehlswagen',
+        senpai: 'sendai regiment'
     }
 
 }
