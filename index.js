@@ -55,7 +55,7 @@ try {
         }
         //golden signal
         if (str === 'golden signal') {
-            await msg.reply({content: content, files: ['https://i.imgur.com/XGRHNxX.jpeg'] })
+            await msg.reply({content: 'here you are', files: ['https://i.imgur.com/XGRHNxX.jpeg'] })
         }
         //show help
         if (str === 'help') {
