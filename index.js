@@ -34,6 +34,10 @@ client.on('ready', () => {
 //main block
 try {
     client.on('messageCreate', async msg =>  {
+        //check for write permissions
+        let canSendMessages = msg.guild.me.permissions.has('SEND_MESSAGES')
+        let canAttachFiles = msg.guild.me.permissions.has('ATTACH_FILES')
+        console.log('send: ' + canSendMessages, 'attach: ' + canAttachFiles)
         //not a bot command
         if (!msg.content.startsWith('!')) {
             //log the message and quit
