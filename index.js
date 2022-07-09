@@ -38,6 +38,11 @@ try {
         let canSendMessages = msg.guild.me.permissions.has('SEND_MESSAGES')
         let canAttachFiles = msg.guild.me.permissions.has('ATTACH_FILES')
         console.log('send: ' + canSendMessages, ' attach: ' + canAttachFiles)
+        if (!canSendMessages || !canAttachFiles) {
+            console.log('no write permissions in ' + msg.channelId + '. Will do nothing.')
+
+            return
+        }
         //not a bot command
         if (!msg.content.startsWith('!')) {
             //log the message and quit
