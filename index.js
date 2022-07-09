@@ -53,6 +53,10 @@ try {
             language = getLanguageByInput(str)
             await db.set(msg.author.id, language)
         }
+        //golden signal
+        if (str === 'golden signal') {
+            await msg.reply({content: content, files: ['https://i.imgur.com/XGRHNxX.jpeg'] })
+        }
         //show help
         if (str === 'help') {
             await msg.reply(translator.translate(language, 'help'))
