@@ -49,35 +49,31 @@ try
             return
         }
         //not a bot command
-        if (!msg.content.startsWith('!'))
-        {
-            //log the message and quit
-            console.log(
-                'guildId: ' + msg.guildId +
-                ' channelId: ' + msg.channelId + '  ' +
-            msg.author.username + '  ' + ' wrote something')
+        if (!msg.content.startsWith('!')) return
 
-            return
-        }
-        console.log('received a bot command: ' + msg.content + ' from ' + msg.author.username)
+        console.log(
+          'received a bot command: ' +
+          'guildId: ' + msg.guildId +
+          ' channelId: ' + msg.channelId + '  ' +
+          msg.content + ' from ' + msg.author.username)
         //remove the "!" sign and whitespaces from the beginning
-        let str = msg.content.slice(1).trim().toLowerCase()
+        let command = msg.content.slice(1).trim().toLowerCase()
         let language = await db.get(msg.author.id)
         if (!language)
         {
             //try to find the language and store it in the DB
-            language = getLanguageByInput(str)
+            language = getLanguageByInput(command)
             await db.set(msg.author.id, language)
         }
         //golden signal
-        if (str === 'golden signal' || str === 'gs')
+        if (command === 'golden signal' || command === 'gs')
         {
             await msg.reply({content: 'here you are', files: ['https://i.imgur.com/XGRHNxX.jpeg'] })
 
             return
         }
         //show help
-        if (str === 'help')
+        if (command === 'help')
         {
             await msg.reply(translator.translate(language, 'help'))
 
@@ -91,9 +87,9 @@ try
             return
         }
         //switch language
-        if (msg.content.length === 3 && languages.includes(str.slice(0,2)))
+        if (msg.content.length === 3 && languages.includes(command.slice(0,2)))
         {
-            language = str.slice(0,2)
+            language = command.slice(0,2)
             //for traditional chinese
             if (language === 'tw') language = 'zh-Hant'
             await db.set(msg.author.id, language)
@@ -107,7 +103,7 @@ try
 
             return
         }
-        if (str.length < minStrLen)
+        if (command.length < minStrLen)
         {
             await msg.reply('Minimum ' + minStrLen + ' chars, please')
 
@@ -118,14 +114,14 @@ try
         else
         {
             //check for synonyms
-            if (str in dictionary.synonyms)
+            if (command in dictionary.synonyms)
             {
-                str = dictionary.synonyms[str]
-                console.log('synonym found for ' + str)
+                command = dictionary.synonyms[command]
+                console.log('synonym found for ' + command)
             }
             let variables = {
                 "language": language,
-                "q": str,
+                "q": command,
                 "showSpawnables": true,
             }
             search.getCards(variables)
