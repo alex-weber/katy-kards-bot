@@ -40,6 +40,8 @@ module.exports = {
         slow:       'fast heinz',
         gay:        'liberation',
         baby:       'autokanone',
+        bussymark:  'bismarck',
+        elephant:   '114',
 
     }
 

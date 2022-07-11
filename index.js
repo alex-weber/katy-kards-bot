@@ -20,31 +20,37 @@ app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
 const {Client, Intents} = require('discord.js')
-const client = new Client({
+const client = new Client(
+  {
     intents: [
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES
     ]
-})
+  })
 //login event
-client.on('ready', () => {
+client.on('ready', () =>
+{
     console.log(`Logged in as ${client.user.tag}!`, 'Server count: ' + client.guilds.cache.size)
     client.user.setActivity('KARDS search and stats')
 })
 //main block
-try {
-    client.on('messageCreate', async msg =>  {
+try
+{
+    client.on('messageCreate', async msg =>
+    {
         //check for write permissions
-        let canSendMessages = msg.guild.me.permissions.has('SEND_MESSAGES')
-        let canAttachFiles = msg.guild.me.permissions.has('ATTACH_FILES')
-        console.log('send: ' + canSendMessages, ' attach: ' + canAttachFiles)
-        if (!canSendMessages || !canAttachFiles) {
+        if (
+          !msg.guild.me.permissions.has('SEND_MESSAGES') ||
+          !msg.guild.me.permissions.has('ATTACH_FILES'))
+        {
+            console.log('send: ' + canSendMessages, ' attach: ' + canAttachFiles)
             console.log('no write permissions in ' + msg.channelId + '. Will do nothing.')
 
             return
         }
         //not a bot command
-        if (!msg.content.startsWith('!')) {
+        if (!msg.content.startsWith('!'))
+        {
             //log the message and quit
             console.log(
                 'guildId: ' + msg.guildId +
@@ -57,27 +63,35 @@ try {
         //remove the "!" sign and whitespaces from the beginning
         let str = msg.content.slice(1).trim().toLowerCase()
         let language = await db.get(msg.author.id)
-        if (!language) {
+        if (!language)
+        {
             //try to find the language and store it in the DB
             language = getLanguageByInput(str)
             await db.set(msg.author.id, language)
         }
         //golden signal
-        if (str === 'golden signal') {
+        if (str === 'golden signal' || str === 'gs')
+        {
             await msg.reply({content: 'here you are', files: ['https://i.imgur.com/XGRHNxX.jpeg'] })
 
             return
         }
         //show help
-        if (str === 'help') {
+        if (str === 'help')
+        {
             await msg.reply(translator.translate(language, 'help'))
+
+            return
         }
         //show stats
-        else if (msg.content === '!!') {
+        if (msg.content === '!!')
+        {
             stats.getStats().then(res => { msg.reply(res) }).catch(error => { console.log(error) })
+
+            return
         }
         //switch language
-        else if (msg.content.length === 3 && languages.includes(str.slice(0,2)))
+        if (msg.content.length === 3 && languages.includes(str.slice(0,2)))
         {
             language = str.slice(0,2)
             //for traditional chinese
@@ -90,15 +104,22 @@ try {
                     language.toUpperCase() + ' for ' +
                     msg.author.username)
             })
+
+            return
         }
-        else if (str.length < minStrLen) {
+        if (str.length < minStrLen)
+        {
             await msg.reply('Minimum ' + minStrLen + ' chars, please')
+
+            return
         }
 
         //else search on KARDS website
-        else {
+        else
+        {
             //check for synonyms
-            if (str in dictionary.synonyms) {
+            if (str in dictionary.synonyms)
+            {
                 str = dictionary.synonyms[str]
                 console.log('synonym found for ' + str)
             }
