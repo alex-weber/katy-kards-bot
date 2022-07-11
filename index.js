@@ -35,13 +35,12 @@ client.on('ready', () =>
 })
 //main block
 try
-{
+{   //await new messages
     client.on('messageCreate', async msg =>
     {
         //check for write permissions
-        if (
-          !msg.guild.me.permissions.has('SEND_MESSAGES') ||
-          !msg.guild.me.permissions.has('ATTACH_FILES'))
+        if (!msg.guild.me.permissions.has('SEND_MESSAGES') ||
+            !msg.guild.me.permissions.has('ATTACH_FILES'))
         {
             console.log('send: ' + canSendMessages, ' attach: ' + canAttachFiles)
             console.log('no write permissions in ' + msg.channelId + '. Will do nothing.')

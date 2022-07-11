@@ -1,4 +1,5 @@
-const getLanguageByInput = function (str) {
+const getLanguageByInput = function (str)
+{
     let language = 'en'
     const firstLetter = str.slice(0,1)
     const lastLetter = str.slice(-1)

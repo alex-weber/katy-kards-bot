@@ -1,4 +1,5 @@
-module.exports.translate = function (language, msg) {
+module.exports.translate = function (language, msg)
+{
 
     const reservedWords = {
         'germany':'германия',
@@ -85,7 +86,7 @@ module.exports.translate = function (language, msg) {
                     'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     '**!en** [ de | es | ft | it | pl | pt | ru | tw | zh ] - change the search language'
             }
-
+            //translate meta keywords from rus to eng
             for (const [key, value] of Object.entries(reservedWords)) {
                 if (msg.slice(0,3) === value.slice(0,3)) {
 
