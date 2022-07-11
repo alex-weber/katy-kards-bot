@@ -67,7 +67,7 @@ try
         //golden signal
         if (command === 'golden signal' || command === 'gs')
         {
-            await msg.reply({content: 'here you are', files: ['https://i.imgur.com/XGRHNxX.jpeg'] })
+            await msg.reply({content: 'here you are', files: ['https://i.imgur.com/IfBw6Eu.jpeg'] })
 
             return
         }
