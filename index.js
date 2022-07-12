@@ -42,6 +42,8 @@ try
     {
         //check for write permissions
         const clientMember = msg.guild.members.fetch(BotID)
+        console.log(clientMember)
+        /*
         let send = clientMember.permissions.has(Permissions.FLAGS.SEND_MESSAGES)
         let attach = clientMember.permissions.has(Permissions.FLAGS.ATTACH_FILES)
         console.log(clientMember, 'guildId: ' + msg.guildId +
@@ -56,6 +58,9 @@ try
 
             return
         }
+
+
+         */
         //not a bot command
         if (!msg.content.startsWith('!')) return
 
