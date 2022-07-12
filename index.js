@@ -40,11 +40,12 @@ try
     {
         //check for write permissions
         const clientMember = msg.guild.members.cache.get(client.user.id)
-        let send = clientMember.permissions.has('SEND_MESSAGES')
-        let attach = clientMember.permissions.has('ATTACH_FILES')
-
+        let send = clientMember.permissions.has(Permissions.FLAGS.SEND_MESSAGES)
+        let attach = clientMember.permissions.has(Permissions.FLAGS.ATTACH_FILES)
         console.log('guildId: ' + msg.guildId +
           ' channelId: ' + msg.channelId +
+          msg.content + ' from '
+          + msg.author.username +
           ' send: ' + send +
           ' attach: ' + attach)
         if (!attach)
