@@ -13,6 +13,7 @@ const dictionary = require('./dictionary')
 //database
 const JSONING = require('jsoning')
 const db = new JSONING("database.json")
+const BotID = '691253934710456360';
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -40,7 +41,7 @@ try
     client.on('messageCreate', async msg =>
     {
         //check for write permissions
-        const clientMember = msg.guild.members.cache.get(client.user.id)
+        const clientMember = msg.guild.members.cache.get(BotID)
         let send = clientMember.permissions.has(Permissions.FLAGS.SEND_MESSAGES)
         let attach = clientMember.permissions.has(Permissions.FLAGS.ATTACH_FILES)
         console.log(clientMember, 'guildId: ' + msg.guildId +
