@@ -41,8 +41,9 @@ try
     client.on('messageCreate', async message =>
     {
         //check for write permissions
-        const clientMember = await message.guild.members.fetch(BotID)
-        console.log(clientMember)
+
+        message.guild.members.fetch().then(console.log)
+          .catch(console.error)
         /*
         let send = clientMember.permissions.has(Permissions.FLAGS.SEND_MESSAGES)
         let attach = clientMember.permissions.has(Permissions.FLAGS.ATTACH_FILES)
