@@ -19,7 +19,7 @@ app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
-const {Client, Intents} = require('discord.js')
+const {Client, Intents, Permissions} = require('discord.js')
 const client = new Client(
   {
     intents: [
