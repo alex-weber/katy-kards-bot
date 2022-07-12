@@ -38,10 +38,10 @@ client.on('ready', () =>
 //main block
 try
 {   //await new messages
-    client.on('messageCreate', async msg =>
+    client.on('messageCreate', async message =>
     {
         //check for write permissions
-        const clientMember = msg.guild.members.fetch(BotID)
+        const clientMember = await message.guild.members.fetch(BotID)
         console.log(clientMember)
         /*
         let send = clientMember.permissions.has(Permissions.FLAGS.SEND_MESSAGES)
@@ -62,63 +62,63 @@ try
 
          */
         //not a bot command
-        if (!msg.content.startsWith('!')) return
+        if (!message.content.startsWith('!')) return
 
         console.log(
           'received a bot command: ' +
-          'guildId: ' + msg.guildId +
-          ' channelId: ' + msg.channelId + '  ' +
-          msg.content + ' from ' + msg.author.username)
+          'guildId: ' + message.guildId +
+          ' channelId: ' + message.channelId + '  ' +
+          message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
-        let command = msg.content.slice(1).trim().toLowerCase()
-        let language = await db.get(msg.author.id)
+        let command = message.content.slice(1).trim().toLowerCase()
+        let language = await db.get(message.author.id)
         if (!language)
         {
             //try to find the language and store it in the DB
             language = getLanguageByInput(command)
-            await db.set(msg.author.id, language)
+            await db.set(message.author.id, language)
         }
         //golden signal
         if (command === 'golden signal' || command === 'gs')
         {
-            await msg.reply({content: 'here you are', files: ['https://i.imgur.com/IfBw6Eu.jpeg'] })
+            await message.reply({content: 'here you are', files: ['https://i.imgur.com/IfBw6Eu.jpeg'] })
 
             return
         }
         //show help
         if (command === 'help')
         {
-            await msg.reply(translator.translate(language, 'help'))
+            await message.reply(translator.translate(language, 'help'))
 
             return
         }
         //show stats
-        if (msg.content === '!!')
+        if (message.content === '!!')
         {
-            stats.getStats().then(res => { msg.reply(res) }).catch(error => { console.log(error) })
+            stats.getStats().then(res => { message.reply(res) }).catch(error => { console.log(error) })
 
             return
         }
         //switch language
-        if (msg.content.length === 3 && languages.includes(command.slice(0,2)))
+        if (message.content.length === 3 && languages.includes(command.slice(0,2)))
         {
             language = command.slice(0,2)
             //for traditional chinese
             if (language === 'tw') language = 'zh-Hant'
-            await db.set(msg.author.id, language)
-            msg.reply(
+            await db.set(message.author.id, language)
+            message.reply(
                 translator.translate(language, 'langChange') + language.toUpperCase()
             ).then( () =>  {
                 console.log('lang changed to ' +
                     language.toUpperCase() + ' for ' +
-                    msg.author.username)
+                    message.author.username)
             })
 
             return
         }
         if (command.length < minStrLen)
         {
-            await msg.reply('Minimum ' + minStrLen + ' chars, please')
+            await message.reply('Minimum ' + minStrLen + ' chars, please')
 
         }
         //else search on KARDS website
@@ -138,14 +138,14 @@ try
             search.getCards(variables)
                 .then(res => {
                     if (!res) {
-                        msg.reply(translator.translate(language, 'error'))
+                        message.reply(translator.translate(language, 'error'))
 
                         return
                     }
                     const cards = res.data.data.cards.edges
                     const counter = res.data.data.cards.pageInfo.count
                     if (!counter) {
-                        msg.reply(translator.translate(language, 'noresult'))
+                        message.reply(translator.translate(language, 'noresult'))
 
                         return
                     }
@@ -158,9 +158,9 @@ try
                     //attach found images
                     const files = search.getFiles(cards, limit)
                     //reply to user
-                    msg.reply({content: content, files: files})
+                    message.reply({content: content, files: files})
                 }).catch(error => {
-                    msg.reply(translator.translate(language, 'error'))
+                    message.reply(translator.translate(language, 'error'))
                     console.error(error)
                 })
         } //end of search
