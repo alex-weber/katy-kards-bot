@@ -39,8 +39,10 @@ try
     client.on('messageCreate', async msg =>
     {
         //check for write permissions
-        let send = msg.guild.me.permissions.has('SEND_MESSAGES')
-        let attach = msg.guild.me.permissions.has('ATTACH_FILES')
+        const clientMember = msg.guild.members.cache.get(client.user.id)
+        let send = clientMember.permissions.has('SEND_MESSAGES')
+        let attach = clientMember.permissions.has('ATTACH_FILES')
+
         console.log('guildId: ' + msg.guildId +
           ' channelId: ' + msg.channelId +
           ' send: ' + send +
