@@ -43,7 +43,7 @@ try
         //check for write permissions
 
         //const clientMember = await message.guild.members.fetch(BotID)
-        console.log(message.channel)
+        console.log(message.channel.permissions)
        /* let send = clientMember.permissions.has(Permissions.FLAGS.SEND_MESSAGES)
         let attach = clientMember.permissions.has(Permissions.FLAGS.ATTACH_FILES)
         console.log(clientMember, 'guildId: ' + msg.guildId +
