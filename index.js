@@ -24,7 +24,8 @@ const client = new Client(
   {
     intents: [
         Intents.FLAGS.GUILDS,
-        Intents.FLAGS.GUILD_MESSAGES
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_MEMBERS,
     ]
   })
 //login event
@@ -113,9 +114,7 @@ try
         {
             await msg.reply('Minimum ' + minStrLen + ' chars, please')
 
-            return
         }
-
         //else search on KARDS website
         else
         {
