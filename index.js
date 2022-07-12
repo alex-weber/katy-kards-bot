@@ -41,28 +41,14 @@ try
     client.on('messageCreate', async message =>
     {
         //check for write permissions
-
         const clientMember = await message.guild.members.fetch(BotID)
         let permissions = message.channel.permissionsFor(clientMember)
-        console.log(
-          message.channelId,
-          permissions.has(Permissions.FLAGS.SEND_MESSAGES),
-          permissions.has(Permissions.FLAGS.ATTACH_FILES))
-       /* let send = clientMember.permissions.has(Permissions.FLAGS.SEND_MESSAGES)
-        let attach = clientMember.permissions.has(Permissions.FLAGS.ATTACH_FILES)
-        console.log(clientMember, 'guildId: ' + msg.guildId +
-          ' channelId: ' + msg.channelId,
-          msg.content + ' from '
-          + msg.author.username,
-          ' send: ' + send +
-          ' attach: ' + attach)
-        if (!attach)
+        if (!permissions.has(Permissions.FLAGS.ATTACH_FILES))
         {
-            console.log('no write permissions. Will do nothing.')
+            console.log('no attach files permissions. Will do nothing.')
 
             return
-        }*/
-
+        }
         //not a bot command
         if (!message.content.startsWith('!')) return
 
