@@ -30,8 +30,9 @@ module.exports = {
 
         milkshake:  '34th infantry regiment',
         sexy:       '47th infantry regiment',
+        ass:        '47th infantry regiment',
         choco:      '32nd infantry regiment',
-        chocoboy:  '32nd infantry regiment',
+        chocoboy:   '32nd infantry regiment',
         chocoboys:  '32nd infantry regiment',
         chocolate:  '32nd infantry regiment',
         milktruck:  '332nd engineer regiment',
@@ -42,6 +43,7 @@ module.exports = {
         baby:       'autokanone',
         bussymark:  'bismarck',
         elephant:   '114',
+        cunt:       'kents',
 
     }
 
