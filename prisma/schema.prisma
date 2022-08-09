@@ -16,8 +16,7 @@ model User {
   language  String
   messages  Message[]
   TopDeck   TopDeck[]
-  role      Role      @relation(fields: [roleId], references: [id])
-  roleId    Int
+  role      String?
 }
 
 model Message {
@@ -40,11 +39,11 @@ model Card {
   cardId         String      @unique
   importId       String      @unique
   imageURL       String
-  goldenImageURL String
+  goldenImageURL String?
   thumbURL       String
   set            String
   title          String
-  description    String
+  description    String?
   type           String
   attack         Int
   defense        Int
@@ -70,8 +69,3 @@ model TopDeck {
   state  String
 }
 
-model Role {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-  User User[]
-}

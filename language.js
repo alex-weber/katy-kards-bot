@@ -10,6 +10,7 @@ const getLanguageByInput = function (str)
     return language
 }
 //all supported languages on kards.com
-const languages = ['de', 'en', 'es', 'fr', 'it', 'pl', 'pt', 'ru', 'tw', 'zh']
+const languages = ['de', 'en', 'es', 'fr', 'it', 'ko', 'pl', 'pt', 'ru', 'tw', 'zh']
+const searchLanguages = ['de', 'en', 'es', 'fr', 'it', 'ko', 'pl', 'pt', 'ru', 'zh-Hant', 'zh-Hans']
 
-module.exports = { getLanguageByInput, languages }
+module.exports = { getLanguageByInput, languages, searchLanguages }

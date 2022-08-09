@@ -138,6 +138,35 @@ async function createSynonym(key, value) {
   finally(async () => { await prisma.$disconnect() })
 }
 
+/**
+ *
+ * @param card
+ * @returns {Promise<*>}
+ */
+async function createCard(card) {
+
+  return await prisma.card.create({
+    data: {
+      cardsId:        card.id,
+      importId:       card.importId,
+      imageURL:       card.imageURL,
+      thumbURL:       card.thumbURL,
+      set:            card.set,
+      title:          card.title,
+      description:    card.description,
+      type:           card.type,
+      attack:         card.attack,
+      defense:        card.defense,
+      kredits:        card.kredits,
+      operationCost:  card.operationCost,
+      rarity:         card.rarity,
+      faction:        card.faction,
+    },
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
 
 module.exports = {
   getUser,
@@ -146,4 +175,5 @@ module.exports = {
   updateUser,
   getSynonym,
   createSynonym,
+  createCard,
 }

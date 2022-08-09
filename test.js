@@ -1,8 +1,5 @@
 
 
-console.log(process.env.DATABASE_URL)
-
-//process.env.DATABASE_URL = 'postgres://postgres:gorbunok09@localhost:5432/nodeKards?schema=public'
 
 const {
     getUser,
@@ -12,20 +9,27 @@ const {
     getSynonym,
     createSynonym
 } = require('./db')
+const search = require("./search");
+const { searchLanguages }= require('./language.js')
 
 async function main() {
 
-    let User = await getUser("22")
-    let messages = await getMessages(User)
-    //await createSynonym('baba', 'dji')
-    let syn = await getSynonym('baba')
-    console.log(messages, syn)
+
+    let command = '554'
+    for (const [, language] of Object.entries(searchLanguages)) {
+        let variables = {
+            "language": language,
+            "q": command,
+            "showSpawnables": true,
+        }
+        let cards = await search.getCards(variables)
+        console.log(cards.data.data.cards.edges[0].node.imageUrl)
+    }
 
 }
-main()
-    .catch((e) => {
-        throw e
-    })
-    .finally(async () => {
+
+main().catch((e) => {throw e})
+    .finally(async () =>
+    {
         console.log('Promise finalized')
     })
