@@ -1,3 +1,9 @@
+
+
+console.log(process.env.DATABASE_URL)
+
+//process.env.DATABASE_URL = 'postgres://postgres:gorbunok09@localhost:5432/nodeKards?schema=public'
+
 const {
     getUser,
     updateUser,

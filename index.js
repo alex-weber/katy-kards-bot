@@ -31,7 +31,8 @@ const client = new Client(
 //login event
 client.on('ready', () =>
 {
-    console.log(`Logged in as ${client.user.tag}!`, 'Server count: ' + client.guilds.cache.size)
+    console.log(`Logged in as ${client.user.tag}!`,
+      'Server count: ' + client.guilds.cache.size)
     client.user.setActivity('KARDS search and stats')
 })
 //main block
@@ -49,12 +50,12 @@ try
             return
         }
         //not a bot command
-        if (!message.content.startsWith('!')) return
+        if (!message.content.startsWith('!') || client.user.bot) return
 
         console.log(
-          'received a bot command: ' +
-          'guildId: ' + message.guildId +
-          ' channelId: ' + message.channelId + '  ' +
+          'received a bot command: ' ,
+          'guildId: ' + message.guildId ,
+          ' channelId: ' + message.channelId ,
           message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
@@ -80,7 +81,7 @@ try
             return
         }
         //show stats
-        if (message.content === '!!')
+        if (message.content === '!!' || message.content === '!ingame' || message.content === '!online')
         {
             stats.getStats().then(res => { message.reply(res) }).catch(error => { console.log(error) })
 
@@ -122,8 +123,8 @@ try
                 "q": command,
                 "showSpawnables": true,
             }
-            search.getCards(variables)
-                .then(res => {
+            search.getCards(variables).then(res =>
+                {
                     if (!res) {
                         message.reply(translator.translate(language, 'error'))
 

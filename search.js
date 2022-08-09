@@ -113,8 +113,6 @@ async function getCards(variables, advanced = false) {
             variables = getVariables(variables)
             response = await getCards(variables, true)
         }
-
-        return response
     }
 
     return response

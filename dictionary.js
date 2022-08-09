@@ -2,11 +2,13 @@ module.exports = {
 
     nation: {
         soviet: 1,
+        russian: 1,
         usa: 2,
         japan: 3,
         germany: 4,
         britain: 5,
         france: 6,
+        french: 6,
         italy: 7,
         poland: 8,
 
@@ -44,6 +46,7 @@ module.exports = {
         bussymark:  'bismarck',
         elephant:   '114',
         cunt:       'kents',
+        shit:       'shibata',
 
     }
 

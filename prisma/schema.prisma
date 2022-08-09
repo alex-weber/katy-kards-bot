@@ -11,10 +11,13 @@ datasource db {
 }
 
 model User {
-  id          Int        @id @default(autoincrement())
-  discordId   String     @unique
-  language    String
-  messages    Message[]
+  id        Int       @id @default(autoincrement())
+  discordId String    @unique
+  language  String
+  messages  Message[]
+  TopDeck   TopDeck[]
+  role      Role      @relation(fields: [roleId], references: [id])
+  roleId    Int
 }
 
 model Message {
@@ -26,42 +29,49 @@ model Message {
 }
 
 model Synonym {
-    id          Int        @id @default(autoincrement())
-    key         String     @unique
-    value       String
+  id       Int    @id @default(autoincrement())
+  key      String @unique
+  value    String
+  imageURL String
 }
 
 model Card {
-  id            Int         @id @default(autoincrement())
-  cardId        String      @unique
-  importId      String      @unique
-  imageURL      String
-  thumbURL      String
-  set           String
-  title         String
-  description   String
-  type          String
-  attack        Int
-  defense       Int
-  kredits       Int
-  rarity        String
-  faction       String
-  version       String
-  attributes    Attribute[]
+  id             Int         @id @default(autoincrement())
+  cardId         String      @unique
+  importId       String      @unique
+  imageURL       String
+  goldenImageURL String
+  thumbURL       String
+  set            String
+  title          String
+  description    String
+  type           String
+  attack         Int
+  defense        Int
+  kredits        Int
+  operationCost  Int
+  rarity         String
+  faction        String
+  version        String
+  attributes     Attribute[]
 }
 
 model Attribute {
-  id        Int      @id @default(autoincrement())
-  content   String?
-  card      Card     @relation(fields: [cardId], references: [id])
-  cardId    Int
+  id      Int     @id @default(autoincrement())
+  content String?
+  card    Card    @relation(fields: [cardId], references: [id])
+  cardId  Int
 }
 
 model TopDeck {
-    id        Int      @id @default(autoincrement())
-    player    User     @relation(fields: [userId], references: [id])
-    userId    Int
-    state     String
+  id     Int    @id @default(autoincrement())
+  player User   @relation(fields: [userId], references: [id])
+  userId Int
+  state  String
 }
 
-
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  User User[]
+}
