@@ -33,7 +33,7 @@ client.on('ready', () =>
 {
     console.log(`Logged in as ${client.user.tag}!`,
       'Server count: ' + client.guilds.cache.size)
-    client.user.setActivity('KARDS search and stats')
+    client.user.setActivity('KARDS search on ' + client.guilds.cache.size + ' servers')
 })
 //main block
 try
@@ -50,7 +50,7 @@ try
             return
         }
         //not a bot command
-        if (!message.content.startsWith('!') || client.user.bot) return
+        if (!message.content.startsWith('!')) return
 
         console.log(
           'received a bot command: ' ,
