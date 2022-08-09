@@ -51,9 +51,7 @@ try
         }
         //not a bot command
         if (!message.content.startsWith('!')) {
-            console.log(
-              message.author.username + message.author.tag +
-              ' is bot' + message.author.bot)
+            console.log(message.author.tag + ' is bot: ' + message.author.bot)
 
             return
         }

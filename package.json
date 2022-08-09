@@ -11,7 +11,7 @@
   "author": "tortunbator",
   "license": "ISC",
   "dependencies": {
-    "@keyv/postgres": "^1.2.1",
+    "prisma": "latest",
     "@prisma/client": "latest",
     "axios": "^0.26.0",
     "database": "^0.0.2",
