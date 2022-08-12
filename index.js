@@ -43,15 +43,15 @@ try
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
-        if (!permissions.has(Permissions.FLAGS.ATTACH_FILES))
+        if (!permissions.has(Permissions.FLAGS.ATTACH_FILES) || !permissions.has(Permissions.FLAGS.SEND_MESSAGES))
         {
-            console.log('no attach files permissions. Will do nothing.')
+            console.log('no send or  attach files permissions. Will do nothing.')
 
             return
         }
         //not a bot command
-        if (!message.content.startsWith('!')) {
-            console.log(message.author.tag + ' is bot: ' + message.author.bot)
+        if (!message.content.startsWith('!') || message.author.bot) {
+            console.log(message.author.tag + ': ' + message.content)
 
             return
         }
