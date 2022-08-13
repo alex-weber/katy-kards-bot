@@ -15,7 +15,7 @@ const { searchLanguages }= require('./language.js')
 async function main() {
 
 
-    let command = ''
+    let command = 'leo'
     //for (const [, language] of Object.entries(searchLanguages)) {
         let variables = {
             "language": 'en',
@@ -24,7 +24,10 @@ async function main() {
         }
         let response = await search.getCards(variables)
         const counter = response.data.data.cards.pageInfo.count
-        console.log('cards found: ' + counter)
+        let cards = response.data.data.cards.edges[0]
+        console.log('cards found: ' + counter, cards.node.json)
+
+        return
         for (let i = 0; i < 2; i = i+20)
         {
             let variables = {

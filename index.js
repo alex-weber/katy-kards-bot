@@ -40,12 +40,18 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
+        //log the message
+        console.log(
+          'guild: ' + message.guild.name +
+          ' channel: ' + message.channel.name +
+          message.author.tag + ': ' +
+          message.content)
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
         if (!permissions.has(Permissions.FLAGS.ATTACH_FILES) || !permissions.has(Permissions.FLAGS.SEND_MESSAGES))
         {
-            console.log('no send or  attach files permissions. Will do nothing.')
+            console.log('no permissions.')
 
             return
         }
@@ -58,8 +64,8 @@ try
 
         console.log(
           'received a bot command: ' ,
-          'guildId: ' + message.guildId ,
-          ' channelId: ' + message.channelId ,
+          'guild: ' + message.guild.name ,
+          ' channel: ' + message.channel.name ,
           message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
@@ -151,6 +157,7 @@ try
                     const files = search.getFiles(cards, limit)
                     //reply to user
                     message.reply({content: content, files: files})
+                    console.log(counter + ' card(s) found', files)
                 }).catch(error => {
                     message.reply(translator.translate(language, 'error'))
                     console.error(error)
