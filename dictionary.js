@@ -47,6 +47,7 @@ module.exports = {
         elephant:   '114',
         cunt:       'kents',
         shit:       'shibata',
+        thomas:     'long tom',
 
     }
 
