@@ -68,12 +68,12 @@ try
           message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
-        let language = await db.get(message.author.id)
+        let language = await db.get(message.author.id.toString())
         if (!language)
         {
             //try to find the language and store it in the DB
             language = getLanguageByInput(command)
-            await db.set(message.author.id, language)
+            await db.set(message.author.id.toString(), language)
         }
         //golden signal
         if (command === 'golden signal' || command === 'gs')
@@ -102,7 +102,7 @@ try
             language = command.slice(0,2)
             //for traditional chinese
             if (language === 'tw') language = 'zh-Hant'
-            await db.set(message.author.id, language)
+            await db.set(message.author.id.toString(), language)
             message.reply(
                 translator.translate(language, 'langChange') + language.toUpperCase()
             ).then( () =>  {
@@ -161,7 +161,7 @@ try
             //attach found images
             const files = search.getFiles(cards, limit)
             //reply to user
-            message.reply({content: content, files: files})
+            await message.reply({content: content, files: files})
             console.log(counter + ' card(s) found', files)
 
         } //end of search
