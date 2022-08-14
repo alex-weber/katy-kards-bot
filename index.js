@@ -23,7 +23,6 @@ app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
-const riapi = require("random-image-api");
 const client = new Client(
   {
     intents: [
@@ -69,8 +68,6 @@ try
           message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
-        //get a random cat image for no result
-        const catImage = await randomImageService.nekos("meow")
         let language = await db.get(message.author.id)
         if (!language)
         {
@@ -135,40 +132,38 @@ try
                 "q": command,
                 "showSpawnables": true,
             }
-            search.getCards(variables).then(res =>
-                {
-                    if (!res) {
-                        message.reply(translator.translate(language, 'error'))
+            const res = await search.getCards(variables)
 
-                        return
-                    }
-                    const cards = res.data.data.cards.edges
-                    const counter = res.data.data.cards.pageInfo.count
-                    if (!counter)
-                    {
+            if (!res) {
+                await message.reply(translator.translate(language, 'error'))
 
-                        message.reply(
-                          {content: translator.translate(language, 'noresult'),
-                              files: [catImage.toString()]
-                          })
+                return
+            }
+            const cards = res.data.data.cards.edges
+            const counter = res.data.data.cards.pageInfo.count
+            if (!counter)
+            {
+                //get a random cat image for no result
+                const catImage = await randomImageService.nekos("meow")
+                await message.reply(
+                  {content: translator.translate(language, 'noresult'),
+                      files: [catImage.toString()]
+                  })
 
-                        return
-                    }
-                    //if any cards are found - attach them
-                    let content = translator.translate(language, 'search') + ': ' + counter
-                    //warn that there are more cards found
-                    if (counter > limit) {
-                        content += translator.translate(language, 'limit') + limit
-                    }
-                    //attach found images
-                    const files = search.getFiles(cards, limit)
-                    //reply to user
-                    message.reply({content: content, files: files})
-                    console.log(counter + ' card(s) found', files)
-                }).catch(error => {
-                    message.reply(translator.translate(language, 'error'))
-                    console.error(error)
-                })
+                return
+            }
+            //if any cards are found - attach them
+            let content = translator.translate(language, 'search') + ': ' + counter
+            //warn that there are more cards found
+            if (counter > limit) {
+                content += translator.translate(language, 'limit') + limit
+            }
+            //attach found images
+            const files = search.getFiles(cards, limit)
+            //reply to user
+            message.reply({content: content, files: files})
+            console.log(counter + ' card(s) found', files)
+
         } //end of search
     }) // end of onMessageCreate
     //start bot session
