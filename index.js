@@ -15,7 +15,7 @@ const JSONING = require('jsoning')
 const db = new JSONING("database.json")
 //random image service
 const randomImageService = require("random-image-api")
-const catImage = await randomImageService.nekos("meow")
+
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -69,6 +69,8 @@ try
           message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
+        //get a random cat image for no result
+        const catImage = await randomImageService.nekos("meow")
         let language = await db.get(message.author.id)
         if (!language)
         {
@@ -144,6 +146,7 @@ try
                     const counter = res.data.data.cards.pageInfo.count
                     if (!counter)
                     {
+
                         message.reply(
                           {content: translator.translate(language, 'noresult'),
                               files: [catImage.toString()]
