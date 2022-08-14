@@ -13,6 +13,9 @@ const dictionary = require('./dictionary')
 //database
 const JSONING = require('jsoning')
 const db = new JSONING("database.json")
+//random image service
+const randomImageService = require("random-image-api")
+const catImage = await randomImageService.nekos("meow")
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -20,6 +23,7 @@ app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
+const riapi = require("random-image-api");
 const client = new Client(
   {
     intents: [
@@ -41,11 +45,7 @@ try
     client.on('messageCreate', async message =>
     {
         //log the message
-        console.log(
-          'guild: ' + message.guild.name +
-          ' channel: ' + message.channel.name +
-          message.author.tag + ': ' +
-          message.content)
+        console.log(message.guild.name+': '+message.channel.name+' '+message.author.tag+ ': '+message.content)
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
@@ -142,8 +142,12 @@ try
                     }
                     const cards = res.data.data.cards.edges
                     const counter = res.data.data.cards.pageInfo.count
-                    if (!counter) {
-                        message.reply(translator.translate(language, 'noresult'))
+                    if (!counter)
+                    {
+                        message.reply(
+                          {content: translator.translate(language, 'noresult'),
+                              files: [catImage.toString()]
+                          })
 
                         return
                     }

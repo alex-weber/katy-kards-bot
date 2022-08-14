@@ -1,5 +1,5 @@
 
-
+const riapi = require("random-image-api")
 
 const {
     getUser,
@@ -52,7 +52,16 @@ async function main() {
 
 }
 
-main().catch((e) => {throw e})
+async function cat()
+{
+
+
+    let catImage = await riapi.nekos("meow")
+    console.log(catImage)
+
+}
+
+cat().catch((e) => {throw e})
     .finally(async () =>
     {
         console.log('Promise finalized')

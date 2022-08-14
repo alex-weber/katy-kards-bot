@@ -11,14 +11,15 @@
   "author": "tortunbator",
   "license": "ISC",
   "dependencies": {
-    "prisma": "latest",
     "@prisma/client": "latest",
     "axios": "^0.26.0",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
     "jsoning": "^0.13.23",
-    "pg": "^8.7.3"
+    "pg": "^8.7.3",
+    "prisma": "latest",
+    "random-image-api": "^0.0.4-beta"
   },
   "engines": {
     "npm": "^8.0.0",
