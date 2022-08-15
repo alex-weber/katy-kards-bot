@@ -178,7 +178,22 @@ async function createCard(card) {
   catch((e) => { throw e }).finally(async () =>
   {
     await prisma.$disconnect()
-    console.log('card ' + card.title + ' created')
+    console.log('card ' + card.cardId + ' created')
+  })
+}
+
+async function updateCard(card)
+{
+  let data = card.json
+
+  for (const [key, value] of Object.entries(card))
+  {
+
+  }
+
+  const record = await prisma.card.update({
+    where: { id: card.cardId },
+    data: { email: 'alice@prisma.io' },
   })
 }
 
@@ -187,12 +202,27 @@ async function createCard(card) {
  * @param card
  * @returns {Promise<*>}
  */
-async function getCard(card) {
+async function cardExists(card) {
 
   return await prisma.card.findUnique({
     where: {
       cardId: card.cardId,
     },
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ *
+ * @param data
+ * @returns {Promise<*>}
+ */
+async function getCardsDB(data)
+{
+
+  return await prisma.card.findMany({
+    where: data,
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
@@ -207,5 +237,6 @@ module.exports = {
   getSynonym,
   createSynonym,
   createCard,
-  getCard,
+  cardExists,
+  getCardsDB,
 }

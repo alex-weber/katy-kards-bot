@@ -37,7 +37,7 @@ model Synonym {
 model Card {
   id             Int           @id @default(autoincrement())
   cardId         String        @unique
-  importId       String        @unique
+  importId       String
   imageURL       String
   goldenImageURL String?
   thumbURL       String

@@ -7,7 +7,7 @@ const {
     getSynonym,
     createSynonym,
     createCard,
-    getCard,
+    cardExists,
 } = require('./db')
 const search = require("./search");
 const { searchLanguages }= require('./language.js')
@@ -17,32 +17,31 @@ async function main() {
 
     let language = 'en'
 
-    //for (const [, language] of Object.entries(searchLanguages)) {
-
-        for (let i = 0; i < 1; i = i+20)
+    for (let i = 80; i < 840; i = i+20)
+    {
+        let variables = {
+            "language": language,
+            "q": '',
+            "showSpawnables": true,
+            "offset": i,
+        }
+        let response = await search.getCards(variables)
+        let cards = response.data.data.cards.edges
+        for (const [, item] of Object.entries(cards))
         {
-            let variables = {
-                "language": language,
-                "q": 'hell',
-                "showSpawnables": true,
-                "offset": i,
-            }
-            let response = await search.getCards(variables)
-            let cards = response.data.data.cards.edges
-            for (const [, item] of Object.entries(cards))
-            {
-                let card = item.node
-                card.language = language
-                const dbCard = await getCard(card)
-                if (!dbCard) {
-                    let result = await createCard(card)
-                    console.log(result)
-                }
+            let card = item.node
+            console.log(card)
+            card.language = language
+            const dbCard = await cardExists(card)
+            if (!dbCard) {
+                let result = await createCard(card)
+                //console.log(result)
             }
         }
+    }
 
 
-   // }
+
 
 }
 

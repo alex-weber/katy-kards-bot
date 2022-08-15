@@ -9,7 +9,7 @@ const host = 'https://www.kards.com'
  * @param variables
  * @returns {*}
  */
-function getVariables (variables) {
+function getVariables(variables) {
 
     const words = variables.q.split(' ')
     //allow to search with at least 2 attributes
@@ -52,6 +52,14 @@ function getVariables (variables) {
             let kredits = parseInt(word.substring(0, word.length - 1))
             if (!isNaN(kredits)) {
                 variables.kredits = [kredits]
+
+                return  variables
+            }
+        }
+        if (word.endsWith('c') || word.endsWith('ц') ) {
+            let costs = parseInt(word.substring(0, word.length - 1))
+            if (!isNaN(costs)) {
+                variables.operationCost = [costs]
 
                 return  variables
             }
@@ -135,5 +143,11 @@ function getFiles(cards, limit) {
 
     return files
 }
+
+function advancedSearch(variables)
+{
+
+}
+
 //export
 module.exports = { getCards, getFiles }
