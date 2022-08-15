@@ -45,13 +45,13 @@ model Card {
   title          Title[]
   description    Description[]
   type           String
-  attack         Int
-  defense        Int
+  attack         Int?
+  defense        Int?
   kredits        Int
-  operationCost  Int
+  operationCost  Int?
   rarity         String
   faction        String
-  version        String
+  version        String?
   attributes     Attribute[]
 }
 

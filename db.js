@@ -146,32 +146,33 @@ async function createSynonym(key, value) {
  */
 async function createCard(card) {
 
+  if (card.json.type === 'order' || card.json.type === 'countermeasure')
+  {
+    card.json.attack = null
+    card.json.defense = null
+    card.json.operationCost = null
+  }
+
   return await prisma.card.create({
     data: {
       cardId:         card.cardId,
       importId:       card.importId,
-      imageURL:       card.imageURL,
-      thumbURL:       card.thumbURL,
+      imageURL:       card.imageUrl,
+      thumbURL:       card.thumbUrl,
       set:            card.json.set,
-      title:          prisma.title.create(
-        {
-        data: {
-          title:    card.json.title,
-          language: card.language
-        }}),
-      descriptions: {
-        create: {
-          language: card.language,
-          content:  card.json.text[APILanguages[card.language]]
+      title: {
+          create: {
+            language: card.language,
+            content:  card.json.title[APILanguages[card.language]]
+          },
         },
-      },
-      type:           card.type,
-      attack:         card.attack,
-      defense:        card.defense,
-      kredits:        card.kredits,
-      operationCost:  card.operationCost,
-      rarity:         card.rarity,
-      faction:        card.faction,
+      type:           card.json.type,
+      attack:         card.json.attack,
+      defense:        card.json.defense,
+      kredits:        card.json.kredits,
+      operationCost:  card.json.operationCost,
+      rarity:         card.json.rarity,
+      faction:        card.json.faction,
     },
   }).
   catch((e) => { throw e }).finally(async () =>
