@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
+const { APILanguages }= require('./language.js')
 
 /**
  *
@@ -147,13 +148,23 @@ async function createCard(card) {
 
   return await prisma.card.create({
     data: {
-      cardsId:        card.id,
+      cardId:         card.cardId,
       importId:       card.importId,
       imageURL:       card.imageURL,
       thumbURL:       card.thumbURL,
-      set:            card.set,
-      title:          card.title,
-      description:    card.description,
+      set:            card.json.set,
+      title:          prisma.title.create(
+        {
+        data: {
+          title:    card.json.title,
+          language: card.language
+        }}),
+      descriptions: {
+        create: {
+          language: card.language,
+          content:  card.json.text[APILanguages[card.language]]
+        },
+      },
       type:           card.type,
       attack:         card.attack,
       defense:        card.defense,
@@ -161,6 +172,25 @@ async function createCard(card) {
       operationCost:  card.operationCost,
       rarity:         card.rarity,
       faction:        card.faction,
+    },
+  }).
+  catch((e) => { throw e }).finally(async () =>
+  {
+    await prisma.$disconnect()
+    console.log('card ' + card.title + ' created')
+  })
+}
+
+/**
+ *
+ * @param card
+ * @returns {Promise<*>}
+ */
+async function getCard(card) {
+
+  return await prisma.card.findUnique({
+    where: {
+      cardId: card.cardId,
     },
   }).
   catch((e) => { throw e }).
@@ -176,4 +206,5 @@ module.exports = {
   getSynonym,
   createSynonym,
   createCard,
+  getCard,
 }
