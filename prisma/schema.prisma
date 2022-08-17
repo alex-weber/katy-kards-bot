@@ -52,7 +52,7 @@ model Card {
   rarity         String
   faction        String
   version        String?
-  attributes     Attribute[]
+  attributes     String?
 }
 
 model Title {
@@ -69,13 +69,6 @@ model Description {
   content  String?
   card     Card    @relation(fields: [cardId], references: [id])
   cardId   Int
-}
-
-model Attribute {
-  id      Int     @id @default(autoincrement())
-  content String?
-  card    Card    @relation(fields: [cardId], references: [id])
-  cardId  Int
 }
 
 model TopDeck {

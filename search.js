@@ -3,7 +3,9 @@ const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
 const { MessageAttachment } = require('discord.js')
+const { getCardsDB } = require('./db')
 const host = 'https://www.kards.com'
+
 /**
  *
  * @param variables
@@ -30,28 +32,34 @@ function getVariables(variables) {
 
         if (typeof word !== 'string') return variables
 
-        let nationID = getAttribute(word, dictionary.nation)
-        if (nationID) {
-            variables.nationIds = [nationID]
+        let faction = getAttribute(word, dictionary.faction)
+        if (faction) {
+            variables.faction = faction
 
             return  variables
         }
         let type = getAttribute(word, dictionary.type)
         if (type) {
-            variables.type = [type]
+            variables.type = type
 
             return  variables
         }
         let rarity = getAttribute(word, dictionary.rarity)
         if (rarity) {
-            variables.rarity = [rarity.charAt(0).toUpperCase() + rarity.slice(1)]
+            variables.rarity = rarity
+
+            return  variables
+        }
+        let attribute = getAttribute(word, dictionary.attribute)
+        if (attribute) {
+            variables.attributes = attribute
 
             return  variables
         }
         if (word.endsWith('k') || word.endsWith('к') ) {
             let kredits = parseInt(word.substring(0, word.length - 1))
             if (!isNaN(kredits)) {
-                variables.kredits = [kredits]
+                variables.kredits = kredits
 
                 return  variables
             }
@@ -59,13 +67,20 @@ function getVariables(variables) {
         if (word.endsWith('c') || word.endsWith('ц') ) {
             let costs = parseInt(word.substring(0, word.length - 1))
             if (!isNaN(costs)) {
-                variables.operationCost = [costs]
+                variables.operationCost = costs
 
                 return  variables
             }
         }
-        //so when no nation | type | rarity found, add the word as the search string
-        variables.q = word
+        let stats = word.match('\\d+(\\/|-)\\d+')
+        if (stats) {
+            let matches = stats[0]
+            let delimiter = stats[1]
+            //console.log(matches, delimiter)
+            let both = matches.split(delimiter)
+            variables.attack = parseInt(both[0])
+            variables.defense = parseInt(both[1])
+        }
 
         return variables
     }
@@ -95,13 +110,13 @@ function getAttribute(word, attributes) {
 
     return result
 }
+
 /**
  *
  * @param variables
- * @param advanced
- * @returns {Promise<AxiosResponse<any>>}
+ * @returns {Promise<boolean|*>}
  */
-async function getCards(variables, advanced = false) {
+async function getCards(variables) {
     //log request
     console.log(variables)
     //search on kards.com
@@ -116,14 +131,17 @@ async function getCards(variables, advanced = false) {
         console.log(error.errno, error.data)
     })
     if (response) {
-        let counter = response.data.data.cards.pageInfo.count
-        if (!counter && !advanced) {
-            variables = getVariables(variables)
-            response = await getCards(variables, true)
+        const counter = response.data.data.cards.pageInfo.count
+        const cards = response.data.data.cards.edges
+        if (!counter) {
+
+            return advancedSearch(variables)
         }
+
+        return { counter: counter, cards: cards }
     }
 
-    return response
+    return { counter: 0, cards: [] }
 }
 
 /**
@@ -144,10 +162,15 @@ function getFiles(cards, limit) {
     return files
 }
 
-function advancedSearch(variables)
+async function advancedSearch(variables)
 {
+    variables = getVariables(variables)
+    delete variables.q
+    delete variables.attributes
+    console.log(variables)
+    return await getCardsDB(variables)
 
 }
 
 //export
-module.exports = { getCards, getFiles }
+module.exports = { getCards, getFiles, advancedSearch }

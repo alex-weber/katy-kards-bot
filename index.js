@@ -139,8 +139,8 @@ try
 
                 return
             }
-            const cards = res.data.data.cards.edges
-            const counter = res.data.data.cards.pageInfo.count
+            const cards = res.cards
+            const counter = res.counter
             if (!counter)
             {
                 //get a random cat image for no result

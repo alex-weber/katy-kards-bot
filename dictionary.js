@@ -13,6 +13,16 @@ module.exports = {
         poland: 8,
 
     },
+    faction: [
+      'soviet',
+      'usa',
+      'japan',
+      'germany',
+      'britain',
+      'france',
+      'italy',
+      'poland',
+    ],
     type: [
         'infantry',
         'artillery',
@@ -27,6 +37,19 @@ module.exports = {
         'limited',
         'special',
         'elite'
+    ],
+    attribute: [
+      'alpine',
+      'blitz',
+      'ambush',
+      'exile',
+      'intel',
+      'smokescreen',
+      'guard',
+      'mobilize',
+      'pincer',
+      'heavy',
+      'fury',
     ],
     synonyms: {
 
