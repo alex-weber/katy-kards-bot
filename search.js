@@ -4,8 +4,9 @@ const dictionary = require('./dictionary')
 const translator = require('./translator.js')
 const { MessageAttachment } = require('discord.js')
 const { getCardsDB } = require('./db')
+const {APILanguages} = require("./language");
 const host = 'https://www.kards.com'
-const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
+const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
 /**
  *
  * @param variables
@@ -15,7 +16,7 @@ function getVariables(variables) {
 
     const words = variables.q.split(' ')
     //allow to search with at least 2 attributes
-    if (words.length < 2) return variables
+    if (words.length < 2) return false
     //unset the search string
     variables.q = ''
     for (let i = 0; i < words.length; i++) {
@@ -76,7 +77,6 @@ function getVariables(variables) {
         if (stats) {
             let matches = stats[0]
             let delimiter = stats[1]
-            //console.log(matches, delimiter)
             let both = matches.split(delimiter)
             variables.attack = parseInt(both[0])
             variables.defense = parseInt(both[1])
@@ -128,33 +128,40 @@ async function getCards(variables) {
         "query": query
         }
     ).catch(error => {
-        console.log(error.errno, error.data)
+        console.log('request to kards.com failed ', error.errno, error.data)
     })
+
     if (response) {
         const counter = response.data.data.cards.pageInfo.count
         const cards = response.data.data.cards.edges
         if (!counter) {
 
-            return advancedSearch(variables)
+            return await advancedSearch(variables)
         }
 
         return { counter: counter, cards: cards }
     }
 
-    return { counter: 0, cards: [] }
+    return await advancedSearch(variables)
 }
 
 /**
  *
  * @param cards
- * @param limit
+ * @param language
  * @returns {*[]}
  */
-function getFiles(cards, limit) {
+function getFiles(cards, language) {
 
     let files = []
-    for (const [, value] of Object.entries(cards)) {
-        let attachment = new MessageAttachment(host + value.node.imageUrl)
+    for (const [, value] of Object.entries(cards.cards)) {
+        //check if the response is from kards.com or internal
+        let imageURL = ''
+        if (value.hasOwnProperty('imageURL')) imageURL = value.imageURL
+        else if (value.hasOwnProperty('node')) imageURL = value.node.imageUrl
+        //replace language in the image link
+        imageURL = imageURL.replace('en-EN', APILanguages[language])
+        let attachment = new MessageAttachment(host + imageURL)
         files.push(attachment)
         if (files.length === limit) break
     }
@@ -162,15 +169,27 @@ function getFiles(cards, limit) {
     return files
 }
 
+/**
+ *
+ * @param variables
+ * @returns {Promise<*>}
+ */
 async function advancedSearch(variables)
 {
     variables = getVariables(variables)
+    if (!variables) return { counter: 0, cards: [] }
     delete variables.q
-    delete variables.attributes
-    console.log(variables)
+    delete variables.language
+    delete variables.showSpawnables
+    if (variables.hasOwnProperty('attributes')) {
+        variables.attributes = {
+            contains: variables.attributes,
+        }
+    }
     let cards = await getCardsDB(variables)
 
+    return { counter: cards.length, cards: cards }
 }
 
 //export
-module.exports = { getCards, getFiles, advancedSearch }
+module.exports = { getCards, getFiles }

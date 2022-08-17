@@ -159,7 +159,7 @@ try
                 content += translator.translate(language, 'limit') + limit
             }
             //attach found images
-            const files = search.getFiles(cards, limit)
+            const files = search.getFiles(cards, language)
             //reply to user
             await message.reply({content: content, files: files})
             console.log(counter + ' card(s) found', files)
