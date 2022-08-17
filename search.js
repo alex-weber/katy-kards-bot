@@ -5,7 +5,7 @@ const translator = require('./translator.js')
 const { MessageAttachment } = require('discord.js')
 const { getCardsDB } = require('./db')
 const host = 'https://www.kards.com'
-
+const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 /**
  *
  * @param variables
@@ -168,7 +168,7 @@ async function advancedSearch(variables)
     delete variables.q
     delete variables.attributes
     console.log(variables)
-    return await getCardsDB(variables)
+    let cards = await getCardsDB(variables)
 
 }
 

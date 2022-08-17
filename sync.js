@@ -4,8 +4,10 @@ const search = require("./search");
 async function syncDB()
 {
   let language = 'en'
-  for (let i = 0; i < 1000; i = i+20)
+  for (let i = 0; i < 10000; i = i+20)
   {
+    console.log('cards done: '+ i)
+
     let variables = {
       "language": language,
       "q": '',
@@ -13,16 +15,16 @@ async function syncDB()
       "offset": i,
     }
     let response = await search.getCards(variables)
-    console.log(response)
+    //console.log(response)
     let cards = response.cards
     if (!cards.length) break
     for (const [, item] of Object.entries(cards))
     {
       let card = item.node
-      console.log('cards done: '+ i)
       card.language = language
       await createCard(card)
     }
+
   }
 }
 

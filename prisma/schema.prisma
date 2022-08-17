@@ -14,9 +14,11 @@ model User {
   id        Int       @id @default(autoincrement())
   discordId String    @unique
   language  String
+  status    String
   messages  Message[]
   TopDeck   TopDeck[]
   role      String?
+  mode      String?
 }
 
 model Message {

@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const { APILanguages }= require('./language.js')
+const {MessageAttachment} = require("discord.js");
 
 
 /**
@@ -192,6 +193,23 @@ async function createCard(card)
       console.log('card ' + card.cardId + ' updated')
     })
   }
+
+  //set title and description if available
+  if (card.json.text !== undefined) {
+    let descriptions = []
+    for (const [key, value] of Object.entries(card.json.text)) {
+      let desc = { language: key, content: value}
+      descriptions.push(desc)
+    }
+    data.description = { create: descriptions }
+  }
+  let titles = []
+  for (const [key, value] of Object.entries(card.json.title)) {
+    let title = { language: key, content: value }
+    titles.push(title)
+
+  }
+  data.title = { create: titles }
 
   return await prisma.card.create({ data: data }).
   catch((e) => { throw e }).finally(async () =>
