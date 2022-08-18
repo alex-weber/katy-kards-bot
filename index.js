@@ -67,13 +67,12 @@ try
           message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
-
-        //try to find the language and store it in the DB
-        let language = getLanguageByInput(command)
+        //check the user language
+        let language = defaultLanguage
         const user = await getUser(message.author.id.toString())
-        if (language !== defaultLanguage)
+        if (user.language !== defaultLanguage)
         {
-            user.language = language
+            language = user.language
             await updateUser(user)
         }
         //golden signal
@@ -105,8 +104,6 @@ try
             if (language === 'tw') language = 'zh-Hant'
             user.language = language
             await updateUser(user)
-            //New DB
-
             message.reply(
                 translator.translate(language, 'langChange') + language.toUpperCase()
             ).then( () =>  {
