@@ -136,15 +136,14 @@ try
                 "q": command,
                 "showSpawnables": true,
             }
-            const res = await search.getCards(variables)
+            const searchResult = await search.getCards(variables)
 
-            if (!res) {
+            if (!searchResult) {
                 await message.reply(translator.translate(language, 'error'))
 
                 return
             }
-            const cards = res.cards
-            const counter = res.counter
+            const counter = searchResult.counter
             if (!counter)
             {
                 //get a random cat image for no result
@@ -163,7 +162,7 @@ try
                 content += translator.translate(language, 'limit') + limit
             }
             //attach found images
-            const files = search.getFiles(cards, language)
+            const files = search.getFiles(searchResult, language)
             //reply to user
             await message.reply({content: content, files: files})
             console.log(counter + ' card(s) found', files)

@@ -1,9 +1,19 @@
 const search = require("./search")
 const {getUser, updateUser} = require("./db")
+const {getLanguageByInput, defaultLanguage} = require("./language");
 
-async function searchBlya(language) {
+async function searchBlya() {
+
+    //try to find the language and store it in the DB
+    let language = getLanguageByInput('554')
+    const user = await getUser('55')
+    if (language !== defaultLanguage)
+    {
+        user.language = language
+        await updateUser(user)
+    }
     let variables = { language : language, showSpawnables: true }
-    variables.q = 'ftp'
+    variables.q = 'leo'
     let cards = await search.getCards(variables)
     console.log(cards)
     if (cards.counter) {
@@ -14,16 +24,21 @@ async function searchBlya(language) {
 
 }
 
-async function user(discordID) {
-    const user = await getUser(discordID)
-    console.log(user)
-    user.language = 'de'
-    const result = updateUser(user)
-    console.log(user)
+async function user(command) {
+    //try to find the language and store it in the DB
+    let language = getLanguageByInput(command)
+    console.log(language)
+    const user = await getUser('1')
+    if (language !== defaultLanguage)
+    {
+        user.language = language
+        await updateUser(user)
+    }
+    console.log(language)
 
 }
 
-searchBlya('en').catch((e) => {throw e}).finally(async () =>
+searchBlya().catch((e) => {throw e}).finally(async () =>
     {
         console.log('Promise finalized')
     })
