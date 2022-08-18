@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const { APILanguages }= require('./language.js')
 const {MessageAttachment} = require("discord.js");
+const {state} = require("pg/lib/native/query");
 
 
 /**
@@ -249,6 +250,148 @@ async function getCardsDB(data)
   finally(async () => { await prisma.$disconnect() })
 }
 
+/**
+ *
+ * @param channelID
+ * @param user
+ * @returns {Promise<*>}
+ */
+async function topDeck(channelID, user)
+{
+
+  let topDeck =  await prisma.topdeck.findFirst({
+    where: {
+      state: 'open',
+      channelID: channelID,
+    },
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+  //create a new top deck game
+  if (!topDeck) {
+
+    return await prisma.topdeck.create({
+      data: {
+        channelID: channelID,
+        player1: user.discordId,
+        state: 'open'
+      }
+    })
+  }
+  //if it is the same player - do nothing
+  else if (user.discordId === topDeck.player1) {
+
+    return
+  }
+  //here comes the second player, so let's start the battle
+  topDeck.player2 = user.discordId
+  topDeck.state = 'running'
+  await updateTopDeck(topDeck)
+
+  return await battle(topDeck)
+
+}
+
+/**
+ *
+ * @param td
+ * @returns {Promise<boolean>}
+ */
+async function battle(td)
+{
+  let card1 = await getRandomCard()
+  let card2 = await getRandomCard()
+  let attacker = card1
+  let defender = card2
+  let log = ''
+  td.log = ''
+  while (attacker.defense > 0 || defender.defense > 0)
+  {
+    if (attacker === card1) {
+      attacker = card2
+      defender = card1
+    }
+    else {
+      attacker = card1
+      defender = card2
+    }
+    //console.log(attacker, defender)
+    log = attacker.cardId + ' ' +
+      attacker.attack + '/' +attacker.defense+ ' -> ' +
+      defender.cardId + ' ' +
+      defender.attack + '/' +defender.defense+ ' * '
+    td.log += log
+    console.log(log)
+    attacker.defense -= defender.attack
+    defender.defense -= attacker.attack
+
+    if (attacker.defense < 1 && defender.defense > 0)
+    {
+      td.winner = td.player2
+      td.loser = attacker.discordId
+      td.state = 'finished'
+      td.log += defender.discordId + ' wins'
+      console.log(log)
+      await updateTopDeck(td)
+      break
+    }
+    else if (defender.defense < 1 && attacker.defense > 0)
+    {
+      td.winner = attacker.discordId
+      td.loser = defender.discordId
+      td.state = 'finished'
+      td.log += attacker.discordId + ' wins'
+      await updateTopDeck(td)
+      break
+    }
+    else if (defender.defense < 1 && attacker.defense < 1)
+    {
+      td.state = 'finished'
+      await updateTopDeck(td)
+      break
+    }
+
+  }
+
+  return true
+}
+
+/**
+ *
+ * @param td
+ * @returns {Promise<*>}
+ */
+async function updateTopDeck(td)
+{
+  return await prisma.topdeck.update({
+    where: { id: td.id },
+    data: {
+      player2: td.player2,
+      state: td.state,
+      winner: td.winner,
+      loser: td.loser,
+      log: td.log,
+    }
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+async function getRandomCard()
+{
+  let cards = await prisma.card.findMany({
+    where: {
+      type: { in: ['infantry', 'tank', 'artillery', 'fighter', 'bomber'] },
+    },
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+  //shuffle the found cards
+  let position = Math.floor(Math.random() * cards.length)
+
+  return cards[position]
+
+}
 
 //exports
 module.exports = {
@@ -260,4 +403,5 @@ module.exports = {
   createSynonym,
   createCard,
   getCardsDB,
+  topDeck,
 }

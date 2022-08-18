@@ -1,5 +1,5 @@
 const search = require("./search")
-const {getUser, updateUser} = require("./db")
+const {getUser, updateUser, topDeck} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language");
 
 async function searchBlya() {
@@ -24,20 +24,19 @@ async function searchBlya() {
 
 }
 
-async function user(command) {
-    //check the user language
-    let language = defaultLanguage
-    const user = await getUser('22')
-    if (user.language !== defaultLanguage)
-    {
-        language = user.language
-        await updateUser(user)
-    }
-    console.log(language)
+async function topDeckGame() {
+
+    let player = await getUser('22')
+    //console.log(player)
+    await topDeck('1', player)
+    //console.log(language)
+    let player2 = await getUser('44')
+    //console.log(player)
+    await topDeck('1', player2)
 
 }
 
-searchBlya().catch((e) => {throw e}).finally(async () =>
+topDeckGame().catch((e) => {throw e}).finally(async () =>
     {
         console.log('Promise finalized')
     })

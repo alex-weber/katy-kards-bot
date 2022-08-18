@@ -16,7 +16,6 @@ model User {
   language  String
   status    String
   messages  Message[]
-  TopDeck   TopDeck[]
   role      String?
   mode      String?
 }
@@ -73,9 +72,14 @@ model Description {
   cardId   Int
 }
 
-model TopDeck {
-  id     Int    @id @default(autoincrement())
-  player User   @relation(fields: [userId], references: [id])
-  userId Int
-  state  String
+model Topdeck {
+  id        Int      @id @default(autoincrement())
+  channelID String
+  startTime DateTime @default(now())
+  state     String
+  player1   String
+  player2   String?
+  winner    String?
+  loser     String?
+  log       String?
 }
