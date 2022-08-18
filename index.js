@@ -42,8 +42,8 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
-        //log the message
-        console.log(message.guild.name+': '+message.channel.name+' '+message.author.tag+ ': '+message.content)
+        //do not react to bots
+        if(message.author.bot) return
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
@@ -54,8 +54,14 @@ try
             return
         }
         //not a bot command
-        if (!message.content.startsWith('!') || message.author.bot) {
-            console.log(message.author.tag + ': ' + message.content)
+        if (!message.content.startsWith('!')) {
+            //log the message
+            let delimiter = ' -> '
+            console.log(
+              message.guild.name + delimiter +
+              message.channel.name + delimiter +
+              message.author.tag + delimiter +
+              message.content)
 
             return
         }

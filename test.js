@@ -25,13 +25,12 @@ async function searchBlya() {
 }
 
 async function user(command) {
-    //try to find the language and store it in the DB
-    let language = getLanguageByInput(command)
-    console.log(language)
-    const user = await getUser('1')
-    if (language !== defaultLanguage)
+    //check the user language
+    let language = defaultLanguage
+    const user = await getUser('22')
+    if (user.language !== defaultLanguage)
     {
-        user.language = language
+        language = user.language
         await updateUser(user)
     }
     console.log(language)
