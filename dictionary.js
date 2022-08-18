@@ -57,6 +57,7 @@ module.exports = {
         sexy:       '47th infantry regiment',
         ass:        '47th infantry regiment',
         choco:      '32nd infantry regiment',
+        chocco:      '32nd infantry regiment',
         chocoboy:   '32nd infantry regiment',
         chocoboys:  '32nd infantry regiment',
         chocolate:  '32nd infantry regiment',
@@ -71,6 +72,9 @@ module.exports = {
         cunt:       'kents',
         shit:       'shibata',
         thomas:     'long tom',
+        cas:        'close air support',
+        uws:        'united we stand',
+        wcd:        'we can do it',
 
     }
 

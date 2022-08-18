@@ -8,11 +8,10 @@ const stats = require('./stats')
 const search = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
-const { getLanguageByInput, languages }= require('./language.js')
+const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const JSONING = require('jsoning')
-const db = new JSONING("database.json")
+const {getUser, updateUser} = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
 
@@ -68,12 +67,14 @@ try
           message.content + ' from ' + message.author.username)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
-        let language = await db.get(message.author.id.toString())
-        if (!language)
+
+        //try to find the language and store it in the DB
+        let language = getLanguageByInput(command)
+        const user = await getUser(message.author.id.toString())
+        if (language !== defaultLanguage)
         {
-            //try to find the language and store it in the DB
-            language = getLanguageByInput(command)
-            await db.set(message.author.id.toString(), language)
+            user.language = language
+            await updateUser(user)
         }
         //golden signal
         if (command === 'golden signal' || command === 'gs')
@@ -102,7 +103,10 @@ try
             language = command.slice(0,2)
             //for traditional chinese
             if (language === 'tw') language = 'zh-Hant'
-            await db.set(message.author.id.toString(), language)
+            user.language = language
+            await updateUser(user)
+            //New DB
+
             message.reply(
                 translator.translate(language, 'langChange') + language.toUpperCase()
             ).then( () =>  {

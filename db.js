@@ -13,13 +13,7 @@ async function createUser(data)
 {
 
   return await prisma.user.create({
-    data: {
-      discordId: data.discordId,
-      language: data.language,
-      messages: {
-        create: { content: data.message },
-      }
-    }
+    data: data
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
@@ -86,6 +80,7 @@ async function getUser(discordId)
     User = await createUser({
       discordId: discordId,
       language: 'en',
+      status: 'active',
     }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
@@ -105,7 +100,11 @@ async function updateUser(User)
 
   return await prisma.user.update({
     where: { id: User.id },
-    data: { language: User.language }
+    data: {
+      language: User.language,
+      role: User.role,
+      status: User.status
+    }
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
@@ -260,6 +259,5 @@ module.exports = {
   getSynonym,
   createSynonym,
   createCard,
-  cardExists,
   getCardsDB,
 }

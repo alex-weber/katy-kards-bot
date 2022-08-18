@@ -154,13 +154,14 @@ async function getCards(variables) {
 function getFiles(cards, language) {
 
     let files = []
+    if (language !== 'zh-Hant') language = APILanguages[language]
     for (const [, value] of Object.entries(cards.cards)) {
         //check if the response is from kards.com or internal
         let imageURL = ''
         if (value.hasOwnProperty('imageURL')) imageURL = value.imageURL
         else if (value.hasOwnProperty('node')) imageURL = value.node.imageUrl
         //replace language in the image link
-        imageURL = imageURL.replace('en-EN', APILanguages[language])
+        imageURL = imageURL.replace('en-EN', language)
         let attachment = new MessageAttachment(host + imageURL)
         files.push(attachment)
         if (files.length === limit) break
@@ -177,7 +178,11 @@ function getFiles(cards, language) {
 async function advancedSearch(variables)
 {
     variables = getVariables(variables)
-    if (!variables) return { counter: 0, cards: [] }
+    if (!variables) {
+        console.log('no variables found for: ' + variables.q)
+
+        return {counter: 0, cards: []}
+    }
     delete variables.q
     delete variables.language
     delete variables.showSpawnables

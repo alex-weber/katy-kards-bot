@@ -1,6 +1,6 @@
 const getLanguageByInput = function (str)
 {
-    let language = 'en'
+    let language = defaultLanguage
     const firstLetter = str.slice(0,1)
     const lastLetter = str.slice(-1)
     //russian
@@ -26,4 +26,6 @@ const APILanguages = {
     zh: 'zh-Hans',
 }
 
-module.exports = { getLanguageByInput, languages, searchLanguages, APILanguages }
+const defaultLanguage = 'en'
+
+module.exports = { getLanguageByInput, languages, searchLanguages, APILanguages, defaultLanguage }

@@ -1,8 +1,9 @@
-const search = require("./search");
+const search = require("./search")
+const {getUser, updateUser} = require("./db")
 
-async function slave(language) {
+async function searchBlya(language) {
     let variables = { language : language, showSpawnables: true }
-    variables.q = 'ass'
+    variables.q = 'ftp'
     let cards = await search.getCards(variables)
     console.log(cards)
     if (cards.counter) {
@@ -13,7 +14,16 @@ async function slave(language) {
 
 }
 
-slave('en').catch((e) => {throw e}).finally(async () =>
+async function user(discordID) {
+    const user = await getUser(discordID)
+    console.log(user)
+    user.language = 'de'
+    const result = updateUser(user)
+    console.log(user)
+
+}
+
+searchBlya('en').catch((e) => {throw e}).finally(async () =>
     {
         console.log('Promise finalized')
     })
