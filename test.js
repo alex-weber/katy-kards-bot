@@ -43,10 +43,13 @@ async function topDeckGame() {
 async function syn()
 {
     let command = '+pipa 81. infantry battalion'
-    let user = await getUser('1')
-    //console.log(user)
-    let result = await handleSynonym(user, command)
-    console.log(result)
+    if (command.startsWith('+')) {
+        let user = await getUser('1')
+        //console.log(user)
+        let result = await handleSynonym(user, command)
+        console.log(result)
+    }
+
 }
 
 syn().catch((e) => {throw e}).finally(async () =>
