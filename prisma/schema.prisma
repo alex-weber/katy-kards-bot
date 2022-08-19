@@ -42,8 +42,8 @@ model Card {
   goldenImageURL String?
   thumbURL       String
   set            String
-  title          Title[]
-  description    Description[]
+  title          String
+  text           String?
   type           String
   attack         Int?
   defense        Int?
@@ -55,29 +55,15 @@ model Card {
   attributes     String?
 }
 
-model Title {
-  id       Int    @id @default(autoincrement())
-  language String
-  content  String
-  card     Card   @relation(fields: [cardId], references: [id])
-  cardId   Int
-}
-
-model Description {
-  id       Int     @id @default(autoincrement())
-  language String
-  content  String?
-  card     Card    @relation(fields: [cardId], references: [id])
-  cardId   Int
-}
-
 model Topdeck {
   id        Int      @id @default(autoincrement())
   channelID String
   startTime DateTime @default(now())
   state     String
   player1   String
+  name1     String
   player2   String?
+  name2     String?
   winner    String?
   loser     String?
   log       String?

@@ -151,23 +151,23 @@ async function createSynonym(key, value)
  */
 async function createCard(card)
 {
-
   if (card.json.type === 'order' || card.json.type === 'countermeasure')
   {
     card.json.attack = null
     card.json.defense = null
     card.json.operationCost = null
   }
-  if (!card.json.hasOwnProperty('attributes')) {
-    card.json.attributes = ''
-  }
-
+  if (!card.json.hasOwnProperty('attributes')) card.json.attributes = ''
+  let text = ''
+  if (card.json.hasOwnProperty('text')) text = card.json.text['en-EN']
 
   const data = {
         cardId:         card.cardId,
         importId:       card.importId,
         imageURL:       card.imageUrl,
         thumbURL:       card.thumbUrl,
+        title:          card.json.title['en-EN'].toLowerCase(),
+        text:           text,
         set:            card.json.set.toLowerCase(),
         type:           card.json.type.toLowerCase(),
         attack:         card.json.attack,
@@ -235,7 +235,7 @@ async function getCardsDB(data)
  * @param user
  * @returns {Promise<*>}
  */
-async function topDeck(channelID, user)
+async function topDeck(channelID, user, username)
 {
 
   let topDeck = await prisma.topdeck.findFirst({
@@ -253,6 +253,7 @@ async function topDeck(channelID, user)
       data: {
         channelID: channelID,
         player1: user.discordId,
+        name1:   username,
         state: 'open'
       }
     })
@@ -266,6 +267,7 @@ async function topDeck(channelID, user)
   }
   //here comes the second player, so let's start the battle
   topDeck.player2 = user.discordId
+  topDeck.name2 = username
   topDeck.state = 'running'
   await updateTopDeck(topDeck)
 
@@ -325,13 +327,14 @@ async function battle(td)
   td.log = ''
   let card1 = await getRandomCard()
   let card2 = await getRandomCard()
+  let files = [card1.imageURL, card2.imageURL]
   let attacker = card1
   let defender = card2
   if (card2.attributes.search('blitz') !== -1 && card1.attributes.search('blitz') === -1)
   {
     attacker = card2
     defender = card1
-    td.lod += attacker.cardId + ' has blitz, so it attacks first*'
+    td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first*'
   }
   attacker['discordId'] = td.player1
   defender['discordId'] = td.player2
@@ -339,15 +342,15 @@ async function battle(td)
   while (attacker.defense > 0 || defender.defense > 0)
   {
     //console.log(attacker, defender)
-    log = attacker.cardId + ' ' +
+    log = attacker.title.toUpperCase() + ' ' +
       attacker.attack + '/' +attacker.defense+ ' -> ' +
-      defender.cardId + ' ' +
+      defender.title.toUpperCase() + ' ' +
       defender.attack + '/' +defender.defense+ '*'
     td.log += log
     //hande damage
     defender.defense -= attacker.attack
     if (defender.defense < 1) {
-      td.log += defender.cardId + ' destroyed*'
+      td.log += defender.title.toUpperCase() + ' destroyed*'
     }
     if (
       (attacker.type === 'bomber' && defender.type === 'fighter') ||
@@ -355,10 +358,10 @@ async function battle(td)
     )
     {
       attacker.defense -= defender.attack
-      console.log(attacker.cardId, 'attacks and takes', defender.attack, 'damage')
+      console.log(attacker.title.toUpperCase(), 'attacks and takes', defender.attack, 'damage')
     }
     if (attacker.defense < 1) {
-      td.log += attacker.cardId + ' destroyed*'
+      td.log += attacker.title.toUpperCase() + ' destroyed*'
     }
     //console.log(attacker, defender)
     if (attacker.defense < 1 && defender.defense > 0)
@@ -381,7 +384,8 @@ async function battle(td)
 
   }
   td.state = 'finished'
-  if (td.winner) td.log += td.winner + ' wins'
+  if (td.winner === td.player1) td.log += td.name1 + ' wins'
+  else if (td.winner === td.player2) td.log += td.name2 + ' wins'
   else td.log += 'draw'
   let lines = td.log.split('*')
   console.log(lines)

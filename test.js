@@ -1,5 +1,5 @@
 const search = require("./search")
-const {getUser, updateUser, topDeck} = require("./db")
+const {getUser, updateUser, topDeck, getSynonym} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language");
 const {handleSynonym} = require("./search");
 
@@ -31,28 +31,24 @@ async function topDeckGame() {
 
     let player = await getUser('22')
     //console.log(player)
-    log = await topDeck('1', player)
+    log = await topDeck('1', player, 'biba')
     console.log(log)
     let player2 = await getUser('44')
     //console.log(player)
-    log = await topDeck('1', player2)
-    console.log(log)
+    log = await topDeck('1', player2, 'koka')
+    //console.log(log)
 
 }
 
 async function syn()
 {
-    let command = '+pipa 81. infantry battalion'
-    if (command.startsWith('+')) {
-        let user = await getUser('1')
-        //console.log(user)
-        let result = await handleSynonym(user, command)
-        console.log(result)
-    }
+    let syn = await getSynonym('slow')
+    if (syn) console.log(syn)
+
 
 }
 
-syn().catch((e) => {throw e}).finally(async () =>
+topDeckGame().catch((e) => {throw e}).finally(async () =>
     {
         console.log('Promise finalized')
     })

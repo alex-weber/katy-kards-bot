@@ -11,6 +11,7 @@
   "author": "tortunbator",
   "license": "ISC",
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.28",
     "@prisma/client": "latest",
     "axios": "^0.26.0",
     "database": "^0.0.2",

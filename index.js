@@ -11,7 +11,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const {getUser, updateUser, getSynonym} = require("./db")
+const {getUser, updateUser, getSynonym, topDeck} = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
 
@@ -107,12 +107,17 @@ try
         if (command.startsWith('+'))
         {
             let syn = await handleSynonym(user, command)
-            console.log(user, command, syn)
             if (syn) {
                 console.log('created synonym:', syn.key, ' -> ', syn.value)
             }
 
             return
+        }
+        //top deck
+        if (command === 'td' && message.channel.name.search('bot') !== -1)
+        {
+            console.log('starting top deck game')
+            let td = await topDeck(message.channelId, user, message.author.username)
         }
         //switch language
         if (message.content.length === 3 && languages.includes(command.slice(0,2)))
@@ -142,6 +147,7 @@ try
         {
             //check for synonyms
             let syn = await getSynonym(command)
+            console.log(syn)
             if (syn) command = syn.value
             else if (command in dictionary.synonyms)
             {
