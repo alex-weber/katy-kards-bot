@@ -6,15 +6,9 @@ const {handleSynonym} = require("./search");
 async function searchBlya() {
 
     //try to find the language and store it in the DB
-    let language = getLanguageByInput('554')
-    const user = await getUser('55')
-    if (language !== defaultLanguage)
-    {
-        user.language = language
-        await updateUser(user)
-    }
+    let language = 'en'
     let variables = { language : language, showSpawnables: true }
-    variables.q = 'leo'
+    variables.q = 'supply shor'
     let cards = await search.getCards(variables)
     console.log(cards)
     if (cards.counter) {
@@ -42,13 +36,12 @@ async function topDeckGame() {
 
 async function syn()
 {
-    let syn = await getSynonym('slow')
-    if (syn) console.log(syn)
+    trans
 
 
 }
 
-topDeckGame().catch((e) => {throw e}).finally(async () =>
+searchBlya().catch((e) => {throw e}).finally(async () =>
     {
         console.log('Promise finalized')
     })

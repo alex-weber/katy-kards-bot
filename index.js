@@ -92,6 +92,7 @@ try
         //show help
         if (command === 'help')
         {
+            //let embed = getHelp(language)
             await message.reply(translator.translate(language, 'help'))
 
             return

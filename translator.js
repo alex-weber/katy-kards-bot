@@ -1,4 +1,6 @@
-module.exports.translate = function (language, msg)
+const { EmbedBuilder } = require('discord.js')
+
+function translate (language, msg)
 {
 
     const reservedWords = {
@@ -98,3 +100,31 @@ module.exports.translate = function (language, msg)
             return msg
     }
 }
+
+function getHelp(language)
+{
+
+    const image = 'https://userfiles.uptimerobot.com/img/1125952-1651958589.png'
+    return new EmbedBuilder()
+      .setColor(0x0099FF)
+      .setTitle('Help')
+      //.setURL('https://kards.com')
+      //.setAuthor({ name: 'tortunbator', iconURL: 'https://i.imgur.com/AfFp7pu.png', url: 'https://kards.com' })
+      .setDescription('Some description here')
+      .setThumbnail(image)
+      .addFields(
+        { name: '!!', value: 'Steam players online and stats' },
+        { name: '!leo', value: 'finds the Leopold', inline: true },
+        { name: 'usa infantry 3k 1c smokescreen 5/5',
+            value: 'finds the US infantry with attack 5, defense 5, for 3 kredits, 1 operation cost and smokescreen',
+            inline: true
+        },
+      )
+      .setImage(image)
+      .setTimestamp()
+      .setFooter({ text: 'Some footer text here', iconURL: image })
+
+
+}
+
+module.exports = { translate, getHelp }

@@ -178,11 +178,8 @@ function getFiles(cards, language) {
 async function advancedSearch(variables)
 {
     variables = getVariables(variables)
-    if (!variables) {
-        console.log('no variables found for: ' + variables.q)
 
-        return {counter: 0, cards: []}
-    }
+
     delete variables.q
     delete variables.language
     delete variables.showSpawnables
@@ -191,6 +188,12 @@ async function advancedSearch(variables)
             contains: variables.attributes,
         }
     }
+    if (Object.keys(variables).length === 0) {
+        console.log('no variables set')
+
+        return {counter: 0, cards: []}
+    }
+    //console.log(variables)
     let cards = await getCardsDB(variables)
 
     return { counter: cards.length, cards: cards }
