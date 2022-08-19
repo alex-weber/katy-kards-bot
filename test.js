@@ -26,13 +26,16 @@ async function searchBlya() {
 
 async function topDeckGame() {
 
+    let log = ''
+
     let player = await getUser('22')
     //console.log(player)
-    await topDeck('1', player)
-    //console.log(language)
+    log = await topDeck('1', player)
+    console.log(log)
     let player2 = await getUser('44')
     //console.log(player)
-    await topDeck('1', player2)
+    log = await topDeck('1', player2)
+    console.log(log)
 
 }
 
