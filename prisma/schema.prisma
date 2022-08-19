@@ -32,7 +32,6 @@ model Synonym {
   id       Int    @id @default(autoincrement())
   key      String @unique
   value    String
-  imageURL String
 }
 
 model Card {

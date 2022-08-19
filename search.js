@@ -3,7 +3,7 @@ const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
 const { MessageAttachment } = require('discord.js')
-const { getCardsDB } = require('./db')
+const { getCardsDB, getSynonym, createSynonym } = require('./db')
 const {APILanguages} = require("./language");
 const host = 'https://www.kards.com'
 const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
@@ -196,5 +196,37 @@ async function advancedSearch(variables)
     return { counter: cards.length, cards: cards }
 }
 
+async function handleSynonym(user, command)
+{
+    if (user.role !== 'GOD' && user.role !== 'VIP') return null
+    const data = command.split(' ')
+    if (data.length < 3) return null
+    console.log(data)
+    const key = data[0].slice(1)
+    let value = data.slice(1).toString()
+    value = value.replace(/,/gi, ' ')
+
+    console.log(key, value)
+
+    //allow only a-z chars
+    let allowedChars = /^[\sa-z]+$/
+    if (!allowedChars.test(key)) {
+
+        return null
+    }
+    //allow also numbers slashes and dots
+    allowedChars = /^[\sa-z0-9\/\.]+$/
+    if (!allowedChars.test(value)) {
+
+        return null
+    }
+    let syn = await getSynonym(key)
+    if (!syn && value) {
+        syn = await createSynonym(key, value)
+    }
+
+    return syn
+}
+
 //export
-module.exports = { getCards, getFiles }
+module.exports = { getCards, getFiles, handleSynonym }

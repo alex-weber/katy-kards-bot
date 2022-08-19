@@ -1,6 +1,7 @@
 const search = require("./search")
 const {getUser, updateUser, topDeck} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language");
+const {handleSynonym} = require("./search");
 
 async function searchBlya() {
 
@@ -39,8 +40,19 @@ async function topDeckGame() {
 
 }
 
-topDeckGame().catch((e) => {throw e}).finally(async () =>
+async function syn()
+{
+    let command = '+pipa 81. infantry battalion'
+    let user = await getUser('1')
+    //console.log(user)
+    let result = await handleSynonym(user, command)
+    console.log(result)
+}
+
+syn().catch((e) => {throw e}).finally(async () =>
     {
         console.log('Promise finalized')
     })
+
+
 

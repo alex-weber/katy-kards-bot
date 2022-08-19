@@ -11,7 +11,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const {getUser, updateUser} = require("./db")
+const {getUser, updateUser, getSynonym} = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
 
@@ -22,6 +22,7 @@ app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
+const {handleSynonym} = require("./search");
 const client = new Client(
   {
     intents: [
@@ -67,10 +68,10 @@ try
         }
 
         console.log(
-          'received a bot command: ' ,
-          'guild: ' + message.guild.name ,
-          ' channel: ' + message.channel.name ,
-          message.content + ' from ' + message.author.username)
+          'received a bot command:',
+          'guild:' + message.guild.name,
+          'channel:' + message.channel.name,
+          message.author.username, message.content)
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
         //check the user language
@@ -102,6 +103,16 @@ try
 
             return
         }
+        //handle synonyms
+        if (command.startsWith('+'))
+        {
+            let syn = await handleSynonym(user, command)
+            if (syn) {
+                console.log('created synonym:', syn.key, ' -> ', syn.value)
+            }
+
+            return
+        }
         //switch language
         if (message.content.length === 3 && languages.includes(command.slice(0,2)))
         {
@@ -129,7 +140,9 @@ try
         else
         {
             //check for synonyms
-            if (command in dictionary.synonyms)
+            let syn = await getSynonym(command)
+            if (syn) command = syn.value
+            else if (command in dictionary.synonyms)
             {
                 command = dictionary.synonyms[command]
                 console.log('synonym found for ' + command)
