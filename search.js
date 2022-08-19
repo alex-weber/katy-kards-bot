@@ -200,7 +200,7 @@ async function handleSynonym(user, command)
 {
     if (user.role !== 'GOD' && user.role !== 'VIP') return null
     const data = command.split(' ')
-    if (data.length < 3) return null
+    if (data.length < 2) return null
     console.log(data)
     const key = data[0].slice(1)
     let value = data.slice(1).toString()

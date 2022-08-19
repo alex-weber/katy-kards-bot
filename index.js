@@ -107,7 +107,7 @@ try
         if (command.startsWith('+'))
         {
             let syn = await handleSynonym(user, command)
-            console.log(syn)
+            console.log(user, command, syn)
             if (syn) {
                 console.log('created synonym:', syn.key, ' -> ', syn.value)
             }
