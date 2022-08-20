@@ -254,7 +254,6 @@ async function topDeck(channelID, user)
       data: {
         channelID: channelID,
         player1: user.discordId,
-        name1:   user.name,
         state: 'open',
         log: user.name + 'enters the battlefield*'
       }
@@ -267,7 +266,6 @@ async function topDeck(channelID, user)
   }
   //here comes the second player, so let's start the battle
   topDeck.player2 = user.discordId
-  topDeck.name2 = user.name
   topDeck.state = 'running'
   await updateTopDeck(topDeck)
 
