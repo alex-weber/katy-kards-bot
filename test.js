@@ -30,7 +30,7 @@ async function topDeckGame() {
     let player2 = await getUser('44')
     //console.log(player)
     let td = await topDeck('1', player2)
-    let lines = td.log.split('*')
+    let lines = td.log.replace(/\*/g, '\n')
     console.log(lines)
     //console.log(log)
 

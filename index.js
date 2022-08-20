@@ -119,12 +119,13 @@ try
         )
         {
             console.log('starting top deck game')
+            let channel = client.channels.get(message.channelId)
             let td = await topDeck(message.channelId, user)
-            let lines = td.log.split('*')
-            console.log(lines)
+            let log = td.log.replace(/\*/g, '\n')
+            console.log(log)
+            await channel.send(log)
 
             return
-            //await message.reply()
         }
         //switch language
         if (message.content.length === 3 && languages.includes(command.slice(0,2)))

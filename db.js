@@ -255,14 +255,14 @@ async function topDeck(channelID, user)
         channelID: channelID,
         player1: user.discordId,
         state: 'open',
-        log: user.name + 'enters the battlefield*'
+        log: user.name + ' enters the battlefield*'
       }
     })
   }
   //if it is the same player - do nothing
   else if (user.discordId === topDeck.player1) {
 
-    return 'still waiting for another player'
+    return topDeck
   }
   //here comes the second player, so let's start the battle
   topDeck.player2 = user.discordId
@@ -344,7 +344,6 @@ async function battle(td)
 
   while (attacker.defense > 0 || defender.defense > 0)
   {
-    td.log += attacker.title + ' is attacking*'
     td.log += attacker.title.toUpperCase() + ' ' +
       attacker.attack + '/' +attacker.defense+ ' -> ' +
       defender.title.toUpperCase() + ' ' +
