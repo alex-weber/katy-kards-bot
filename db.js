@@ -102,6 +102,10 @@ async function updateUser(User)
       role: User.role,
       status: User.status,
       name: User.name,
+      tdGames: User.tdGames,
+      tdWins: User.tdWins,
+      tdLoses: User.tdLoses,
+      tdDraws: User.tdDraws,
     }
   }).
   catch((e) => { throw e }).
@@ -238,6 +242,15 @@ async function getCardsDB(data)
  */
 async function topDeck(channelID, user)
 {
+  //set all stats to zero if it's the first game
+  if (!user.tdGames)
+  {
+    user.tdGames = 0
+    user.tdWins = 0
+    user.tdLoses = 0
+    user.tdDraws = 0
+    await updateUser(user)
+  }
 
   let topDeck = await prisma.topdeck.findFirst({
     where: {
@@ -255,7 +268,7 @@ async function topDeck(channelID, user)
         channelID: channelID,
         player1: user.discordId,
         state: 'open',
-        log: user.name + ' enters the battlefield*'
+        log: user.name + ' enters the battlefield\n'
       }
     })
   }
@@ -296,7 +309,7 @@ async function updateTopDeck(td)
 
 /**
  *
- * @returns {Promise<*>}
+ * @returns Card
  */
 async function getRandomCard()
 {
@@ -331,28 +344,29 @@ async function battle(td)
   {
     attacker = td.card2
     defender = td.card1
-    td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first*'
+    td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first\n'
   }
   attacker['discordId'] = td.player1
-  let user = await getUser(td.player1)
-  attacker['name'] = user.name
-  user = await getUser(td.player2)
-  defender['name'] = user.name
+  let user1 = await getUser(td.player1)
+  attacker['name'] = user1.name
+  let user2 = await getUser(td.player2)
+  defender['name'] = user2.name
   defender['discordId'] = td.player2
 
-  td.log += attacker.name+ '[' + attacker.type + ']' +  ' vs ' + defender.name + '[' + defender.type + ']*'
+  td.log += attacker.name +' '+ attacker.title.toUpperCase() +'[' + attacker.type + '] ' +
+    ' vs ' + defender.name +' '+ defender.title.toUpperCase() +'[' + defender.type + ']\n'
 
   while (attacker.defense > 0 || defender.defense > 0)
   {
     td.log += attacker.title.toUpperCase() + ' ' +
       attacker.attack + '/' +attacker.defense+ ' -> ' +
       defender.title.toUpperCase() + ' ' +
-      defender.attack + '/' +defender.defense+ '*'
+      defender.attack + '/' +defender.defense+ '\n'
     //hande damage
 
     defender.defense -= attacker.attack
     if (defender.defense < 1) {
-      td.log += defender.title.toUpperCase() + ' destroyed*'
+      td.log += defender.title.toUpperCase() + ' destroyed\n'
     }
     if (
       (attacker.type === 'bomber' && defender.type === 'fighter') ||
@@ -360,10 +374,9 @@ async function battle(td)
     )
     {
       attacker.defense -= defender.attack
-      //console.log(attacker.title.toUpperCase(), 'attacks and takes', defender.attack, 'damage')
     }
     if (attacker.defense < 1) {
-      td.log += attacker.title.toUpperCase() + ' destroyed*'
+      td.log += attacker.title.toUpperCase() + ' destroyed\n'
     }
     //console.log(attacker, defender)
     if (attacker.defense < 1 && defender.defense > 0)
@@ -386,11 +399,32 @@ async function battle(td)
 
   }
   td.state = 'finished'
-  if (td.winner) {
+  //update user stats
+  if (td.winner)
+  {
     let winner = await getUser(td.winner)
+    let loser = await getUser(td.loser)
     td.log += winner.name + ' wins'
+    winner.tdWins = parseInt(winner.tdWins) +1
+    loser.tdLoses = parseInt(loser.tdLoses) +1
+    winner.tdGames = parseInt(winner.tdGames) +1
+    loser.tdGames = parseInt(loser.tdGames) +1
+    await updateUser(winner)
+    await updateUser(loser)
+
   }
-  else td.log += 'draw'
+  else
+  {
+    user1.tdDraws = parseInt(user1.tdDraws) +1
+    user2.tdDraws = parseInt(user2.tdDraws) +1
+    user1.tdGames = parseInt(user1.tdGames) +1
+    user2.tdGames = parseInt(user2.tdGames) +1
+    await updateUser(user1)
+    await updateUser(user2)
+    td.log += 'draw'
+  }
+
+
   await updateTopDeck(td)
 
   return td

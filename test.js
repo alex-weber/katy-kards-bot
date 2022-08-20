@@ -25,13 +25,11 @@ async function topDeckGame() {
 
     let player = await getUser('22')
     //console.log(player)
-    log = await topDeck('1', player)
-    console.log(log)
+    await topDeck('1', player)
     let player2 = await getUser('44')
     //console.log(player)
     let td = await topDeck('1', player2)
-    let lines = td.log.replace(/\*/g, '\n')
-    console.log(lines)
+    console.log(td.log)
     //console.log(log)
 
 }
@@ -46,10 +44,7 @@ async function syn()
 
 }
 
-topDeckGame().catch((e) => {throw e}).finally(async () =>
-    {
-        console.log('Promise finalized')
-    })
+topDeckGame().catch((e) => {console.log(e) })
 
 
 

@@ -121,7 +121,6 @@ try
             console.log('starting top deck game')
             let channel = client.channels.get(message.channelId)
             let td = await topDeck(message.channelId, user)
-            let log = td.log.replace(/\*/g, '\n')
             console.log(log)
             await channel.send(log)
 

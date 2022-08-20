@@ -19,6 +19,10 @@ model User {
   messages  Message[]
   role      String?
   mode      String?
+  tdGames   Int?
+  tdWins    Int?
+  tdLoses   Int?
+  tdDraws   Int?
 }
 
 model Message {
