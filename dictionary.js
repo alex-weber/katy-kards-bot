@@ -76,6 +76,7 @@ module.exports = {
         uws:        'united we stand',
         wcd:        'we can do it',
 
-    }
+    },
+    botwar: { channels: ['1010050763382345748'] }
 
 }

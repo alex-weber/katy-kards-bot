@@ -112,10 +112,19 @@ try
             return
         }
         //top deck
-        if (command === 'td' && message.channel.name.search('bot') !== -1)
+        if (
+          command === 'td' &&
+          message.channel.name.search('bot') !== -1 &&
+          dictionary.botwar.channels.includes(message.channelId)
+        )
         {
             console.log('starting top deck game')
-            let td = await topDeck(message.channelId, user, message.author.username)
+            let td = await topDeck(message.channelId, user)
+            let lines = td.log.split('*')
+            console.log(lines)
+
+            return
+            //await message.reply()
         }
         //switch language
         if (message.content.length === 3 && languages.includes(command.slice(0,2)))

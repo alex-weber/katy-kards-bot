@@ -250,16 +250,15 @@ async function topDeck(channelID, user)
   //create a new top deck game
   if (!topDeck) {
 
-    await prisma.topdeck.create({
+    return await prisma.topdeck.create({
       data: {
         channelID: channelID,
         player1: user.discordId,
         name1:   user.name,
-        state: 'open'
+        state: 'open',
+        log: user.name + 'enters the battlefield*'
       }
     })
-
-    return 'Waiting for another player'
   }
   //if it is the same player - do nothing
   else if (user.discordId === topDeck.player1) {
@@ -326,15 +325,14 @@ async function battle(td)
 {
 
   td.log = ''
-  let card1 = await getRandomCard()
-  let card2 = await getRandomCard()
-  let files = [card1.imageURL, card2.imageURL]
-  let attacker = card1
-  let defender = card2
-  if (card2.attributes.search('blitz') !== -1 && card1.attributes.search('blitz') === -1)
+  td.card1 = await getRandomCard()
+  td.card2 = await getRandomCard()
+  let attacker = td.card1
+  let defender = td.card2
+  if (td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1)
   {
-    attacker = card2
-    defender = card1
+    attacker = td.card2
+    defender = td.card1
     td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first*'
   }
   attacker['discordId'] = td.player1
@@ -396,8 +394,6 @@ async function battle(td)
     td.log += winner.name + ' wins'
   }
   else td.log += 'draw'
-  let lines = td.log.split('*')
-  console.log(lines)
   await updateTopDeck(td)
 
   return td

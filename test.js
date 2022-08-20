@@ -29,7 +29,9 @@ async function topDeckGame() {
     console.log(log)
     let player2 = await getUser('44')
     //console.log(player)
-    log = await topDeck('1', player2)
+    let td = await topDeck('1', player2)
+    let lines = td.log.split('*')
+    console.log(lines)
     //console.log(log)
 
 }
