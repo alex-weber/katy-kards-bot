@@ -100,7 +100,8 @@ async function updateUser(User)
     data: {
       language: User.language,
       role: User.role,
-      status: User.status
+      status: User.status,
+      name: User.name,
     }
   }).
   catch((e) => { throw e }).
@@ -235,7 +236,7 @@ async function getCardsDB(data)
  * @param user
  * @returns {Promise<*>}
  */
-async function topDeck(channelID, user, username)
+async function topDeck(channelID, user)
 {
 
   let topDeck = await prisma.topdeck.findFirst({
@@ -253,7 +254,7 @@ async function topDeck(channelID, user, username)
       data: {
         channelID: channelID,
         player1: user.discordId,
-        name1:   username,
+        name1:   user.name,
         state: 'open'
       }
     })
@@ -267,7 +268,7 @@ async function topDeck(channelID, user, username)
   }
   //here comes the second player, so let's start the battle
   topDeck.player2 = user.discordId
-  topDeck.name2 = username
+  topDeck.name2 = user.name
   topDeck.state = 'running'
   await updateTopDeck(topDeck)
 
@@ -323,7 +324,7 @@ async function getRandomCard()
  */
 async function battle(td)
 {
-  let log = ''
+
   td.log = ''
   let card1 = await getRandomCard()
   let card2 = await getRandomCard()
@@ -337,17 +338,23 @@ async function battle(td)
     td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first*'
   }
   attacker['discordId'] = td.player1
+  let user = await getUser(td.player1)
+  attacker['name'] = user.name
+  user = await getUser(td.player2)
+  defender['name'] = user.name
   defender['discordId'] = td.player2
-  console.log(attacker.type, defender.type)
+
+  td.log += attacker.name+ '[' + attacker.type + ']' +  ' vs ' + defender.name + '[' + defender.type + ']*'
+
   while (attacker.defense > 0 || defender.defense > 0)
   {
-    //console.log(attacker, defender)
-    log = attacker.title.toUpperCase() + ' ' +
+    td.log += attacker.title + ' is attacking*'
+    td.log += attacker.title.toUpperCase() + ' ' +
       attacker.attack + '/' +attacker.defense+ ' -> ' +
       defender.title.toUpperCase() + ' ' +
       defender.attack + '/' +defender.defense+ '*'
-    td.log += log
     //hande damage
+
     defender.defense -= attacker.attack
     if (defender.defense < 1) {
       td.log += defender.title.toUpperCase() + ' destroyed*'
@@ -358,7 +365,7 @@ async function battle(td)
     )
     {
       attacker.defense -= defender.attack
-      console.log(attacker.title.toUpperCase(), 'attacks and takes', defender.attack, 'damage')
+      //console.log(attacker.title.toUpperCase(), 'attacks and takes', defender.attack, 'damage')
     }
     if (attacker.defense < 1) {
       td.log += attacker.title.toUpperCase() + ' destroyed*'
@@ -384,8 +391,10 @@ async function battle(td)
 
   }
   td.state = 'finished'
-  if (td.winner === td.player1) td.log += td.name1 + ' wins'
-  else if (td.winner === td.player2) td.log += td.name2 + ' wins'
+  if (td.winner) {
+    let winner = await getUser(td.winner)
+    td.log += winner.name + ' wins'
+  }
   else td.log += 'draw'
   let lines = td.log.split('*')
   console.log(lines)

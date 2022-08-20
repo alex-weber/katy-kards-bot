@@ -67,21 +67,18 @@ try
             return
         }
 
-        console.log(
-          'received a bot command:',
-          'guild:' + message.guild.name,
-          'channel:' + message.channel.name,
+        console.log('received a bot command:',
+          message.guild.name, message.channel.name,
           message.author.username, message.content)
+        //set username
+        const user = await getUser(message.author.id.toString())
+        user.name = message.author.username
         //remove the "!" sign and whitespaces from the beginning
         let command = message.content.slice(1).trim().toLowerCase()
         //check the user language
         let language = defaultLanguage
-        const user = await getUser(message.author.id.toString())
-        if (user.language !== defaultLanguage)
-        {
-            language = user.language
-            await updateUser(user)
-        }
+        if (user.language !== defaultLanguage) language = user.language
+        await updateUser(user)
         //golden signal
         if (command === 'golden signal' || command === 'gs')
         {
@@ -149,7 +146,16 @@ try
             //check for synonyms
             let syn = await getSynonym(command)
             console.log(syn)
-            if (syn) command = syn.value
+
+            if (syn) {
+                //check if there is a image link
+                if (syn.value.startsWith('http')) {
+                    await message.reply({content: syn.key, files: [syn.value]})
+
+                    return
+                }
+                else command = syn.value
+            }
             else if (command in dictionary.synonyms)
             {
                 command = dictionary.synonyms[command]

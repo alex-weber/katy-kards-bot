@@ -8,7 +8,7 @@ async function searchBlya() {
     //try to find the language and store it in the DB
     let language = 'en'
     let variables = { language : language, showSpawnables: true }
-    variables.q = 'supply shor'
+    variables.q = 'infantry 4c'
     let cards = await search.getCards(variables)
     console.log(cards)
     if (cards.counter) {
@@ -25,23 +25,26 @@ async function topDeckGame() {
 
     let player = await getUser('22')
     //console.log(player)
-    log = await topDeck('1', player, 'biba')
+    log = await topDeck('1', player)
     console.log(log)
     let player2 = await getUser('44')
     //console.log(player)
-    log = await topDeck('1', player2, 'koka')
+    log = await topDeck('1', player2)
     //console.log(log)
 
 }
 
 async function syn()
 {
-    trans
+    let player = await getUser('44')
+    console.log(player)
+    player.name = 'Bob'
+    await updateUser(player)
 
 
 }
 
-searchBlya().catch((e) => {throw e}).finally(async () =>
+topDeckGame().catch((e) => {throw e}).finally(async () =>
     {
         console.log('Promise finalized')
     })
