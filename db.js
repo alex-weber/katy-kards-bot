@@ -338,21 +338,27 @@ async function battle(td)
   td.log = ''
   td.card1 = await getRandomCard()
   td.card2 = await getRandomCard()
+  let user1 = await getUser(td.player1)
+  let user2 = await getUser(td.player2)
   let attacker = td.card1
   let defender = td.card2
   if (td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1)
   {
     attacker = td.card2
     defender = td.card1
+    attacker['discordId'] = td.player2
+    attacker['name'] = user2.name
+    defender['discordId'] = td.player1
+    defender['name'] = user1.name
     td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first\n'
+  } else {
+    attacker['discordId'] = td.player1
+    attacker['name'] = user1.name
+    defender['discordId'] = td.player2
+    defender['name'] = user2.name
   }
-  attacker['discordId'] = td.player1
-  let user1 = await getUser(td.player1)
-  attacker['name'] = user1.name
-  let user2 = await getUser(td.player2)
-  defender['name'] = user2.name
-  defender['discordId'] = td.player2
 
+  //the battle begins
   while (attacker.defense > 0 || defender.defense > 0)
   {
     td.log += attacker.title.toUpperCase() + ' ' +
