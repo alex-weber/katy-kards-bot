@@ -137,6 +137,7 @@ try
             }
             if (td.state === 'finished') {
                 //draw the image
+                await message.reply('getting battle results...')
                 const battleImage = await drawBattlefield(td)
                 await message.reply({content: td.log, files: [battleImage]})
                 console.log(td.log)
