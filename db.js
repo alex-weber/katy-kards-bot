@@ -463,8 +463,7 @@ async function getTopDeckStats()
   let counter = 1
   for (const [, user] of Object.entries(users))
   {
-    let score = user.tdWins - user.tdLoses
-    answer += counter +': ' + user.name + ' ('+ score +')\n'
+    answer += counter +': ' + user.name + ' ('+ user.tdWins +')\n'
     counter++
     if (counter > 9) break
   }
