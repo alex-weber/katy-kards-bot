@@ -316,6 +316,9 @@ async function getRandomCard()
   let cards = await prisma.card.findMany({
     where: {
       type: { in: ['infantry', 'tank', 'artillery', 'fighter', 'bomber'] },
+      attack: {
+        gt: 0,
+      }
     },
   }).
   catch((e) => { throw e }).
