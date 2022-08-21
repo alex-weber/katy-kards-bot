@@ -11,7 +11,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const {getUser, updateUser, getSynonym, topDeck} = require("./db")
+const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats} = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
 const fs = require('fs')
@@ -95,7 +95,15 @@ try
 
             return
         }
-        //show stats
+        //get top deck game ranking
+        if (command === 'ranking')
+        {
+
+            await message.reply(await getTopDeckStats())
+
+            return
+        }
+        //show online stats
         if (message.content === '!!' || message.content === '!ingame' || message.content === '!online')
         {
             stats.getStats().then(res => { message.reply(res) }).catch(error => { console.log(error) })

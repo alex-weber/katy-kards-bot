@@ -353,9 +353,6 @@ async function battle(td)
   defender['name'] = user2.name
   defender['discordId'] = td.player2
 
-  td.log += attacker.name +' '+ attacker.title.toUpperCase() +'[' + attacker.type + '] ' +
-    ' vs ' + defender.name +' '+ defender.title.toUpperCase() +'[' + defender.type + ']\n'
-
   while (attacker.defense > 0 || defender.defense > 0)
   {
     td.log += attacker.title.toUpperCase() + ' ' +
@@ -430,6 +427,42 @@ async function battle(td)
   return td
 }
 
+/**
+ *
+ * @returns {Promise<string|boolean>}
+ */
+async function getTopDeckStats()
+{
+  const users = await prisma.user.findMany({
+    where: {
+      tdGames: {
+        gt: 0,
+      }
+    },
+    orderBy: {
+      tdWins: 'desc',
+    },
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+
+  if (!users) return false
+
+  let answer = 'Top Deck Game Ranking\n\n'
+  let counter = 1
+  for (const [, user] of Object.entries(users))
+  {
+    let score = user.tdWins - user.tdLoses
+    answer += counter +': ' + user.name + ' ('+ score +')\n'
+    counter++
+    if (counter > 9) break
+  }
+
+  return answer
+
+}
+
+
 //exports
 module.exports = {
   getUser,
@@ -441,6 +474,7 @@ module.exports = {
   createCard,
   getCardsDB,
   topDeck,
+  getTopDeckStats,
   getRandomCard,
   updateTopDeck
 }

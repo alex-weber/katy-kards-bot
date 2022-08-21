@@ -1,5 +1,5 @@
 const search = require("./search")
-const {getUser, updateUser, topDeck, getSynonym} = require("./db")
+const {getUser, updateUser, topDeck, getSynonym, getTopDeckStats} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language")
 const {handleSynonym} = require("./search")
 const { drawBattlefield } = require('./canvasManager')
@@ -29,27 +29,23 @@ async function topDeckGame() {
     let player2 = await getUser('44')
     //console.log(player)
     let td = await topDeck('1', player2)
-    const battleImage = await drawBattlefield(td)
+    //const battleImage = await drawBattlefield(td)
     console.log(td.log)
-    //delete the battle image
-    fs.rm(battleImage, function () {
-        console.log('image deleted')
-    })
+
 
 
 }
 
-async function syn()
+async function raiting()
 {
-    let player = await getUser('44')
-    console.log(player)
-    player.name = 'Bob'
-    await updateUser(player)
+    await topDeckGame()
+    console.log(await getTopDeckStats())
+
 
 
 }
 
-topDeckGame().catch((e) => {console.log(e) })
+raiting().catch((e) => {console.log(e) })
 
 
 
