@@ -128,7 +128,7 @@ try
         )
         {
             console.log('starting top deck game')
-            let channel = client.channels.fetch(message.channelId)
+            //let channel = client.channels.fetch(message.channelId)
             let td = await topDeck(message.channelId, user)
             if (td.state === 'open') {
                 await message.reply('Waiting for another player...')
@@ -138,7 +138,7 @@ try
             if (td.state === 'finished') {
                 //draw the image
                 const battleImage = await drawBattlefield(td)
-                await channel.send({content: td.log, files: [battleImage]})
+                await message.reply({content: td.log, files: [battleImage]})
                 console.log(td.log)
                 //delete the battle image
                 fs.rm(battleImage, function () {
