@@ -123,8 +123,9 @@ try
         //top deck
         if (
           command === 'td' &&
-          message.channel.name.search('bot') !== -1 &&
-          dictionary.botwar.channels.includes(message.channelId.toString())
+          ( message.channel.name.search('bot') !== -1 ||
+            dictionary.botwar.channels.includes( message.channelId.toString() )
+          )
         )
         {
             console.log('starting top deck game')
