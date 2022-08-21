@@ -14,7 +14,7 @@ const dictionary = require('./dictionary')
 const {getUser, updateUser, getSynonym, topDeck} = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
-
+const fs = require('fs')
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -23,6 +23,7 @@ app.listen(port, () => console.log(`Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
 const {handleSynonym} = require("./search");
+const {drawBattlefield} = require("./canvasManager");
 const client = new Client(
   {
     intents: [
@@ -121,8 +122,21 @@ try
             console.log('starting top deck game')
             let channel = client.channels.get(message.channelId)
             let td = await topDeck(message.channelId, user)
-            console.log(log)
-            await channel.send(log)
+            if (td.state === 'open') {
+                await message.reply('Waiting for another player...')
+
+                return
+            }
+            if (td.state === 'finished') {
+                //draw the image
+                const battleImage = await drawBattlefield(td)
+                await channel.send({content: td.log, files: [battleImage]})
+                console.log(td.log)
+                //delete the battle image
+                fs.rm(battleImage, function () {
+                    console.log('image deleted')
+                })
+            }
 
             return
         }

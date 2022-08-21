@@ -268,7 +268,7 @@ async function topDeck(channelID, user)
         channelID: channelID,
         player1: user.discordId,
         state: 'open',
-        log: user.name + ' enters the battlefield\n'
+        log: ''
       }
     })
   }

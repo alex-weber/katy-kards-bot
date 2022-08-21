@@ -1,7 +1,9 @@
 const search = require("./search")
 const {getUser, updateUser, topDeck, getSynonym} = require("./db")
-const {getLanguageByInput, defaultLanguage} = require("./language");
-const {handleSynonym} = require("./search");
+const {getLanguageByInput, defaultLanguage} = require("./language")
+const {handleSynonym} = require("./search")
+const { drawBattlefield } = require('./canvasManager')
+const fs = require("fs");
 
 async function searchBlya() {
 
@@ -21,16 +23,19 @@ async function searchBlya() {
 
 async function topDeckGame() {
 
-    let log = ''
-
     let player = await getUser('22')
     //console.log(player)
     await topDeck('1', player)
     let player2 = await getUser('44')
     //console.log(player)
     let td = await topDeck('1', player2)
+    const battleImage = await drawBattlefield(td)
     console.log(td.log)
-    //console.log(log)
+    //delete the battle image
+    fs.rm(battleImage, function () {
+        console.log('image deleted')
+    })
+
 
 }
 
