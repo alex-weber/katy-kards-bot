@@ -128,7 +128,7 @@ try
         )
         {
             console.log('starting top deck game')
-            let channel = client.channels.get(message.channelId)
+            let channel = client.channels.fetch(message.channelId)
             let td = await topDeck(message.channelId, user)
             if (td.state === 'open') {
                 await message.reply('Waiting for another player...')
