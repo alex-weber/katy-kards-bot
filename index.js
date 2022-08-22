@@ -90,22 +90,22 @@ try
         //show help
         if (command === 'help')
         {
-            const embed = translator.getHelp(language)
-            await message.reply({embeds: [embed]})
+            //const embed = translator.getHelp(language)
+            await message.reply(translator.translate(language, 'help'))
 
             return
         }
         //get top 9 TD ranking
         if (command === 'ranking')
         {
-            await message.reply({embeds: [await getTopDeckStats()]})
+            await message.reply(await getTopDeckStats())
 
             return
         }
         //user's TD ranking
         if (command === 'myrank')
         {
-            await message.reply({embeds: [myTDRank(user)]})
+            await message.reply(myTDRank(user))
 
             return
         }

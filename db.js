@@ -457,16 +457,13 @@ async function getTopDeckStats()
 
   if (!users) return false
 
-  let answer = ''
+  let answer = 'TD Ranking\n\n'
   answer += '(Wins x 2 + Draws - Loses x 2)\n\n'
   let ranking = []
   for (const [, user] of Object.entries(users))
   {
-    let score = user.tdWins*2 + user.tdDraws - user.tdLoses*2
-    ranking.push({
-      name: user.name,
-      score: score
-    })
+    user.score = user.tdWins*2 + user.tdDraws - user.tdLoses*2
+    ranking.push(user)
   }
   ranking.sort((a, b) => b.score - a.score)
   let counter = 1
@@ -476,41 +473,17 @@ async function getTopDeckStats()
     counter++
   })
 
-  return {
-    color: 0x000000,
-    title: 'Top Deck Game Ranking',
-    description: answer,
-  }
+  return answer
 
 }
 
 function myTDRank(user)
 {
-  return {
-    color: 0x000000,
-    title: user.name + '(' +(user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString()+ ')',
-    fields: [
-      {
-        name: 'Games',
-        value: user.tdGames.toString(),
-      },
-      {
-        name: 'Wins',
-        value: user.tdWins.toString(),
-        inline: true,
-      },
-      {
-        name: 'Draws',
-        value: user.tdDraws.toString(),
-        inline: true,
-      },
-      {
-        name: 'Loses',
-        value: user.tdLoses.toString(),
-        inline: true,
-      },
-    ],
-  }
+  return user.name + '(' +(user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString()+ ')\n\n' +
+    'Games: ' + user.tdGames.toString() + '\n' +
+    'Wins: ' + user.tdWins.toString() + '\n' +
+    'Draws: ' + user.tdDraws.toString() + '\n' +
+    'Loses: ' + user.tdLoses.toString()
 
 }
 
