@@ -41,9 +41,9 @@ async function topDeckGame() {
 async function raiting()
 {
     //await topDeckGame()
-    //console.log(await getTopDeckStats())
-    let user = await getUser('1')
-    console.log(myTDRank(user))
+    console.log(await getTopDeckStats())
+    //let user = await getUser('1')
+    //console.log(myTDRank(user))
 
 }
 

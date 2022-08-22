@@ -441,7 +441,7 @@ async function battle(td)
 
 /**
  *
- * @returns {Promise<string|boolean>}
+ * @returns {Promise<boolean|{color: number, description: string, title: string}>}
  */
 async function getTopDeckStats()
 {
@@ -457,7 +457,7 @@ async function getTopDeckStats()
 
   if (!users) return false
 
-  let answer = '**Top Deck Game Ranking**\n\n'
+  let answer = ''
   answer += '(Wins x 2 + Draws - Loses x 2)\n\n'
   let ranking = []
   for (const [, user] of Object.entries(users))
@@ -476,7 +476,11 @@ async function getTopDeckStats()
     counter++
   })
 
-  return answer
+  return {
+    color: 0x000000,
+    title: 'Top Deck Game Ranking',
+    description: answer,
+  }
 
 }
 

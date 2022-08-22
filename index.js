@@ -95,19 +95,17 @@ try
 
             return
         }
-        //get top deck game ranking
+        //get top 9 TD ranking
         if (command === 'ranking')
         {
-
-            await message.reply(await getTopDeckStats())
+            await message.reply({embeds: [await getTopDeckStats()]})
 
             return
         }
-        //user top deck game ranking
+        //user's TD ranking
         if (command === 'myrank')
         {
-            const rankingEmbed = myTDRank(user)
-            await message.reply({embeds: [rankingEmbed]})
+            await message.reply({embeds: [myTDRank(user)]})
 
             return
         }
