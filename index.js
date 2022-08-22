@@ -90,11 +90,8 @@ try
         //show help
         if (command === 'help')
         {
-            if (user.name === 'tortunbator') {
-                const embed = translator.getHelp(language)
-                await message.reply({embeds: [embed]})
-            }
-            else await message.reply(translator.translate(language, 'help'))
+            const embed = translator.getHelp(language)
+            await message.reply({embeds: [embed]})
 
             return
         }

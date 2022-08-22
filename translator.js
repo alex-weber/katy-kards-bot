@@ -112,39 +112,35 @@ function getHelp(language)
     const image = 'https://userfiles.uptimerobot.com/img/1125952-1651958589.png'
 
     return  {
-        color: 0x0099ff,
+        color: 0x000000,
         title: 'Help',
-        url: 'https://discord.com/channels/817700750083358720',
+        url: 'https://stats.uptimerobot.com/kBwWphkNQx/789189655',
         author: {
-            name: 'tortunbator',
+            name: 'Katyusha',
             icon_url: 'https://cdn.discordapp.com/attachments/817700750083358722/1011218483624824842/katyusha.png',
             url: 'https://github.com/alex-weber/',
         },
         description: 'KARDS Bot for searching and playing',
         thumbnail: {
-            url: image,
+            url: 'https://stats.uptimerobot.com/kBwWphkNQx/789189655',
         },
         fields: [
             {
                 name: '!!',
                 value: 'Steam players online and stats',
-                inline: true,
             },
             {
                 name: '!en',
                 value: 'Switch the search language. Available: ' + languages.toString(),
-                inline: true,
             },
             {
                 name: '!usa infantry 3k 1c smokescreen 5/5',
                 value: 'Finds the US infantry with attack 5, defense 5, for 3 kredits, ' +
                   '1 operation cost and smokescreen',
-                inline: true,
             },
             {
                 name: '!td',
-                value: 'The Top Deck Game. Works only in channels that contain the string "bot" ',
-                inline: true,
+                value: 'The Top Deck Game. Works only in channels that contain the string "bot" in their name',
             },
 
         ],
