@@ -178,8 +178,7 @@ function getFiles(cards, language) {
 async function advancedSearch(variables)
 {
     variables = getVariables(variables)
-
-
+    //delete non DB fields
     delete variables.q
     delete variables.language
     delete variables.showSpawnables
@@ -193,7 +192,7 @@ async function advancedSearch(variables)
 
         return {counter: 0, cards: []}
     }
-    //console.log(variables)
+    console.log(variables)
     let cards = await getCardsDB(variables)
 
     return { counter: cards.length, cards: cards }

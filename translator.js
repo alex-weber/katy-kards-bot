@@ -101,29 +101,57 @@ function translate (language, msg)
     }
 }
 
+/**
+ *
+ * @param language
+ * @returns {{image: {url: string}, thumbnail: {url: string}, color: number, footer: {icon_url: string, text: string}, author: {icon_url: string, name: string, url: string}, description: string, title: string, fields: [{inline: boolean, name: string, value: string},{inline: boolean, name: string, value: string},{inline: boolean, name: string, value: string}], url: string, timestamp: string}}
+ */
 function getHelp(language)
 {
 
     const image = 'https://userfiles.uptimerobot.com/img/1125952-1651958589.png'
-    return new EmbedBuilder()
-      .setColor(0x0099FF)
-      .setTitle('Help')
-      //.setURL('https://kards.com')
-      //.setAuthor({ name: 'tortunbator', iconURL: 'https://i.imgur.com/AfFp7pu.png', url: 'https://kards.com' })
-      .setDescription('Some description here')
-      .setThumbnail(image)
-      .addFields(
-        { name: '!!', value: 'Steam players online and stats' },
-        { name: '!leo', value: 'finds the Leopold', inline: true },
-        { name: 'usa infantry 3k 1c smokescreen 5/5',
-            value: 'finds the US infantry with attack 5, defense 5, for 3 kredits, 1 operation cost and smokescreen',
-            inline: true
-        },
-      )
-      .setImage(image)
-      .setTimestamp()
-      .setFooter({ text: 'Some footer text here', iconURL: image })
 
+    return  {
+        color: 0x0099ff,
+        title: 'Help',
+        url: 'https://discord.com/channels/817700750083358720',
+        author: {
+            name: 'tortunbator',
+            icon_url: 'https://cdn.discordapp.com/attachments/817700750083358722/1011218483624824842/katyusha.png',
+            url: 'https://github.com/alex-weber/',
+        },
+        description: 'Some description here',
+        thumbnail: {
+            url: image,
+        },
+        fields: [
+            {
+                name: '!!',
+                value: 'Steam players online and stats',
+                inline: true,
+            },
+            {
+                name: '!usa infantry 3k 1c smokescreen 5/5',
+                value: 'Finds the US infantry with attack 5, defense 5, for 3 kredits, ' +
+                  '1 operation cost and smokescreen',
+                inline: true,
+            },
+            {
+                name: '!td',
+                value: 'The Top Deck Game. Works only in channels that contain the string "bot" ',
+                inline: true,
+            },
+
+        ],
+        image: {
+            url: image,
+        },
+        timestamp: new Date().toISOString(),
+        footer: {
+            text: 'Katyusha Kards Bot',
+            icon_url: image,
+        }
+    }
 
 }
 
