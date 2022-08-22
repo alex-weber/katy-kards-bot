@@ -11,7 +11,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats} = require("./db")
+const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats, } = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
 const fs = require('fs')
@@ -91,7 +91,7 @@ try
         if (command === 'help')
         {
             if (user.name === 'tortunbator') {
-                const embed = getHelp(language)
+                const embed = translator.getHelp(language)
                 await message.reply({embeds: [embed]})
             }
             else await message.reply(translator.translate(language, 'help'))
