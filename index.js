@@ -11,7 +11,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats, } = require("./db")
+const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats, myTDRank, } = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
 const fs = require('fs')
@@ -100,6 +100,14 @@ try
         {
 
             await message.reply(await getTopDeckStats())
+
+            return
+        }
+        //user top deck game ranking
+        if (command === 'myrank')
+        {
+
+            await message.reply({embeds: [myTDRank(user)]})
 
             return
         }

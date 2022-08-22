@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client')
+const {languages} = require("./language");
 const prisma = new PrismaClient()
 
 /**
@@ -479,6 +480,40 @@ async function getTopDeckStats()
 
 }
 
+function myTDRank(user)
+{
+  return {
+    color: 0x000000,
+    title: 'Top Deck Ranking: ' + user.name,
+    fields: [
+      {
+        name: 'Games',
+        value: user.tdGames,
+        inline: true,
+      },
+      {
+        name: 'Wins',
+        value: user.tdWins,
+        inline: true,
+      },
+      {
+        name: 'Draws',
+        value: user.tdDraws,
+        inline: true,
+      },
+      {
+        name: 'Loses',
+        value: user.td.tdLoses,
+        inline: true,
+      },
+      {
+        name: 'Rank',
+        value: user.tdWins*2 + user.tdDraws - user.td.tdLoses*2,
+      },
+    ],
+  }
+
+}
 
 //exports
 module.exports = {
@@ -492,6 +527,7 @@ module.exports = {
   getCardsDB,
   topDeck,
   getTopDeckStats,
+  myTDRank,
   getRandomCard,
   updateTopDeck
 }
