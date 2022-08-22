@@ -115,6 +115,7 @@ try
         {
             let syn = await handleSynonym(user, command)
             if (syn) {
+                await message.reply(syn.key, ' -> ', syn.value)
                 console.log('created synonym:', syn.key, ' -> ', syn.value)
             }
 

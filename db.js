@@ -97,16 +97,7 @@ async function updateUser(User)
 
   return await prisma.user.update({
     where: { id: User.id },
-    data: {
-      language: User.language,
-      role: User.role,
-      status: User.status,
-      name: User.name,
-      tdGames: User.tdGames,
-      tdWins: User.tdWins,
-      tdLoses: User.tdLoses,
-      tdDraws: User.tdDraws,
-    }
+    data: User
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
@@ -470,12 +461,23 @@ async function getTopDeckStats()
 
   let answer = 'Top Deck Game Ranking\n\n'
   let counter = 1
+  let ranking = []
   for (const [, user] of Object.entries(users))
   {
-    answer += counter +': ' + user.name + ' ('+ user.tdWins +')\n'
+    let score = user.tdWins - user.tdLoses
+    ranking.push({
+      name: user.name,
+      score: score
+    })
     counter++
     if (counter > 9) break
   }
+  ranking.sort((a, b) => b.score - a.score)
+  counter = 1
+  ranking.forEach((user) => {
+    answer += counter +': ' + user.name + ' ('+ user.score +')\n'
+    counter++
+  })
 
   return answer
 
