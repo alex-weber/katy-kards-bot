@@ -217,7 +217,7 @@ async function handleSynonym(user, command)
         return null
     }
     //allow also numbers slashes and dots
-    allowedChars = /^[\sa-z0-9\/\.]+$/
+    allowedChars = /^[\sa-zA-Z:0-9\/\.]+$/
     if (!allowedChars.test(value)) {
 
         return null
