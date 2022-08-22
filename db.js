@@ -503,12 +503,12 @@ function myTDRank(user)
       },
       {
         name: 'Loses',
-        value: user.td.tdLoses,
+        value: user.tdLoses,
         inline: true,
       },
       {
         name: 'Rank',
-        value: user.tdWins*2 + user.tdDraws - user.td.tdLoses*2,
+        value: user.tdWins*2 + user.tdDraws - user.tdLoses*2,
       },
     ],
   }

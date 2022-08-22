@@ -106,8 +106,8 @@ try
         //user top deck game ranking
         if (command === 'myrank')
         {
-
-            await message.reply({embeds: [myTDRank(user)]})
+            const rankingEmbed = myTDRank(user)
+            await message.reply({embeds: [rankingEmbed]})
 
             return
         }
