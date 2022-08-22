@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js')
+const { languages } = require('./language.js')
 
 function translate (language, msg)
 {
@@ -120,7 +120,7 @@ function getHelp(language)
             icon_url: 'https://cdn.discordapp.com/attachments/817700750083358722/1011218483624824842/katyusha.png',
             url: 'https://github.com/alex-weber/',
         },
-        description: 'Some description here',
+        description: 'KARDS Bot for searching and playing',
         thumbnail: {
             url: image,
         },
@@ -128,6 +128,11 @@ function getHelp(language)
             {
                 name: '!!',
                 value: 'Steam players online and stats',
+                inline: true,
+            },
+            {
+                name: '!en',
+                value: 'Switch the search language. Available: ' + languages.toString(),
                 inline: true,
             },
             {
@@ -148,7 +153,7 @@ function getHelp(language)
         },
         timestamp: new Date().toISOString(),
         footer: {
-            text: 'Katyusha Kards Bot',
+            text: 'Katyusha Kards Bot. All rights unreserved. Some other important legal shit here.',
             icon_url: image,
         }
     }
