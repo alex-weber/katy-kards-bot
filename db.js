@@ -488,27 +488,27 @@ function myTDRank(user)
     fields: [
       {
         name: 'Games',
-        value: user.tdGames,
+        value: user.tdGames.toString(),
         inline: true,
       },
       {
         name: 'Wins',
-        value: user.tdWins,
+        value: user.tdWins.toString(),
         inline: true,
       },
       {
         name: 'Draws',
-        value: user.tdDraws,
+        value: user.tdDraws.toString(),
         inline: true,
       },
       {
         name: 'Loses',
-        value: user.tdLoses,
+        value: user.tdLoses.toString(),
         inline: true,
       },
       {
         name: 'Rank',
-        value: user.tdWins*2 + user.tdDraws - user.tdLoses*2,
+        value: (user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString(),
       },
     ],
   }
