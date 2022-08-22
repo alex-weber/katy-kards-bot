@@ -484,12 +484,11 @@ function myTDRank(user)
 {
   return {
     color: 0x000000,
-    title: 'Top Deck Ranking: ' + user.name,
+    title: user.name + '(' +(user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString()+ ')',
     fields: [
       {
         name: 'Games',
         value: user.tdGames.toString(),
-        inline: true,
       },
       {
         name: 'Wins',
@@ -505,10 +504,6 @@ function myTDRank(user)
         name: 'Loses',
         value: user.tdLoses.toString(),
         inline: true,
-      },
-      {
-        name: 'Rank',
-        value: (user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString(),
       },
     ],
   }
