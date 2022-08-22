@@ -450,9 +450,6 @@ async function getTopDeckStats()
         gt: 0,
       }
     },
-    orderBy: {
-      tdWins: 'desc',
-    },
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
@@ -461,7 +458,6 @@ async function getTopDeckStats()
 
   let answer = '**Top Deck Game Ranking**\n\n'
   answer += '(Wins x 2 + Draws - Loses x 2)\n\n'
-  let counter = 1
   let ranking = []
   for (const [, user] of Object.entries(users))
   {
@@ -470,12 +466,11 @@ async function getTopDeckStats()
       name: user.name,
       score: score
     })
-    counter++
-    if (counter > 9) break
   }
   ranking.sort((a, b) => b.score - a.score)
-  counter = 1
+  let counter = 1
   ranking.forEach((user) => {
+    if (counter > 9) return
     answer += counter +': ' + user.name + ' ('+ user.score +')\n'
     counter++
   })
