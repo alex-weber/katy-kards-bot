@@ -45,7 +45,7 @@ async function raiting()
 
 }
 
-//searchBlya().catch((e) => {console.log(e) })
-console.log(getHelp('en'))
+raiting().catch((e) => {console.log(e) })
+
 
 

@@ -459,12 +459,13 @@ async function getTopDeckStats()
 
   if (!users) return false
 
-  let answer = 'Top Deck Game Ranking\n\n'
+  let answer = '**Top Deck Game Ranking**\n\n'
+  answer += '(Wins x 2 + Draws - Loses x 2)\n\n'
   let counter = 1
   let ranking = []
   for (const [, user] of Object.entries(users))
   {
-    let score = user.tdWins - user.tdLoses
+    let score = user.tdWins*2 + user.tdDraws - user.tdLoses*2
     ranking.push({
       name: user.name,
       score: score
