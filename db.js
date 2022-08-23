@@ -335,25 +335,21 @@ async function battle(td)
   td.card2 = await getRandomCard()
   let user1 = await getUser(td.player1)
   let user2 = await getUser(td.player2)
+  td.card1.owner = user1
+  td.card2.owner = user2
   let attacker = td.card1
   let defender = td.card2
-  if (td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1)
+  //the card with the lowest kredits attacks first. Otherwise, with blitz.
+  if ((td.card2.kredits < td.card1.kredits) ||
+      (td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1))
   {
     attacker = td.card2
     defender = td.card1
-    attacker['discordId'] = td.player2
-    attacker['name'] = user2.name
-    defender['discordId'] = td.player1
-    defender['name'] = user1.name
-    td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first\n'
-  } else {
-    attacker['discordId'] = td.player1
-    attacker['name'] = user1.name
-    defender['discordId'] = td.player2
-    defender['name'] = user2.name
+    td.log += attacker.title.toUpperCase() + ' costs less or has blitz, so it attacks first\n'
   }
-
   //the battle begins
+  let winner
+  let loser
   while (attacker.defense > 0 || defender.defense > 0)
   {
     td.log += attacker.title.toUpperCase() + ' ' +
@@ -377,12 +373,16 @@ async function battle(td)
     if (defender.defense < 1) {
       td.log += defender.title.toUpperCase() + ' destroyed\n'
     }
+    //count attacker's heavy armor on reverse damage
     if (
-      (attacker.type === 'bomber' && defender.type === 'fighter') ||
-      (defender.type !== 'bomber' && attacker.type !== 'artillery' && attacker.type !== 'bomber')
-    )
+        (attacker.type === 'bomber' && defender.type === 'fighter') ||
+        (defender.type !== 'bomber' && attacker.type !== 'artillery' && attacker.type !== 'bomber')
+       )
     {
-      attacker.defense -= defender.attack
+      let defAttack = defender.attack
+      if (attacker.attributes.search('heavyArmor1') !== -1) defAttack--
+      if (attacker.attributes.search('heavyArmor2')!== -1) defAttack = defAttack - 2
+      attacker.defense -= defAttack
     }
     if (attacker.defense < 1) {
       td.log += attacker.title.toUpperCase() + ' destroyed\n'
@@ -390,14 +390,18 @@ async function battle(td)
     //console.log(attacker, defender)
     if (attacker.defense < 1 && defender.defense > 0)
     {
-      td.winner = defender.discordId
-      td.loser = attacker.discordId
+      winner = defender.owner
+      loser = attacker.owner
+      td.winner = defender.owner.discordId
+      td.loser = attacker.owner.discordId
       break
     }
     else if (defender.defense < 1 && attacker.defense > 0)
     {
-      td.winner = attacker.discordId
-      td.loser = defender.discordId
+      winner = attacker.owner
+      loser = defender.owner
+      td.winner = attacker.owner.discordId
+      td.loser = defender.owner.discordId
       break
     }
     else if (defender.defense < 1 && attacker.defense < 1) break
@@ -411,13 +415,11 @@ async function battle(td)
   //update user stats
   if (td.winner)
   {
-    let winner = await getUser(td.winner)
-    let loser = await getUser(td.loser)
     td.log += winner.name + ' wins'
-    winner.tdWins = parseInt(winner.tdWins) +1
-    loser.tdLoses = parseInt(loser.tdLoses) +1
+    winner.tdWins = parseInt(winner.tdWins)   +1
+    loser.tdLoses = parseInt(loser.tdLoses)   +1
     winner.tdGames = parseInt(winner.tdGames) +1
-    loser.tdGames = parseInt(loser.tdGames) +1
+    loser.tdGames = parseInt(loser.tdGames)   +1
     await updateUser(winner)
     await updateUser(loser)
 
@@ -432,7 +434,6 @@ async function battle(td)
     await updateUser(user2)
     td.log += 'draw'
   }
-
 
   await updateTopDeck(td)
 
@@ -477,6 +478,11 @@ async function getTopDeckStats()
 
 }
 
+/**
+ *
+ * @param user
+ * @returns {string}
+ */
 function myTDRank(user)
 {
   return user.name + '(' +(user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString()+ ')\n\n' +

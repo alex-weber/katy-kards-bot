@@ -23,12 +23,10 @@ async function searchBlya() {
 
 async function topDeckGame() {
 
-    let player = await getUser('1')
+    let player = await getUser('22')
     //console.log(player)
-    player.tdWins = 100
-    await updateUser(player)
     await topDeck('1', player)
-    let player2 = await getUser('2')
+    let player2 = await getUser('44')
     //console.log(player)
     let td = await topDeck('1', player2)
     //const battleImage = await drawBattlefield(td)
@@ -47,7 +45,7 @@ async function raiting()
 
 }
 
-raiting().catch((e) => {console.log(e) })
+topDeckGame().catch((e) => {console.log(e) })
 
 
 
