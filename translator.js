@@ -90,7 +90,7 @@ function translate (language, msg)
                     '**!td [infantry | tank | artillery | fighter | bomber]**\n' +
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '**!ranking** - Top Deck Ranking\n' +
-                    '**myrank** - Your personal Top Deck Ranking with stats.\n\n' +
+                    '**!myrank** - Your personal Top Deck Ranking with stats.\n\n' +
                     '**!en** [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language'
             }
             //translate meta keywords from rus to eng
