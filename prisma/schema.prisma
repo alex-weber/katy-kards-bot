@@ -70,4 +70,6 @@ model Topdeck {
   winner    String?
   loser     String?
   log       String?
+  kredits   Int?
+  unitType  String?
 }

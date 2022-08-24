@@ -25,7 +25,7 @@ async function topDeckGame() {
 
     let player = await getUser('22')
     //console.log(player)
-    await topDeck('1', player)
+    await topDeck('1', player, 'td fighter')
     let player2 = await getUser('44')
     //console.log(player)
     let td = await topDeck('1', player2)

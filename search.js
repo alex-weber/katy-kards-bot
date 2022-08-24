@@ -231,4 +231,4 @@ async function handleSynonym(user, command)
 }
 
 //export
-module.exports = { getCards, getFiles, handleSynonym }
+module.exports = { getCards, getFiles, handleSynonym, getVariables }

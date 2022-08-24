@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
-const {languages} = require("./language");
 const prisma = new PrismaClient()
-
+const dictionary = require('./dictionary')
 /**
  *
  * @param data
@@ -230,9 +229,10 @@ async function getCardsDB(data)
  *
  * @param channelID
  * @param user
- * @returns {Promise<*>}
+ * @param command
+ * @returns {Promise<boolean|*>}
  */
-async function topDeck(channelID, user)
+async function topDeck(channelID, user, command = null)
 {
   //set all stats to zero if it's the first game
   if (!user.tdGames)
@@ -254,14 +254,26 @@ async function topDeck(channelID, user)
   finally(async () => { await prisma.$disconnect() })
   //create a new top deck game
   if (!topDeck) {
+    //check params in command
+    let data = {
+      channelID: channelID,
+      player1: user.discordId,
+      state: 'open',
+      log: ''
+    }
+    if (command)
+    {
+      const types = ['infantry', 'artillery', 'bomber', 'fighter', 'tank']
+      for (let i = 0; i < types.length; i++) {
+        if (command.search(types[i]) !== -1) {
+          data['unitType'] = types[i]
+          break
+        }
+      }
+    }
 
     return await prisma.topdeck.create({
-      data: {
-        channelID: channelID,
-        player1: user.discordId,
-        state: 'open',
-        log: ''
-      }
+      data: data
     })
   }
   //if it is the same player - do nothing
@@ -301,17 +313,26 @@ async function updateTopDeck(td)
 
 /**
  *
+ * @param td
  * @returns Card
  */
-async function getRandomCard()
+async function getRandomCard(td)
 {
+  let types = ['infantry', 'tank', 'artillery', 'fighter', 'bomber']
+  if (td.unitType && types.includes(td.unitType)) {
+    types = [td.unitType]
+  }
+  let data =
+  {
+    type: { in: types },
+    attack: {
+      gt: 0,
+    }
+  }
+  if (td.kredits !== null && td.kredits > -1) data['kredits'] = parameters.kredits
+
   let cards = await prisma.card.findMany({
-    where: {
-      type: { in: ['infantry', 'tank', 'artillery', 'fighter', 'bomber'] },
-      attack: {
-        gt: 0,
-      }
-    },
+    where: data
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
@@ -331,8 +352,8 @@ async function battle(td)
 {
 
   td.log = ''
-  td.card1 = await getRandomCard()
-  td.card2 = await getRandomCard()
+  td.card1 = await getRandomCard(td)
+  td.card2 = await getRandomCard(td)
   let user1 = await getUser(td.player1)
   let user2 = await getUser(td.player2)
   td.card1.owner = user1
