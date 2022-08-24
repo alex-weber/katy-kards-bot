@@ -15,6 +15,8 @@ const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats, myTDRank, } = 
 //random image service
 const randomImageService = require("random-image-api")
 const fs = require('fs')
+//default prefix
+let prefix = '!'
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -35,9 +37,9 @@ const client = new Client(
 //login event
 client.on('ready', () =>
 {
-    console.log(`Logged in as ${client.user.tag}!`,
+    console.log(`Logged in as ${client.user.tag}`,
       'Server count: ' + client.guilds.cache.size)
-    client.user.setActivity('KARDS search on ' + client.guilds.cache.size + ' servers')
+    client.user.setActivity('KARDS(' + client.guilds.cache.size + ') servers')
 })
 //main block
 try
@@ -55,8 +57,14 @@ try
 
             return
         }
+        //check for a different prefix
+        let serverPrefix = process.env['PREFIX_'+message.guildId]
+        if (serverPrefix !== undefined) {
+            prefix = serverPrefix
+            console.log('prefix is ->', prefix)
+        }
         //not a bot command
-        if (!message.content.startsWith('!')) {
+        if (!message.content.startsWith(prefix)) {
             //log the message
             let delimiter = ' -> '
             console.log(
@@ -75,7 +83,7 @@ try
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
         //remove the "!" sign and whitespaces from the beginning
-        let command = message.content.slice(1).trim().toLowerCase()
+        let command = message.content.replace(prefix, '').trim().toLowerCase()
         //check the user language
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
@@ -109,7 +117,10 @@ try
             return
         }
         //show online stats
-        if (message.content === '!!' || message.content === '!ingame' || message.content === '!online')
+        if (
+          message.content === prefix+prefix ||
+          message.content === prefix+'ingame' ||
+          message.content === prefix+'online')
         {
             stats.getStats().then(res => { message.reply(res) }).catch(error => { console.log(error) })
 
@@ -128,7 +139,7 @@ try
         }
         //top deck
         if (
-          message.content.startsWith('!td') &&
+          message.content.startsWith(prefix+'td') &&
           ( message.channel.name.search('bot') !== -1 ||
             dictionary.botwar.channels.includes( message.channelId.toString() )
           )

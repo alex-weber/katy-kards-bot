@@ -91,7 +91,9 @@ function translate (language, msg)
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '**!ranking** - Top Deck Ranking\n' +
                     '**!myrank** - Your personal Top Deck Ranking with stats.\n\n' +
-                    '**!en** [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language'
+                    '**!en** [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
+                    'If you want to support me: https://www.paypal.me/kropotor\n\n'
+
             }
             //translate meta keywords from rus to eng
             for (const [key, value] of Object.entries(reservedWords)) {

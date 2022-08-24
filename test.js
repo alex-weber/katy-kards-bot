@@ -6,6 +6,7 @@ const { drawBattlefield } = require('./canvasManager')
 const fs = require("fs");
 const { getHelp } = require('./translator.js')
 const translator = require("./translator");
+const dictionary = require("./dictionary");
 async function searchBlya() {
 
     //try to find the language and store it in the DB
@@ -54,6 +55,7 @@ async function raiting()
 
 //topDeckGame().catch((e) => {console.log(e) })
 console.log(translator.translate('en', 'help'))
+
 
 
 
