@@ -87,7 +87,7 @@ function translate (language, msg)
                     '**!usa infantry blitz 3k** - *find cards with all the attributes*\n' +
                     'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     'Advanced search requires at least 2 parameters. Every word should contain at least 3 chars.\n\n' +
-                    '**!td [infantry | tank | artillery | fighter | bomber]**' +
+                    '**!td [infantry | tank | artillery | fighter | bomber]**\n' +
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '**!ranking** - Top Deck Ranking\n' +
                     '**myrank** - Your personal Top Deck Ranking with stats.\n\n' +
@@ -105,59 +105,4 @@ function translate (language, msg)
     }
 }
 
-/**
- *
- * @param language
- * @returns {{image: {url: string}, thumbnail: {url: string}, color: number, footer: {icon_url: string, text: string}, author: {icon_url: string, name: string, url: string}, description: string, title: string, fields: [{inline: boolean, name: string, value: string},{inline: boolean, name: string, value: string},{inline: boolean, name: string, value: string}], url: string, timestamp: string}}
- */
-function getHelp(language)
-{
-
-    const image = 'https://userfiles.uptimerobot.com/img/1125952-1651958589.png'
-
-    return  {
-        color: 0x000000,
-        title: 'Help',
-        url: 'https://stats.uptimerobot.com/kBwWphkNQx/789189655',
-        author: {
-            name: 'Katyusha',
-            icon_url: 'https://cdn.discordapp.com/attachments/817700750083358722/1011218483624824842/katyusha.png',
-            url: 'https://github.com/alex-weber/',
-        },
-        description: 'KARDS Bot for searching and playing',
-        thumbnail: {
-            url: 'https://stats.uptimerobot.com/kBwWphkNQx/789189655',
-        },
-        fields: [
-            {
-                name: '!!',
-                value: 'Steam players online and stats',
-            },
-            {
-                name: '!en',
-                value: 'Switch the search language. Available: ' + languages.toString(),
-            },
-            {
-                name: '!usa infantry 3k 1c smokescreen 5/5',
-                value: 'Finds the US infantry with attack 5, defense 5, for 3 kredits, ' +
-                  '1 operation cost and smokescreen',
-            },
-            {
-                name: '!td',
-                value: 'The Top Deck Game. Works only in channels that contain the string "bot" in their name',
-            },
-
-        ],
-        image: {
-            url: image,
-        },
-        timestamp: new Date().toISOString(),
-        footer: {
-            text: 'Katyusha Kards Bot. All rights unreserved. Some other important legal shit here.',
-            icon_url: image,
-        }
-    }
-
-}
-
-module.exports = { translate, getHelp }
+module.exports = { translate }
