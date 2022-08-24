@@ -129,7 +129,7 @@ try
         }
         //top deck
         if (
-          command === 'td' &&
+          message.content.startsWith('!td') &&
           ( message.channel.name.search('bot') !== -1 ||
             dictionary.botwar.channels.includes( message.channelId.toString() )
           )
