@@ -87,7 +87,7 @@ function translate (language, msg)
                     '**!usa infantry blitz 3k** - *find cards with all the attributes*\n' +
                     'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     'Advanced search requires at least 2 parameters. Every word should contain at least 3 chars.\n\n' +
-                    '**!td [infantry | tank | artillery | fighter | bomber] ' +
+                    '**!td [infantry | tank | artillery | fighter | bomber]**' +
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '**!ranking** - Top Deck Ranking\n' +
                     '**myrank** - Your personal Top Deck Ranking with stats.\n\n' +
