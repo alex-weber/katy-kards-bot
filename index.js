@@ -137,11 +137,11 @@ try
         {
             console.log('starting top deck game')
             //let channel = client.channels.fetch(message.channelId)
-            let td = await topDeck(message.channelId, user)
+            let td = await topDeck(message.channelId, user, command)
             if (td.state === 'open') {
                 let unitType = 'Unit type: '
                 if (td.unitType) unitType += td.unitType
-                await message.reply('**' +unitType+ '**\nWaiting for another player...')
+                await message.reply('**' +unitType.toUpperCase()+ '**\nWaiting for another player...')
 
                 return
             }

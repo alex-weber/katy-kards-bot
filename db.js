@@ -254,13 +254,14 @@ async function topDeck(channelID, user, command = null)
   finally(async () => { await prisma.$disconnect() })
   //create a new top deck game
   if (!topDeck) {
-    //check params in command
+    //essential data
     let data = {
       channelID: channelID,
       player1: user.discordId,
       state: 'open',
       log: ''
     }
+    //check params in command
     if (command)
     {
       const types = ['infantry', 'artillery', 'bomber', 'fighter', 'tank']

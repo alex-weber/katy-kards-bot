@@ -24,11 +24,17 @@ async function searchBlya() {
 async function topDeckGame() {
 
     let player = await getUser('22')
-    //console.log(player)
-    await topDeck('1', player, 'td fighter')
+    let td = await topDeck('1', player, 'td ')
+    if (td.state === 'open') {
+
+        if (td.unitType) {
+            console.log('**' + td.unitType.toUpperCase()+ '** battle\n')
+        }
+    }
+    console.log('Waiting for another player...')
     let player2 = await getUser('44')
     //console.log(player)
-    let td = await topDeck('1', player2)
+    td = await topDeck('1', player2, 'td bomber')
     //const battleImage = await drawBattlefield(td)
     console.log(td.log)
 
