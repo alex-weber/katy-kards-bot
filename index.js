@@ -16,7 +16,7 @@ const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats, myTDRank, } = 
 const randomImageService = require("random-image-api")
 const fs = require('fs')
 //default prefix
-let prefix = '!'
+let defaultPrefix = '!'
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -63,6 +63,7 @@ try
             prefix = serverPrefix
             console.log('prefix is ->', prefix)
         }
+        else prefix = defaultPrefix
         //not a bot command
         if (!message.content.startsWith(prefix)) {
             //log the message
