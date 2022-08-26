@@ -2,6 +2,7 @@
 const express = require('express')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
+const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 //custom modules
 const translator = require('./translator.js')
 const stats = require('./stats')
@@ -45,7 +46,13 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
-        let prefix = '!' //default
+        let prefix = defaultPrefix
+        //check for a different prefix
+        let serverPrefix = process.env['PREFIX_'+message.guildId]
+        if (serverPrefix !== undefined) {
+            prefix = serverPrefix
+            console.log('prefix is set to ->', prefix)
+        }
         //not a bot command or bot
         if (!message.content.startsWith(prefix) || message.author.bot) {
 
@@ -60,13 +67,7 @@ try
 
             return
         }
-        //check for a different prefix
 
-        let serverPrefix = process.env['PREFIX_'+message.guildId]
-        if (serverPrefix !== undefined) {
-            prefix = serverPrefix
-            console.log('prefix is set to ->', prefix)
-        }
         //it's a bot command
         console.log('bot command:', message.author.username, '->', message.content)
         //set username
@@ -171,62 +172,62 @@ try
         if (command.length < minStrLen)
         {
             await message.reply('Minimum ' + minStrLen + ' chars, please')
+
+            return
         }
-        //else search on KARDS website
-        else
+        //search on KARDS website
+        //check for synonyms
+        let syn = await getSynonym(command)
+        if (syn) {
+            //check if there is a image link
+            if (syn.value.startsWith('https')) {
+                await message.reply({files: [syn.value]})
+
+                return
+            }
+            else command = syn.value
+        }
+        else if (command in dictionary.synonyms)
         {
-            //check for synonyms
-            let syn = await getSynonym(command)
-            if (syn) {
-                //check if there is a image link
-                if (syn.value.startsWith('https')) {
-                    await message.reply({files: [syn.value]})
+            command = dictionary.synonyms[command]
+            console.log('synonym found for ' + command)
+        }
+        let variables = {
+            'language': language,
+            'q': command,
+            'showSpawnables': true,
+        }
+        const searchResult = await search.getCards(variables)
 
-                    return
-                }
-                else command = syn.value
-            }
-            else if (command in dictionary.synonyms)
-            {
-                command = dictionary.synonyms[command]
-                console.log('synonym found for ' + command)
-            }
-            let variables = {
-                'language': language,
-                'q': command,
-                'showSpawnables': true,
-            }
-            const searchResult = await search.getCards(variables)
+        if (!searchResult) {
+            await message.reply(translator.translate(language, 'error'))
 
-            if (!searchResult) {
-                await message.reply(translator.translate(language, 'error'))
+            return
+        }
+        const counter = searchResult.counter
+        if (!counter)
+        {
+            //get a random cat image for no result
+            const catImage = await randomImageService.nekos('meow')
+            await message.reply(
+              {content: translator.translate(language, 'noresult'),
+                  files: [catImage.toString()]
+              })
 
-                return
-            }
-            const counter = searchResult.counter
-            if (!counter)
-            {
-                //get a random cat image for no result
-                const catImage = await randomImageService.nekos('meow')
-                await message.reply(
-                  {content: translator.translate(language, 'noresult'),
-                      files: [catImage.toString()]
-                  })
+            return
+        }
+        //if any cards are found - attach them
+        let content = translator.translate(language, 'search') + ': ' + counter
+        //warn that there are more cards found
+        if (counter > limit) {
+            content += translator.translate(language, 'limit') + limit
+        }
+        //attach found images
+        const files = search.getFiles(searchResult, language)
+        //reply to user
+        await message.reply({content: content, files: files})
+        console.log(counter + ' card(s) found', files)
 
-                return
-            }
-            //if any cards are found - attach them
-            let content = translator.translate(language, 'search') + ': ' + counter
-            //warn that there are more cards found
-            if (counter > limit) {
-                content += translator.translate(language, 'limit') + limit
-            }
-            //attach found images
-            const files = search.getFiles(searchResult, language)
-            //reply to user
-            await message.reply({content: content, files: files})
-            console.log(counter + ' card(s) found', files)
-        } //end of search
     }) // end of onMessageCreate
     //start bot session
     client.login(process.env.DISCORD_TOKEN).then( () => { console.log('client started') })

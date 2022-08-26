@@ -56,7 +56,9 @@ async function raiting()
 
 }
 
-topDeckGame().catch((e) => {console.log(e) })
+//topDeckGame().catch((e) => {console.log(e) })
+const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
+console.log(defaultPrefix)
 
 
 
