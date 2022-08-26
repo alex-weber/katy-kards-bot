@@ -93,7 +93,7 @@ function translate (language, msg)
                 '**!myrank** - Your personal Top Deck Ranking with stats.\n\n' +
                 '**!en** [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
                 'Uptime stats: https://stats.uptimerobot.com/kBwWphkNQx\n' +
-                'If you want to support me: https://www.paypal.me/kropotor'
+                'The hosting costs 7$ a month.\n' + 'If you want to support me: https://www.paypal.me/kropotor'
 
             }
             //translate meta keywords from rus to eng

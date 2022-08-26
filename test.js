@@ -26,7 +26,7 @@ async function searchBlya() {
 async function topDeckGame() {
 
     let player = await getUser('22')
-    let td = await topDeck('1', player, 'td ')
+    let td = await topDeck('1', player, 'td tank')
     if (td.state === 'open') {
 
         if (td.unitType) {
@@ -36,7 +36,7 @@ async function topDeckGame() {
     console.log('Waiting for another player...')
     let player2 = await getUser('44')
     //console.log(player)
-    td = await topDeck('1', player2, 'td bomber')
+    td = await topDeck('1', player2, 'td')
     //const battleImage = await drawBattlefield(td)
     console.log(td.log)
 
@@ -53,8 +53,8 @@ async function raiting()
 
 }
 
-//topDeckGame().catch((e) => {console.log(e) })
-console.log(translator.translate('en', 'help'))
+topDeckGame().catch((e) => {console.log(e) })
+
 
 
 
