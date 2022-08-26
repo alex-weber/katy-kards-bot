@@ -1,12 +1,15 @@
 const search = require("./search")
-const {getUser, updateUser, topDeck, getSynonym, getTopDeckStats, myTDRank} = require("./db")
+const {getUser, getTopDeckStats} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language")
 const {handleSynonym} = require("./search")
 const { drawBattlefield } = require('./canvasManager')
-const fs = require("fs");
+const fs = require("fs")
 const { getHelp } = require('./translator.js')
-const translator = require("./translator");
-const dictionary = require("./dictionary");
+const translator = require("./translator")
+const dictionary = require("./dictionary")
+const { topDeck, myTDRank } = require("./topDeck")
+
+
 async function searchBlya() {
 
     //try to find the language and store it in the DB
@@ -53,7 +56,7 @@ async function raiting()
 
 }
 
-topDeckGame().catch((e) => {console.log(e) })
+raiting().catch((e) => {console.log(e) })
 
 
 

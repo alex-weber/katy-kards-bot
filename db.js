@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
-const dictionary = require('./dictionary')
+
 /**
  *
  * @param data
@@ -14,47 +14,6 @@ async function createUser(data)
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
-}
-
-/**
- *
- * @param User
- * @param content
- * @returns {Promise<*>}
- */
-async function createMessage(User, content)
-{
-
-  return await prisma.message.create({
-    data: {
-      authorId: User.id,
-      content: content,
-    }
-  }).
-  catch((e) => { throw e }).
-  finally(async () => { await prisma.$disconnect() })
-
-}
-
-/**
- *
- * @param User
- * @returns {Promise<*>}
- */
-async function getMessages(User)
-{
-
-  return await prisma.message.findMany({
-    where: {
-      authorId: User.id,
-      content: {
-        not: null,
-      },
-    },
-  }).
-  catch((e) => { throw e }).
-  finally(async () => { await prisma.$disconnect() })
-
 }
 
 /**
@@ -84,7 +43,6 @@ async function getUser(discordId)
   }
 
   return User
-
 }
 
 /**
@@ -101,7 +59,6 @@ async function updateUser(User)
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
-
 }
 
 /**
@@ -228,23 +185,11 @@ async function getCardsDB(data)
 /**
  *
  * @param channelID
- * @param user
- * @param command
- * @returns {Promise<boolean|*>}
+ * @returns topDeck
  */
-async function topDeck(channelID, user, command = null)
+async function getOpenTopDeck(channelID)
 {
-  //set all stats to zero if it's the first game
-  if (!user.tdGames)
-  {
-    user.tdGames = 0
-    user.tdWins = 0
-    user.tdLoses = 0
-    user.tdDraws = 0
-    await updateUser(user)
-  }
-
-  let topDeck = await prisma.topdeck.findFirst({
+  return await prisma.topdeck.findFirst({
     where: {
       state: 'open',
       channelID: channelID,
@@ -252,43 +197,21 @@ async function topDeck(channelID, user, command = null)
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
-  //create a new top deck game
-  if (!topDeck) {
-    //essential data
-    let data = {
-      channelID: channelID,
-      player1: user.discordId,
-      state: 'open',
-      log: ''
-    }
-    //check params in command
-    if (command)
-    {
-      const types = ['infantry', 'artillery', 'bomber', 'fighter', 'tank']
-      for (let i = 0; i < types.length; i++) {
-        if (command.search(types[i]) !== -1) {
-          data['unitType'] = types[i]
-          break
-        }
-      }
-    }
+}
+
+/**
+ *
+ * @param data
+ * @returns {Promise<*>}
+ */
+async function createTopDeck(data)
+{
 
     return await prisma.topdeck.create({
       data: data
-    })
-  }
-  //if it is the same player - do nothing
-  else if (user.discordId === topDeck.player1) {
-
-    return topDeck
-  }
-  //here comes the second player, so let's start the battle
-  topDeck.player2 = user.discordId
-  topDeck.state = 'running'
-  await updateTopDeck(topDeck)
-
-  return await battle(topDeck)
-
+    }).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
 }
 
 /**
@@ -341,129 +264,11 @@ async function getRandomCard(td)
   let position = Math.floor(Math.random() * cards.length)
 
   return cards[position]
-
 }
 
 /**
  *
- * @param td
- * @returns {Promise<boolean>}
- */
-async function battle(td)
-{
-
-  td.log = ''
-  td.card1 = await getRandomCard(td)
-  td.card2 = await getRandomCard(td)
-  let user1 = await getUser(td.player1)
-  let user2 = await getUser(td.player2)
-  td.card1.owner = user1
-  td.card2.owner = user2
-  let attacker = td.card1
-  let defender = td.card2
-  //the card with the lowest kredits attacks first. Otherwise, with blitz.
-  if ((td.card2.kredits < td.card1.kredits) ||
-      (td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1))
-  {
-    attacker = td.card2
-    defender = td.card1
-    td.log += attacker.title.toUpperCase() + ' costs less or has blitz, so it attacks first\n'
-  }
-  //the battle begins
-  let winner
-  let loser
-  while (attacker.defense > 0 || defender.defense > 0)
-  {
-    td.log += attacker.title.toUpperCase() + ' ' +
-      attacker.attack + '/' +attacker.defense+ ' -> ' +
-      defender.title.toUpperCase() + ' ' +
-      defender.attack + '/' +defender.defense+ '\n'
-    //hande damage
-    let attack = attacker.attack
-    let defAttack = defender.attack
-    //check for heavy armor
-    if (attacker.attributes.search('heavyArmor1') !== -1) defAttack--
-    if (attacker.attributes.search('heavyArmor2')!== -1) defAttack = defAttack - 2
-    if (defender.attributes.search('heavyArmor1') !== -1) attack--
-    if (defender.attributes.search('heavyArmor2')!== -1) attack = attack - 2
-    if (attack < 0) attack = 0
-    //check for ambush
-    if (defender.attributes.search('ambush')!== -1 && defAttack >= attacker.defense)
-    {
-      console.log('ambush!')
-      attack = 0
-    }
-    //deal damage
-    defender.defense -= attack
-    if (defender.defense < 1) {
-      td.log += defender.title.toUpperCase() + ' destroyed\n'
-    }
-    //count attacker's heavy armor on reverse damage
-    if (
-        (attacker.type === 'bomber' && defender.type === 'fighter') ||
-        (defender.type !== 'bomber' && attacker.type !== 'artillery' && attacker.type !== 'bomber')
-       )
-    {
-      attacker.defense -= defAttack
-    }
-    if (attacker.defense < 1) {
-      td.log += attacker.title.toUpperCase() + ' destroyed\n'
-    }
-    console.log(attack, defAttack)
-    if (attacker.defense < 1 && defender.defense > 0)
-    {
-      winner = defender.owner
-      loser = attacker.owner
-      td.winner = defender.owner.discordId
-      td.loser = attacker.owner.discordId
-      break
-    }
-    else if (defender.defense < 1 && attacker.defense > 0)
-    {
-      winner = attacker.owner
-      loser = defender.owner
-      td.winner = attacker.owner.discordId
-      td.loser = defender.owner.discordId
-      break
-    }
-    else if (defender.defense < 1 && attacker.defense < 1) break
-    //switch sides and repeat
-    let tmp = attacker
-    attacker = defender
-    defender = tmp
-  }
-  //finish the battle
-  td.state = 'finished'
-  //update user stats
-  if (td.winner)
-  {
-    td.log += winner.name + ' wins'
-    winner.tdWins = parseInt(winner.tdWins)   +1
-    loser.tdLoses = parseInt(loser.tdLoses)   +1
-    winner.tdGames = parseInt(winner.tdGames) +1
-    loser.tdGames = parseInt(loser.tdGames)   +1
-    await updateUser(winner)
-    await updateUser(loser)
-  }
-  else
-  {
-    user1.tdDraws = parseInt(user1.tdDraws) +1
-    user2.tdDraws = parseInt(user2.tdDraws) +1
-    user1.tdGames = parseInt(user1.tdGames) +1
-    user2.tdGames = parseInt(user2.tdGames) +1
-    await updateUser(user1)
-    await updateUser(user2)
-    td.log += 'draw'
-  }
-
-  await updateTopDeck(td)
-
-  return td
-}
-
-/**
- *
- * @returns {Promise<boolean|{color: number, description: string, title: string}>}
+ * @returns String
  */
 async function getTopDeckStats()
 {
@@ -496,37 +301,19 @@ async function getTopDeckStats()
   })
 
   return answer
-
-}
-
-/**
- *
- * @param user
- * @returns {string}
- */
-function myTDRank(user)
-{
-  return user.name + '(' +(user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString()+ ')\n\n' +
-    'Games: ' + user.tdGames.toString() + '\n' +
-    'Wins: ' + user.tdWins.toString() + '\n' +
-    'Draws: ' + user.tdDraws.toString() + '\n' +
-    'Loses: ' + user.tdLoses.toString()
-
 }
 
 //exports
 module.exports = {
   getUser,
-  createMessage,
-  getMessages,
   updateUser,
+  createTopDeck,
+  updateTopDeck,
+  getOpenTopDeck,
+  getTopDeckStats,
   getSynonym,
   createSynonym,
   createCard,
   getCardsDB,
-  topDeck,
-  getTopDeckStats,
-  myTDRank,
   getRandomCard,
-  updateTopDeck
 }

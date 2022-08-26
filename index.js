@@ -11,11 +11,12 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const { getUser, updateUser, getSynonym, topDeck, getTopDeckStats, myTDRank, } = require("./db")
+const { getUser, updateUser, getSynonym, getTopDeckStats } = require("./db")
 //random image service
-const randomImageService = require("random-image-api")
+const randomImageService = require('random-image-api')
 const fs = require('fs')
-
+//topDeck game
+const { topDeck, myTDRank }  = require('./topDeck')
 
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
@@ -23,8 +24,8 @@ app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
 const { Client, Intents, Permissions } = require('discord.js')
-const { handleSynonym } = require("./search");
-const { drawBattlefield } = require("./canvasManager");
+const { handleSynonym } = require('./search');
+const { drawBattlefield } = require('./canvasManager');
 const client = new Client(
   {
     intents: [
@@ -44,14 +45,17 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
-        //do not react to bots
-        if(message.author.bot) return
+        //not a bot command or bot
+        if (!message.content.startsWith(prefix) || message.author.bot) {
+
+            return
+        }
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
         if (!permissions.has(Permissions.FLAGS.ATTACH_FILES) || !permissions.has(Permissions.FLAGS.SEND_MESSAGES))
         {
-            console.log('no permissions.')
+            console.log('no write permissions.')
 
             return
         }
@@ -60,24 +64,10 @@ try
         let serverPrefix = process.env['PREFIX_'+message.guildId]
         if (serverPrefix !== undefined) {
             prefix = serverPrefix
-            console.log('prefix is ->', prefix)
+            console.log('prefix is set to ->', prefix)
         }
-        //not a bot command
-        if (!message.content.startsWith(prefix)) {
-            //log the message
-            let delimiter = ' -> '
-            console.log(
-              message.guild.name + delimiter +
-              message.channel.name + delimiter +
-              message.author.tag + delimiter +
-              message.content)
-
-            return
-        }
-
-        console.log('bot command:', message.content, ' ->',
-          message.guild.name, message.channel.name,
-          message.author.username, )
+        //it's a bot command
+        console.log('bot command:', message.author.username, '->', message.content)
         //set username
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
@@ -87,7 +77,7 @@ try
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
         await updateUser(user)
-        //show help
+        //handle command
         if (command === 'help')
         {
             await message.reply(translator.translate(language, 'help'))
@@ -95,7 +85,7 @@ try
             return
         }
         //get top 9 TD ranking
-        if (command === 'ranking')
+        if (command === 'ranking' || command === 'rankings')
         {
             await message.reply(await getTopDeckStats())
 
@@ -123,13 +113,13 @@ try
         {
             let syn = await handleSynonym(user, command)
             if (syn) {
-                await message.reply(syn.key, 'created')
-                console.log('created synonym:', syn.key, ' -> ', syn.value)
+                await message.reply(syn.key + ' created')
+                console.log('created synonym:', syn.key)
             }
 
             return
         }
-        //top deck
+        //top deck game only in special channels
         if (
           message.content.startsWith(prefix+'td') &&
           ( message.channel.name.search('bot') !== -1 ||
@@ -172,9 +162,7 @@ try
             message.reply(
                 translator.translate(language, 'langChange') + language.toUpperCase()
             ).then( () =>  {
-                console.log('lang changed to ' +
-                    language.toUpperCase() + ' for ' +
-                    message.author.username)
+                console.log('lang changed to', language.toUpperCase(), 'for', message.author.username)
             })
 
             return
@@ -182,18 +170,15 @@ try
         if (command.length < minStrLen)
         {
             await message.reply('Minimum ' + minStrLen + ' chars, please')
-
         }
         //else search on KARDS website
         else
         {
             //check for synonyms
             let syn = await getSynonym(command)
-            console.log(syn)
-
             if (syn) {
                 //check if there is a image link
-                if (syn.value.startsWith('http')) {
+                if (syn.value.startsWith('https')) {
                     await message.reply({files: [syn.value]})
 
                     return
@@ -206,9 +191,9 @@ try
                 console.log('synonym found for ' + command)
             }
             let variables = {
-                "language": language,
-                "q": command,
-                "showSpawnables": true,
+                'language': language,
+                'q': command,
+                'showSpawnables': true,
             }
             const searchResult = await search.getCards(variables)
 
@@ -221,7 +206,7 @@ try
             if (!counter)
             {
                 //get a random cat image for no result
-                const catImage = await randomImageService.nekos("meow")
+                const catImage = await randomImageService.nekos('meow')
                 await message.reply(
                   {content: translator.translate(language, 'noresult'),
                       files: [catImage.toString()]
@@ -240,7 +225,6 @@ try
             //reply to user
             await message.reply({content: content, files: files})
             console.log(counter + ' card(s) found', files)
-
         } //end of search
     }) // end of onMessageCreate
     //start bot session
