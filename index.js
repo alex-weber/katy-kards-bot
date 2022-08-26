@@ -11,7 +11,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const { getLanguageByInput, languages, defaultLanguage }= require('./language.js')
 const dictionary = require('./dictionary')
 //database
-const {getUser, updateUser, getSynonym, topDeck, getTopDeckStats, myTDRank, } = require("./db")
+const { getUser, updateUser, getSynonym, topDeck, getTopDeckStats, myTDRank, } = require("./db")
 //random image service
 const randomImageService = require("random-image-api")
 const fs = require('fs')
@@ -22,9 +22,9 @@ app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
 
 // ================= DISCORD JS ===================
-const {Client, Intents, Permissions} = require('discord.js')
-const {handleSynonym} = require("./search");
-const {drawBattlefield} = require("./canvasManager");
+const { Client, Intents, Permissions } = require('discord.js')
+const { handleSynonym } = require("./search");
+const { drawBattlefield } = require("./canvasManager");
 const client = new Client(
   {
     intents: [
@@ -36,8 +36,7 @@ const client = new Client(
 //login event
 client.on('ready', () =>
 {
-    console.log(`Logged in as ${client.user.tag}`,
-      'Server count: ' + client.guilds.cache.size)
+    console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
     client.user.setActivity('KARDS(' + client.guilds.cache.size + ') servers')
 })
 //main block
@@ -76,25 +75,18 @@ try
             return
         }
 
-        console.log('received a bot command:',
+        console.log('bot command:', message.content, ' ->',
           message.guild.name, message.channel.name,
-          message.author.username, message.content)
+          message.author.username, )
         //set username
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
-        //remove the "!" sign and whitespaces from the beginning
+        //remove the prefix and whitespaces from the beginning
         let command = message.content.replace(prefix, '').trim().toLowerCase()
         //check the user language
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
         await updateUser(user)
-        //golden signal
-        if (command === 'golden signal' || command === 'gs')
-        {
-            await message.reply({content: 'here you are', files: ['https://i.imgur.com/IfBw6Eu.jpeg'] })
-
-            return
-        }
         //show help
         if (command === 'help')
         {
