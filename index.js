@@ -123,7 +123,7 @@ try
         {
             let syn = await handleSynonym(user, command)
             if (syn) {
-                await message.reply(syn.key, ' -> ', syn.value)
+                await message.reply(syn.key, 'created')
                 console.log('created synonym:', syn.key, ' -> ', syn.value)
             }
 
@@ -194,7 +194,7 @@ try
             if (syn) {
                 //check if there is a image link
                 if (syn.value.startsWith('http')) {
-                    await message.reply({content: syn.key, files: [syn.value]})
+                    await message.reply({files: [syn.value]})
 
                     return
                 }
