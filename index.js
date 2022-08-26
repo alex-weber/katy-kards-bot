@@ -45,6 +45,7 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
+        let prefix = '!' //default
         //not a bot command or bot
         if (!message.content.startsWith(prefix) || message.author.bot) {
 
@@ -60,7 +61,7 @@ try
             return
         }
         //check for a different prefix
-        let prefix = '!' //default
+
         let serverPrefix = process.env['PREFIX_'+message.guildId]
         if (serverPrefix !== undefined) {
             prefix = serverPrefix
