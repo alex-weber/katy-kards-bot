@@ -146,13 +146,13 @@ async function battle(td)
   //finish the battle
   td.state = 'finished'
   //update user stats
+  user1.tdGames = parseInt(user1.tdGames) +1
+  user2.tdGames = parseInt(user2.tdGames) +1
   if (td.winner)
   {
     td.log += winner.name + ' wins'
     winner.tdWins = parseInt(winner.tdWins)   +1
     loser.tdLoses = parseInt(loser.tdLoses)   +1
-    winner.tdGames = parseInt(winner.tdGames) +1
-    loser.tdGames = parseInt(loser.tdGames)   +1
     await updateUser(winner)
     await updateUser(loser)
   }
@@ -160,12 +160,11 @@ async function battle(td)
   {
     user1.tdDraws = parseInt(user1.tdDraws) +1
     user2.tdDraws = parseInt(user2.tdDraws) +1
-    user1.tdGames = parseInt(user1.tdGames) +1
-    user2.tdGames = parseInt(user2.tdGames) +1
     await updateUser(user1)
     await updateUser(user2)
     td.log += 'draw'
   }
+
 
   await updateTopDeck(td)
 

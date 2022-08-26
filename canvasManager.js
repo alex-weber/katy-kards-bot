@@ -36,14 +36,12 @@ async function drawBattlefield(topDeck)
   const user2 = await getUser(topDeck.player2)
   context.fillText(user1.name, padding, 40)
   context.fillText(user2.name, 440, 40)
-
   // Write the image to file
   const buffer = canvas.toBuffer("image/png")
   const file = "./tmp/" +topDeck.id+ ".png"
   fs.writeFileSync(file, buffer)
 
   return file
-
 }
 
 module.exports = { drawBattlefield }
