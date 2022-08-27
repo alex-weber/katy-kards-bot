@@ -57,8 +57,9 @@ async function raiting()
 }
 
 //topDeckGame().catch((e) => {console.log(e) })
-const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
-console.log(defaultPrefix)
+let unitType = ''
+//unitType = 'artillery' + ' battle\n'
+console.log( unitType.toUpperCase() + 'Waiting for another player...')
 
 
 
