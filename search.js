@@ -217,7 +217,7 @@ async function handleSynonym(user, command)
         return null
     }
     //allow also numbers slashes and dots
-    allowedChars = /^[\sa-zA-Z:0-9\/\.]+$/
+    allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/
     if (!allowedChars.test(value)) {
 
         return null
@@ -231,4 +231,4 @@ async function handleSynonym(user, command)
 }
 
 //export
-module.exports = { getCards, getFiles, handleSynonym, getVariables }
+module.exports = { getCards, getFiles, handleSynonym }
