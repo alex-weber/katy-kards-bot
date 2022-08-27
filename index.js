@@ -133,9 +133,9 @@ try
             //let channel = client.channels.fetch(message.channelId)
             let td = await topDeck(message.channelId, user, command)
             if (td.state === 'open') {
-                let unitType = ''
-                if (td.unitType) unitType += td.unitType + ' battle\n'
-                await message.reply( +unitType.toUpperCase()+ 'Waiting for another player...')
+                let unitType = '\n'
+                if (td.unitType) unitType = td.unitType + ' battle\n'.toUpperCase()
+                await message.reply( unitType + 'Waiting for another player...')
 
                 return
             }
