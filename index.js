@@ -51,7 +51,7 @@ try
         let serverPrefix = process.env['PREFIX_'+message.guildId]
         if (serverPrefix !== undefined) {
             prefix = serverPrefix
-            console.log('prefix is set to ->', prefix)
+            console.log('prefix is set to', prefix, 'for', message.guild.name)
         }
         //not a bot command or bot
         if (!message.content.startsWith(prefix) || message.author.bot) {

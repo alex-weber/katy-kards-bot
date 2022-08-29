@@ -98,29 +98,30 @@ async function battle(td)
     if (defender.attributes.search('heavyArmor1') !== -1) attack--
     if (defender.attributes.search('heavyArmor2')!== -1) attack = attack - 2
     if (attack < 0) attack = 0
-    //check for ambush
-    if (defender.attributes.search('ambush')!== -1 && defAttack >= attacker.defense)
-    {
-      console.log('ambush!')
-      attack = 0
-    }
+
     //deal damage
     defender.defense -= attack
     if (defender.defense < 1) {
       td.log += defender.title.toUpperCase() + ' destroyed\n'
     }
-    //count attacker's heavy armor on reverse damage
+    //reverse damage
     if (
       (attacker.type === 'bomber' && defender.type === 'fighter') ||
       (defender.type !== 'bomber' && attacker.type !== 'artillery' && attacker.type !== 'bomber')
     )
     {
+      //check for ambush
+      if (defender.attributes.search('ambush')!== -1 && defAttack >= attacker.defense)
+      {
+        console.log('ambush!')
+        attack = 0
+      }
       attacker.defense -= defAttack
     }
     if (attacker.defense < 1) {
       td.log += attacker.title.toUpperCase() + ' destroyed\n'
     }
-    console.log(attack, defAttack)
+    //console.log(attack, defAttack)
     if (attacker.defense < 1 && defender.defense > 0)
     {
       winner = defender.owner
