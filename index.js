@@ -123,7 +123,7 @@ try
         }
         //top deck game only in special channels
         if (
-          message.content.startsWith(prefix+'td') &&
+          command.startsWith('td') &&
           ( message.channel.name.search('bot') !== -1 ||
             dictionary.botwar.channels.includes( message.channelId.toString() )
           )
