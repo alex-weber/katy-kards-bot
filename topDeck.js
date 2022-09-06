@@ -98,12 +98,6 @@ async function battle(td)
     if (defender.attributes.search('heavyArmor1') !== -1) attack--
     if (defender.attributes.search('heavyArmor2')!== -1) attack = attack - 2
     if (attack < 0) attack = 0
-
-    //deal damage
-    defender.defense -= attack
-    if (defender.defense < 1) {
-      td.log += defender.title.toUpperCase() + ' destroyed\n'
-    }
     //reverse damage
     if (
       (attacker.type === 'bomber' && defender.type === 'fighter') ||
@@ -118,6 +112,12 @@ async function battle(td)
       }
       attacker.defense -= defAttack
     }
+    //deal damage
+    defender.defense -= attack
+    if (defender.defense < 1) {
+      td.log += defender.title.toUpperCase() + ' destroyed\n'
+    }
+
     if (attacker.defense < 1) {
       td.log += attacker.title.toUpperCase() + ' destroyed\n'
     }

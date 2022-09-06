@@ -29,7 +29,7 @@ async function searchBlya() {
 async function topDeckGame() {
 
     let player = await getUser('22')
-    let td = await topDeck('1', player, 'td infantry')
+    let td = await topDeck('1', player, 'td')
     if (td.state === 'open') {
 
         if (td.unitType) {
