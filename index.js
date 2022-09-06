@@ -39,7 +39,7 @@ const client = new Client(
 client.on('ready', () =>
 {
     console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
-    client.user.setActivity('KARDS(' + client.guilds.cache.size + ') servers')
+    client.user.setActivity('on duty for ' + client.guilds.cache.size + ' servers')
 })
 //main block
 try
