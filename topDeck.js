@@ -64,6 +64,9 @@ async function battle(td)
 {
   //init
   td.log = ''
+  let kredits = Math.floor(Math.random() * 7) +1
+  if (kredits > 7) kredits = 7
+  td.kredits = kredits
   td.card1 = await getRandomCard(td)
   td.card2 = await getRandomCard(td)
   let user1 = await getUser(td.player1)

@@ -58,8 +58,8 @@ async function raiting()
     await handleSynonym(user, 'hui i pizda=igrali v poezda')
 
 }
-raiting().catch((e) => {console.log(e) })
-
+topDeckGame().catch((e) => {console.log(e) })
+//\\
 
 
 

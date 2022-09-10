@@ -251,9 +251,9 @@ async function getRandomCard(td)
     type: { in: types },
     attack: {
       gt: 0,
-    }
+    },
+    kredits: td.kredits
   }
-  if (td.kredits !== null && td.kredits > -1) data['kredits'] = parameters.kredits
 
   let cards = await prisma.card.findMany({
     where: data
