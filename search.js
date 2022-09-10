@@ -211,7 +211,7 @@ async function handleSynonym(user, command)
     console.log(key, value)
 
     //allow only a-z chars
-    let allowedChars = /^[\sa-z]+$/
+    let allowedChars = /^[\sa-z0-9]+$/
     if (!allowedChars.test(key)) {
 
         return null
