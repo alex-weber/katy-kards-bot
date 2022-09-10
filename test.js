@@ -1,5 +1,5 @@
 const search = require("./search")
-const {getUser, getTopDeckStats} = require("./db")
+const {getUser, getTopDeckStats, updateUser} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language")
 const {handleSynonym} = require("./search")
 const { drawBattlefield } = require('./canvasManager')
@@ -50,13 +50,16 @@ async function topDeckGame() {
 async function raiting()
 {
     //await topDeckGame()
-    console.log(await getTopDeckStats())
-    let user = await getUser('1')
-    console.log(myTDRank(user))
+    //console.log(await getTopDeckStats())
+    let user = await getUser('44')
+    user.role = 'VIP'
+    await updateUser(user)
+    console.log(user)
+    await handleSynonym(user, 'hui i pizda=igrali v poezda')
 
 }
+raiting().catch((e) => {console.log(e) })
 
-topDeckGame().catch((e) => {console.log(e) })
 
 
 
