@@ -86,11 +86,12 @@ async function getSynonym(key)
  */
 async function createSynonym(key, value)
 {
+  if (typeof key !== 'string' || typeof value !== 'string') return
 
   return await prisma.synonym.create({
     data: {
-      key: key.toString(),
-      value: value.toString(),
+      key: key,
+      value: value,
     },
   }).
   catch((e) => { throw e }).
@@ -105,11 +106,12 @@ async function createSynonym(key, value)
  */
 async function updateSynonym(key, value)
 {
+  if (typeof value !== 'string') return
 
   return await prisma.synonym.update({
     where: { key: key },
     data: {
-      value: value.toString(),
+      value: value,
     },
   }).
   catch((e) => { throw e }).
