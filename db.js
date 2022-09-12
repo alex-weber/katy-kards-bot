@@ -99,6 +99,25 @@ async function createSynonym(key, value)
 
 /**
  *
+ * @param key
+ * @param value
+ * @returns {Promise<*>}
+ */
+async function updateSynonym(key, value)
+{
+
+  return await prisma.synonym.update({
+    where: { key: key },
+    data: {
+      value: value.toString(),
+    },
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ *
  * @param card
  * @returns {Promise<*>}
  */
@@ -313,6 +332,7 @@ module.exports = {
   getTopDeckStats,
   getSynonym,
   createSynonym,
+  updateSynonym,
   createCard,
   getCardsDB,
   getRandomCard,
