@@ -209,10 +209,15 @@ try
         {
             //get a random cat image for no result
             const catImage = await randomImageService.nekos('meow')
-            await message.reply(
-              {content: translator.translate(language, 'noresult'),
-                  files: [catImage.toString()]
-              })
+            try {
+                await message.reply(
+                  {content: translator.translate(language, 'noresult'),
+                      files: [catImage.toString()]
+                  })
+            } catch (e) {
+                console.log(e)
+            }
+
 
             return
         }

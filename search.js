@@ -15,8 +15,7 @@ const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
 function getVariables(variables) {
 
     const words = variables.q.split(' ')
-    //allow to search with at least 2 attributes
-    if (words.length < 2) return false
+    if (words.length < 1) return false
     //unset the search string
     variables.q = ''
     for (let i = 0; i < words.length; i++) {
@@ -33,6 +32,15 @@ function getVariables(variables) {
 
         if (typeof word !== 'string') return variables
 
+        switch (word) {
+            case 'us':
+                word = 'usa'
+            break
+            case 'french':
+                word = 'france'
+            break
+
+        }
         let faction = getAttribute(word, dictionary.faction)
         if (faction) {
             variables.faction = faction
