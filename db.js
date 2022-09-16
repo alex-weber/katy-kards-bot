@@ -37,6 +37,10 @@ async function getUser(discordId)
       discordId: discordId,
       language: 'en',
       status: 'active',
+      tdGames: 0,
+      tdWins: 0,
+      tdDraws: 0,
+      tdLoses: 0,
     }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })

@@ -28,7 +28,9 @@ async function searchBlya() {
 
 async function topDeckGame() {
 
-    let player = await getUser('22')
+    let player = await getUser('124')
+
+    return
     let td = await topDeck('1', player, 'td')
     if (td.state === 'open') {
 
@@ -58,7 +60,7 @@ async function raiting()
     await handleSynonym(user, 'hui i pizda=igrali v poezda')
 
 }
-searchBlya().catch((e) => {console.log(e) })
+topDeckGame().catch((e) => {console.log(e) })
 //\\
 
 

@@ -181,12 +181,6 @@ async function battle(td)
  */
 function myTDRank(user)
 {
-  if (!user.tdGames) {
-    user.tdGames = 0
-    user.tdWins  = 0
-    user.tdDraws = 0
-    user.tdLoses = 0
-  }
 
   return user.name + '(' +(user.tdWins*2 + user.tdDraws - user.tdLoses*2).toString()+ ')\n\n' +
     'Games: ' + user.tdGames.toString() + '\n' +
