@@ -1,4 +1,4 @@
-const Canvas = require('@napi-rs/canvas');
+const Canvas = require('@napi-rs/canvas')
 const fs = require('fs')
 const host = 'https://www.kards.com'
 const {getUser} = require('./db')

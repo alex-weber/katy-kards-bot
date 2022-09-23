@@ -1,5 +1,5 @@
-const axios = require("axios");
-const translator = require("./translator");
+const axios = require("axios")
+const translator = require("./translator")
 
 /**
  *

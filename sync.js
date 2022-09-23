@@ -1,5 +1,5 @@
 const {createCard} = require('./db')
-const {getCards} = require("./search");
+const {getCards} = require("./search")
 
 /**
  *
