@@ -76,27 +76,13 @@ try
         if (user.language !== defaultLanguage) language = user.language
         await updateUser(user)
         //handle command
-        if (command === 'help')
-        {
-            return await message.reply(translate(language, 'help'))
-        }
+        if (command === 'help') return await message.reply(translate(language, 'help'))
         //get top 9 TD ranking
-        if (command === 'ranking' || command === 'rankings')
-        {
-            await message.reply(await getTopDeckStats())
-
-            return
-        }
+        if (command === 'ranking' || command === 'rankings') return await message.reply(await getTopDeckStats())
         //user's TD ranking
-        if (command === 'myrank')
-        {
-            await message.reply(myTDRank(user))
-
-            return
-        }
+        if (command === 'myrank') return await message.reply(myTDRank(user))
         //show online stats
-        if (
-            message.content === prefix + prefix ||
+        if (message.content === prefix + prefix ||
             message.content === prefix + 'ingame' ||
             message.content === prefix + 'online')
         {
@@ -176,9 +162,7 @@ try
         }
         if (command.length < minStrLen)
         {
-            await message.reply('Minimum ' + minStrLen + ' chars, please')
-
-            return
+            return await message.reply('Minimum ' + minStrLen + ' chars, please')
         }
         //check for synonyms
         let syn = await getSynonym(command)
@@ -205,9 +189,7 @@ try
         const searchResult = await getCards(variables)
         if (!searchResult)
         {
-            await message.reply(translate(language, 'error'))
-
-            return
+            return await message.reply(translate(language, 'error'))
         }
         const counter = searchResult.counter
         if (!counter)
