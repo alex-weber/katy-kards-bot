@@ -6,13 +6,13 @@ const translator = require("./translator");
  * @returns {Promise<string>}
  */
 async function formatStats() {
-
     const statsURL = 'https://steamcharts.com/app/544810/chart-data.json'
     let output = ''
     const response = await axios.get(statsURL)
     const body = response.data
     const offset = 0 //no Moscow time, use GMT
-    for (let i = 1; i < 25; i++) {
+    for (let i = 1; i < 25; i++)
+    {
         let date = new Date(body[body.length - i][0] + offset)
         let players = body[body.length - i][1];
         output +=

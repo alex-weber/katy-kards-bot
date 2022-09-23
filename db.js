@@ -23,7 +23,6 @@ async function createUser(data)
  */
 async function getUser(discordId)
 {
-
   let User = await prisma.user.findUnique({
     where: {
       discordId: discordId,
@@ -31,7 +30,6 @@ async function getUser(discordId)
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
-
   if (!User) {
     User = await createUser({
       discordId: discordId,
@@ -214,6 +212,7 @@ async function getCardsDB(data)
  */
 async function getOpenTopDeck(channelID)
 {
+
   return await prisma.topdeck.findFirst({
     where: {
       state: 'open',
@@ -279,7 +278,6 @@ async function getRandomCard(td)
     },
     kredits: td.kredits
   }
-
   let cards = await prisma.card.findMany({
     where: data
   }).

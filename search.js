@@ -2,9 +2,9 @@ const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
-const { MessageAttachment } = require('discord.js')
-const { getCardsDB, getSynonym, createSynonym, updateSynonym} = require('./db')
-const {APILanguages} = require("./language");
+const {MessageAttachment} = require('discord.js')
+const {getCardsDB, getSynonym, createSynonym, updateSynonym} = require('./db')
+const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
 const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
 /**
@@ -12,13 +12,14 @@ const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
  * @param variables
  * @returns {*}
  */
-function getVariables(variables) {
-
+function getVariables(variables)
+{
     const words = variables.q.split(' ')
     if (words.length < 1) return false
     //unset the search string
     variables.q = ''
-    for (let i = 0; i < words.length; i++) {
+    for (let i = 0; i < words.length; i++)
+    {
         variables = setAttribute(translator.translate('en', words[i]), variables)
     }
 
@@ -28,61 +29,69 @@ function getVariables(variables) {
      * @param variables
      * @returns {*}
      */
-    function setAttribute(word, variables) {
-
+    function setAttribute(word, variables)
+    {
         if (typeof word !== 'string') return variables
-
-        switch (word) {
+        switch (word)
+        {
             case 'us':
                 word = 'usa'
-            break
+                break
             case 'french':
                 word = 'france'
-            break
-
+                break
         }
         let faction = getAttribute(word, dictionary.faction)
-        if (faction) {
+        if (faction)
+        {
             variables.faction = faction
 
-            return  variables
+            return variables
         }
         let type = getAttribute(word, dictionary.type)
-        if (type) {
+        if (type)
+        {
             variables.type = type
 
-            return  variables
+            return variables
         }
         let rarity = getAttribute(word, dictionary.rarity)
-        if (rarity) {
+        if (rarity)
+        {
             variables.rarity = rarity
 
-            return  variables
+            return variables
         }
         let attribute = getAttribute(word, dictionary.attribute)
-        if (attribute) {
+        if (attribute)
+        {
             variables.attributes = attribute
 
-            return  variables
+            return variables
         }
-        if (word.endsWith('k') || word.endsWith('к') ) {
+        if (word.endsWith('k') || word.endsWith('к'))
+        {
             let kredits = parseInt(word.substring(0, word.length - 1))
-            if (!isNaN(kredits)) {
+            if (!isNaN(kredits))
+            {
                 variables.kredits = kredits
 
-                return  variables
+                return variables
             }
         }
-        if (word.endsWith('c') || word.endsWith('ц') ) {
+        if (word.endsWith('c') || word.endsWith('ц'))
+        {
             let costs = parseInt(word.substring(0, word.length - 1))
-            if (!isNaN(costs)) {
+            if (!isNaN(costs))
+            {
                 variables.operationCost = costs
 
-                return  variables
+                return variables
             }
         }
         let stats = word.match('\\d+(\\/|-)\\d+')
-        if (stats) {
+        if (stats)
+        {
             let matches = stats[0]
             let delimiter = stats[1]
             let both = matches.split(delimiter)
@@ -92,6 +101,7 @@ function getVariables(variables) {
 
         return variables
     }
+
     //return it anyway
     return variables
 }
@@ -102,18 +112,20 @@ function getVariables(variables) {
  * @param attributes
  * @returns {String}
  */
-function getAttribute(word, attributes) {
+function getAttribute(word, attributes)
+{
     let result = ''
     //do not search if the word is shorter than 3 chars
     if (word.length < 3) return result
 
-    for (const [key, value] of Object.entries(attributes)) {
-       if ( key.slice(0,3) === word.slice(0,3) ||
-            (typeof value === 'string' &&  value.slice(0,3) === word.slice(0,3)) )
-       {
-           result = value
-           break
-       }
+    for (const [key, value] of Object.entries(attributes))
+    {
+        if (key.slice(0, 3) === word.slice(0, 3) ||
+            (typeof value === 'string' && value.slice(0, 3) === word.slice(0, 3)))
+        {
+            result = value
+            break
+        }
     }
 
     return result
@@ -124,30 +136,34 @@ function getAttribute(word, attributes) {
  * @param variables
  * @returns {Promise<boolean|*>}
  */
-async function getCards(variables) {
+async function getCards(variables)
+{
     //log request
     console.log(variables)
     //search on kards.com
     let response = await axios.post(
         'https://api.kards.com/graphql',
         {
-        "operationName": "getCards",
-        "variables": variables,
-        "query": query
+            "operationName": "getCards",
+            "variables": variables,
+            "query": query
         }
-    ).catch(error => {
+    ).catch(error =>
+    {
         console.log('request to kards.com failed ', error.errno, error.data)
     })
 
-    if (response) {
+    if (response)
+    {
         const counter = response.data.data.cards.pageInfo.count
         const cards = response.data.data.cards.edges
-        if (!counter) {
+        if (!counter)
+        {
 
             return await advancedSearch(variables)
         }
 
-        return { counter: counter, cards: cards }
+        return {counter: counter, cards: cards}
     }
 
     return await advancedSearch(variables)
@@ -159,11 +175,12 @@ async function getCards(variables) {
  * @param language
  * @returns {*[]}
  */
-function getFiles(cards, language) {
-
+function getFiles(cards, language)
+{
     let files = []
     if (language !== 'zh-Hant') language = APILanguages[language]
-    for (const [, value] of Object.entries(cards.cards)) {
+    for (const [, value] of Object.entries(cards.cards))
+    {
         //check if the response is from kards.com or internal
         let imageURL = ''
         if (value.hasOwnProperty('imageURL')) imageURL = value.imageURL
@@ -190,12 +207,14 @@ async function advancedSearch(variables)
     delete variables.q
     delete variables.language
     delete variables.showSpawnables
-    if (variables.hasOwnProperty('attributes')) {
+    if (variables.hasOwnProperty('attributes'))
+    {
         variables.attributes = {
             contains: variables.attributes,
         }
     }
-    if (Object.keys(variables).length === 0) {
+    if (Object.keys(variables).length === 0)
+    {
         console.log('no variables set')
 
         return {counter: 0, cards: []}
@@ -203,9 +222,15 @@ async function advancedSearch(variables)
     console.log(variables)
     let cards = await getCardsDB(variables)
 
-    return { counter: cards.length, cards: cards }
+    return {counter: cards.length, cards: cards}
 }
 
+/**
+ *
+ * @param user
+ * @param command
+ * @returns {Promise<null|*>}
+ */
 async function handleSynonym(user, command)
 {
     if (user.role !== 'GOD' && user.role !== 'VIP') return null
@@ -215,26 +240,16 @@ async function handleSynonym(user, command)
     const key = data[0].slice(1)
     let value = data.slice(1).toString()
     value = value.replace(/,/gi, ' ')
-
     console.log(key, value)
-
     //allow only a-z chars
     let allowedChars = /^[\sa-z0-9]+$/
-    if (!allowedChars.test(key)) {
-
-        return null
-    }
+    if (!allowedChars.test(key)) return null
     //allow also numbers slashes and dots
     allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/
-    if (!allowedChars.test(value)) {
-
-        return null
-    }
+    if (!allowedChars.test(value)) return null
     let syn = await getSynonym(key)
     if (!syn && value) return await createSynonym(key, value)
     else return await updateSynonym(key, value)
-
 }
 
-//export
-module.exports = { getCards, getFiles, handleSynonym }
+module.exports = {getCards, getFiles, handleSynonym}
