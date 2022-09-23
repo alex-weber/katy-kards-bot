@@ -26,13 +26,14 @@ async function formatStats()
 
 /**
  *
+ * @param language
  * @returns {Promise<string>}
  */
-async function getPlayers()
+async function getPlayers(language)
 {
     const steamURL = 'https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=544810'
     const response = await axios.get(steamURL)
-    let output = translate('en', 'online') + ': '
+    let output = translate(language, 'online') + ': '
     const players = response.data.response.player_count
     output += players + '\n\n'
 
@@ -41,11 +42,12 @@ async function getPlayers()
 
 /**
  *
+ * @param language
  * @returns {Promise<string>}
  */
-async function getStats()
+async function getStats(language)
 {
-    return await getPlayers() + await formatStats()
+    return await getPlayers(language) + await formatStats()
 }
 
 module.exports = {getStats}

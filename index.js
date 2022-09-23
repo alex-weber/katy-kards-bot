@@ -86,7 +86,7 @@ try
             message.content === prefix + 'ingame' ||
             message.content === prefix + 'online')
         {
-            getStats().then(res =>
+            getStats(language).then(res =>
             {
                 message.reply(res)
             }).catch(error =>
