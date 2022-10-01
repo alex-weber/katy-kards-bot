@@ -57,7 +57,7 @@ try
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
-        if (!permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
+        if (!permissions || !permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
             !permissions.has(Permissions.FLAGS.ATTACH_FILES))
         {
             console.log('no write permissions.')
