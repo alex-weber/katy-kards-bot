@@ -40,6 +40,21 @@ function getVariables(variables)
             case 'french':
                 word = 'france'
                 break
+            case 'russian':
+            case 'ussr':
+                word = 'soviet'
+                break
+            case 'uk':
+                word = 'britain'
+                break
+            case 'plane':
+                variables.type = { in: ['bomber', 'fighter'] }
+
+                return variables
+            case 'unit':
+                variables.type = { notIn: ['order', 'countermeasure'] }
+
+                return variables
         }
         let faction = getAttribute(word, dictionary.faction)
         if (faction)
@@ -105,6 +120,9 @@ function getVariables(variables)
             variables.attack = parseInt(both[0])
             variables.defense = parseInt(both[1])
         }
+        //so if there is no parameter found - add the word to the search string
+        if (variables.text === undefined) variables.text = ''
+        variables.text += word + ' '
 
         return variables
     }
@@ -210,6 +228,12 @@ function getFiles(cards, language)
 async function advancedSearch(variables)
 {
     variables = getVariables(variables)
+    if (Object.keys(variables).length === 0)
+    {
+        console.log('no variables set')
+
+        return {counter: 0, cards: []}
+    }
     //delete non DB fields
     delete variables.q
     delete variables.language
@@ -220,11 +244,11 @@ async function advancedSearch(variables)
             contains: variables.attributes,
         }
     }
-    if (Object.keys(variables).length === 0)
+    if (variables.hasOwnProperty('text'))
     {
-        console.log('no variables set')
-
-        return {counter: 0, cards: []}
+        variables.text = {
+            contains: variables.text.trim(' '),
+        }
     }
     console.log(variables)
     let cards = await getCardsDB(variables)
