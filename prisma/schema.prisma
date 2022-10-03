@@ -40,7 +40,6 @@ model Card {
   cardId         String @unique
   importId       String
   imageURL       String
-  goldenImageURL String?
   thumbURL       String
   set            String
   title          String
@@ -52,8 +51,8 @@ model Card {
   operationCost  Int?
   rarity         String
   faction        String
-  version        String?
   attributes     String?
+  exile          String?
 }
 
 model Topdeck {

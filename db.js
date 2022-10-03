@@ -136,6 +136,8 @@ async function createCard(card)
   if (!card.json.hasOwnProperty('attributes')) card.json.attributes = ''
   let text = ''
   if (card.json.hasOwnProperty('text')) text = card.json.text['en-EN']
+  let exile = ''
+  if (card.json.hasOwnProperty('exile')) exile = card.json.exile
 
   const data = {
         cardId:         card.cardId,
@@ -152,7 +154,8 @@ async function createCard(card)
         operationCost:  card.json.operationCost,
         rarity:         card.json.rarity.toLowerCase(),
         faction:        card.json.faction.toLowerCase(),
-        attributes:     card.json.attributes.toString()
+        attributes:     card.json.attributes.toString(),
+        exile:          exile.toLowerCase(),
   }
 
   if (await cardExists(card))

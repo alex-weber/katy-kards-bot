@@ -69,6 +69,13 @@ function getVariables(variables)
 
             return variables
         }
+        let exile = getAttribute(word, ['exile'])
+        if (exile)
+        {
+            variables.exile = {not: ''}
+
+            return variables
+        }
         if (word.endsWith('k') || word.endsWith('к'))
         {
             let kredits = parseInt(word.substring(0, word.length - 1))

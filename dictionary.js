@@ -42,7 +42,6 @@ module.exports = {
         'alpine',
         'blitz',
         'ambush',
-        'exile',
         'intel',
         'smokescreen',
         'guard',
