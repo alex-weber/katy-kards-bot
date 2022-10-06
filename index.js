@@ -194,10 +194,10 @@ try
         const counter = searchResult.counter
         if (!counter)
         {
-            //get a random cat image for no result
-            const catImage = await randomImageService.nekos('meow')
             try
             {
+                //get a random cat image for no result
+                const catImage = await randomImageService.nekos('meow')
                 await message.reply(
                     {
                         content: translate(language, 'noresult'),
@@ -205,6 +205,7 @@ try
                     })
             } catch (e)
             {
+                await message.reply(translate(language, 'noresult'))
                 console.log(e)
             }
 
