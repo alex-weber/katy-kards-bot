@@ -119,6 +119,8 @@ function getVariables(variables)
             let both = matches.split(delimiter)
             variables.attack = parseInt(both[0])
             variables.defense = parseInt(both[1])
+
+            return variables
         }
         //so if there is no parameter found - add the word to the search string
         if (variables.text === undefined) variables.text = ''
