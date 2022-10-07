@@ -250,6 +250,7 @@ async function advancedSearch(variables)
     {
         variables.text = {
             contains: variables.text.trim(' '),
+            mode: 'insensitive',
         }
     }
     console.log(variables)
