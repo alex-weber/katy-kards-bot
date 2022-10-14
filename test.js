@@ -8,6 +8,7 @@ const { getHelp } = require('./translator.js')
 const translator = require("./translator")
 const dictionary = require("./dictionary")
 const { topDeck, myTDRank } = require("./topDeck")
+const {getCardsStats} = require("./stats")
 
 
 async function searchBlya() {
@@ -60,7 +61,16 @@ async function raiting()
     await handleSynonym(user, 'hui i pizda=igrali v poezda')
 
 }
-searchBlya().catch((e) => {console.log(e) })
+
+async function cardsStats()
+{
+    //await topDeckGame()
+    //console.log(await getTopDeckStats())
+    let stats = await getCardsStats()
+    console.log(stats)
+
+}
+cardsStats().catch((e) => {console.log(e) })
 //\\
 
 
