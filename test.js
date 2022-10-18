@@ -16,7 +16,7 @@ async function searchBlya() {
     //try to find the language and store it in the DB
     let language = 'en'
     let variables = { language : language, showSpawnables: true }
-    variables.q = 'brit arty deployment:'
+    variables.q = 'usa 4k rangers 4-4'
     let cards = await search.getCards(variables)
     console.log(cards)
     if (cards.counter) {
@@ -70,7 +70,7 @@ async function cardsStats()
     console.log(stats)
 
 }
-cardsStats().catch((e) => {console.log(e) })
+searchBlya().catch((e) => {console.log(e) })
 //\\
 
 

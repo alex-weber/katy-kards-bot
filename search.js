@@ -246,13 +246,26 @@ async function advancedSearch(variables)
             contains: variables.attributes,
         }
     }
+    let text = ''
     if (variables.hasOwnProperty('text'))
     {
-        variables.text = {
-            contains: variables.text.trim(' '),
-            mode: 'insensitive',
-        }
+        text = variables.text.trim()
     }
+    variables.OR = [
+        {
+            title: {
+                contains: text,
+                mode: 'insensitive',
+            },
+        },
+        {
+            text: {
+                contains: text,
+                mode: 'insensitive',
+            },
+        },
+    ]
+    delete variables.text
     console.log(variables)
     let cards = await getCardsDB(variables)
 
