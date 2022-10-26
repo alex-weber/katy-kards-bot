@@ -34,7 +34,8 @@ function translate(language, msg)
         'standard': 'стандартная',
         'limited': 'ограниченная',
         'special': 'специальная',
-        'elite': 'элитная'
+        'elite': 'элитная',
+        'exile': 'изгнание',
     }
 
     switch (language)
