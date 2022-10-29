@@ -41,11 +41,12 @@ function translate(language, msg)
     switch (language)
     {
         case 'ru':
-            if (msg === 'online') return 'нагибаторов онлайн'
+            if (msg === 'online') return 'Steam нагибаторов онлайн'
             if (msg === 'search') return 'найдено карт'
             if (msg === 'stats') return 'последние 24 часа'
             if (msg === 'error') return 'shit..ошибочка вышла!'
             if (msg === 'limit') return ', но покажу всего '
+            if (msg === 'time') return 'Время сейчас'
             if (msg === 'noresult') return 'Язык поиска: ' + language.toUpperCase() + ', карт не найдено...'
             if (msg === 'langChange') return 'Язык поиска: '
             if (msg === 'help')
@@ -60,9 +61,10 @@ function translate(language, msg)
         case 'de':
             if (msg === 'online') return 'Steam Spieler online'
             if (msg === 'search') return 'Suchergebnisse'
-            if (msg === 'stats') return 'letzte 24 Stunden'
+            if (msg === 'stats') return 'Die letzten 24 Stunden'
             if (msg === 'error') return 'Scheiße, ein Fehler!'
             if (msg === 'limit') return ', ich zeige aber nur '
+            if (msg === 'time') return 'Die aktuelle Zeit'
             if (msg === 'noresult') return 'Suchsprache: ' + language.toUpperCase() + ', nichts gefunden...'
             if (msg === 'langChange') return 'Suchsprache: '
             if (msg === 'help')
@@ -76,11 +78,12 @@ function translate(language, msg)
             }
             break
         default: //en
-            if (msg === 'online') return 'Players online'
+            if (msg === 'online') return 'Steam players online'
             if (msg === 'search') return 'Cards found'
             if (msg === 'stats') return 'Last 24 hours'
             if (msg === 'error') return 'Oops... Something went wrong...'
             if (msg === 'limit') return ', but showing only the first '
+            if (msg === 'time') return 'Time now'
             if (msg === 'noresult') return 'Search language: ' + language.toUpperCase() + '. No cards found...'
             if (msg === 'langChange') return 'Search language: '
             if (msg === 'help')

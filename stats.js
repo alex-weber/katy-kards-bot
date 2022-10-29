@@ -35,7 +35,9 @@ async function getPlayers(language)
 {
     const steamURL = 'https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=544810'
     const response = await axios.get(steamURL)
-    let output = translate(language, 'online') + ': '
+    const date = new Date()
+    let output = translate(language, 'time') +': '+ date.getHours() +':'+ date.getMinutes() +' GMT\n'
+    output += translate(language, 'online') + ': '
     const players = response.data.response.player_count
     output += players + '\n\n'
 

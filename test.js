@@ -8,13 +8,13 @@ const { getHelp } = require('./translator.js')
 const translator = require("./translator")
 const dictionary = require("./dictionary")
 const { topDeck, myTDRank } = require("./topDeck")
-const {getCardsStats} = require("./stats")
+const {getCardsStats, getStats} = require("./stats")
 
 
 async function searchBlya() {
 
     //try to find the language and store it in the DB
-    let language = 'en'
+    let language = 'ru'
     let variables = { language : language, showSpawnables: true }
     variables.q = 'изгнание'
     let cards = await search.getCards(variables)
@@ -66,11 +66,11 @@ async function cardsStats()
 {
     //await topDeckGame()
     //console.log(await getTopDeckStats())
-    let stats = await getCardsStats()
+    let stats = await getStats('en')
     console.log(stats)
 
 }
-searchBlya().catch((e) => {console.log(e) })
+cardsStats().catch((e) => {console.log(e) })
 //\\
 
 
