@@ -280,7 +280,7 @@ async function advancedSearch(variables)
  */
 async function handleSynonym(user, command)
 {
-    if (user.role !== 'GOD' && user.role !== 'VIP') return null
+    if (!isManager(user)) return null
     const data = command.split('=')
     if (data.length < 2) return null
     console.log(data)
@@ -299,4 +299,14 @@ async function handleSynonym(user, command)
     else return await updateSynonym(key, value)
 }
 
-module.exports = {getCards, getFiles, handleSynonym}
+/**
+ *
+ * @param user
+ * @returns {boolean}
+ */
+function isManager(user)
+{
+    return (user.role === 'GOD' || user.role === 'VIP')
+}
+
+module.exports = {getCards, getFiles, handleSynonym, isManager}

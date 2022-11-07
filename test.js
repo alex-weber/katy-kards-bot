@@ -1,7 +1,7 @@
 const search = require("./search")
 const {getUser, getTopDeckStats, updateUser} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language")
-const {handleSynonym} = require("./search")
+const {handleSynonym, isManager} = require("./search")
 const { drawBattlefield } = require('./canvasManager')
 const fs = require("fs")
 const { getHelp } = require('./translator.js')
@@ -55,11 +55,9 @@ async function raiting()
     //await topDeckGame()
     //console.log(await getTopDeckStats())
     let user = await getUser('44')
-    user.role = 'VIP'
+    user.role = ''
     await updateUser(user)
-    console.log(user)
-    await handleSynonym(user, 'hui i pizda=igrali v poezda')
-
+    console.log(isManager(user))
 }
 
 async function cardsStats()
@@ -70,7 +68,7 @@ async function cardsStats()
     console.log(stats)
 
 }
-cardsStats().catch((e) => {console.log(e) })
+raiting().catch((e) => {console.log(e) })
 //\\
 
 

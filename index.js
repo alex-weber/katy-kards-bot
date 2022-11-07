@@ -6,7 +6,7 @@ const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 //modules
 const {translate} = require('./translator.js')
 const {getStats} = require('./stats')
-const {getCards, getFiles} = require('./search')
+const {getCards, getFiles, handleSynonym} = require('./search')
 const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const {getLanguageByInput, languages, defaultLanguage} = require('./language.js')
@@ -23,7 +23,6 @@ app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
-const {handleSynonym} = require('./search')
 const {drawBattlefield} = require('./canvasManager')
 const client = new Client(
     {
@@ -97,7 +96,7 @@ try
             return
         }
         //handle synonyms
-        if (command.startsWith('+'))
+        if (command.startsWith('^'))
         {
             let syn = await handleSynonym(user, command)
             if (syn)
@@ -180,12 +179,12 @@ try
             command = dictionary.synonyms[command]
             console.log('synonym found for ' + command)
         }
+        //first search on KARDS.com, on no result search in the local DB
         let variables = {
             'language': language,
             'q': command,
             'showSpawnables': true,
         }
-        //search on KARDS website
         const searchResult = await getCards(variables)
         if (!searchResult)
         {
