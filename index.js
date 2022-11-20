@@ -195,12 +195,18 @@ try
         {
             try
             {
-                //get a random cat image for no result
-                const catImage = await randomImageService.nekos('meow')
+                //get a random cat/dog/hug image for no result
+                let endpoints = ['meow', 'woof', 'hug']
+                //define the sample function to get a random array value
+                Array.prototype.sample = function()
+                {
+                    return this[Math.floor(Math.random()*this.length)]
+                }
+                const image = await randomImageService.nekos(endpoints.sample())
                 await message.reply(
                     {
                         content: translate(language, 'noresult'),
-                        files: [catImage.toString()]
+                        files: [image.toString()]
                     })
             } catch (e)
             {
