@@ -196,7 +196,7 @@ try
             try
             {
                 //get a random cat/dog/hug image for no result
-                let endpoints = ['meow', 'woof', 'hug']
+                let endpoints = ['meow', 'woof']
                 //define the sample function to get a random array value
                 Array.prototype.sample = function()
                 {
