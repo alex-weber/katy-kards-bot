@@ -55,6 +55,10 @@ function getVariables(variables)
                 variables.type = { notIn: ['order', 'countermeasure'] }
 
                 return variables
+            case 'pin':
+                variables.text = 'pin'
+
+                return variables
         }
         let faction = getAttribute(word, dictionary.faction)
         if (faction)
