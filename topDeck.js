@@ -82,13 +82,12 @@ async function battle(td)
     td.card2.owner = user2
     let attacker = td.card1
     let defender = td.card2
-    //the card with the lowest kredits attacks first. Otherwise, with blitz.
-    if ((td.card2.kredits < td.card1.kredits) ||
-        (td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1))
+    //the card with blitz attacks first.
+    if ((td.card2.attributes.search('blitz') !== -1 && td.card1.attributes.search('blitz') === -1))
     {
         attacker = td.card2
         defender = td.card1
-        td.log += attacker.title.toUpperCase() + ' costs less or has blitz, so it attacks first\n'
+        td.log += attacker.title.toUpperCase() + ' has blitz, so it attacks first\n'
     }
     //the battle begins
     let winner
