@@ -35,6 +35,8 @@ function getVariables(variables)
         switch (word)
         {
             case 'us':
+            case 'america':
+            case 'american':
                 word = 'usa'
                 break
             case 'french':
