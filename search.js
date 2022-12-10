@@ -184,6 +184,8 @@ async function getCards(variables)
     ).catch(error =>
     {
         console.log('request to kards.com failed ', error.errno, error.data)
+
+        return false
     })
 
     if (response)

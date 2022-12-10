@@ -46,13 +46,11 @@ try
         let prefix = defaultPrefix
         //check for a different prefix
         let serverPrefix = process.env['PREFIX_' + message.guildId]
-        if (serverPrefix !== undefined)
-        {
-            prefix = serverPrefix
-            console.log('prefix is set to', prefix, 'for', message.guild.name)
-        }
+        if (serverPrefix !== undefined) prefix = serverPrefix
+
         //not a bot command or bot
         if (!message.content.startsWith(prefix) || message.author.bot) return
+
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)
         let permissions = message.channel.permissionsFor(clientMember)
@@ -63,8 +61,10 @@ try
 
             return
         }
+
         //it's a bot command
         console.log('bot command:', message.guild.name, message.author.username, '->', message.content)
+
         //set username
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
@@ -74,12 +74,16 @@ try
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
         await updateUser(user)
+
         //handle command
         if (command === 'help') return await message.reply(translate(language, 'help'))
+
         //get top 9 TD ranking
         if (command === 'ranking' || command === 'rankings') return await message.reply(await getTopDeckStats())
+
         //user's TD ranking
         if (command === 'myrank') return await message.reply(myTDRank(user))
+
         //show online stats
         if (message.content === prefix + prefix ||
             message.content === prefix + 'ingame' ||
@@ -95,18 +99,7 @@ try
 
             return
         }
-        //handle synonyms
-        if (command.startsWith('^'))
-        {
-            let syn = await handleSynonym(user, command)
-            if (syn)
-            {
-                await message.reply(syn.key + ' created')
-                console.log('created synonym:', syn.key)
-            }
 
-            return
-        }
         //top deck game only in special channels
         if (
             command.startsWith('td') &&
@@ -147,6 +140,7 @@ try
 
             return
         }
+
         //switch language
         if (message.content.length === 3 && languages.includes(command.slice(0, 2)))
         {
@@ -168,6 +162,20 @@ try
         {
             return await message.reply('Minimum ' + minStrLen + ' chars, please')
         }
+
+        //handle synonyms
+        if (command.startsWith('^'))
+        {
+            let syn = await handleSynonym(user, command)
+            if (syn)
+            {
+                await message.reply(syn.key + ' created')
+                console.log('created synonym:', syn.key)
+            }
+
+            return
+        }
+
         //check for synonyms
         let syn = await getSynonym(command)
         if (syn)
@@ -184,6 +192,7 @@ try
             command = dictionary.synonyms[command]
             console.log('synonym found for ' + command)
         }
+
         //first search on KARDS.com, on no result search in the local DB
         let variables = {
             'language': language,
