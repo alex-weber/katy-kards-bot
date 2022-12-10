@@ -130,14 +130,19 @@ try
             {
                 //draw the image
                 await message.reply('getting battle results...')
-                const battleImage = await drawBattlefield(td)
-                await message.reply({content: td.log, files: [battleImage]})
-                console.log(td.log)
-                //delete the battle image
-                fs.rm(battleImage, function ()
-                {
-                    console.log('image deleted')
-                })
+                try {
+                    const battleImage = await drawBattlefield(td)
+                    await message.reply({content: td.log, files: [battleImage]})
+                    console.log(td.log)
+                    //delete the battle image
+                    fs.rm(battleImage, function ()
+                    {
+                        console.log('image deleted')
+                    })
+                } catch (e) {
+                    await message.reply('could not draw battle image\n' + td.log)
+                    console.error(e.toString())
+                }
             }
 
             return
