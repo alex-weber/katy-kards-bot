@@ -29,9 +29,7 @@ async function searchBlya() {
 
 async function topDeckGame() {
 
-    let player = await getUser('124')
-
-    return
+    let player = await getUser('22')
     let td = await topDeck('1', player, 'td')
     if (td.state === 'open') {
 
@@ -43,10 +41,8 @@ async function topDeckGame() {
     let player2 = await getUser('44')
     //console.log(player)
     td = await topDeck('1', player2, 'td')
-    //const battleImage = await drawBattlefield(td)
+    const battleImage = await drawBattlefield(td)
     console.log(td.log)
-
-
 
 }
 
@@ -68,7 +64,7 @@ async function cardsStats()
     console.log(stats)
 
 }
-searchBlya().catch((e) => {console.log(e) })
+topDeckGame().catch((e) => {console.log(e) })
 //\\
 
 

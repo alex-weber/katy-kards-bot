@@ -12,7 +12,21 @@ async function drawBattlefield(topDeck)
 {
     const canvas = Canvas.createCanvas(700, 500)
     const context = canvas.getContext('2d')
-    const background = await Canvas.loadImage('./assets/td/board.png')
+    const backgroundPromise = Canvas.loadImage('./assets/td/board.png')
+    const vsPromise = Canvas.loadImage('./assets/td/vs.png')
+    const card1Promise = Canvas.loadImage(host + topDeck.card1.imageURL)
+    const card2Promise = Canvas.loadImage(host + topDeck.card2.imageURL)
+    const [
+        background,
+        vs,
+        card1,
+        card2
+    ] = await Promise.all([
+            backgroundPromise,
+            vsPromise,
+            card1Promise,
+            card2Promise
+    ])
     // This uses the canvas dimensions to stretch the image onto the entire canvas
     context.drawImage(background, 0, 0, canvas.width, canvas.height)
     //draw cards
@@ -20,12 +34,9 @@ async function drawBattlefield(topDeck)
     const paddingTop = 70
     const cardWidth = 250
     const cardHeight = 350
-    const card1 = await Canvas.loadImage(host + topDeck.card1.imageURL)
     context.drawImage(card1, padding, paddingTop, cardWidth, cardHeight)
-    const card2 = await Canvas.loadImage(host + topDeck.card2.imageURL)
     context.drawImage(card2, canvas.width - cardWidth - padding, paddingTop, cardWidth, cardHeight)
     //draw the VS sign
-    const vs = await Canvas.loadImage('./assets/td/vs.png')
     context.drawImage(vs, padding + cardWidth, 170, 160, 160)
     //write players names
     context.font = '30px'
