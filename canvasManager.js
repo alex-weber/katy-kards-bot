@@ -41,7 +41,6 @@ async function drawBattlefield(topDeck)
     //write players names
     context.font = '30px'
     context.fillStyle = '#d2b8b8'
-    // Actually fill the text with a solid color
     const user1 = await getUser(topDeck.player1)
     const user2 = await getUser(topDeck.player2)
     context.fillText(user1.name, padding, 40)
