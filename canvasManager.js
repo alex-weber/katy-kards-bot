@@ -45,7 +45,7 @@ async function drawBattlefield(topDeck)
     const user2Promise = getUser(topDeck.player2)
     const [user1, user2] = await Promise.all([user1Promise, user2Promise])
     context.fillText(user1.name, padding, 40)
-    context.fillText(user2.name, 440, 40)
+    context.fillText(user2.name, 430, 40)
     // Write the image to file
     const buffer = canvas.toBuffer("image/png")
     const file = "./tmp/" + topDeck.id + ".png"
