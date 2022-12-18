@@ -41,8 +41,9 @@ async function drawBattlefield(topDeck)
     //write players names
     context.font = '30px'
     context.fillStyle = '#d2b8b8'
-    const user1 = await getUser(topDeck.player1)
-    const user2 = await getUser(topDeck.player2)
+    const user1Promise = getUser(topDeck.player1)
+    const user2Promise = getUser(topDeck.player2)
+    const [user1, user2] = await Promise.all([user1Promise, user2Promise])
     context.fillText(user1.name, padding, 40)
     context.fillText(user2.name, 440, 40)
     // Write the image to file
