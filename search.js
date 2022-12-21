@@ -180,23 +180,24 @@ async function getCards(variables)
             "operationName": "getCards",
             "variables": variables,
             "query": query
-        }
+        },
+        { timeout: 3000} //wait 3 seconds for the response
     ).catch(error =>
     {
         console.log('request to kards.com failed ', error.errno, error.data)
 
-        return false
     })
 
     if (response)
     {
         const counter = response.data.data.cards.pageInfo.count
-        const cards = response.data.data.cards.edges
         if (!counter)
         {
 
             return await advancedSearch(variables)
         }
+        const cards = response.data.data.cards.edges
+
 
         return {counter: counter, cards: cards}
     }
