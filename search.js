@@ -173,8 +173,6 @@ async function getCards(variables)
 {
     //log request
     console.log(variables)
-    //search locally if the language is EN
-    if (variables.language === 'en') return await advancedSearch(variables)
     //search on kards.com
     let response = await axios.post(
         'https://api.kards.com/graphql',
