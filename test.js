@@ -64,9 +64,13 @@ async function cardsStats()
     console.log(stats)
 
 }
-searchBlya().catch((e) => {console.log(e) })
-//\\
+//searchBlya().catch((e) => {console.log(e) })
 
+const prefix = '!'
+let input = '!!!!!!!!!!!!!!!!! URA!'
+let command = input
+while (command.startsWith(prefix)) command = command.replace(prefix, '')
+console.log(command.trim().toLowerCase())
 
 
 

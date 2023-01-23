@@ -68,8 +68,10 @@ try
         //set username
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
-        //remove the prefix and whitespaces from the beginning
-        let command = message.content.replace(prefix, '').trim().toLowerCase()
+        //remove all the prefixes from the beginning
+        let command = message.content
+        while (command.startsWith(prefix)) command = command.replace(prefix, '')
+        command = command.trim().toLowerCase()
         //check the user language
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
@@ -85,9 +87,7 @@ try
         if (command === 'myrank') return await message.reply(myTDRank(user))
 
         //show online stats
-        if (message.content === prefix + prefix ||
-            message.content === prefix + 'ingame' ||
-            message.content === prefix + 'online')
+        if (message.content === prefix + prefix || command === 'ingame' || command === 'online')
         {
             getStats(language).then(res =>
             {
