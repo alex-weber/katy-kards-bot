@@ -99,7 +99,8 @@ function translate(language, msg)
                     '**!myrank** - Your personal Top Deck Ranking with stats.\n\n' +
                     '**!en** [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
                     'Uptime stats: https://stats.uptimerobot.com/kBwWphkNQx\n' +
-                    'The hosting costs 7$ a month.\n' + 'If you want to support me: https://www.paypal.me/kropotor'
+                    'The hosting costs 12$ a month. (Heroku Hobby 7$ + pgSQL mini 5$)\n' +
+                    'If you want to support me: https://www.paypal.me/kropotor'
 
             }
             //translate meta keywords from ru to en
