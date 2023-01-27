@@ -36,9 +36,7 @@ const client = new Client(
 client.on('ready', () =>
 {
     console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
-    for (const guild of client.guilds.cache.array()) {
-        console.log(guild.name)
-    }
+    console.log(client.guilds.cache)
     client.user.setActivity('WATCHING ' + client.guilds.cache.size + ' servers')
 })
 //main block
