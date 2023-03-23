@@ -108,7 +108,7 @@ function getVariables(variables)
                 return variables
             }
         }
-        if (word.endsWith('c') || word.endsWith('ц'))
+        if (word.endsWith('c') || word.endsWith('ц') || word.endsWith('op'))
         {
             let costs = parseInt(word.substring(0, word.length - 1))
             if (!isNaN(costs))
