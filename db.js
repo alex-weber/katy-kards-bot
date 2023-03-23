@@ -122,6 +122,21 @@ async function updateSynonym(key, value)
 
 /**
  *
+ * @param key
+ * @returns {Promise<*>}
+ */
+async function deleteSynonym(key)
+{
+
+  return await prisma.synonym.delete({
+    where: { key: key }
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ *
  * @param card
  * @returns {Promise<*>}
  */
@@ -340,6 +355,7 @@ module.exports = {
   getSynonym,
   createSynonym,
   updateSynonym,
+  deleteSynonym,
   createCard,
   getCardsDB,
   getRandomCard,

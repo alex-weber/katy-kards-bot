@@ -3,7 +3,7 @@ const query = require("./query")
 const dictionary = require('./dictionary')
 const translator = require('./translator.js')
 const {MessageAttachment} = require('discord.js')
-const {getCardsDB, getSynonym, createSynonym, updateSynonym} = require('./db')
+const {getCardsDB, getSynonym, createSynonym, updateSynonym, deleteSynonym} = require('./db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
 const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
@@ -306,6 +306,7 @@ async function handleSynonym(user, command)
     if (!allowedChars.test(value)) return null
     let syn = await getSynonym(key)
     if (!syn && value) return await createSynonym(key, value)
+    else if (value === 'delete') return await deleteSynonym(key)
     else return await updateSynonym(key, value)
 }
 
