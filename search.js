@@ -305,9 +305,24 @@ async function handleSynonym(user, command)
     allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/
     if (!allowedChars.test(value)) return null
     let syn = await getSynonym(key)
-    if (!syn && value) return await createSynonym(key, value)
-    else if (value === 'delete') return await deleteSynonym(key)
-    else return await updateSynonym(key, value)
+    if (!syn && value)
+    {
+        await createSynonym(key, value)
+
+        return 'created'
+    }
+    else if (value === 'delete')
+    {
+        await deleteSynonym(key)
+
+        return 'deleted'
+    }
+    else
+    {
+        await updateSynonym(key, value)
+
+        return 'updated'
+    }
 }
 
 /**

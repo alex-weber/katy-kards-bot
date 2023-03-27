@@ -168,11 +168,10 @@ try
         //handle synonyms
         if (command.startsWith('^'))
         {
-            let syn = await handleSynonym(user, command)
-            if (syn)
+            let done = await handleSynonym(user, command)
+            if (done)
             {
-                await message.reply(syn.key + ' created')
-                console.log('created synonym:', syn.key)
+                await message.reply(done)
             }
 
             return
