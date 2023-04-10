@@ -41,8 +41,8 @@ async function topDeckGame() {
     let player2 = await getUser('44')
     //console.log(player)
     td = await topDeck('1', player2, 'td')
-    const battleImage = await drawBattlefield(td)
-    console.log(td.log)
+    //const battleImage = await drawBattlefield(td)
+    console.log(td)
 
 }
 
@@ -64,7 +64,7 @@ async function cardsStats()
     console.log(stats)
 
 }
-searchBlya('tank sasa/8').catch((e) => {console.log(e) })
+topDeckGame().catch((e) => {console.log(e) })
 
 
 
