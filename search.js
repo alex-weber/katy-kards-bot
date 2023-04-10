@@ -118,14 +118,16 @@ function getVariables(variables)
                 return variables
             }
         }
-        let stats = word.match('\\d+(\\/|-)\\d+')
+        let stats = word.match('\\w+(\\/|-)\\w+')
         if (stats)
         {
             let matches = stats[0]
             let delimiter = stats[1]
             let both = matches.split(delimiter)
-            variables.attack = parseInt(both[0])
-            variables.defense = parseInt(both[1])
+            let attack = parseInt(both[0])
+            let defense = parseInt(both[1])
+            if (!isNaN(attack)) variables.attack = attack
+            if (!isNaN(defense)) variables.defense = defense
 
             return variables
         }
@@ -335,4 +337,4 @@ function isManager(user)
     return (user.role === 'GOD' || user.role === 'VIP')
 }
 
-module.exports = {getCards, getFiles, handleSynonym, isManager}
+module.exports = {getCards, getFiles, handleSynonym, isManager, advancedSearch}
