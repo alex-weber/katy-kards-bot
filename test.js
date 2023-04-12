@@ -64,7 +64,7 @@ async function cardsStats()
     console.log(stats)
 
 }
-topDeckGame().catch((e) => {console.log(e) })
+searchBlya('polish spitfire').catch((e) => {console.log(e) })
 
 
 

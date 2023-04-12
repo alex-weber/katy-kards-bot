@@ -118,14 +118,12 @@ function getVariables(variables)
                 return variables
             }
         }
-        let stats = word.match('\\w+(\\/|-)\\w+')
+        //allow only * as placeholder for attack or defense
+        let stats = word.match('^(\\d{1,2}|\\*)(\\/|-)(\\d{1,2}|\\*)$')
         if (stats)
         {
-            let matches = stats[0]
-            let delimiter = stats[1]
-            let both = matches.split(delimiter)
-            let attack = parseInt(both[0])
-            let defense = parseInt(both[1])
+            let attack = parseInt(stats[1])
+            let defense = parseInt(stats[3])
             if (!isNaN(attack)) variables.attack = attack
             if (!isNaN(defense)) variables.defense = defense
 
