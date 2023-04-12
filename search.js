@@ -51,10 +51,12 @@ function getVariables(variables)
                 word = 'britain'
                 break
             case 'plane':
+            case 'planes':
                 variables.type = { in: ['bomber', 'fighter'] }
 
                 return variables
             case 'unit':
+            case 'units':
                 variables.type = { notIn: ['order', 'countermeasure'] }
 
                 return variables
