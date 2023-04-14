@@ -83,8 +83,7 @@ try
         await updateUser(user)
 
         //handle command
-        if (command === 'help') return await message.reply(translate(language, 'help'))
-        if (command === 'emhelp') return await message.reply({embeds: [helpEmbed]})
+        if (command === 'help') return await message.reply({embeds: [helpEmbed]})
 
         //get top 9 TD ranking
         if (command === 'ranking' || command === 'rankings') return await message.reply(await getTopDeckStats())

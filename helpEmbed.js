@@ -2,7 +2,7 @@
  const helpEmbed =
  {
     "type": `rich`,
-    "title": `Help`,
+    "title": `Click to donate`,
     "description": `The hosting costs 12$ a month. (Heroku Hobby 7$ + pgSQL mini 5$). \n
     Supporters will get VIP permissions for creating custom bot commands. \n
     Click on the title to donate.`,
@@ -16,20 +16,20 @@
             2c or 2op  -  Operation cost\n
             5-5 or 5/5  - Five attack and five defense\n
             */8              - Any attack and 8 defense\n\n 
-            !soviet infantry guard 1/8 3k 1c`
+            !soviet infantry guard 1/8 3k 1c\n`
         },
         {
             "name": `Top Deck game`,
             "value": `!ranking  - Top 9 players\n
-            !myrank  - Your personal TD ranking`
+            !myrank  - Your personal TD ranking\n`
         },
         {
             "name": `Monitoring`,
-            "value": `!! - Steam players online`
+            "value": `!! - Steam players online\n`
         },
         {
             "name": `Language`,
-            "value": `!en [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.`
+            "value": `!en [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n`
         }
     ],
     "url": `https://www.paypal.me/kropotor`
