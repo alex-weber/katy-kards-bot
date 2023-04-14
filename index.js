@@ -18,6 +18,8 @@ const randomImageService = require('random-image-api')
 const fs = require('fs')
 //topDeck game
 const {topDeck, myTDRank} = require('./topDeck')
+//helpEmbed
+const {helpEmbed} = require('./helpEmbed')
 //start server
 app.get('/', (req, res) => res.send('Bot is online.'))
 app.listen(port, () => console.log(`Bot is listening at :${port}`))
@@ -82,6 +84,7 @@ try
 
         //handle command
         if (command === 'help') return await message.reply(translate(language, 'help'))
+        if (command === 'emhelp') return await message.reply({embeds: [helpEmbed]})
 
         //get top 9 TD ranking
         if (command === 'ranking' || command === 'rankings') return await message.reply(await getTopDeckStats())
