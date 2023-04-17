@@ -57,7 +57,7 @@ try
         let botCommand = /\".+\"/gm
         if (botCommand.test(message.content))
         {
-            let arr = message.split('"')
+            let arr = message.content.split('"')
             if (arr[1] !== undefined )
             {
                 //rewrite the message content with only needed information
