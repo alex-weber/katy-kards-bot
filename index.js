@@ -54,6 +54,7 @@ try
         if (serverPrefix !== undefined) prefix = serverPrefix
 
         //is there a "bot command" maked with double quotation marks?
+        let quotationCommand = false
         let botCommand = /\".+\"/gm
         if (botCommand.test(message.content))
         {
@@ -63,6 +64,7 @@ try
                 //rewrite the message content with only needed information
                 message.content = arr[1]
                 console.log('bot command with quotes inside a message:', message.content)
+                quotationCommand = true
             }
         }
         //not a bot command or bot
@@ -223,6 +225,8 @@ try
         const counter = searchResult.counter
         if (!counter)
         {
+            //don't reply if nothin is found
+            if (quotationCommand) return
             try
             {
                 //get a random cat/dog/hug image for no result

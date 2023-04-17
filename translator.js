@@ -92,6 +92,7 @@ function translate(language, msg)
                     '**!!** - *Steam players online and stats*\n\n' +
                     '**!leo** - *will find the Leopold*\n' +
                     '**!usa infantry blitz 3k 2c smoke 5/5** - *find cards with all the attributes*\n' +
+                    'you can use ** * ** as placeholder for any attack or any defense\n' +
                     'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     '**!td [infantry | tank | artillery | fighter | bomber]**\n' +
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
