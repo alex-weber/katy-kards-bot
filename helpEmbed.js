@@ -28,7 +28,7 @@
         },
         {
             "name": `Language`,
-            "value": `!en [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.`
+            "value": `!en [ de | es | fr | it | ko | pl | pt | ru | tw | zh ] - change the search language.`
         }
     ],
     "url": `https://www.paypal.me/kropotor`

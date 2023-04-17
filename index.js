@@ -53,8 +53,20 @@ try
         let serverPrefix = process.env['PREFIX_' + message.guildId]
         if (serverPrefix !== undefined) prefix = serverPrefix
 
+        //is there a "bot command" maked with double quotation marks?
+        let botCommand = /\".+\"/gm
+        if (botCommand.test(message.content))
+        {
+            let arr = message.split('"')
+            if (arr[1] !== undefined )
+            {
+                //rewrite the message content with only needed information
+                message.content = arr[1]
+                console.log('bot command with quotes inside a message:', message.content)
+            }
+        }
         //not a bot command or bot
-        if (!message.content.startsWith(prefix) || message.author.bot) return
+        else if (!message.content.startsWith(prefix) || message.author.bot ) return
 
         //check for write permissions
         const clientMember = await message.guild.members.fetch(client.user.id)

@@ -1,7 +1,7 @@
 const search = require("./search")
-const {getUser, getTopDeckStats, updateUser} = require("./db")
+const {getUser, getTopDeckStats, updateUser, getCardsDB} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language")
-const {handleSynonym, isManager, advancedSearch} = require("./search")
+const {handleSynonym, isManager, advancedSearch, getCards} = require("./search")
 const { drawBattlefield } = require('./canvasManager')
 const fs = require("fs")
 const { getHelp } = require('./translator.js')
@@ -56,15 +56,32 @@ async function raiting()
     console.log(isManager(user))
 }
 
-async function cardsStats()
+async function quotes()
 {
-    //await topDeckGame()
-    //console.log(await getTopDeckStats())
-    let stats = await getStats('en')
-    console.log(stats)
+    let botCommand = /\".+\"/gm
+    let message = 'you can use "air power to destroy any tank '
+    if (botCommand.test(message))
+    {
+        let arr = message.split('"')
+        if (arr[1] !== undefined ) console.log(arr[1])
+    }
 
 }
-searchBlya('polish spitfire').catch((e) => {console.log(e) })
+
+async function createJSON()
+{
+    let cards = await getCardsDB({})
+    //console.log(cards)
+    //save the file
+    fs.writeFile(
+        'export/cards.json',
+        JSON.stringify(cards),
+        function (err) {
+            if (err) console.log('could not write file')
+            else console.log('JSON created!')
+        })
+}
+quotes().catch((e) => {console.log(e) })
 
 
 
