@@ -250,6 +250,8 @@ try
 
             return
         }
+        //don't reply if more than one card is found via quotations
+        if (quotationCommand && counter !== 1) return
         //if any cards are found - attach them
         let content = translate(language, 'search') + ': ' + counter
         //warn that there are more cards found
