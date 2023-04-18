@@ -273,11 +273,11 @@ try
                     return ctx.reply(res)
                 })
 
-                return 
+                return
             }
             //search
             command = bot.parseCommand(prefix, command)
-
+            if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
             let variables = {
                 'language': language,
                 'q': command,
