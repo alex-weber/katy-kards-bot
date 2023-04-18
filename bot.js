@@ -3,12 +3,15 @@ const {Permissions} = require("discord.js");
 /**
  *
  * @param message
+ * @returns {string|string}
  */
 function getPrefix(message) {
     let prefix = process.env.DEFAULT_PREFIX || '!'
     //check for a different prefix
     let serverPrefix = process.env['PREFIX_' + message.guildId]
     if (serverPrefix !== undefined) prefix = serverPrefix
+
+    return prefix
 }
 
 /**
