@@ -263,9 +263,10 @@ try
     if (telegramClient) {
 
         telegramClient.on(telegramMessage('text'), async (ctx) => {
-            console.log(ctx)
 
-            return
+            console.log(ctx.update.message)
+
+            return 
 
             if (!ctx.message.text.startsWith('!')) {
                 console.log('not a bot command')
@@ -276,7 +277,7 @@ try
             let language = 'en'
             let variables = {
                 'language': language,
-                'q': ctx.content.slice(1),
+                'q': ctx.message.text.slice(1),
                 'showSpawnables': true,
             }
             let searchResult = await getCards(variables)
