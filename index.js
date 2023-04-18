@@ -75,9 +75,8 @@ try
         const user = await getUser(message.author.id.toString())
         user.name = message.author.username
         //remove all the prefixes from the beginning
-        let command = message.content
-        while (command.startsWith(prefix)) command = command.replace(prefix, '')
-        command = command.trim().toLowerCase()
+        let command = bot.parseCommand(prefix, message.content)
+
         //check the user language
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
@@ -263,27 +262,29 @@ try
     if (telegramClient) {
 
         telegramClient.on(telegramMessage('text'), async (ctx) => {
-
-            let text = ctx.update.message.text
-            console.log(text)
-            if (!text.startsWith('!')) {
-                console.log('not a bot command')
-
-                return
+            let prefix = '!'
+            let command = ctx.update.message.text
+            if (!command.startsWith(prefix)) return
+            //online players
+            if (command === prefix+prefix) {
+                getStats(language).then(res =>
+                {
+                    ctx.reply(res)
+                })
             }
-            //testing search
-            let language = 'en'
+            //search
+            command = bot.parseCommand(prefix, command)
+            let language = getLanguageByInput(command)
             let variables = {
                 'language': language,
-                'q': text.slice(1),
+                'q': command,
                 'showSpawnables': true,
             }
             let searchResult = await getCards(variables)
             if (!searchResult) return
-            if (!searchResult.counter) return await ctx.reply('no cards found')
+            if (!searchResult.counter) return await ctx.reply(translate(language, 'noresult'))
             let files = getFiles(searchResult, language)
-            //console.log(files)
-            await ctx.reply('cards found: ' + searchResult.counter)
+            await ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
             if (searchResult.counter > 1)
             {
                 try {
@@ -291,13 +292,11 @@ try
                 } catch (e) {
                     console.log(e)
                 }
-
             }
             else if (searchResult.counter === 1) {
                 await ctx.replyWithPhoto(files[0].attachment)
             }
-
-        })
+        }) //end of telegram client.on(new message)
         telegramClient.launch().then(() =>
         {
             console.log('Telegram client started')

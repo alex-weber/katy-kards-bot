@@ -53,4 +53,18 @@ async function hasWritePermissions(client, message)
     return true
 }
 
-module.exports = {getPrefix, isQuotationSearch, hasWritePermissions}
+/**
+ *
+ * @param prefix
+ * @param command
+ * @returns {string}
+ */
+function parseCommand(prefix, command)
+{
+    while (command.startsWith(prefix)) command = command.replace(prefix, '')
+    command = command.trim().toLowerCase()
+
+    return command
+}
+
+module.exports = {getPrefix, isQuotationSearch, hasWritePermissions, parseCommand}
