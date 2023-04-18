@@ -20,9 +20,8 @@ const fs = require('fs')
 const {topDeck, myTDRank} = require('./topDeck')
 //helpEmbed
 const {helpEmbed} = require('./helpEmbed')
-//Telegram
-import { Telegraf } from 'telegraf'
-import { message as telegramMessage } from 'telegraf/filters'
+//telegram
+const {telegramBot, telegramMessage} = require('./telegram')
 //start http server
 app.get('/', (req, res) => res.send('Discord-Bot is online.'))
 //start listening for messages
@@ -276,13 +275,10 @@ try
         console.log('client started')
     })
     //start Telegram-Bot's session if TOKEN is set
-    if (process.env.TELEGRAM_TOKEN !== undefined) {
-        const telegramBot = new Telegraf(process.env.TELEGRAM_TOKEN)
+    if (telegramBot) {
         //test
         telegramBot.on(telegramMessage('text'), async (ctx) => {
-
-            // Using context shortcut
-            await ctx.reply(`Hello there, it works!`);
+            await ctx.reply(`Hello there, it works!`)
         })
         telegramBot.launch()
     }
