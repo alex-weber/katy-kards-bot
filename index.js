@@ -265,6 +265,7 @@ try
             let prefix = '!'
             let command = ctx.update.message.text
             if (!command.startsWith(prefix)) return
+            let language = getLanguageByInput(command)
             //online players
             if (command === prefix+prefix) {
                 getStats(language).then(res =>
@@ -274,7 +275,7 @@ try
             }
             //search
             command = bot.parseCommand(prefix, command)
-            let language = getLanguageByInput(command)
+
             let variables = {
                 'language': language,
                 'q': command,
