@@ -270,8 +270,10 @@ try
             if (command === prefix+prefix) {
                 getStats(language).then(res =>
                 {
-                    ctx.reply(res)
+                    return ctx.reply(res)
                 })
+
+                return 
             }
             //search
             command = bot.parseCommand(prefix, command)
