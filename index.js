@@ -263,7 +263,11 @@ try
     if (telegramClient) {
 
         telegramClient.on(telegramMessage('text'), async (ctx) => {
-            if (!ctx.content.startsWith('!')) {
+            console.log(ctx)
+
+            return
+
+            if (!ctx.message.text.startsWith('!')) {
                 console.log('not a bot command')
 
                 return
