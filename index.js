@@ -266,7 +266,6 @@ try
 
             let text = ctx.update.message.text
             console.log(text)
-
             if (!text.startsWith('!')) {
                 console.log('not a bot command')
 
@@ -287,14 +286,15 @@ try
             await ctx.reply('cards found: ' + searchResult.counter)
             if (searchResult.counter > 1)
             {
+                try {
+                    await ctx.replyWithMediaGroup(getMediaGroup(files))
+                } catch (e) {
+                    console.log(e)
+                }
 
-                return await ctx.replyWithMediaGroup(getMediaGroup(files))
             }
             else if (searchResult.counter === 1) {
-                let array = getMediaGroup(files)
-                let photo = array[0]
-                console.log(photo)
-                await ctx.replyWithPhoto(photo)
+                await ctx.replyWithPhoto(files[0].attachment)
             }
 
         })

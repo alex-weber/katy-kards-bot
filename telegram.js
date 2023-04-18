@@ -15,7 +15,10 @@ function getMediaGroup(files) {
     let mediaGroup = []
     for (const [, value] of Object.entries(files)) {
         if (value.attachment !== undefined) mediaGroup.push(
-            Input.fromURLStream(value.attachment)
+            {
+                type: 'photo',
+                media: value.attachment
+            }
         )
     }
 

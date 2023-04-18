@@ -88,9 +88,7 @@ async function telMedia()
         console.log(getMediaGroup(files))
     }
     else if (searchResult.counter === 1) {
-        let array = getMediaGroup(files)
-        let photo = array[0]
-        console.log(photo)
+        console.log(files[0].attachment)
         ///await ctx.replyWithPhoto(Input.fromURL(url))
     }
 }
