@@ -1,7 +1,7 @@
 const search = require("./search")
 const {getUser, getTopDeckStats, updateUser, getCardsDB} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language")
-const {handleSynonym, isManager, advancedSearch, getCards} = require("./search")
+const {handleSynonym, isManager, advancedSearch, getCards, getFiles} = require("./search")
 const { drawBattlefield } = require('./canvasManager')
 const fs = require("fs")
 const { getHelp } = require('./translator.js')
@@ -9,7 +9,7 @@ const translator = require("./translator")
 const dictionary = require("./dictionary")
 const { topDeck, myTDRank } = require("./topDeck")
 const {getCardsStats, getStats} = require("./stats")
-
+const {telegramClient, telegramMessage, Input, getMediaGroup} = require('./telegram')
 
 async function searchBlya(input) {
 
@@ -68,6 +68,33 @@ async function quotes()
 
 }
 
+async function telMedia()
+{
+    //testing search
+    let language = 'en'
+    let variables = {
+        'language': language,
+        'q': '!leo'.slice(1),
+        'showSpawnables': true,
+    }
+    let searchResult = await getCards(variables)
+    if (!searchResult) return
+    if (!searchResult.counter) console.log('no cards found')
+    let files = getFiles(searchResult, language)
+    console.log(files)
+    if (searchResult.counter > 1)
+    {
+
+        console.log(getMediaGroup(files))
+    }
+    else if (searchResult.counter === 1) {
+        let array = getMediaGroup(files)
+        let photo = array[0]
+        console.log(photo)
+        ///await ctx.replyWithPhoto(Input.fromURL(url))
+    }
+}
+
 async function createJSON()
 {
     let cards = await getCardsDB({})
@@ -81,7 +108,7 @@ async function createJSON()
             else console.log('JSON created!')
         })
 }
-quotes().catch((e) => {console.log(e) })
+telMedia().catch((e) => {console.log(e) })
 
 
 

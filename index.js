@@ -21,7 +21,9 @@ const {topDeck, myTDRank} = require('./topDeck')
 //helpEmbed
 const {helpEmbed} = require('./helpEmbed')
 //telegram
-const {telegramBot, telegramMessage} = require('./telegram')
+const {telegramClient, telegramMessage, Input, getMediaGroup} = require('./telegram')
+//bot
+const bot = require('./bot')
 //start http server
 app.get('/', (req, res) => res.send('Discord-Bot is online.'))
 //start listening for messages
@@ -29,6 +31,7 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
 const {drawBattlefield} = require('./canvasManager')
+const {Telegraf} = require("telegraf");
 const client = new Client(
     {
         intents: [
@@ -50,38 +53,20 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
-        let prefix = defaultPrefix
-        //check for a different prefix
-        let serverPrefix = process.env['PREFIX_' + message.guildId]
-        if (serverPrefix !== undefined) prefix = serverPrefix
-
+        let prefix = bot.getPrefix(message)
         //is there a "bot command" maked with double quotation marks?
-        let quotationCommand = false
-        let botCommand = /\".+\"/gm
-        if (botCommand.test(message.content))
+        let qSearch = bot.isQuotationSearch(message)
+        if (qSearch)
         {
-            let arr = message.content.split('"')
-            if (arr[1] !== undefined )
-            {
-                //rewrite the message content with only needed information
-                message.content = arr[1]
-                console.log('bot command with quotes inside a message:', message.content)
-                quotationCommand = true
-            }
+            //rewrite the message content with only needed information
+            message.content = qSearch
+            console.log('bot command with quotes inside a message:', message.content)
         }
         //not a bot command or bot
         else if (!message.content.startsWith(prefix) || message.author.bot ) return
 
         //check for write permissions
-        const clientMember = await message.guild.members.fetch(client.user.id)
-        let permissions = message.channel.permissionsFor(clientMember)
-        if (!permissions || !permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
-            !permissions.has(Permissions.FLAGS.ATTACH_FILES))
-        {
-            console.log('no write permissions.')
-
-            return
-        }
+        if (!bot.hasWritePermissions(client, message)) return
 
         //it's a bot command
         console.log('bot command:', message.guild.name, message.author.username, '->', message.content)
@@ -253,7 +238,7 @@ try
             return
         }
         //don't reply if more than one card is found via quotations
-        if (quotationCommand && counter !== 1) return
+        if (qSearch && counter !== 1) return
         //if any cards are found - attach them
         let content = translate(language, 'search') + ': ' + counter
         //warn that there are more cards found
@@ -272,15 +257,47 @@ try
     //start Discord-Bot's session
     client.login(process.env.DISCORD_TOKEN).then(() =>
     {
-        console.log('client started')
+        console.log('Discord client started')
     })
     //start Telegram-Bot's session if TOKEN is set
-    if (telegramBot) {
-        //test
-        telegramBot.on(telegramMessage('text'), async (ctx) => {
-            await ctx.reply(`Hello there, it works!`)
+    if (telegramClient) {
+
+        telegramClient.on(telegramMessage('text'), async (ctx) => {
+            if (!ctx.content.startsWith('!')) {
+                console.log('not a bot command')
+
+                return
+            }
+            //testing search
+            let language = 'en'
+            let variables = {
+                'language': language,
+                'q': ctx.content.slice(1),
+                'showSpawnables': true,
+            }
+            let searchResult = await getCards(variables)
+            if (!searchResult) return
+            if (!searchResult.counter) return await ctx.reply('no cards found')
+            let files = getFiles(searchResult, language)
+            //console.log(files)
+            await ctx.reply('cards found: ' + searchResult.counter)
+            if (searchResult.counter > 1)
+            {
+
+                return await ctx.replyWithMediaGroup(getMediaGroup(files))
+            }
+            else if (searchResult.counter === 1) {
+                let array = getMediaGroup(files)
+                let photo = array[0]
+                console.log(photo)
+                await ctx.replyWithPhoto(photo)
+            }
+
         })
-        telegramBot.launch()
+        telegramClient.launch().then(() =>
+        {
+            console.log('Telegram client started')
+        })
     }
 //end of global try
 } catch (error)

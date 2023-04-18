@@ -1,8 +1,25 @@
 
-const {Telegraf} = require('telegraf')
+const {Telegraf, Input} = require('telegraf')
 let {message} = require('telegraf/filters')
 
-let telegramBot = false
-if (process.env.TELEGRAM_TOKEN !== undefined) telegramBot = new Telegraf(process.env.TELEGRAM_TOKEN)
+let telegramClient = false
+if (process.env.TELEGRAM_TOKEN !== undefined) telegramClient = new Telegraf(process.env.TELEGRAM_TOKEN)
 let telegramMessage = message
-module.exports = {telegramBot, telegramMessage}
+
+/**
+ *
+ * @param files
+ * @returns {*[]}
+ */
+function getMediaGroup(files) {
+    let mediaGroup = []
+    for (const [, value] of Object.entries(files)) {
+        if (value.attachment !== undefined) mediaGroup.push(
+            Input.fromURLStream(value.attachment)
+        )
+    }
+
+    return mediaGroup
+}
+
+module.exports = {telegramClient, telegramMessage, Input, getMediaGroup}
