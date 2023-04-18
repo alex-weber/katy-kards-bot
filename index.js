@@ -291,13 +291,20 @@ try
             if (searchResult.counter > 1)
             {
                 try {
-                    await ctx.replyWithMediaGroup(getMediaGroup(files))
+                    return await ctx.replyWithMediaGroup(getMediaGroup(files))
                 } catch (e) {
                     console.log(e)
+                    return ctx.reply(translate(language, 'error'))
                 }
             }
             else if (searchResult.counter === 1) {
-                await ctx.replyWithPhoto(files[0].attachment)
+                try {
+                    return await ctx.replyWithPhoto(files[0].attachment)
+                }
+                catch (e) {
+                    console.log(e)
+                    return ctx.reply(translate(language, 'error'))
+                }
             }
         }) //end of telegram client.on(new message)
         telegramClient.launch().then(() =>
