@@ -1,11 +1,9 @@
 const getLanguageByInput = function (str)
 {
     let language = defaultLanguage
-    const firstLetter = str.slice(0, 1)
-    const lastLetter = str.slice(-1)
     //russian
-    const cyrillicPattern = /^[\u0400-\u04FF]+$/
-    if (cyrillicPattern.test(firstLetter) || cyrillicPattern.test(lastLetter)) language = 'ru'
+    const cyrillicPattern = /[а-я]/
+    if (cyrillicPattern.test(str)) language = 'ru'
 
     return language
 }

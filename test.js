@@ -56,15 +56,10 @@ async function raiting()
     console.log(isManager(user))
 }
 
-async function quotes()
+async function quotes(str)
 {
-    let botCommand = /\".+\"/gm
-    let message = 'you can use "air power to destroy any tank '
-    if (botCommand.test(message))
-    {
-        let arr = message.split('"')
-        if (arr[1] !== undefined ) console.log(arr[1])
-    }
+    const cyrillicPattern = /[а-я]/
+    if (cyrillicPattern.test(str)) console.log('yep')
 
 }
 
@@ -106,6 +101,6 @@ async function createJSON()
             else console.log('JSON created!')
         })
 }
-telMedia().catch((e) => {console.log(e) })
+quotes('pussy3').catch((e) => {console.log(e) })
 
 
