@@ -7,7 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "keywords": ["KARDS", "bot", "discord.js"],
+  "keywords": [
+    "KARDS",
+    "bot",
+    "discord.js"
+  ],
   "author": "tortunbator",
   "license": "ISC",
   "dependencies": {
@@ -19,7 +23,8 @@
     "express": "^4.17.3",
     "pg": "^8.7.3",
     "prisma": "latest",
-    "random-image-api": "^0.0.4-beta"
+    "random-image-api": "^0.0.4-beta",
+    "telegraf": "^4.12.2"
   },
   "engines": {
     "npm": "^8.0.0",

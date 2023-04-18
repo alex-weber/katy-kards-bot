@@ -20,9 +20,13 @@ const fs = require('fs')
 const {topDeck, myTDRank} = require('./topDeck')
 //helpEmbed
 const {helpEmbed} = require('./helpEmbed')
-//start server
-app.get('/', (req, res) => res.send('Bot is online.'))
-app.listen(port, () => console.log(`Bot is listening at :${port}`))
+//Telegram
+import { Telegraf } from 'telegraf'
+import { message as telegramMessage } from 'telegraf/filters'
+//start http server
+app.get('/', (req, res) => res.send('Discord-Bot is online.'))
+//start listening for messages
+app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
 const {drawBattlefield} = require('./canvasManager')
@@ -32,10 +36,9 @@ const client = new Client(
             Intents.FLAGS.GUILDS,
             Intents.FLAGS.GUILD_MESSAGES,
             Intents.FLAGS.GUILD_MEMBERS,
-            Intents.FLAGS.DIRECT_MESSAGES,
         ]
     })
-//login event
+//Discord-Bot login event
 client.on('ready', () =>
 {
     console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
@@ -267,11 +270,22 @@ try
 
     }) // end of onMessageCreate
 
-    //start bot's session
+    //start Discord-Bot's session
     client.login(process.env.DISCORD_TOKEN).then(() =>
     {
         console.log('client started')
     })
+    //start Telegram-Bot's session if TOKEN is set
+    if (process.env.TELEGRAM_TOKEN !== undefined) {
+        const telegramBot = new Telegraf(process.env.TELEGRAM_TOKEN)
+        //test
+        telegramBot.on(telegramMessage('text'), async (ctx) => {
+
+            // Using context shortcut
+            await ctx.reply(`Hello there, it works!`);
+        })
+        telegramBot.launch()
+    }
 //end of global try
 } catch (error)
 {
