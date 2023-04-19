@@ -81,9 +81,9 @@ try
         if (user.language !== defaultLanguage) language = user.language
         updateUser(user)
         //switch language
-        if (bot.isLanguageSwitch(message, command))
+        if (bot.isLanguageSwitch(command))
         {
-            language = bot.switchLanguage(user, command)
+            language = await bot.switchLanguage(user, command)
             message.reply(
                 translate(language, 'langChange') + language.toUpperCase()
             ).then(() =>
@@ -258,7 +258,7 @@ try
         telegramClient.on(telegramMessage('text'), async (ctx) => {
             let prefix = '!'
             let command = ctx.update.message.text
-            if (!command.startsWith(prefix)) return
+            if (!command.startsWith(prefix) || ctx.update.message.from.is_bot) return
             let language = getLanguageByInput(command)
             //online players
             if (command === prefix+prefix) {
@@ -270,28 +270,29 @@ try
                 return
             }
             console.log(ctx.update.message.from)
-            /*/set username
-            const user = await getUser(ctx.update.message.username)
-            if (!user.name) user.name = ctx.update.message.username
+            command = bot.parseCommand(prefix, command)
+            //update user
+            const user = await getUser(ctx.update.message.from.id)
+            if (!user.name) user.name = ctx.update.message.from.username
             //check the user language
             if (user.language !== language) language = user.language
-            updateUser(user)
+            await updateUser(user)
             //switch language
-            if (bot.isLanguageSwitch(message, command))
+            if (bot.isLanguageSwitch(command))
             {
-                bot.switchLanguage(user, command)
-                message.reply(
+                language = await bot.switchLanguage(user, command)
+                ctx.reply(
                     translate(language, 'langChange') + language.toUpperCase()
                 ).then(() =>
                 {
-                    console.log('lang changed to', language.toUpperCase(), 'for', ctx.update.message.username)
+                    console.log('lang changed to', language.toUpperCase(), 'for', ctx.update.message.from.username)
                 })
 
                 return
             }
-            */
+
             //search
-            command = bot.parseCommand(prefix, command)
+
             if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
             let variables = {
                 'language': language,

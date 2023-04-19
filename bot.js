@@ -82,9 +82,9 @@ async function switchLanguage(user, command)
     return language
 }
 
-function isLanguageSwitch(message, command)
+function isLanguageSwitch(command)
 {
-    return message.content.length === 3 && languages.includes(command.slice(0, 2))
+    return languages.includes(command)
 }
 
 module.exports = {getPrefix, isQuotationSearch, hasWritePermissions, parseCommand, switchLanguage, isLanguageSwitch}

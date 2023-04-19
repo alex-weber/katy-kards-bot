@@ -10,6 +10,8 @@ const dictionary = require("./dictionary")
 const { topDeck, myTDRank } = require("./topDeck")
 const {getCardsStats, getStats} = require("./stats")
 const {telegramClient, telegramMessage, Input, getMediaGroup} = require('./telegram')
+const bot = require("./bot");
+const {translate} = require("./translator");
 
 async function searchBlya(input) {
 
@@ -56,10 +58,15 @@ async function raiting()
     console.log(isManager(user))
 }
 
-async function quotes(str)
+async function quotes(command)
 {
-    const cyrillicPattern = /[а-я]/
-    if (cyrillicPattern.test(str)) console.log('yep')
+    command = bot.parseCommand("!", command)
+    if (bot.isLanguageSwitch(command)) {
+            let user = await getUser('44')
+            let language = await bot.switchLanguage(user, command)
+            console.log(language)
+        }
+
 
 }
 
@@ -101,6 +108,6 @@ async function createJSON()
             else console.log('JSON created!')
         })
 }
-quotes('pussy3').catch((e) => {console.log(e) })
+quotes('!!en').catch((e) => {console.log(e) })
 
 
