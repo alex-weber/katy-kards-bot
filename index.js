@@ -271,6 +271,7 @@ try
             }
             console.log(ctx.update.message.from)
             command = bot.parseCommand(prefix, command)
+            if (command === 'help') return await ctx.reply(translate(language, 'help'))
             //update user
             let userID = ctx.update.message.from.id.toString()
             const user = await getUser(userID)

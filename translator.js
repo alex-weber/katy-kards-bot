@@ -52,10 +52,17 @@ function translate(language, msg)
             if (msg === 'help')
             {
                 return 'Приветствую!\n\n' +
-                    '**!!** - *Количество игроков онлайн и статистика*\n\n' +
-                    '**!leo** - *Найдет Леопольда*\n' +
-                    '**!сша пехота 3к блиц** - *Найдет карты с соответствующими параметрами*\n' +
-                    '**!en** [ de| es | ft | it | ko | pl | pt | ru | tw | zh ] - *Сменить язык поиска*'
+                    '!! - Количество игроков онлайн и статистика\n' +
+                    '!leo - Найдет Леопольда\n' +
+                    'Первые 3 символа слова используются для поиска атрибутов.\n' +
+'                    Все ненайденные слова добавляются в поиск по полной строке в заголовке и тексте.\n' +
+'                    3k - Стоимость развертывания\n' +
+'                    2ц - Стоимость операции\n' +
+'                    5-5 или 5/5 - пять атаки и пять защиты\n' +
+'                    !советская пехота 1/8 3k 1c \n' +
+'                    Можете использовать знак умножения в качестве заменителя для любой атаки или любой защиты \n' +
+'                    Страны для поиска: Советы Германия Великобритания США Япония Польша Франция Италия' +
+                    '!en [ de| es | ft | it | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска'
             }
             break
         case 'de':
@@ -91,8 +98,13 @@ function translate(language, msg)
                 return 'Welcome!\n\n' +
                     '**!!** - *Steam players online and stats*\n\n' +
                     '**!leo** - *will find the Leopold*\n' +
-                    '**!usa infantry blitz 3k 2c smoke 5/5** - *find cards with all the attributes*\n' +
-                    'you can use ** * ** as placeholder for any attack or any defense\n' +
+                    'The first 3 charachters of a word are used to search for attributes. \n' +
+                    'All not found words are added to a full string search in title and text.\n' +
+                    '3k - Deployment cost\n' +
+                    '2c or 2op  - Operation cost\n' +
+                    '5-5 or 5/5 - Five attack and five defense\n' +
+                    '!soviet infantry guard 1/8 3k 1c\n' +
+                    'You can use ** * ** as placeholder for any attack or any defense\n' +
                     'Nations for search: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     '**!td [infantry | tank | artillery | fighter | bomber]**\n' +
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
