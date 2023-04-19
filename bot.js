@@ -77,7 +77,9 @@ async function switchLanguage(user, command)
     if (language === 'tw') language = 'zh-Hant'
     user.language = language
 
-    return await updateUser(user)
+    await updateUser(user)
+
+    return language
 }
 
 function isLanguageSwitch(message, command)

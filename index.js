@@ -83,7 +83,7 @@ try
         //switch language
         if (bot.isLanguageSwitch(message, command))
         {
-            bot.switchLanguage(user, command)
+            language = bot.switchLanguage(user, command)
             message.reply(
                 translate(language, 'langChange') + language.toUpperCase()
             ).then(() =>
@@ -269,7 +269,7 @@ try
 
                 return
             }
-            console.log(ctx)
+            console.log(ctx.update.message.from)
             /*/set username
             const user = await getUser(ctx.update.message.username)
             if (!user.name) user.name = ctx.update.message.username
