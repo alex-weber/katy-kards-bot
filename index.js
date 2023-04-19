@@ -25,7 +25,7 @@ const {telegramClient, telegramMessage, Input, getMediaGroup} = require('./teleg
 //bot
 const bot = require('./bot')
 //start http server
-app.get('/', (req, res) => res.send('Discord-Bot is online.'))
+app.get('/', (req, res) => res.send('Katyusha Kards Bot is online.'))
 //start listening for messages
 app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
@@ -70,18 +70,29 @@ try
 
         //it's a bot command
         console.log('bot command:', message.guild.name, message.author.username, '->', message.content)
-
-        //set username
-        const user = await getUser(message.author.id.toString())
-        user.name = message.author.username
         //remove all the prefixes from the beginning
         let command = bot.parseCommand(prefix, message.content)
 
+        //set username
+        const user = await getUser(message.author.id.toString())
+        if (!user.name) user.name = message.author.username
         //check the user language
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
-        await updateUser(user)
+        updateUser(user)
+        //switch language
+        if (bot.isLanguageSwitch(message, command))
+        {
+            bot.switchLanguage(user, command)
+            message.reply(
+                translate(language, 'langChange') + language.toUpperCase()
+            ).then(() =>
+            {
+                console.log('lang changed to', language.toUpperCase(), 'for', message.author.username)
+            })
 
+            return
+        }
         //handle command
         if (command === 'help') return await message.reply(translate(language, 'help'))
 
@@ -146,23 +157,6 @@ try
             return
         }
 
-        //switch language
-        if (message.content.length === 3 && languages.includes(command.slice(0, 2)))
-        {
-            language = command.slice(0, 2)
-            //for traditional chinese
-            if (language === 'tw') language = 'zh-Hant'
-            user.language = language
-            await updateUser(user)
-            message.reply(
-                translate(language, 'langChange') + language.toUpperCase()
-            ).then(() =>
-            {
-                console.log('lang changed to', language.toUpperCase(), 'for', message.author.username)
-            })
-
-            return
-        }
         if (command.length < minStrLen)
         {
             return await message.reply('Minimum ' + minStrLen + ' chars, please')
@@ -275,6 +269,27 @@ try
 
                 return
             }
+            console.log(ctx)
+            /*/set username
+            const user = await getUser(ctx.update.message.username)
+            if (!user.name) user.name = ctx.update.message.username
+            //check the user language
+            if (user.language !== language) language = user.language
+            updateUser(user)
+            //switch language
+            if (bot.isLanguageSwitch(message, command))
+            {
+                bot.switchLanguage(user, command)
+                message.reply(
+                    translate(language, 'langChange') + language.toUpperCase()
+                ).then(() =>
+                {
+                    console.log('lang changed to', language.toUpperCase(), 'for', ctx.update.message.username)
+                })
+
+                return
+            }
+            */
             //search
             command = bot.parseCommand(prefix, command)
             if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')

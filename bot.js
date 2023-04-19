@@ -1,4 +1,7 @@
-const {Permissions} = require("discord.js");
+const {Permissions} = require("discord.js")
+const {updateUser} = require("./db")
+const {translate} = require("./translator")
+const {languages} = require("./language");
 
 /**
  *
@@ -67,4 +70,19 @@ function parseCommand(prefix, command)
     return command
 }
 
-module.exports = {getPrefix, isQuotationSearch, hasWritePermissions, parseCommand}
+async function switchLanguage(user, command)
+{
+    let language = command.slice(0, 2)
+    //for traditional chinese
+    if (language === 'tw') language = 'zh-Hant'
+    user.language = language
+
+    return await updateUser(user)
+}
+
+function isLanguageSwitch(message, command)
+{
+    return message.content.length === 3 && languages.includes(command.slice(0, 2))
+}
+
+module.exports = {getPrefix, isQuotationSearch, hasWritePermissions, parseCommand, switchLanguage, isLanguageSwitch}
