@@ -277,7 +277,7 @@ try
             const user = await getUser(userID)
             if (!user.name) user.name = ctx.update.message.from.username
             //check the user language
-            if (user.language !== language) language = user.language
+            if (user.language && user.language !== language) language = user.language
             await updateUser(user)
             //help
             if (command === 'help') return await ctx.reply(translate(language, 'help'))
