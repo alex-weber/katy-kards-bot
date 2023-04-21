@@ -273,6 +273,9 @@ try
             }
             console.log(ctx.update.message.from)
             command = bot.parseCommand(prefix, command)
+            //get or create user
+            let userID = ctx.update.message.from.id.toString()
+            const user = await getUser(userID)
             //switch language
             if (bot.isLanguageSwitch(command))
             {
@@ -287,8 +290,6 @@ try
                 return
             }
             //update user
-            let userID = ctx.update.message.from.id.toString()
-            const user = await getUser(userID)
             if (!user.name) user.name = ctx.update.message.from.username
             //check the user language
             if (language === 'ru') user.language = language
