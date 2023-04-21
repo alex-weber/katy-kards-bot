@@ -60,12 +60,13 @@ async function raiting()
 
 async function quotes(command)
 {
+    let user = await getUser('44')
     command = bot.parseCommand("!", command)
-    if (bot.isLanguageSwitch(command)) {
-            let user = await getUser('44')
-            let language = await bot.switchLanguage(user, command)
-            console.log(language)
-        }
+    let language = getLanguageByInput(command)
+    if (language === 'ru') user.language = language
+    else if (user.language !== language) language = user.language
+    console.log(language)
+    await updateUser(user)
 
 
 }
@@ -108,6 +109,6 @@ async function createJSON()
             else console.log('JSON created!')
         })
 }
-quotes('!!en').catch((e) => {console.log(e) })
+quotes('!suks').catch((e) => {console.log(e) })
 
 

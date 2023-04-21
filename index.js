@@ -253,9 +253,11 @@ try
         console.log('Discord client started')
     })
     //start Telegram-Bot's session if TOKEN is set
-    if (telegramClient) {
+    if (telegramClient)
+    {
 
-        telegramClient.on(telegramMessage('text'), async (ctx) => {
+        telegramClient.on(telegramMessage('text'), async (ctx) =>
+        {
             let prefix = '!'
             let command = ctx.update.message.text
             if (!command.startsWith(prefix) || ctx.update.message.from.is_bot) return
@@ -271,16 +273,6 @@ try
             }
             console.log(ctx.update.message.from)
             command = bot.parseCommand(prefix, command)
-
-            //update user
-            let userID = ctx.update.message.from.id.toString()
-            const user = await getUser(userID)
-            if (!user.name) user.name = ctx.update.message.from.username
-            //check the user language
-            if (user.language && user.language !== language) language = user.language
-            await updateUser(user)
-            //help
-            if (command === 'help') return await ctx.reply(translate(language, 'help'))
             //switch language
             if (bot.isLanguageSwitch(command))
             {
@@ -294,9 +286,17 @@ try
 
                 return
             }
-
+            //update user
+            let userID = ctx.update.message.from.id.toString()
+            const user = await getUser(userID)
+            if (!user.name) user.name = ctx.update.message.from.username
+            //check the user language
+            if (language === 'ru') user.language = language
+            else if (user.language !== language) language = user.language
+            await updateUser(user)
+            //help
+            if (command === 'help') return await ctx.reply(translate(language, 'help'))
             //search
-
             if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
             let variables = {
                 'language': language,
@@ -317,7 +317,8 @@ try
                     return ctx.reply(translate(language, 'error'))
                 }
             }
-            else if (searchResult.counter === 1) {
+            else if (searchResult.counter === 1)
+            {
                 try {
                     return await ctx.replyWithPhoto(files[0].attachment)
                 }
