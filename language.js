@@ -3,7 +3,7 @@ const getLanguageByInput = function (str)
     let language = defaultLanguage
     //russian
     const cyrillicPattern = /[а-я]/
-    if (cyrillicPattern.test(str)) language = 'ru'
+    if (cyrillicPattern.test(str.toLowerCase())) language = 'ru'
 
     return language
 }

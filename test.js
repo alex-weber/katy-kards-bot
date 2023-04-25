@@ -109,6 +109,6 @@ async function createJSON()
             else console.log('JSON created!')
         })
 }
-quotes('!suks').catch((e) => {console.log(e) })
+quotes('!ТЕР').catch((e) => {console.log(e) })
 
 
