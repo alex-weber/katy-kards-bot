@@ -157,7 +157,7 @@ try
             return
         }
 
-        if (command.length < minStrLen)
+        if (command.length < minStrLen && !qSearch)
         {
             return await message.reply('Minimum ' + minStrLen + ' chars, please')
         }
