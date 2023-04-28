@@ -81,7 +81,7 @@ try
         if (user.language !== defaultLanguage) language = user.language
         updateUser(user)
         //switch language
-        if (bot.isLanguageSwitch(command))
+        if (bot.isLanguageSwitch(command) && !qSearch)
         {
             language = await bot.switchLanguage(user, command)
             message.reply(
