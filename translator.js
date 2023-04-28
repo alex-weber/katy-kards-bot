@@ -62,7 +62,7 @@ function translate(language, msg)
                     '!советская пехота охрана 1/8 3k 1ц \n' +
                     'Можете использовать * в качестве заменителя для любой атаки или любой защиты.\n' +
                     'Страны для поиска: Советы Германия Великобритания США Япония Польша Франция Италия.\n' +
-                    '!en [ de| es | ft | it | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска'
+                    '!en [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска'
             }
             break
         case 'de':
@@ -81,7 +81,7 @@ function translate(language, msg)
                     '**!leo** - *findet den Leopold*\n' +
                     '**!usa infantry blitz 3k** - *findet alle Karten mit den Attributen*\n' +
                     'Nationen: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
-                    '**!de** [ de| es | ft | it | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern'
+                    '**!de** [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern'
             }
             break
         default: //en
@@ -110,7 +110,7 @@ function translate(language, msg)
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '**!ranking** - Top Deck Ranking\n' +
                     '**!myrank** - Your personal Top Deck Ranking with stats.\n\n' +
-                    '**!en** [ de | es | ft | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
+                    '**!en** [ de | es | fr | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
                     'The hosting costs 12$ a month. (Heroku Hobby 7$ + pgSQL mini 5$)\n' +
                     'If you want to support me: https://www.paypal.me/kropotor'
 
