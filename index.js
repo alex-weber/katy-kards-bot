@@ -75,6 +75,13 @@ try
 
         //set username
         const user = await getUser(message.author.id.toString())
+        //check the status
+        if (user.status !== 'active')
+        {
+            console.log(user)
+            
+            return
+        }
         if (!user.name) user.name = message.author.username
         //check the user language
         let language = defaultLanguage
