@@ -109,6 +109,6 @@ async function createJSON()
             else console.log('JSON created!')
         })
 }
-quotes('!ТЕР').catch((e) => {console.log(e) })
+searchBlya('brit order random').catch((e) => {console.log(e) })
 
 
