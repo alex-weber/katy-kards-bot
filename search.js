@@ -61,7 +61,7 @@ function getVariables(variables)
 
                 return variables
             case 'pin':
-                variables.text = 'pin'
+                variables.text = ['pin']
 
                 return variables
         }

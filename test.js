@@ -156,6 +156,6 @@ async function prismaTest()
     console.log(cards)
 
 }
-searchBlya('usa infantry blitz 4k 4/4 4c').catch((e) => {console.log(e) })
+searchBlya('brit arty pin again').catch((e) => {console.log(e) })
 
 
