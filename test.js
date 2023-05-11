@@ -109,6 +109,53 @@ async function createJSON()
             else console.log('JSON created!')
         })
 }
-searchBlya('brit order random').catch((e) => {console.log(e) })
+
+async function prismaTest()
+{
+
+    let variables = {
+        OR: [
+
+            {
+                AND: [
+                    {
+                        title: {
+                            contains: 'shuffl',
+                            mode: 'insensitive',
+                        }
+                    },
+                    {
+                        title: {
+                            contains: 'rand',
+                            mode: 'insensitive',
+                        }
+                    },
+                ]
+            },
+
+            {
+                AND: [
+                    {
+                        text: {
+                            contains: 'shuffle',
+                            mode: 'insensitive',
+                        }
+                    },
+                    {
+                        text: {
+                            contains: 'random',
+                            mode: 'insensitive',
+                        }
+                    },
+                ]
+            },
+        ]
+    }
+
+    let cards = await getCardsDB(variables)
+    console.log(cards)
+
+}
+searchBlya('order 10k').catch((e) => {console.log(e) })
 
 

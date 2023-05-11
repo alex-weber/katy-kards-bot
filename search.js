@@ -132,8 +132,8 @@ function getVariables(variables)
             return variables
         }
         //so if there is no parameter found - add the word to the search string
-        if (variables.text === undefined) variables.text = ''
-        variables.text += word + ' '
+        if (variables.text === undefined) variables.text = []
+        variables.text.push(word)
 
         return variables
     }
@@ -261,17 +261,29 @@ async function advancedSearch(variables)
 
     if (variables.hasOwnProperty('text'))
     {
-        let text = variables.text.trim()
-        let searchObject = {
-            contains: text,
-            mode: 'insensitive',
+        let andConditionsTitle = []
+        let andConditionsText = []
+        for (const word of variables.text)
+        {
+            andConditionsTitle.push({
+                title: {
+                    contains: word,
+                    mode: 'insensitive',
+                }
+            })
+            andConditionsText.push({
+                text: {
+                    contains: word,
+                    mode: 'insensitive',
+                }
+            })
         }
         variables.OR = [
             {
-                title: searchObject
+                AND: andConditionsTitle
             },
             {
-                text: searchObject
+                AND: andConditionsText
             },
         ]
         delete variables.text
