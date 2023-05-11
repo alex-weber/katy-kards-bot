@@ -55,7 +55,7 @@ function translate(language, msg)
                     '!! - Количество игроков онлайн и статистика\n' +
                     '!leo - Найдет Леопольда\n' +
                     'Первые 3 символа слова используются для поиска атрибутов.\n' +
-                    'Все ненайденные слова добавляются в поиск по полной строке в заголовке и тексте.\n' +
+                    'Все ненайденные слова добавляются в поиск в заголовке и тексте.\n' +
                     '3k - Стоимость развертывания\n' +
                     '2ц - Стоимость операции\n' +
                     '5-5 или 5/5 - пять атаки и пять защиты\n' +
@@ -79,7 +79,7 @@ function translate(language, msg)
                 return 'Willkommen!\n\n' +
                     '**!!** - *Steam Spieler online and Statistiken*\n\n' +
                     '**!leo** - *findet den Leopold*\n' +
-                    '**!usa infantry blitz 3k** - *findet alle Karten mit den Attributen*\n' +
+                    '**!usa infantry blitz 4k 4/4 4c ** - *findet alle Karten mit den Attributen*\n' +
                     'Nationen: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     '**!de** [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern'
             }
@@ -98,8 +98,8 @@ function translate(language, msg)
                 return 'Welcome!\n\n' +
                     '**!!** - *Steam players online and stats*\n\n' +
                     '**!leo** - *will find the Leopold*\n' +
-                    'The first 3 charachters of a word are used to search for attributes. \n' +
-                    'All not found words are added to a full string search in title and text.\n' +
+                    'The first 3 characters of a word are used to search for attributes. \n' +
+                    'All not found words will be used for searching in title and text.\n' +
                     '3k - Deployment cost\n' +
                     '2c or 2op  - Operation cost\n' +
                     '5-5 or 5/5 - Five attack and five defense\n' +

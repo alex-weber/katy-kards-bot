@@ -1,7 +1,7 @@
 const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
-const translator = require('./translator.js')
+const {translate} = require('./translator.js')
 const {MessageAttachment} = require('discord.js')
 const {getCardsDB, getSynonym, createSynonym, updateSynonym, deleteSynonym} = require('./db')
 const {APILanguages} = require("./language")
@@ -15,12 +15,12 @@ const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
 function getVariables(variables)
 {
     const words = variables.q.split(' ')
-    if (words.length < 1) return false
+    if (!words.length) return false
     //unset the search string
     variables.q = ''
-    for (let i = 0; i < words.length; i++)
+    for (const word of words)
     {
-        variables = setAttribute(translator.translate('en', words[i]), variables)
+        variables = setAttribute(translate('en', word), variables)
     }
 
     /**
