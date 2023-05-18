@@ -156,6 +156,6 @@ async function prismaTest()
     console.log(cards)
 
 }
-searchBlya('brit arty pin again').catch((e) => {console.log(e) })
+searchBlya('советы кв').catch((e) => {console.log(e) })
 
 

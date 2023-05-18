@@ -150,7 +150,11 @@ async function createCard(card)
   }
   if (!card.json.hasOwnProperty('attributes')) card.json.attributes = ''
   let text = ''
-  if (card.json.hasOwnProperty('text')) text = card.json.text['en-EN']
+  if (card.json.hasOwnProperty('text') && card.json.text.hasOwnProperty('en-EN'))
+  {
+    //console.log(card.json.text)
+    text = card.json.text['en-EN'].toLowerCase() + '%%' + card.json.text['ru-RU'].toLowerCase()
+  }
   let exile = ''
   if (card.json.hasOwnProperty('exile')) exile = card.json.exile
 
@@ -159,7 +163,7 @@ async function createCard(card)
         importId:       card.importId,
         imageURL:       card.imageUrl,
         thumbURL:       card.thumbUrl,
-        title:          card.json.title['en-EN'].toLowerCase(),
+        title:          card.json.title['en-EN'] + '%%' + card.json.title['ru-RU'],
         text:           text,
         set:            card.json.set.toLowerCase(),
         type:           card.json.type.toLowerCase(),
