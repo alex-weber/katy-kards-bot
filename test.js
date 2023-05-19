@@ -156,6 +156,6 @@ async function prismaTest()
     console.log(cards)
 
 }
-searchBlya('советы кв').catch((e) => {console.log(e) })
+topDeckGame().catch((e) => {console.log(e) })
 
 
