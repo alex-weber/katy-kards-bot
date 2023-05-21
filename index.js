@@ -66,7 +66,7 @@ try
         else if (!message.content.startsWith(prefix) || message.author.bot ) return
 
         //check for write permissions
-        if (!bot.hasWritePermissions(client, message)) return
+        if (! await bot.hasWritePermissions(client, message)) return
 
         //it's a bot command
         console.log('bot command:', message.guild.name, message.author.username, '->', message.content)
