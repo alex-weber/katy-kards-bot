@@ -51,9 +51,9 @@ async function hasWritePermissions(client, message)
         console.log('no write permissions.')
 
         return false
-    }
+    } else return true
 
-    return true
+
 }
 
 /**
