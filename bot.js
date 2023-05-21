@@ -45,8 +45,8 @@ async function hasWritePermissions(client, message)
 {
     const clientMember = await message.guild.members.fetch(client.user.id)
     let permissions = message.channel.permissionsFor(clientMember)
-    if (!permissions || !permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
-        !permissions.has(Permissions.FLAGS.ATTACH_FILES))
+    if (!permissions || ! await permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
+        ! await permissions.has(Permissions.FLAGS.ATTACH_FILES))
     {
         console.log('no write permissions.')
 
