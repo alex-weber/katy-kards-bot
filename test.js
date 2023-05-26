@@ -7,7 +7,7 @@ const fs = require("fs")
 const { getHelp } = require('./translator.js')
 const translator = require("./translator")
 const dictionary = require("./dictionary")
-const { topDeck, myTDRank } = require("./topDeck")
+const { topDeck, myTDRank, getTitle } = require("./topDeck")
 const {getCardsStats, getStats} = require("./stats")
 const {telegramClient, telegramMessage, Input, getMediaGroup} = require('./telegram')
 const bot = require("./bot");
@@ -19,9 +19,10 @@ async function searchBlya(input) {
     let language = 'en'
     let variables = { language : language, showSpawnables: true }
     variables.q = input
-    let cards = await search.advancedSearch(variables)
-    console.log(cards)
+    let cards = await search.getCards(variables)
+
     if (cards.counter) {
+        console.log(cards.cards[0])
         let files = search.getFiles(cards, language)
         console.log(files)
     }
@@ -156,6 +157,6 @@ async function prismaTest()
     console.log(cards)
 
 }
-topDeckGame().catch((e) => {console.log(e) })
+searchBlya('core').catch((e) => {console.log(e) })
 
 

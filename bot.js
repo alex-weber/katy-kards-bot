@@ -24,10 +24,10 @@ function getPrefix(message) {
  */
 function isQuotationSearch(message)
 {
-    let botCommand = /\".+\"/gm
+    let botCommand = /%.+%/gm
     if (botCommand.test(message.content))
     {
-        let arr = message.content.split('"')
+        let arr = message.content.split('%')
         if (arr[1] !== undefined ) return arr[1]
 
     }
