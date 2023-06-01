@@ -53,6 +53,7 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
+        if (message.author.bot) return
         let prefix = bot.getPrefix(message)
         //is there a "bot command" maked with double quotation marks?
         let qSearch = bot.isQuotationSearch(message)
@@ -63,7 +64,7 @@ try
             console.log('bot command with quotes inside a message:', message.content)
         }
         //not a bot command or bot
-        else if (!message.content.startsWith(prefix) || message.author.bot ) return
+        else if (!message.content.startsWith(prefix)) return
 
         //check for write permissions
         if (! await bot.hasWritePermissions(client, message)) return
