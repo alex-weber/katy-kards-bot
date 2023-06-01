@@ -62,7 +62,7 @@ function translate(language, msg)
                     '!советская пехота охрана 1/8 3k 1ц \n' +
                     'Можете использовать * в качестве заменителя для любой атаки или любой защиты.\n' +
                     'Страны для поиска: Советы Германия Британия США Япония Польша Франция Италия.\n' +
-                    '!en [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска' +
+                    '!en [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска\n' +
                     'https://patreon.com/KardsBotKatyusha'
             }
             break
@@ -84,7 +84,7 @@ function translate(language, msg)
                     'Nationen: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
                     '**!de** [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern\n' +
                     'Heroku Hosting Kosten: 12$ monatlich.(Heroku Hobby 7$ + pgSQL mini 5$)\n' +
-                    'Sie bekommen einen VIP-Zugang und können eigene Bot-Befehle erstellen, wenn Sie mich auf Patreon unterstützen.' +
+                    'Sie bekommen einen VIP-Zugang und können eigene Bot-Befehle erstellen, wenn Sie mich auf Patreon unterstützen.\n' +
                     'https://patreon.com/KardsBotKatyusha'
             }
             break
@@ -117,7 +117,7 @@ function translate(language, msg)
                     '!myrank - Your personal Top Deck Ranking with stats.\n\n' +
                     '!en [ de | es | fr | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
                     'The hosting costs 12$ a month. (Heroku Hobby 7$ + pgSQL mini 5$)\n' +
-                    'You will get a VIP access and can create your own bot commands if you support me on Patreon.' +
+                    'You will get a VIP access and can create your own bot commands if you support me on Patreon.\n' +
                     'https://patreon.com/KardsBotKatyusha'
 
             }
