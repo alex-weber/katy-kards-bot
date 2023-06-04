@@ -82,7 +82,7 @@ function getTitle(card)
  */
 async function battle(td)
 {
-    td.log = ''
+    td.log = '```' //format the log as code to avoid auto-formatting changing numbers
     let kredits = Math.floor(Math.random() * 7) + 1
     if (kredits > 7) kredits = 7
     td.kredits = kredits
@@ -186,6 +186,7 @@ async function battle(td)
         await updateUser(user2)
         td.log += 'draw'
     }
+    td.log += '```' //add code block end
     await updateTopDeck(td)
 
     return td
