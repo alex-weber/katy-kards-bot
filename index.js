@@ -213,11 +213,11 @@ try
         const counter = searchResult.counter
         if (!counter)
         {
-            //don't reply if nothin is found
+            //don't reply if nothing is found
             if (qSearch) return
             try
             {
-                //get a random cat/dog/hug image for no result
+                //get a random cat|dog image for no result
                 let endpoints = ['meow', 'woof']
                 //define the sample function to get a random array value
                 Array.prototype.sample = function()
@@ -250,9 +250,13 @@ try
         //attach found images
         const files = getFiles(searchResult, language)
         //reply to user
-        await message.reply({content: content, files: files})
-        console.log(counter + ' card(s) found', files)
-
+        try {
+            await message.reply({content: content, files: files})
+            console.log(counter + ' card(s) found', files)
+        } catch (e) {
+            console.log(e)
+        }
+        
     }) // end of onMessageCreate
 
     //start Discord-Bot's session
@@ -266,7 +270,7 @@ try
 
         telegramClient.on(telegramMessage('text'), async (ctx) =>
         {
-            let prefix = '!'
+            let prefix = defaultPrefix
             let command = ctx.update.message.text
             if (!command.startsWith(prefix) || ctx.update.message.from.is_bot) return
             let language = getLanguageByInput(command)
