@@ -7,7 +7,7 @@ const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 const {translate} = require('./translator.js')
 const {getStats} = require('./stats')
 const {getCards, getFiles, handleSynonym, isBotCommandChannel} = require('./search')
-let limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
+const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const {getLanguageByInput, languages, defaultLanguage} = require('./language.js')
 const dictionary = require('./dictionary')
@@ -242,6 +242,7 @@ try
         //if any cards are found - attach them
         let content = translate(language, 'search') + ': ' + counter
         //set limit to 10 if it is a bot-commands channel
+        let limit = globalLimit
         if (isBotCommandChannel(message)) limit = 10
         //warn that there are more cards found
         if (counter > limit)
@@ -320,7 +321,7 @@ try
             let searchResult = await getCards(variables)
             if (!searchResult) return
             if (!searchResult.counter) return await ctx.reply(translate(language, 'noresult'))
-            let files = getFiles(searchResult, language, limit)
+            let files = getFiles(searchResult, language, globalLimit)
             await ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
             if (searchResult.counter > 1)
             {
