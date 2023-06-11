@@ -6,7 +6,6 @@ const {MessageAttachment} = require('discord.js')
 const {getCardsDB, getSynonym, createSynonym, updateSynonym, deleteSynonym} = require('./db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
-const limit = parseInt(process.env.LIMIT) || 5 //attachment limit for discord
 /**
  *
  * @param variables
@@ -212,9 +211,10 @@ async function getCards(variables)
  *
  * @param cards
  * @param language
+ * @param limit
  * @returns {*[]}
  */
-function getFiles(cards, language)
+function getFiles(cards, language, limit)
 {
     let files = []
     if (language !== 'zh-Hant') language = APILanguages[language]
@@ -347,4 +347,16 @@ function isManager(user)
     return (user.role === 'GOD' || user.role === 'VIP')
 }
 
-module.exports = {getCards, getFiles, handleSynonym, isManager, advancedSearch}
+function isBotCommandChannel(message)
+{
+    return message.channel.name.search('bot') !== -1
+}
+
+module.exports = {
+    getCards,
+    getFiles,
+    handleSynonym,
+    isManager,
+    advancedSearch,
+    isBotCommandChannel,
+}

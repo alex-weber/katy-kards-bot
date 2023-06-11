@@ -6,8 +6,8 @@ const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 //modules
 const {translate} = require('./translator.js')
 const {getStats} = require('./stats')
-const {getCards, getFiles, handleSynonym} = require('./search')
-const limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
+const {getCards, getFiles, handleSynonym, isBotCommandChannel} = require('./search')
+let limit = parseInt(process.env.LIMIT) || 10 //attachment limit for discord
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const {getLanguageByInput, languages, defaultLanguage} = require('./language.js')
 const dictionary = require('./dictionary')
@@ -79,7 +79,7 @@ try
         //check the status
         if (user.status !== 'active')
         {
-            console.log(user)
+            console.log('blocked user\n',user)
             
             return
         }
@@ -125,9 +125,8 @@ try
         }
 
         //top deck game only in special channels
-        if (
-            command.startsWith('td') &&
-            (message.channel.name.search('bot') !== -1 ||
+        if (command.startsWith('td') &&
+            (isBotCommandChannel(message) ||
                 dictionary.botwar.channels.includes(message.channelId.toString())
             )
         )
@@ -242,13 +241,15 @@ try
         if (qSearch && counter !== 1) return
         //if any cards are found - attach them
         let content = translate(language, 'search') + ': ' + counter
+        //set limit to 10 if it is a bot-commands channel
+        if (isBotCommandChannel(message)) limit = 10
         //warn that there are more cards found
         if (counter > limit)
         {
             content += translate(language, 'limit') + limit
         }
         //attach found images
-        const files = getFiles(searchResult, language)
+        const files = getFiles(searchResult, language, limit)
         //reply to user
         try {
             await message.reply({content: content, files: files})
@@ -319,7 +320,7 @@ try
             let searchResult = await getCards(variables)
             if (!searchResult) return
             if (!searchResult.counter) return await ctx.reply(translate(language, 'noresult'))
-            let files = getFiles(searchResult, language)
+            let files = getFiles(searchResult, language, limit)
             await ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
             if (searchResult.counter > 1)
             {
