@@ -311,7 +311,7 @@ async function handleSynonym(user, command)
     value = value.replace(/,/gi, ' ')
     console.log(key, value)
     //allow only a-z chars
-    let allowedChars = /^[\sa-z0-9]+$/
+    let allowedChars = /^[\sa-z0-9_-]+$/
     if (!allowedChars.test(key)) return null
     //allow also numbers slashes and dots
     allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/

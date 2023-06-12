@@ -127,12 +127,13 @@ try
         //top deck game only in special channels
         if (command.startsWith('td') &&
             (isBotCommandChannel(message) ||
-                dictionary.botwar.channels.includes(message.channelId.toString())
-            )
-        )
+                dictionary.
+                botwar.
+                channels.
+                includes(message.channelId.toString())
+            ))
         {
             console.log('starting top deck game')
-            //let channel = client.channels.fetch(message.channelId)
             let td = await topDeck(message.channelId, user, command)
             if (td.state === 'open')
             {
@@ -186,12 +187,8 @@ try
         if (syn)
         {
             //check if there is a image link
-            if (syn.value.startsWith('https'))
-            {
-                await message.reply({files: [syn.value]})
-
-                return
-            } else command = syn.value
+            if (syn.value.startsWith('https')) return await message.reply({files: [syn.value]})
+            else command = syn.value
         } else if (command in dictionary.synonyms)
         {
             command = dictionary.synonyms[command]
