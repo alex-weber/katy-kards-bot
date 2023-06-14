@@ -102,7 +102,6 @@ function translate(language, msg)
                 return 'Welcome!\n\n' +
                     '!! - Steam players online and stats\n\n' +
                     '!leo - will find the Leopold\n' +
-                    'The first 3 characters of a word are used to search for attributes. \n' +
                     'All not found words will be used for searching in title and text.\n' +
                     '3k - Deployment cost\n' +
                     '2c or 2op  - Operation cost\n' +
@@ -111,7 +110,7 @@ function translate(language, msg)
                     'You can use * as placeholder for any attack or any defense\n' +
                     'You can also trigger the search without a leading prefix - show me %leo% please\n' +
                     'Nations for search: Soviet Germany Britain USA Japan Poland France Italy\n' +
-                    '!td [infantry | tank | artillery | fighter | bomber]\n' +
+                    '!td [infantry | tank | artillery | fighter | bomber] ' +
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '!ranking - Top Deck Ranking\n' +
                     '!myrank - Your personal Top Deck Ranking with stats.\n\n' +
