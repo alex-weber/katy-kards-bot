@@ -42,12 +42,22 @@ function getVariables(variables)
                 word = 'france'
                 break
             case 'russian':
+            case 'rus':
             case 'ussr':
                 word = 'soviet'
                 break
             case 'uk':
             case 'gb':
                 word = 'britain'
+                break
+            case 'polish':
+                word = 'poland'
+                break
+            case 'japanese':
+                word = 'japan'
+                break
+            case 'arty':
+                word = 'artillery'
                 break
             case 'plane':
             case 'planes':
@@ -155,8 +165,7 @@ function getAttribute(word, attributes)
 
     for (const [key, value] of Object.entries(attributes))
     {
-        if (key.slice(0, 3) === word.slice(0, 3) ||
-            (typeof value === 'string' && value.slice(0, 3) === word.slice(0, 3)))
+        if (key.indexOf(word) === 0 || (typeof value === 'string' && value.indexOf(word) === 0))
         {
             result = value
             break

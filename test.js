@@ -23,7 +23,7 @@ async function searchBlya(input) {
 
     if (cards.counter) {
         console.log(cards.cards[0])
-        let files = search.getFiles(cards, language)
+        let files = search.getFiles(cards, language, 10)
         console.log(files)
     }
     else console.log('nothing...')
@@ -157,6 +157,6 @@ async function prismaTest()
     console.log(cards)
 
 }
-searchBlya('core').catch((e) => {console.log(e) })
+searchBlya('japa elit ighter 4k').catch((e) => {console.log(e) })
 
 
