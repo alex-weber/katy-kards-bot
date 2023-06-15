@@ -277,7 +277,9 @@ try
         {
             let prefix = defaultPrefix
             let command = ctx.update.message.text
-            if (!command.startsWith(prefix) || ctx.update.message.from.is_bot) return
+            if (!command.startsWith(prefix) ||
+                ctx.update.message.from.is_bot ||
+                command.length > maxStrLen) return
             let language = getLanguageByInput(command)
             //online players
             if (command === prefix+prefix) {
