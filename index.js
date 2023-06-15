@@ -177,9 +177,9 @@ try
         }
 
         //list all synonyms
-        if (command === 'listsyn')
+        if (command.startsWith('listsyn'))
         {
-            let listing = await listSynonyms(user)
+            let listing = await listSynonyms(user, command)
             if (listing) return await message.reply(listing)
 
             return

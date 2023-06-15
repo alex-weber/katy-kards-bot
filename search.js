@@ -6,6 +6,7 @@ const {MessageAttachment} = require('discord.js')
 const {getCardsDB, getSynonym, createSynonym, updateSynonym, deleteSynonym, getAllSynonyms} = require('./db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
+const maxMessageLength = 4000
 /**
  *
  * @param variables
@@ -319,12 +320,8 @@ async function handleSynonym(user, command)
     let value = data.slice(1).toString()
     value = value.replace(/,/gi, ' ')
     console.log(key, value)
-    //allow only a-z chars
-    let allowedChars = /^[\sa-z0-9_-]+$/
-    if (!allowedChars.test(key)) return null
-    //allow also numbers slashes and dots
-    allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/
-    if (!allowedChars.test(value)) return null
+    //check key & value
+    if (!checkSynonymKey(key) || !checkSynonymValue(value)) return null
     let syn = await getSynonym(key)
     if (!syn && value)
     {
@@ -348,19 +345,60 @@ async function handleSynonym(user, command)
 
 /**
  *
- * @param user
- * @returns {Promise<string>}
+ * @param key
+ * @returns {boolean}
  */
-async function listSynonyms(user)
+function checkSynonymKey(key)
+{
+    //allow only a-z, numbers, underscore and minus chars
+    let allowedChars = /^[\sa-z0-9_-]+$/
+
+    return allowedChars.test(key)
+}
+
+/**
+ *
+ * @param value
+ * @returns {boolean}
+ */
+function checkSynonymValue(value)
+{
+    let allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/
+
+    return allowedChars.test(value)
+}
+
+/**
+ *
+ * @param user
+ * @param command
+ * @returns {Promise<string|null>}
+ */
+async function listSynonyms(user, command)
 {
     if (!isManager(user)) return null
-    const synonyms = await getAllSynonyms()
+    const data = command.split('=')
     let listing = '```' //start code block to avoid Discord to parse hyperlinks
+    if (data.length === 2 && checkSynonymKey(data[1]))
+    {
+        let synObject = await getSynonym(data[1])
+        if (synObject)
+        {
+            return listing + synObject.key + ': ' + synObject.value + '```'
+        }
+        else return 'not found'
+    }
+
+    const synonyms = await getAllSynonyms()
+
     for (const [, syn] of Object.entries(synonyms))
     {
-        listing += syn.key + ': ' + syn.value + '\n'
+        listing += syn.key + '\n'
     }
     listing += '```' //end code block
+    if (listing.length > maxMessageLength) {
+        listing = listing.slice(0, maxMessageLength-1)
+    }
 
     return listing
 }

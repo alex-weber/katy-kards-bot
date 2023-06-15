@@ -69,7 +69,11 @@ async function updateUser(User)
 async function getAllSynonyms()
 {
 
-  return await prisma.synonym.findMany().
+  return await prisma.synonym.findMany({
+    orderBy: {
+      key: 'asc'
+    }
+  }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })
 }
