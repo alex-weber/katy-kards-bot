@@ -4,13 +4,13 @@ const app = express()
 const port = parseInt(process.env.PORT) || 3000
 const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 //modules
-const {translate} = require('./translator.js')
+const {translate} = require('./translator')
 const {getStats} = require('./stats')
-const {getCards, getFiles, handleSynonym, isBotCommandChannel} = require('./search')
+const {getCards, getFiles, handleSynonym, isBotCommandChannel, listSynonyms} = require('./search')
 const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)
-const {getLanguageByInput, languages, defaultLanguage} = require('./language.js')
+const {getLanguageByInput, languages, defaultLanguage} = require('./language')
 const dictionary = require('./dictionary')
 //database
 const {getUser, updateUser, getSynonym, getTopDeckStats} = require("./db")
@@ -32,7 +32,7 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
 const {drawBattlefield} = require('./canvasManager')
-const {Telegraf} = require("telegraf");
+const {Telegraf} = require('telegraf');
 const client = new Client(
     {
         intents: [
@@ -45,7 +45,7 @@ const client = new Client(
 client.on('ready', () =>
 {
     console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
-    const guildNames = client.guilds.cache.map(g => g.name).join("\n")
+    const guildNames = client.guilds.cache.map(g => g.name).join('\n')
     console.log(guildNames)
     client.user.setActivity('WATCHING ' + client.guilds.cache.size + ' servers')
 })
@@ -176,6 +176,14 @@ try
             return await message.reply('Minimum ' + minStrLen + ' chars, please')
         }
 
+        //list all synonyms
+        if (command === 'listsyn')
+        {
+            let listing = await listSynonyms(user)
+            if (listing) return await message.reply(listing)
+
+            return
+        }
         //handle synonyms
         if (command.startsWith('^'))
         {

@@ -3,7 +3,7 @@ const query = require("./query")
 const dictionary = require('./dictionary')
 const {translate} = require('./translator.js')
 const {MessageAttachment} = require('discord.js')
-const {getCardsDB, getSynonym, createSynonym, updateSynonym, deleteSynonym} = require('./db')
+const {getCardsDB, getSynonym, createSynonym, updateSynonym, deleteSynonym, getAllSynonyms} = require('./db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
 /**
@@ -349,6 +349,25 @@ async function handleSynonym(user, command)
 /**
  *
  * @param user
+ * @returns {Promise<string>}
+ */
+async function listSynonyms(user)
+{
+    if (!isManager(user)) return null
+    const synonyms = await getAllSynonyms()
+    let listing = '```' //start code block to avoid Discord to parse hyperlinks
+    for (const [, syn] of Object.entries(synonyms))
+    {
+        listing += syn.key + ': ' + syn.value + '\n'
+    }
+    listing += '```' //end code block
+
+    return listing
+}
+
+/**
+ *
+ * @param user
  * @returns {boolean}
  */
 function isManager(user)
@@ -364,6 +383,7 @@ function isBotCommandChannel(message)
 module.exports = {
     getCards,
     getFiles,
+    listSynonyms,
     handleSynonym,
     isManager,
     advancedSearch,

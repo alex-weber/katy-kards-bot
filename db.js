@@ -64,6 +64,17 @@ async function updateUser(User)
 }
 
 /**
+ * @returns {Promise<*>}
+ */
+async function getAllSynonyms()
+{
+
+  return await prisma.synonym.findMany().
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
  *
  * @param key
  * @returns {Promise<*>}
@@ -356,6 +367,7 @@ module.exports = {
   updateTopDeck,
   getOpenTopDeck,
   getTopDeckStats,
+  getAllSynonyms,
   getSynonym,
   createSynonym,
   updateSynonym,

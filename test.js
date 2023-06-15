@@ -1,7 +1,7 @@
 const search = require("./search")
 const {getUser, getTopDeckStats, updateUser, getCardsDB} = require("./db")
 const {getLanguageByInput, defaultLanguage} = require("./language")
-const {handleSynonym, isManager, advancedSearch, getCards, getFiles} = require("./search")
+const {handleSynonym, isManager, advancedSearch, getCards, getFiles, listSynonyms} = require("./search")
 const { drawBattlefield } = require('./canvasManager')
 const fs = require("fs")
 const { getHelp } = require('./translator.js')
@@ -111,52 +111,11 @@ async function createJSON()
         })
 }
 
-async function prismaTest()
+async function listSyn()
 {
-
-    let variables = {
-        OR: [
-
-            {
-                AND: [
-                    {
-                        title: {
-                            contains: 'shuffl',
-                            mode: 'insensitive',
-                        }
-                    },
-                    {
-                        title: {
-                            contains: 'rand',
-                            mode: 'insensitive',
-                        }
-                    },
-                ]
-            },
-
-            {
-                AND: [
-                    {
-                        text: {
-                            contains: 'shuffle',
-                            mode: 'insensitive',
-                        }
-                    },
-                    {
-                        text: {
-                            contains: 'random',
-                            mode: 'insensitive',
-                        }
-                    },
-                ]
-            },
-        ]
-    }
-
-    let cards = await getCardsDB(variables)
-    console.log(cards)
-
+    let user = await getUser('1')
+    console.log(await listSynonyms(user))
 }
-searchBlya('japa elit ighter 4k').catch((e) => {console.log(e) })
+listSyn().catch((e) => {console.log(e) })
 
 
