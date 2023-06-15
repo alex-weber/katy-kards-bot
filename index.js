@@ -9,6 +9,7 @@ const {getStats} = require('./stats')
 const {getCards, getFiles, handleSynonym, isBotCommandChannel} = require('./search')
 const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
+const maxStrLen = 256 // buffer overflow protection :)
 const {getLanguageByInput, languages, defaultLanguage} = require('./language.js')
 const dictionary = require('./dictionary')
 //database
@@ -53,7 +54,7 @@ try
 {   //await new messages
     client.on('messageCreate', async message =>
     {
-        if (message.author.bot) return
+        if (message.author.bot || message.content.length > maxStrLen) return
         let prefix = bot.getPrefix(message)
         //is there a "bot command" maked with double quotation marks?
         let qSearch = bot.isQuotationSearch(message)
@@ -70,7 +71,12 @@ try
         if (! await bot.hasWritePermissions(client, message)) return
 
         //it's a bot command
-        console.log('bot command:', message.guild.name, message.author.username, '->', message.content)
+        console.log('bot command:',
+            message.guild.name,
+            message.channel.name,
+            message.author.username,
+            '->',
+            message.content)
         //remove all the prefixes from the beginning
         let command = bot.parseCommand(prefix, message.content)
 
