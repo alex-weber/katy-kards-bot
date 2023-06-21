@@ -116,6 +116,6 @@ async function listSyn()
     let user = await getUser('1')
     console.log(await handleSynonym(user, '^test4&=not working'))
 }
-listSyn().catch((e) => {console.log(e) })
+searchBlya('italian arty').catch((e) => {console.log(e) })
 
 

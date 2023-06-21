@@ -49,6 +49,7 @@ function getVariables(variables)
                 break
             case 'uk':
             case 'gb':
+            case 'british':
                 word = 'britain'
                 break
             case 'polish':
@@ -56,6 +57,9 @@ function getVariables(variables)
                 break
             case 'japanese':
                 word = 'japan'
+                break
+            case 'italian':
+                word = 'italy'
                 break
             case 'arty':
                 word = 'artillery'
