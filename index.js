@@ -85,7 +85,7 @@ try
         //check the status
         if (user.status !== 'active')
         {
-            console.log('blocked user\n',user)
+            console.log('blocked user\n', user)
             
             return
         }
@@ -145,9 +145,10 @@ try
             {
                 let unitType = ''
                 if (td.unitType) unitType = td.unitType + ' battle\n'
-                await message.reply(unitType.toUpperCase() + 'Waiting for another player...')
 
-                return
+                return await message.reply(
+                    unitType.toUpperCase() +
+                    'Waiting for another player...')
             }
             if (td.state === 'finished')
             {
@@ -187,7 +188,7 @@ try
         //handle synonyms
         if (command.startsWith('^'))
         {
-            let done = await handleSynonym(user, command)
+            let done = await handleSynonym(user, message.content)
             if (done)
             {
                 await message.reply(done)

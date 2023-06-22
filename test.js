@@ -84,7 +84,7 @@ async function telMedia()
     let searchResult = await getCards(variables)
     if (!searchResult) return
     if (!searchResult.counter) console.log('no cards found')
-    let files = getFiles(searchResult, language)
+    let files = getFiles(searchResult, language, 2)
     console.log(files)
     if (searchResult.counter > 1)
     {
@@ -114,8 +114,8 @@ async function createJSON()
 async function listSyn()
 {
     let user = await getUser('1')
-    console.log(await handleSynonym(user, '^test4&=not working'))
+    console.log(await handleSynonym(user, '!^test7=not workingGTE'))
 }
-searchBlya('italian arty').catch((e) => {console.log(e) })
+listSyn().catch((e) => {console.log(e) })
 
 
