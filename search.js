@@ -317,7 +317,7 @@ async function advancedSearch(variables)
 async function handleSynonym(user, content)
 {
     if (!isManager(user)) return null
-    const data = content.slice(2).split('=')
+    const data = content.slice(1).split('=')
     if (data.length < 2) return null
     console.log(data)
     const key = data[0].slice(1)
