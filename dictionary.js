@@ -53,8 +53,6 @@ module.exports = {
         slow: 'fast heinz',
         baby: 'autokanone',
         elephant: '114',
-        shit: 'shibata',
-        thomas: 'long tom',
         cas: 'close air support',
         uws: 'united we stand',
         wcd: 'we can do it',
