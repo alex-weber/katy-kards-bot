@@ -318,7 +318,7 @@ try
                 return
             }
             //update user
-            if (!user.name) user.name = ctx.update.message.from.username
+            if (!user.name) user.name = ctx.update.message.from.first_name
             //check the user language
             if (language === 'ru') user.language = language
             else if (user.language !== language) language = user.language
@@ -327,6 +327,22 @@ try
             if (command === 'help') return await ctx.reply(translate(language, 'help'))
             //search
             if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
+            //check for synonyms
+            let syn = await getSynonym(command)
+            if (syn)
+            {
+                //check if there is a image link
+                if (syn.value.startsWith('https'))
+                {
+                    try {
+                        return await ctx.replyWithPhoto(syn.value)
+                    } catch (e) {
+                        console.log(e)
+                        return ctx.reply(translate(language, 'error'))
+                    }
+                }
+                else command = syn.value
+            }
             let variables = {
                 'language': language,
                 'q': command,

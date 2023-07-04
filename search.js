@@ -317,10 +317,11 @@ async function advancedSearch(variables)
 async function handleSynonym(user, content)
 {
     if (!isManager(user)) return null
-    const data = content.slice(1).split('=')
+    //remove the prefix and the ^ from the beginning and split into key, value
+    const data = content.slice(2).split('=')
     if (data.length < 2) return null
     console.log(data)
-    const key = data[0].slice(1)
+    const key = data[0]
     let value = data.slice(1).toString()
     value = value.replace(/,/gi, ' ')
     console.log(key, value)

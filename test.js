@@ -114,8 +114,12 @@ async function createJSON()
 async function listSyn()
 {
     let user = await getUser('1')
-    console.log(await handleSynonym(user, '!^test7=not workingGTE'))
+    console.log(await handleSynonym(user, '!^test8=mamBa hujaMba'))
 }
-listSyn().catch((e) => {console.log(e) })
+async function getStats1()
+{
+    console.log(await getStats('en'))
+}
+getStats1().catch((e) => {console.log(e) })
 
 

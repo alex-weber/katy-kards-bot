@@ -27,7 +27,7 @@
     "telegraf": "^4.12.2"
   },
   "engines": {
-    "npm": "^8.0.0",
+    "npm": "^9.0.0",
     "node": "^16.0.0"
   },
   "devDependencies": {

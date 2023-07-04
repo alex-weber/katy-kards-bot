@@ -13,13 +13,14 @@ async function formatStats()
     let output = ''
     const response = await axios.get(statsURL)
     const body = response.data
+    const divider = 100
     for (let i = 1; i < 25; i++)
     {
         let date = new Date(body[body.length - i][0])
         let players = body[body.length - i][1];
         output +=
             date.getHours().toString().padStart(2, "0") + ':00 ' +
-            '░'.repeat(Math.floor(players / 100)) + ' ' +
+            '░'.repeat(Math.floor(players / divider)) + ' ' +
             players + '\n'
     }
 
