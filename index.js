@@ -212,9 +212,10 @@ try
 
         //first search on KARDS.com, on no result search in the local DB
         let variables = {
-            'language': language,
-            'q': command,
-            'showSpawnables': true,
+            language: language,
+            q: command,
+            showSpawnables: true,
+            showReserved: true,
         }
         const searchResult = await getCards(variables)
         if (!searchResult)

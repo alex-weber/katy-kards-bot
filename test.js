@@ -17,7 +17,11 @@ async function searchBlya(input) {
 
     //try to find the language and store it in the DB
     let language = 'en'
-    let variables = { language : language, showSpawnables: true }
+    let variables = {
+        language : language,
+        showSpawnables: true,
+        showReserved: true,
+    }
     variables.q = input
     let cards = await search.getCards(variables)
 
@@ -120,6 +124,6 @@ async function getStats1()
 {
     console.log(await getStats('en'))
 }
-getStats1().catch((e) => {console.log(e) })
+searchBlya('stug iii').catch((e) => {console.log(e) })
 
 
