@@ -266,6 +266,7 @@ async function advancedSearch(variables)
     delete variables.q
     delete variables.language
     delete variables.showSpawnables
+    delete variables.showReserved
     if (variables.hasOwnProperty('attributes'))
     {
         variables.attributes = {
