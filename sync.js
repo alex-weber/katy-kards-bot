@@ -14,20 +14,26 @@ async function syncDB()
         console.log('cards done: ' + i)
 
         let variables = {
-            "language": language,
-            "q": '',
-            "showSpawnables": true,
-            "offset": i,
+            language: language,
+            q: '',
+            showSpawnables: true,
+            showReserved: true,
+            offset: i,
         }
-        let response = await getCards(variables)
-        //console.log(response)
-        let cards = response.cards
-        if (!cards.length) break
-        for (const [, item] of Object.entries(cards))
-        {
-            let card = item.node
-            card.language = language
-            await createCard(card)
+        try {
+            let response = await getCards(variables)
+            //console.log(response)
+            let cards = response.cards
+            if (!cards.length) break
+            for (const [, item] of Object.entries(cards))
+            {
+                let card = item.node
+                card.language = language
+                await createCard(card)
+            }
+        } catch (e) {
+            i = i -20
+            continue
         }
     }
 }

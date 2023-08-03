@@ -345,9 +345,10 @@ try
                 else command = syn.value
             }
             let variables = {
-                'language': language,
-                'q': command,
-                'showSpawnables': true,
+                language: language,
+                q: command,
+                showSpawnables: true,
+                showReserved: true,
             }
             let searchResult = await getCards(variables)
             if (!searchResult) return

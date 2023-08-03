@@ -53,6 +53,7 @@ model Card {
   faction        String
   attributes     String?
   exile          String?
+  reserved       Boolean?
 }
 
 model Topdeck {

@@ -190,6 +190,7 @@ async function createCard(card)
         faction:        card.json.faction.toLowerCase(),
         attributes:     card.json.attributes.toString(),
         exile:          exile.toLowerCase(),
+        reserved:       card.reserved,
   }
 
   if (await cardExists(card))

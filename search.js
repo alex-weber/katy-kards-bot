@@ -232,15 +232,26 @@ function getFiles(cards, language, limit)
 {
     let files = []
     if (language !== 'zh-Hant') language = APILanguages[language]
-    for (const [, value] of Object.entries(cards.cards))
+    for (const [, card] of Object.entries(cards.cards))
     {
         //check if the response is from kards.com or internal
         let imageURL = ''
-        if (value.hasOwnProperty('imageURL')) imageURL = value.imageURL
-        else if (value.hasOwnProperty('node')) imageURL = value.node.imageUrl
+        let reserved = false
+        if (card.hasOwnProperty('imageURL'))
+        {
+            imageURL = card.imageURL
+            reserved = card.reserved
+        }
+        else if (card.hasOwnProperty('node'))
+        {
+            imageURL = card.node.imageUrl
+            reserved = card.node.reserved
+        }
         //replace language in the image link
         imageURL = imageURL.replace('en-EN', language)
-        let attachment = new MessageAttachment(host + imageURL)
+        let imageName = ''
+        if (reserved) imageName = 'reserved'
+        let attachment = new MessageAttachment(host + imageURL, imageName)
         files.push(attachment)
         if (files.length === limit) break
     }
