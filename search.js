@@ -251,7 +251,8 @@ function getFiles(cards, language, limit)
         imageURL = imageURL.replace('en-EN', language)
         let imageName = null
         if (reserved) imageName = 'reserved'
-        let attachment = new MessageAttachment(host + imageURL, imageName)
+        let attachment = new MessageAttachment(host + imageURL)
+        attachment = attachment.setDescription(imageName)
         files.push(attachment)
         if (files.length === limit) break
     }
