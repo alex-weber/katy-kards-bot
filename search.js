@@ -43,6 +43,7 @@ function getVariables(variables)
                 word = 'france'
                 break
             case 'russian':
+            case 'russia':
             case 'rus':
             case 'ussr':
                 word = 'soviet'

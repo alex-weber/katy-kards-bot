@@ -93,7 +93,7 @@ try
         //check the user language
         let language = defaultLanguage
         if (user.language !== defaultLanguage) language = user.language
-        updateUser(user)
+        await updateUser(user)
         //switch language
         if (bot.isLanguageSwitch(command) && !qSearch)
         {

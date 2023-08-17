@@ -124,6 +124,6 @@ async function getStats1()
 {
     console.log(await getStats('en'))
 }
-searchBlya('stug iii').catch((e) => {console.log(e) })
+searchBlya('japan order guard').catch((e) => {console.log(e) })
 
 
