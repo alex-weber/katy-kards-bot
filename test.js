@@ -12,6 +12,7 @@ const {getCardsStats, getStats} = require("./stats")
 const {telegramClient, telegramMessage, Input, getMediaGroup} = require('./telegram')
 const bot = require("./bot");
 const {translate} = require("./translator");
+const {isQuotationSearch} = require("./bot");
 
 async function searchBlya(input) {
 
@@ -124,6 +125,6 @@ async function getStats1()
 {
     console.log(await getStats('en'))
 }
-searchBlya('japan order guard').catch((e) => {console.log(e) })
-
-
+//searchBlya('japan order guard').catch((e) => {console.log(e) })
+let command = bot.parseCommand("!", "!!!!!!!!!!!!!!!!!a")
+console.log(command.length)

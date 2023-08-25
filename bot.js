@@ -24,7 +24,7 @@ function getPrefix(message) {
  */
 function isQuotationSearch(message)
 {
-    let botCommand = /%.+%/gm
+    let botCommand = /[^0-9]+%.+%/
     if (botCommand.test(message.content))
     {
         let arr = message.content.split('%')

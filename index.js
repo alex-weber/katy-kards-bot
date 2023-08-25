@@ -79,7 +79,7 @@ try
             message.content)
         //remove all the prefixes from the beginning
         let command = bot.parseCommand(prefix, message.content)
-
+        if (!command.length) return
         //set username
         const user = await getUser(message.author.id.toString())
         //check the status
@@ -302,6 +302,7 @@ try
             }
             console.log(ctx.update.message.from)
             command = bot.parseCommand(prefix, command)
+            if (!command.length) return
             //get or create user
             let userID = ctx.update.message.from.id.toString()
             const user = await getUser(userID)
