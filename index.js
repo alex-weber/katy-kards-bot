@@ -172,7 +172,7 @@ try
             return
         }
 
-        if (command.length && command.length < minStrLen && !qSearch)
+        if (command.length < minStrLen && !qSearch)
         {
             return await message.reply('Minimum ' + minStrLen + ' chars, please')
         }
@@ -328,7 +328,7 @@ try
             //help
             if (command === 'help') return await ctx.reply(translate(language, 'help'))
             //search
-            if (command.length && command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
+            if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
             //check for synonyms
             let syn = await getSynonym(command)
             if (syn)
