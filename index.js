@@ -79,7 +79,7 @@ try
             message.content)
         //remove all the prefixes from the beginning
         let command = bot.parseCommand(prefix, message.content)
-        if (!command.length) return
+
         //set username
         const user = await getUser(message.author.id.toString())
         //check the status
@@ -172,7 +172,7 @@ try
             return
         }
 
-        if (command.length < minStrLen && !qSearch)
+        if (command.length && command.length < minStrLen && !qSearch)
         {
             return await message.reply('Minimum ' + minStrLen + ' chars, please')
         }
@@ -302,7 +302,7 @@ try
             }
             console.log(ctx.update.message.from)
             command = bot.parseCommand(prefix, command)
-            if (!command.length) return
+
             //get or create user
             let userID = ctx.update.message.from.id.toString()
             const user = await getUser(userID)
@@ -328,7 +328,7 @@ try
             //help
             if (command === 'help') return await ctx.reply(translate(language, 'help'))
             //search
-            if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
+            if (command.length && command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
             //check for synonyms
             let syn = await getSynonym(command)
             if (syn)
