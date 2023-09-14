@@ -26,8 +26,8 @@
     "telegraf": "^4.12.2"
   },
   "engines": {
-    "npm": "^9.0.0",
-    "node": "^16.0.0"
+    "npm": "^10.1.0",
+    "node": "^18.17.1"
   },
   "devDependencies": {
     "prisma": "^5.1.1"

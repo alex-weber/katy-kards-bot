@@ -1,7 +1,4 @@
-.idea
-/vendor/
-/node_modules/
-test.js
+.idea/
+node_modules/
 .env
-/export/
-
+export/
