@@ -188,7 +188,7 @@ async function createCard(card)
         operationCost:  card.json.operationCost,
         rarity:         card.json.rarity.toLowerCase(),
         faction:        card.json.faction.toLowerCase(),
-        attributes:     card.json.attributes.toString(),
+        attributes:     card.json.attributes.toString().toLowerCase(),
         exile:          exile.toLowerCase(),
         reserved:       card.reserved,
   }

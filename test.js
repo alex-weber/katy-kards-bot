@@ -23,7 +23,7 @@ async function searchBlya(input) {
         showSpawnables: true,
         showReserved: true,
     }
-    variables.q = input
+    variables.q = input.toLowerCase()
     let cards = await search.getCards(variables)
 
     if (cards.counter) {
@@ -125,6 +125,5 @@ async function getStats1()
 {
     console.log(await getStats('en'))
 }
-//searchBlya('japan order guard').catch((e) => {console.log(e) })
-let command = bot.parseCommand("!", "!!!!!!!!!!!!!!!!!a")
-console.log(command.length)
+searchBlya('veteran 50.').catch((e) => {console.log(e) })
+

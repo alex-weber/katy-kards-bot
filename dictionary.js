@@ -36,6 +36,7 @@ module.exports = {
         'pincer',
         'heavy',
         'fury',
+        'veteran',
     ],
     synonyms: {
 
