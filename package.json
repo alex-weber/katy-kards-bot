@@ -1,11 +1,12 @@
 {
   "name": "katyusha-kards-bot",
-  "version": "2.1",
+  "version": "2.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js",
+    "heroku-postbuild": "npx prisma generate"
   },
   "keywords": [
     "KARDS",
@@ -17,6 +18,7 @@
   "dependencies": {
     "@napi-rs/canvas": "^0.1.28",
     "@prisma/client": "^5.1.1",
+    "prisma": "^5.1.1",
     "axios": "^0.26.0",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
@@ -27,8 +29,5 @@
   "engines": {
     "npm": "^10.0.0",
     "node": "^18.17.1"
-  },
-  "devDependencies": {
-    "prisma": "^5.1.1"
   }
 }
