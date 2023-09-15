@@ -14,8 +14,6 @@ const {getLanguageByInput, languages, defaultLanguage} = require('./language')
 const dictionary = require('./dictionary')
 //database
 const {getUser, updateUser, getSynonym, getTopDeckStats} = require("./db")
-//random image service
-const randomImageService = require('random-image-api')
 const fs = require('fs')
 //topDeck game
 const {topDeck, myTDRank} = require('./topDeck')
@@ -33,6 +31,7 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 const {Client, Intents, Permissions} = require('discord.js')
 const {drawBattlefield} = require('./canvasManager')
 const {Telegraf} = require('telegraf');
+const axios = require("axios");
 const client = new Client(
     {
         intents: [
@@ -236,11 +235,12 @@ try
                 {
                     return this[Math.floor(Math.random()*this.length)]
                 }
-                const image = await randomImageService.nekos(endpoints.sample())
+                const endpoint = endpoints.sample()
+                const image = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
                 await message.reply(
                     {
                         content: translate(language, 'noresult'),
-                        files: [image.toString()]
+                        files: [image.data.url.toString()]
                     })
             } catch (e)
             {
