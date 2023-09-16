@@ -117,10 +117,10 @@ async function battle(td)
         let attack = attacker.attack
         let defAttack = defender.attack
         //check for heavy armor
-        if (attacker.attributes.search('heavyArmor1') !== -1) defAttack--
-        if (attacker.attributes.search('heavyArmor2') !== -1) defAttack = defAttack - 2
-        if (defender.attributes.search('heavyArmor1') !== -1) attack--
-        if (defender.attributes.search('heavyArmor2') !== -1) attack = attack - 2
+        if (attacker.attributes.search('heavyarmor1') !== -1) defAttack--
+        if (attacker.attributes.search('heavyarmor2') !== -1) defAttack = defAttack - 2
+        if (defender.attributes.search('heavyarmor1') !== -1) attack--
+        if (defender.attributes.search('heavyarmor2') !== -1) attack = attack - 2
         if (attack < 0) attack = 0
         //reverse damage
         if ((attacker.type === 'bomber' && defender.type === 'fighter') ||
