@@ -107,13 +107,13 @@ try
             return
         }
         //handle command
-        if (command === 'help') return await message.reply(translate(language, 'help'))
+        if (command === 'help') return message.reply(translate(language, 'help'))
 
         //get top 9 TD ranking
-        if (command === 'ranking' || command === 'rankings') return await message.reply(await getTopDeckStats())
+        if (command === 'ranking' || command === 'rankings') return message.reply(await getTopDeckStats())
 
         //user's TD ranking
-        if (command === 'myrank') return await message.reply(myTDRank(user))
+        if (command === 'myrank') return message.reply(myTDRank(user))
 
         //show online stats
         if (message.content === prefix + prefix || command === 'ingame' || command === 'online')
@@ -145,14 +145,14 @@ try
                 let unitType = ''
                 if (td.unitType) unitType = td.unitType + ' battle\n'
 
-                return await message.reply(
+                return message.reply(
                     unitType.toUpperCase() +
                     'Waiting for another player...')
             }
             if (td.state === 'finished')
             {
                 //draw the image
-                await message.reply('getting battle results...')
+                message.reply('getting battle results...')
                 try {
                     const battleImage = await drawBattlefield(td)
                     await message.reply({content: td.log, files: [battleImage]})
@@ -163,7 +163,7 @@ try
                         console.log('image deleted')
                     })
                 } catch (e) {
-                    await message.reply('could not draw battle image\n' + td.log)
+                    message.reply('could not draw battle image\n' + td.log)
                     console.error(e.toString())
                 }
             }
@@ -173,14 +173,14 @@ try
         if (!command.length) return
         if (command.length < minStrLen && !qSearch)
         {
-            return await message.reply('Minimum ' + minStrLen + ' chars, please')
+            return message.reply('Minimum ' + minStrLen + ' chars, please')
         }
 
         //list all synonyms
         if (command.startsWith('listsyn'))
         {
             let listing = await listSynonyms(user, command)
-            if (listing) return await message.reply(listing)
+            if (listing) return message.reply(listing)
 
             return
         }
@@ -190,7 +190,7 @@ try
             let done = await handleSynonym(user, message.content)
             if (done)
             {
-                await message.reply(done)
+                message.reply(done)
             }
 
             return
@@ -201,7 +201,7 @@ try
         if (syn)
         {
             //check if there is a image link
-            if (syn.value.startsWith('https')) return await message.reply({files: [syn.value]})
+            if (syn.value.startsWith('https')) return message.reply({files: [syn.value]})
             else command = syn.value
         } else if (command in dictionary.synonyms)
         {
@@ -219,7 +219,7 @@ try
         const searchResult = await getCards(variables)
         if (!searchResult)
         {
-            return await message.reply(translate(language, 'error'))
+            return message.reply(translate(language, 'error'))
         }
         const counter = searchResult.counter
         if (!counter)
@@ -237,14 +237,14 @@ try
                 }
                 const endpoint = endpoints.sample()
                 const image = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
-                await message.reply(
+                message.reply(
                     {
                         content: translate(language, 'noresult'),
                         files: [image.data.url.toString()]
                     })
             } catch (e)
             {
-                await message.reply(translate(language, 'noresult'))
+                message.reply(translate(language, 'noresult'))
                 console.log(e)
             }
 
@@ -266,7 +266,7 @@ try
         const files = getFiles(searchResult, language, limit)
         //reply to user
         try {
-            await message.reply({content: content, files: files})
+            message.reply({content: content, files: files})
             console.log(counter + ' card(s) found', files)
         } catch (e) {
             console.log(e)
@@ -326,7 +326,7 @@ try
             else if (user.language !== language) language = user.language
             await updateUser(user)
             //help
-            if (command === 'help') return await ctx.reply(translate(language, 'help'))
+            if (command === 'help') return ctx.reply(translate(language, 'help'))
             //search
             if (!command.length) return
             if (command.length < minStrLen) return ctx.reply('minimum 2 charachters, please')
@@ -338,7 +338,7 @@ try
                 if (syn.value.startsWith('https'))
                 {
                     try {
-                        return await ctx.replyWithPhoto(syn.value)
+                        return ctx.replyWithPhoto(syn.value)
                     } catch (e) {
                         console.log(e)
                         return ctx.reply(translate(language, 'error'))
@@ -354,13 +354,13 @@ try
             }
             let searchResult = await getCards(variables)
             if (!searchResult) return
-            if (!searchResult.counter) return await ctx.reply(translate(language, 'noresult'))
+            if (!searchResult.counter) return ctx.reply(translate(language, 'noresult'))
             let files = getFiles(searchResult, language, globalLimit)
-            await ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
+            ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
             if (searchResult.counter > 1)
             {
                 try {
-                    return await ctx.replyWithMediaGroup(getMediaGroup(files))
+                    return ctx.replyWithMediaGroup(getMediaGroup(files))
                 } catch (e) {
                     console.log(e)
                     return ctx.reply(translate(language, 'error'))
@@ -369,7 +369,7 @@ try
             else if (searchResult.counter === 1)
             {
                 try {
-                    return await ctx.replyWithPhoto(files[0].attachment)
+                    return ctx.replyWithPhoto(files[0].attachment)
                 }
                 catch (e) {
                     console.log(e)
