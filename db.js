@@ -357,7 +357,7 @@ async function getTopDeckStats()
   let counter = 1
   ranking.forEach((user) => {
     if (counter > 9) return
-    answer += counter +': ' + user.name + ' ('+ user.score +')\n'
+    answer += counter +'. ' + user.name + ' ('+ user.score +')\n'
     counter++
   })
 

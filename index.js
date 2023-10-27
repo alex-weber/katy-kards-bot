@@ -91,6 +91,7 @@ try
         if (!user.name) user.name = message.author.username
         //check the user language
         let language = defaultLanguage
+        if (getLanguageByInput(command) === 'ru') user.language = 'ru'
         if (user.language !== defaultLanguage) language = user.language
         await updateUser(user)
         //switch language
