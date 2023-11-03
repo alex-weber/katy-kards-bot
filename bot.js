@@ -1,7 +1,8 @@
 const {Permissions} = require("discord.js")
 const {updateUser} = require("./db")
 const {translate} = require("./translator")
-const {languages} = require("./language");
+const {languages} = require("./language")
+const axios = require("axios")
 
 /**
  *
@@ -70,6 +71,12 @@ function parseCommand(prefix, command)
     return command
 }
 
+/**
+ *
+ * @param user
+ * @param command
+ * @returns {Promise<string>}
+ */
 async function switchLanguage(user, command)
 {
     let language = command.slice(0, 2)
@@ -82,9 +89,37 @@ async function switchLanguage(user, command)
     return language
 }
 
+/**
+ *
+ * @param command
+ * @returns {Boolean}
+ */
 function isLanguageSwitch(command)
 {
     return languages.includes(command)
 }
 
-module.exports = {getPrefix, isQuotationSearch, hasWritePermissions, parseCommand, switchLanguage, isLanguageSwitch}
+/**
+ *
+ * @param url
+ * @returns {Promise<Integer>}
+ */
+async function getFileSize(url)
+{
+    const response = await axios.head(url, { responseType: 'json' })
+    const fileSize = parseInt(response.headers["content-length"])
+    console.log(url, fileSize)
+
+    return fileSize
+
+}
+
+module.exports = {
+    getPrefix,
+    isQuotationSearch,
+    hasWritePermissions,
+    parseCommand,
+    switchLanguage,
+    isLanguageSwitch,
+    getFileSize,
+}

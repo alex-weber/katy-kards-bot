@@ -10,6 +10,7 @@ const {getCards, getFiles, handleSynonym, isBotCommandChannel, listSynonyms} = r
 const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)
+const maxFileSize = 5*1024*1024 //5MB
 const {getLanguageByInput, languages, defaultLanguage} = require('./language')
 const dictionary = require('./dictionary')
 //database
@@ -336,7 +337,7 @@ try
             if (syn)
             {
                 //check if there is a image link
-                if (syn.value.startsWith('https'))
+                if (syn.value.startsWith('https') && await bot.getFileSize(syn.value) < maxFileSize)
                 {
                     try {
                         return ctx.replyWithPhoto(syn.value)
