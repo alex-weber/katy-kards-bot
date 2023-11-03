@@ -337,10 +337,13 @@ try
             if (syn)
             {
                 //check if there is a image link
-                if (syn.value.startsWith('https') && await bot.getFileSize(syn.value) < maxFileSize)
+                if (syn.value.startsWith('https'))
                 {
                     try {
-                        return ctx.replyWithPhoto(syn.value)
+                        const fileSize = await bot.getFileSize(syn.value)
+                        if (fileSize < maxFileSize) return ctx.replyWithPhoto(syn.value)
+                        else return ctx.reply(translate(language, 'error'))
+                        
                     } catch (e) {
                         console.log(e)
                         return ctx.reply(translate(language, 'error'))
