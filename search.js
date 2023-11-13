@@ -331,16 +331,18 @@ async function advancedSearch(variables)
 async function handleSynonym(user, content)
 {
     if (!isManager(user)) return null
-    //remove the prefix and the ^ from the beginning and split into key, value
-    const data = content.slice(2).split('=')
-    if (data.length < 2) return null
-    console.log(data)
-    const key = data[0]
-    let value = data.slice(1).toString()
-    value = value.replace(/,/gi, ' ')
+    //remove the prefix and the ^ from the beginning and get the key and the value
+    const key = content.slice(2, content.indexOf('='))
+    let value = content.slice(content.indexOf('=')+1)
     console.log(key, value)
     //check key & value
-    if (!checkSynonymKey(key) || !checkSynonymValue(value)) return null
+    if (!checkSynonymKey(key)) return null
+    if (value.startsWith('https'))
+    {
+        value = getURL(value)
+        if (!value) return null
+    }
+    else if (!checkSynonymValue(value)) return null
     let syn = await getSynonym(key)
     if (!syn && value)
     {
@@ -360,6 +362,25 @@ async function handleSynonym(user, content)
 
         return 'updated'
     }
+}
+
+/**
+ *
+ * @param value
+ * @returns {boolean|string}
+ */
+function getURL(value)
+{
+    try {
+        const url = new URL(value)
+
+        return url.origin + url.pathname
+    } catch (e) {
+        console.log(e.message)
+
+        return false
+    }
+
 }
 
 /**
