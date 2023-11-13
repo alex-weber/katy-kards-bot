@@ -49,6 +49,19 @@ client.on('ready', () =>
     console.log(guildNames)
     client.user.setActivity('WATCHING ' + client.guilds.cache.size + ' servers')
 })
+//prevent app from crashing
+process.on('unhandledRejection', (reason, promise) =>
+{
+    console.log('Unhandled Rejection at:', promise, 'reason:', reason)
+})
+process.on('uncaughtException', (err, origin) =>
+{
+    console.log('uncaught Exception:', err, origin)
+})
+process.on('uncaughtExceptionMonitor', (err, origin) =>
+{
+    console.log('uncaught Exception Monitor:', err, origin)
+})
 //main block
 try
 {   //await new messages
@@ -271,7 +284,8 @@ try
             message.reply({content: content, files: files})
             console.log(counter + ' card(s) found', files)
         } catch (e) {
-            console.log(e)
+            console.log(e.message)
+            message.reply(translate(language, 'error'))
         }
         
     }) // end of onMessageCreate
@@ -343,7 +357,7 @@ try
                         const fileSize = await bot.getFileSize(syn.value)
                         if (fileSize < maxFileSize) return ctx.replyWithPhoto(syn.value)
                         else return ctx.reply(translate(language, 'error'))
-                        
+
                     } catch (e) {
                         console.log(e)
                         return ctx.reply(translate(language, 'error'))

@@ -1,6 +1,5 @@
 const {Permissions} = require("discord.js")
 const {updateUser} = require("./db")
-const {translate} = require("./translator")
 const {languages} = require("./language")
 const axios = require("axios")
 
