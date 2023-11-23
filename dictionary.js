@@ -9,6 +9,7 @@ module.exports = {
         'france',
         'italy',
         'poland',
+        'finland',
     ],
     type: [
         'infantry',
@@ -37,6 +38,7 @@ module.exports = {
         'heavy',
         'fury',
         'veteran',
+        'salvage',
     ],
     synonyms: {
 
