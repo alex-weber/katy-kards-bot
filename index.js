@@ -47,7 +47,7 @@ client.on('ready', () =>
     console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
     const guildNames = client.guilds.cache.map(g => g.name).join('\n')
     console.log(guildNames)
-    client.user.setActivity('WATCHING ' + client.guilds.cache.size + ' servers')
+    client.user.setActivity(client.guilds.cache.size + ' servers', { type: 'WATCHING'})
 })
 //prevent app from crashing
 process.on('unhandledRejection', (reason, promise) =>
