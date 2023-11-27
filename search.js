@@ -463,7 +463,5 @@ module.exports = {
     getFiles,
     listSynonyms,
     handleSynonym,
-    isManager,
-    advancedSearch,
     isBotCommandChannel,
 }

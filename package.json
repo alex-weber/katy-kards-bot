@@ -18,12 +18,12 @@
   "dependencies": {
     "@napi-rs/canvas": "^0.1.28",
     "@prisma/client": "^5.1.1",
-    "prisma": "^5.1.1",
-    "axios": "^0.26.0",
+    "axios": "^1.6.2",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
     "pg": "^8.7.3",
+    "prisma": "^5.1.1",
     "telegraf": "^4.12.2"
   },
   "engines": {
