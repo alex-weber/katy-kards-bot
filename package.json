@@ -17,17 +17,19 @@
   "license": "ISC",
   "dependencies": {
     "@napi-rs/canvas": "^0.1.28",
-    "@prisma/client": "^5.1.1",
+    "@prisma/client": "^5.6.0",
     "axios": "^1.6.2",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
-    "pg": "^8.7.3",
-    "prisma": "^5.1.1",
+    "node": "^21.2.0",
+    "npm": "^10.2.4",
+    "pg": "^8.11.3",
+    "prisma": "^5.6.0",
     "telegraf": "^4.12.2"
   },
   "engines": {
-    "npm": "^10.0.0",
-    "node": "^18.17.1"
+    "npm": "^10.2.4",
+    "node": "^21.2.0"
   }
 }

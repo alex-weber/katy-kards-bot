@@ -31,16 +31,14 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
 const {Client, Intents, Permissions} = require('discord.js')
 const {drawBattlefield} = require('./canvasManager')
-const {Telegraf} = require('telegraf');
-const axios = require("axios");
-const client = new Client(
-    {
+const {Telegraf} = require('telegraf')
+const axios = require("axios")
+const client = new Client({
         intents: [
             Intents.FLAGS.GUILDS,
             Intents.FLAGS.GUILD_MESSAGES,
             Intents.FLAGS.GUILD_MEMBERS,
-        ]
-    })
+        ]})
 //Discord-Bot login event
 client.on('ready', () =>
 {
