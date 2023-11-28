@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "node index.js",
     "heroku-postbuild": "npx prisma generate"
   },
@@ -31,5 +31,8 @@
   "engines": {
     "npm": "^10.2.4",
     "node": "^21.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
