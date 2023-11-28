@@ -1,5 +1,5 @@
 const {getStats} = require('../stats')
-const {getCards, listSynonyms} = require('../search')
+const {getCards, getFiles, listSynonyms} = require('../search')
 const {getUser} = require('../db')
 
 test('player stats loaded', async () => {
@@ -15,10 +15,11 @@ test('search is working', async () => {
         showReserved: true,
     }
     let data = await getCards(variables)
-    expect(data).toBeTruthy()
+    expect(data.cards[0].node.cardId).toMatch('leopold')
     variables.q = 'sov tank 10k'
     data = await getCards(variables)
-    expect(data).toBeTruthy()
+    const files = getFiles(data, 'en', 10)
+    expect(files[0].attachment).toMatch('stalin')
 })
 
 test('listing synonyms', async () => {
