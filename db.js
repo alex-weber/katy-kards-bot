@@ -329,7 +329,7 @@ async function getRandomCard(td)
 
 /**
  *
- * @returns String
+ * @returns Promise
  */
 async function getTopDeckStats()
 {

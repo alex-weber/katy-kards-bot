@@ -39,7 +39,7 @@ function isQuotationSearch(message)
  *
  * @param client
  * @param message
- * @returns {boolean}
+ * @returns Promise {boolean}
  */
 async function hasWritePermissions(client, message)
 {

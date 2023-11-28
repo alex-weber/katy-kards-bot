@@ -24,10 +24,7 @@ async function telegramHandler(ctx) {
     let language = getLanguageByInput(command)
     //online players
     if (command === prefix+prefix) {
-        getStats(language).then(res =>
-        {
-            return ctx.reply(res)
-        })
+        getStats(language).then(res => { return ctx.reply(res) })
 
         return
     }
@@ -45,7 +42,8 @@ async function telegramHandler(ctx) {
             translate(language, 'langChange') + language.toUpperCase()
         ).then(() =>
         {
-            console.log('lang changed to', language.toUpperCase(), 'for', ctx.update.message.from.username)
+            console.log('lang changed to', language.toUpperCase(), 'for',
+                ctx.update.message.from.username)
         })
 
         return

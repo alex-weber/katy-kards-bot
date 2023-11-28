@@ -21,7 +21,7 @@ const maxStrLen = 256 // buffer overflow protection :)
 async function discordHandler(message, client) {
     if (message.author.bot || message.content.length > maxStrLen) return
     let prefix = bot.getPrefix(message)
-    //is there a "bot command" maked with double quotation marks?
+    //is there a "bot command" marked with double quotation marks?
     let qSearch = bot.isQuotationSearch(message)
     if (qSearch)
     {
@@ -85,13 +85,9 @@ async function discordHandler(message, client) {
     //show online stats
     if (message.content === prefix + prefix || command === 'ingame' || command === 'online')
     {
-        getStats(language).then(res =>
-        {
-            message.reply(res)
-        }).catch(error =>
-        {
-            console.log(error)
-        })
+        getStats(language).
+        then(res => { message.reply(res) }).
+        catch(error => { console.log(error) })
 
         return
     }
@@ -167,7 +163,7 @@ async function discordHandler(message, client) {
     let syn = await getSynonym(command)
     if (syn)
     {
-        //check if there is a image link
+        //check if there is an image link
         if (syn.value.startsWith('https')) return message.reply({files: [syn.value]})
         else command = syn.value
     } else if (command in dictionary.synonyms)
@@ -242,6 +238,4 @@ async function discordHandler(message, client) {
 
 }
 
-module.exports = {
-    discordHandler
-}
+module.exports = {discordHandler}

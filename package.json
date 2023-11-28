@@ -1,7 +1,7 @@
 {
   "name": "katyusha-kards-bot",
-  "version": "2.0.1",
-  "description": "",
+  "version": "2.5.0",
+  "description": "cards search and more",
   "main": "index.js",
   "scripts": {
     "test": "jest",
