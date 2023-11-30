@@ -12,6 +12,8 @@ const axios = require("axios")
 const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)
+const jsoning = require("jsoning")
+const cache = new jsoning("db.json")
 /**
  *
  * @param message
@@ -79,6 +81,16 @@ async function discordHandler(message, client) {
     }
     //handle command
     if (command === 'help') return message.reply(translate(language, 'help'))
+
+    //clear cache
+    if (command === 'cclear' && user.role === 'GOD')
+    {
+        await cache.clear()
+        console.log('clear cache command from user ', user.name)
+        message.reply('cache cleared')
+
+        return
+    }
 
     //get top 9 TD ranking
     if (command === 'ranking' || command === 'rankings') return message.reply(await getTopDeckStats())
@@ -176,6 +188,13 @@ async function discordHandler(message, client) {
         console.log('synonym found for ' + command)
     }
 
+    //check if in cache
+    if (cache.has(language+command)) {
+        console.log('serving from cache: ', language, command)
+        message.reply(await cache.get(language+command))
+
+        return
+    }
     //first search on KARDS.com, on no result search in the local DB
     let variables = {
         language: language,
@@ -235,6 +254,8 @@ async function discordHandler(message, client) {
     try {
         message.reply({content: content, files: files})
         console.log(counter + ' card(s) found', files)
+        //store in the cache
+        await cache.set(language+command, {content: content, files: files})
     } catch (e) {
         console.log(e.message)
         message.reply(translate(language, 'error'))
