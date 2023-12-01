@@ -13,7 +13,6 @@ test('search is working', async () => {
         q: 'Leopold',
         showSpawnables: true,
         showReserved: true,
-        offset: 20,
     }
     let data = await getCards(variables)
     expect(data.cards[0].node.cardId).toMatch('leopold')

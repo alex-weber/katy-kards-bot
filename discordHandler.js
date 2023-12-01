@@ -9,7 +9,7 @@ const dictionary = require("./dictionary")
 const {drawBattlefield} = require("./canvasManager")
 const fs = require("fs")
 const axios = require("axios")
-const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
+const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)
 const jsoning = require("jsoning")
@@ -188,10 +188,16 @@ async function discordHandler(message, client) {
         console.log('synonym found for ' + command)
     }
 
+    //set limit to 10 if it is a bot-commands channel
+    let limit = globalLimit
+    if (isBotCommandChannel(message)) limit = 10
     //check if in cache
-    if (cache.has(language+command)) {
-        console.log('serving from cache: ', language, command)
-        message.reply(await cache.get(language+command))
+    const cacheKey = language+command
+    if (cache.has(cacheKey)) {
+        console.log('serving from cache: ', language, command, limit)
+        let answer = await cache.get(cacheKey)
+        let attachments = answer.files
+        message.reply({content: answer.content, files: answer.files.slice(0, limit)})
 
         return
     }
@@ -240,9 +246,6 @@ async function discordHandler(message, client) {
     if (qSearch && counter !== 1) return
     //if any cards are found - attach them
     let content = translate(language, 'search') + ': ' + counter
-    //set limit to 10 if it is a bot-commands channel
-    let limit = globalLimit
-    if (isBotCommandChannel(message)) limit = 10
     //warn that there are more cards found
     if (counter > limit)
     {
@@ -255,7 +258,7 @@ async function discordHandler(message, client) {
         message.reply({content: content, files: files})
         console.log(counter + ' card(s) found', files)
         //store in the cache
-        await cache.set(language+command, {content: content, files: files})
+        await cache.set(cacheKey, {content: content, files: files})
     } catch (e) {
         console.log(e.message)
         message.reply(translate(language, 'error'))
