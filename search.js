@@ -62,6 +62,9 @@ function getVariables(variables)
             case 'italian':
                 word = 'italy'
                 break
+            case 'finnish':
+                word = 'finland'
+                break
             case 'arty':
                 word = 'artillery'
                 break

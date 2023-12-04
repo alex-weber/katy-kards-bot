@@ -8,6 +8,7 @@ function translate(language, msg)
 {
     const reservedWords = {
         'germany': 'германия',
+        'german': 'немецкий',
         'usa': 'сша',
         'japan': 'япония',
         'soviet': 'советы',
@@ -63,9 +64,8 @@ function translate(language, msg)
                     '5-5 или 5/5 - пять атаки и пять защиты\n' +
                     '!советская пехота охрана 1/8 3k 1ц \n' +
                     'Можете использовать * в качестве заменителя для любой атаки или любой защиты.\n' +
-                    'Страны для поиска: Советы Германия Британия США Япония Польша Франция Италия.\n' +
-                    '!en [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска\n' +
-                    'https://patreon.com/KardsBotKatyusha'
+                    'Страны для поиска: Советы Германия Британия США Япония Польша Франция Италия Финляндия.\n' +
+                    '!en [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска\n'
             }
             break
         case 'de':
@@ -83,11 +83,9 @@ function translate(language, msg)
                     '**!!** - *Steam Spieler online and Statistiken*\n\n' +
                     '**!leo** - *findet den Leopold*\n' +
                     '**!usa infantry blitz 4k 4/4 4c ** - *findet alle Karten mit den Attributen*\n' +
-                    'Nationen: **Soviet Germany Britain USA Japan Poland France Italy**\n' +
-                    '**!de** [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern\n' +
-                    'Heroku Hosting Kosten: 12$ monatlich.(Heroku Hobby 7$ + pgSQL mini 5$)\n' +
-                    'Sie bekommen einen VIP-Zugang und können eigene Bot-Befehle erstellen, wenn Sie mich auf Patreon unterstützen.\n' +
-                    'https://patreon.com/KardsBotKatyusha'
+                    'Nationen: **Soviet Germany Britain USA Japan Poland France Italy Finland**\n' +
+                    '**!de** [ de| es | fr | it | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern\n'
+
             }
             break
         default: //en
@@ -111,15 +109,12 @@ function translate(language, msg)
                     '!soviet infantry guard 1/8 3k 1c\n' +
                     'You can use * as placeholder for any attack or any defense\n' +
                     'You can also trigger the search without a leading prefix - show me %leo% please\n' +
-                    'Nations for search: Soviet Germany Britain USA Japan Poland France Italy\n' +
+                    'Nations for search: Soviet Germany Britain USA Japan Poland France Italy Finland\n' +
                     '!td [infantry | tank | artillery | fighter | bomber] ' +
                     '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '!ranking - Top Deck Ranking\n' +
                     '!myrank - Your personal Top Deck Ranking with stats.\n\n' +
-                    '!en [ de | es | fr | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n' +
-                    'The hosting costs 12$ a month. (Heroku Hobby 7$ + pgSQL mini 5$)\n' +
-                    'You will get a VIP access and can create your own bot commands if you support me on Patreon.\n' +
-                    'https://patreon.com/KardsBotKatyusha'
+                    '!en [ de | es | fr | it | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n'
 
             }
             //translate meta keywords from ru to en
