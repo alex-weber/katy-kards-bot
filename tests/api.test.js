@@ -9,8 +9,8 @@ test('player stats loaded', async () => {
 
 test('search is working', async () => {
     let variables = {
-        language: 'en',
-        q: 'Leopold',
+        language: 'en-EN',
+        q: 'leo',
         showSpawnables: true,
         showReserved: true,
     }

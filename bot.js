@@ -79,10 +79,7 @@ function parseCommand(prefix, command)
 async function switchLanguage(user, command)
 {
     let language = command.slice(0, 2)
-    //for traditional chinese
-    if (language === 'tw') language = 'zh-Hant'
     user.language = language
-
     await updateUser(user)
 
     return language

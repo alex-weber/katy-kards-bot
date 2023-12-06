@@ -235,7 +235,7 @@ async function getCards(variables)
 function getFiles(cards, language, limit)
 {
     let files = []
-    if (language !== 'zh-Hant') language = APILanguages[language]
+    language = APILanguages[language]
     for (const [, card] of Object.entries(cards.cards))
     {
         //check if the response is from kards.com or internal

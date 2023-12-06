@@ -1,6 +1,6 @@
 const bot = require("./bot")
 const {getUser, updateUser, getTopDeckStats, getSynonym} = require("./db")
-const {defaultLanguage, getLanguageByInput} = require("./language")
+const {defaultLanguage, getLanguageByInput, APILanguages} = require("./language")
 const {translate} = require("./translator")
 const {myTDRank, topDeck} = require("./topDeck")
 const {getStats} = require("./stats")
@@ -196,14 +196,13 @@ async function discordHandler(message, client) {
     if (cache.has(cacheKey)) {
         console.log('serving from cache: ', language, command, limit)
         let answer = await cache.get(cacheKey)
-        let attachments = answer.files
         message.reply({content: answer.content, files: answer.files.slice(0, limit)})
 
         return
     }
     //first search on KARDS.com, on no result search in the local DB
     let variables = {
-        language: language,
+        language: APILanguages[language],
         q: command,
         showSpawnables: true,
         showReserved: true,
@@ -246,6 +245,13 @@ async function discordHandler(message, client) {
     if (qSearch && counter !== 1) return
     //if any cards are found - attach them
     let content = translate(language, 'search') + ': ' + counter
+    //do not show any cards if there are more than 20 cards
+    if (counter > 20)
+    {
+        message.reply(content + translate(language, 'noshow'))
+
+        return
+    }
     //warn that there are more cards found
     if (counter > limit)
     {
