@@ -246,7 +246,7 @@ async function discordHandler(message, client) {
     //if any cards are found - attach them
     let content = translate(language, 'search') + ': ' + counter
     //do not show any cards if there are more than 20 cards
-    if (counter > 20)
+    if (counter > 20 && !isBotCommandChannel(message))
     {
         message.reply(content + translate(language, 'noshow'))
 
