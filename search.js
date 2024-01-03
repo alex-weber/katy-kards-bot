@@ -90,12 +90,15 @@ function getVariables(variables)
 
             return variables
         }
-        let type = getAttribute(word, dictionary.type)
-        if (type)
+        if (!variables.type)
         {
-            variables.type = type
+            let type = getAttribute(word, dictionary.type)
+            if (type)
+            {
+                variables.type = type
 
-            return variables
+                return variables
+            }
         }
         let rarity = getAttribute(word, dictionary.rarity)
         if (rarity)
@@ -104,12 +107,15 @@ function getVariables(variables)
 
             return variables
         }
-        let attribute = getAttribute(word, dictionary.attribute)
-        if (attribute)
+        if (variables.type !== 'order' && variables.type !== 'countermeasure')
         {
-            variables.attributes = attribute
+            let attribute = getAttribute(word, dictionary.attribute)
+            if (attribute)
+            {
+                variables.attributes = attribute
 
-            return variables
+                return variables
+            }
         }
         let exile = getAttribute(word, ['exile'])
         if (exile)
@@ -458,7 +464,9 @@ function isManager(user)
 
 function isBotCommandChannel(message)
 {
-    return message.channel.name.search('bot') !== -1
+    return (
+        dictionary.botwar.channels.includes(message.channelId.toString()) ||
+        message.channel.name.search('bot') !== -1)
 }
 
 module.exports = {
@@ -467,4 +475,5 @@ module.exports = {
     listSynonyms,
     handleSynonym,
     isBotCommandChannel,
+    isManager,
 }

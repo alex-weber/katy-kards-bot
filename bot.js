@@ -64,10 +64,12 @@ async function hasWritePermissions(client, message)
  */
 function parseCommand(prefix, command)
 {
+    //if it's double prefix set the command to online
+    if (command === prefix + prefix) return 'online'
+    //remove all duplicates od prefix
     while (command.startsWith(prefix)) command = command.replace(prefix, '')
-    command = command.trim().toLowerCase()
 
-    return command
+    return command.trim().toLowerCase()
 }
 
 /**

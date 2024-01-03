@@ -4,7 +4,7 @@ const {defaultLanguage, getLanguageByInput, APILanguages} = require("./language"
 const {translate} = require("./translator")
 const {myTDRank, topDeck} = require("./topDeck")
 const {getStats} = require("./stats")
-const {isBotCommandChannel, listSynonyms, handleSynonym, getCards, getFiles} = require("./search")
+const {isManager, isBotCommandChannel, listSynonyms, handleSynonym, getCards, getFiles} = require("./search")
 const dictionary = require("./dictionary")
 const {drawBattlefield} = require("./canvasManager")
 const fs = require("fs")
@@ -44,9 +44,10 @@ async function discordHandler(message, client) {
         message.author.username,
         '->',
         message.content)
+
     //remove all the prefixes from the beginning
     let command = bot.parseCommand(prefix, message.content)
-
+    if (!command.length) return
     //set username
     const user = await getUser(message.author.id.toString())
     //check the status
@@ -66,6 +67,16 @@ async function discordHandler(message, client) {
     }
     if (user.language !== defaultLanguage) language = user.language
 
+    //show online stats
+    if (command === 'ingame' || command === 'online')
+    {
+        getStats(language).
+        then(res => { message.reply(res) }).
+        catch(error => { console.log(error) })
+
+        return
+    }
+
     //switch language
     if (bot.isLanguageSwitch(command) && !qSearch)
     {
@@ -83,7 +94,7 @@ async function discordHandler(message, client) {
     if (command === 'help') return message.reply(translate(language, 'help'))
 
     //clear cache
-    if (command === 'cclear' && user.role === 'GOD')
+    if (command === 'cclear' && isManager(user))
     {
         await cache.clear()
         console.log('clear cache command from user ', user.name)
@@ -93,29 +104,13 @@ async function discordHandler(message, client) {
     }
 
     //get top 9 TD ranking
-    if (command === 'ranking' || command === 'rankings') return message.reply(await getTopDeckStats())
+    if (command.startsWith('ranking')) return message.reply(await getTopDeckStats())
 
     //user's TD ranking
     if (command === 'myrank') return message.reply(myTDRank(user))
 
-    //show online stats
-    if (message.content === prefix + prefix || command === 'ingame' || command === 'online')
-    {
-        getStats(language).
-        then(res => { message.reply(res) }).
-        catch(error => { console.log(error) })
-
-        return
-    }
-
     //top deck game only in special channels
-    if (command.startsWith('td') &&
-        (isBotCommandChannel(message) ||
-            dictionary.
-            botwar.
-            channels.
-            includes(message.channelId.toString())
-        ))
+    if (command.startsWith('td') && isBotCommandChannel(message))
     {
         console.log('starting top deck game')
         let td = await topDeck(message.channelId, user, command)
@@ -149,7 +144,7 @@ async function discordHandler(message, client) {
 
         return
     }
-    if (!command.length) return
+    //check minimums
     if (command.length < minStrLen && !qSearch)
     {
         return message.reply('Minimum ' + minStrLen + ' chars, please')
@@ -207,12 +202,12 @@ async function discordHandler(message, client) {
         showSpawnables: true,
         showReserved: true,
     }
-    const searchResult = await getCards(variables)
-    if (!searchResult)
+    const cards = await getCards(variables)
+    if (!cards)
     {
         return message.reply(translate(language, 'error'))
     }
-    const counter = searchResult.counter
+    const counter = cards.counter
     if (!counter)
     {
         //don't reply if nothing is found
@@ -258,7 +253,7 @@ async function discordHandler(message, client) {
         content += translate(language, 'limit') + limit
     }
     //attach found images
-    const files = getFiles(searchResult, language, limit)
+    const files = getFiles(cards, language, limit)
     //reply to user
     try {
         message.reply({content: content, files: files})
