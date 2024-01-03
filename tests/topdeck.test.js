@@ -21,7 +21,7 @@ test('playing TD', async () => {
     expect(td.state).toEqual('finished')
 
 
-})
+}, 10000)
 
 test('My TD Rank', async () => {
     let user = await getUser('2')

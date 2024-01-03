@@ -175,8 +175,11 @@ async function discordHandler(message, client) {
     if (syn)
     {
         //check if there is an image link
-        if (syn.value.startsWith('https')) return message.reply({files: [syn.value]})
-        else command = syn.value
+        if (syn.value.startsWith('https:')) return message.reply({files: [syn.value]})
+        //check if it should reply with a text message
+        if (syn.value.startsWith('text:')) return message.reply(syn.value.replace('text:', ''))
+        //else use the value as command
+        command = syn.value
     } else if (command in dictionary.synonyms)
     {
         command = dictionary.synonyms[command]
