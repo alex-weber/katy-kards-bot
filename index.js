@@ -18,6 +18,7 @@ const client = new Client({
             Intents.FLAGS.GUILDS,
             Intents.FLAGS.GUILD_MESSAGES,
             Intents.FLAGS.GUILD_MEMBERS,
+            Intents.FLAGS.DIRECT_MESSAGES,
         ]})
 //Discord-Bot login event
 client.on('ready', () =>
@@ -34,6 +35,11 @@ client.login(process.env.DISCORD_TOKEN).then(() =>
 {
     console.log('Discord client started')
 })
+//
+client.on('error', (error) => {
+    console.log(error)
+})
+
 //start Telegram-Bot's session if TOKEN is set
 if (telegramClient)
 {

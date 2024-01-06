@@ -21,7 +21,9 @@ const cache = new jsoning("db.json")
  * @returns {Promise<*>}
  */
 async function discordHandler(message, client) {
+
     if (message.author.bot || message.content.length > maxStrLen) return
+    //get a custom sever prefix if set
     let prefix = bot.getPrefix(message)
     //is there a "bot command" marked with double quotation marks?
     let qSearch = bot.isQuotationSearch(message)
@@ -35,15 +37,18 @@ async function discordHandler(message, client) {
     else if (!message.content.startsWith(prefix)) return
 
     //check for write permissions
-    if (! await bot.hasWritePermissions(client, message)) return
+    if (message.guildId && ! await bot.hasWritePermissions(client, message)) return
 
     //it's a bot command
-    console.log('bot command:',
-        message.guild.name,
-        message.channel.name,
-        message.author.username,
-        '->',
-        message.content)
+    //create a DM channel
+    await message.author.createDM()
+    let guildName = ''
+    let channelName = ''
+    if (message.guildId) {
+        guildName = message.guild.name
+        channelName = message.channel.name
+    }
+    console.log('bot command:', guildName, channelName, message.author.username, '->', message.content)
 
     //remove all the prefixes from the beginning
     let command = bot.parseCommand(prefix, message.content)
@@ -110,7 +115,7 @@ async function discordHandler(message, client) {
     if (command === 'myrank') return message.reply(myTDRank(user))
 
     //top deck game only in special channels
-    if (command.startsWith('td') && isBotCommandChannel(message))
+    if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
     {
         console.log('starting top deck game')
         let td = await topDeck(message.channelId, user, command)

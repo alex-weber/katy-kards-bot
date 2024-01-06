@@ -464,9 +464,10 @@ function isManager(user)
 
 function isBotCommandChannel(message)
 {
-    return (
+    if (message.guildId) return (
         dictionary.botwar.channels.includes(message.channelId.toString()) ||
         message.channel.name.search('bot') !== -1)
+    else return true
 }
 
 module.exports = {
