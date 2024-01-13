@@ -76,7 +76,10 @@ async function telegramHandler(ctx) {
                 return ctx.reply(translate(language, 'error'))
             }
         }
-        else command = syn.value
+        //check if it should reply with a text message
+        if (syn.value.startsWith('text:')) return ctx.reply(syn.value.replace('text:', ''))
+        //else use the value as command
+        command = syn.value
     }
     let variables = {
         language: language,
