@@ -44,6 +44,9 @@ client.on('error', (error) => {
 if (telegramClient)
 {
     telegramClient.on(telegramMessage('text'), async ctx => telegramHandler(ctx))
+    telegramClient.catch((err) => {
+        console.log('telegramAPI error occured:', err)
+    })
     telegramClient.launch().then(() =>
     {
         console.log('Telegram client started')
