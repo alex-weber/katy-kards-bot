@@ -68,7 +68,7 @@ async function telegramHandler(ctx) {
         {
             try {
                 const fileSize = await bot.getFileSize(syn.value)
-                if (fileSize < maxFileSize) return ctx.replyWithPhoto(syn.value)
+                if (fileSize && fileSize < maxFileSize) return ctx.replyWithPhoto(syn.value)
                 else return ctx.reply(translate(language, 'error'))
 
             } catch (e) {
@@ -91,6 +91,7 @@ async function telegramHandler(ctx) {
     if (!searchResult) return
     if (!searchResult.counter) return ctx.reply(translate(language, 'noresult'))
     let files = getFiles(searchResult, language, globalLimit)
+    console.log(files)
     ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
     if (searchResult.counter > 1)
     {

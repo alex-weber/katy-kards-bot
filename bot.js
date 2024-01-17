@@ -105,6 +105,8 @@ function isLanguageSwitch(command)
 async function getFileSize(url)
 {
     const response = await axios.head(url, { responseType: 'json' })
+    //return 0 if the content-length header is not set
+    if (!response.headers.has('content-length')) return 0
     const fileSize = parseInt(response.headers["content-length"])
     console.log(url, fileSize)
 
