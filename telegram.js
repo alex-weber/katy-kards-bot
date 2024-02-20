@@ -17,7 +17,8 @@ function getMediaGroup(files) {
         if (value.attachment !== undefined) mediaGroup.push(
             {
                 type: 'photo',
-                media: value.attachment
+                media: value.attachment,
+                caption: value.description,
             }
         )
     }

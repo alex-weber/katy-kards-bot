@@ -105,7 +105,7 @@ async function telegramHandler(ctx) {
     else if (searchResult.counter === 1)
     {
         try {
-            return ctx.replyWithPhoto(files[0].attachment)
+            return ctx.replyWithPhoto(files[0].attachment, { caption: files[0].description })
         }
         catch (e) {
             console.log(e)
