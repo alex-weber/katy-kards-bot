@@ -36,7 +36,7 @@ function translate(language, msg)
         'heavyArmor2': 'тяж2',
         'standard': 'стандартная',
         'limited': 'ограниченная',
-        'special': 'специальная',
+        'special': 'особая',
         'elite': 'элитная',
         'exile': 'изгнание',
     }
