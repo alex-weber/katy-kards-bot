@@ -349,9 +349,9 @@ async function handleSynonym(user, content)
     if (value.startsWith('https'))
     {
         value = getURL(value)
-        if (!value) return null
+        if (!value) return 'bad URL'
     }
-    else if (!checkSynonymValue(value)) return null
+    
     let syn = await getSynonym(key)
     if (!syn && value)
     {
@@ -383,7 +383,7 @@ function getURL(value)
     try {
         const url = new URL(value)
 
-        return url.origin + url.pathname
+        return url.toString()
     } catch (e) {
         console.log(e.message)
 
