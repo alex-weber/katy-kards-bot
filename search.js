@@ -22,6 +22,13 @@ function getVariables(variables)
     {
         variables = setAttribute(translate('en', word), variables)
     }
+    //move attributes to text if it is a non-unit card
+    if ((['order', 'countermeasure']).includes(variables.type) && variables.attributes)
+    {
+        if (!variables.text) variables.text = []
+        variables.text.push(variables.attributes)
+        delete variables.attributes
+    }
 
     /**
      *
@@ -54,9 +61,12 @@ function getVariables(variables)
                 word = 'britain'
                 break
             case 'polish':
+            case 'pl':
                 word = 'poland'
                 break
             case 'japanese':
+            case 'jp':
+            case 'jpn':
                 word = 'japan'
                 break
             case 'italian':
@@ -107,6 +117,7 @@ function getVariables(variables)
 
             return variables
         }
+        //do not set attributes if it is a non-unit card
         if (variables.type !== 'order' && variables.type !== 'countermeasure')
         {
             let attribute = getAttribute(word, dictionary.attribute)
