@@ -105,7 +105,16 @@ async function telegramHandler(ctx) {
     else if (searchResult.counter === 1)
     {
         try {
-            return ctx.replyWithPhoto(files[0].attachment, { caption: files[0].description })
+
+            return ctx.replyWithPhoto(files[0].attachment, { caption: files[0].description }).
+            then((m) => {
+                /*ctx.telegram.setMessageReaction(
+                    m.chat.id,
+                    m.message_id,
+                    [{'type':'emoji', 'emoji':'👍' }]
+                )*/
+                console.log(m.message_id)
+            })
         }
         catch (e) {
             console.log(e)
