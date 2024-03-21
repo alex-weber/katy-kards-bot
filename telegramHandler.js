@@ -28,6 +28,9 @@ async function telegramHandler(ctx) {
 
         return
     }
+    //set attachment limit to 10 if it is a private chat
+    let limit = globalLimit
+    if (ctx.update.message.chat.type === 'private') limit = 10
     console.log(ctx.update.message.from)
     command = bot.parseCommand(prefix, command)
 
@@ -90,7 +93,7 @@ async function telegramHandler(ctx) {
     let searchResult = await getCards(variables)
     if (!searchResult) return
     if (!searchResult.counter) return ctx.reply(translate(language, 'noresult'))
-    let files = getFiles(searchResult, language, globalLimit)
+    let files = getFiles(searchResult, language, limit)
     console.log(files)
     ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
     if (searchResult.counter > 1)
