@@ -300,11 +300,19 @@ async function advancedSearch(variables)
     delete variables.language
     delete variables.showSpawnables
     delete variables.showReserved
+
     if (variables.hasOwnProperty('attributes'))
     {
-        variables.attributes = {
-            contains: variables.attributes,
-        }
+        if (!variables.OR) variables.OR = []
+        variables.OR.push({
+            attributes: {
+                contains: variables.attributes,
+            }
+        })
+        if (!variables.text) variables.text = []
+        variables.text.push(variables.attributes)
+        delete variables.attributes
+
     }
 
     if (variables.hasOwnProperty('text'))
@@ -326,16 +334,17 @@ async function advancedSearch(variables)
                 }
             })
         }
-        variables.OR = [
-            {
-                AND: andConditionsTitle
-            },
-            {
-                AND: andConditionsText
-            },
-        ]
+        if (!variables.OR) variables.OR = []
+        variables.OR.push({
+            AND: andConditionsTitle
+        })
+        variables.OR.push({
+            AND: andConditionsText
+        })
+
         delete variables.text
     }
+
     console.log(variables)
     let cards = await getCardsDB(variables)
 

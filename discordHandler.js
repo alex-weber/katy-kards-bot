@@ -13,7 +13,7 @@ const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const jsoning = require("jsoning")
-const cache = new jsoning("db.json")
+const cache = new jsoning("cache.json")
 /**
  *
  * @param message
