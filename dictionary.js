@@ -36,6 +36,7 @@ module.exports = {
         'mobilize',
         'pincer',
         'heavy',
+        'armor',
         'fury',
         'veteran',
         'salvage',
