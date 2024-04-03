@@ -23,17 +23,12 @@ async function telegramHandler(ctx) {
         command.length > maxStrLen) return
     let language = getLanguageByInput(command)
     //online players
-    if (command === prefix+prefix) {
-        getStats(language).then(res => { return ctx.reply(res) })
-
-        return
-    }
+    if (command === prefix+prefix) return ctx.reply(await getStats(language))
     //set attachment limit to 10 if it is a private chat
     let limit = globalLimit
     if (ctx.update.message.chat.type === 'private') limit = 10
     console.log(ctx.update.message.from)
     command = bot.parseCommand(prefix, command)
-
     //get or create user
     let userID = ctx.update.message.from.id.toString()
     const user = await getUser(userID)
@@ -53,7 +48,7 @@ async function telegramHandler(ctx) {
     }
     //update user
     if (!user.name) user.name = ctx.update.message.from.first_name
-    //check the user language
+    //change user language to RU if cyrillic is detected
     if (language === 'ru') user.language = language
     else if (user.language !== language) language = user.language
     await updateUser(user)

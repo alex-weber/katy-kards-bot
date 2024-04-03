@@ -210,6 +210,7 @@ async function getCards(variables)
 {
     //log request
     console.log(variables)
+    console.time('getCards')
     //search on kards.com
     let response = await axios.post(
         'https://api.kards.com/graphql',
@@ -224,7 +225,7 @@ async function getCards(variables)
         console.log('request to kards.com failed ', error.errno, error.data)
 
     })
-
+    console.timeEnd('getCards')
     if (response)
     {
         const counter = response.data.data.cards.pageInfo.count
@@ -345,8 +346,10 @@ async function advancedSearch(variables)
         delete variables.text
     }
 
-    console.log(variables)
+    console.dir(variables, { depth: null })
+    console.time('getCardsDB')
     let cards = await getCardsDB(variables)
+    console.timeEnd('getCardsDB')
 
     return {counter: cards.length, cards: cards}
 }
