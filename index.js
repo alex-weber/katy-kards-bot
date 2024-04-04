@@ -46,6 +46,11 @@ if (telegramClient)
     telegramClient.on(telegramMessage('text'), async ctx => telegramHandler(ctx))
     telegramClient.catch((err) => {
         console.log('telegramAPI error occured:', err)
+        if (err.on.payload.chat_id)
+        {
+            telegramClient.telegram.sendMessage(err.on.payload.chat_id, 'Error: file upload failed')
+        }
+
     })
     telegramClient.launch().then(() =>
     {
