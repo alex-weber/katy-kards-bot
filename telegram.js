@@ -17,7 +17,7 @@ function getMediaGroup(files) {
         if (value.attachment !== undefined) mediaGroup.push(
             {
                 type: 'photo',
-                media: value.attachment,
+                media: value.attachment + '?' + new Date().getTime().toString(), //add timestamp as param to bypass cache
                 caption: value.description,
             }
         )

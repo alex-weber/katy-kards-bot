@@ -104,7 +104,9 @@ async function telegramHandler(ctx) {
     {
         try {
 
-            return ctx.replyWithPhoto(files[0].attachment, { caption: files[0].description }).
+            return ctx.replyWithPhoto(
+                files[0].attachment + '?' + new Date().getTime().toString(),
+                { caption: files[0].description }).
             then((m) => {
                 /*ctx.telegram.setMessageReaction(
                     m.chat.id,
