@@ -232,7 +232,6 @@ async function discordHandler(message, client) {
         const endpoint = endpoints.sample()
         const image = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
         const imageURL = image.data.url.toString()
-        console.log(image)
         if (await bot.getFileSize(imageURL) > maxFileSize)
             return message.reply(translate(language, 'noresult'))
         return message.reply(
