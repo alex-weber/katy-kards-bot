@@ -12,6 +12,7 @@ const axios = require("axios")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
+const maxFileSize = 5*1024*1024 //5MB
 const jsoning = require("jsoning")
 const cache = new jsoning("cache.json")
 /**
@@ -220,29 +221,25 @@ async function discordHandler(message, client) {
     {
         //don't reply if nothing is found
         if (qSearch) return
-        try
-        {
-            //get a random cat|dog image for no result
-            let endpoints = ['meow', 'woof']
-            //define the sample function to get a random array value
-            Array.prototype.sample = function()
-            {
-                return this[Math.floor(Math.random()*this.length)]
-            }
-            const endpoint = endpoints.sample()
-            const image = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
-            message.reply(
-                {
-                    content: translate(language, 'noresult'),
-                    files: [image.data.url.toString()]
-                })
-        } catch (e)
-        {
-            message.reply(translate(language, 'noresult'))
-            console.log(e)
-        }
 
-        return
+        //get a random cat|dog image for no result
+        let endpoints = ['meow', 'woof']
+        //define the sample function to get a random array value
+        Array.prototype.sample = function()
+        {
+            return this[Math.floor(Math.random()*this.length)]
+        }
+        const endpoint = endpoints.sample()
+        const image = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
+        const imageURL = image.data.url.toString()
+        console.log(image)
+        if (await bot.getFileSize(imageURL) > maxFileSize)
+            return message.reply(translate(language, 'noresult'))
+        return message.reply(
+            {
+                content: translate(language, 'noresult'),
+                files: [imageURL]
+            })
     }
     //don't reply if more than one card is found via quotations
     if (qSearch && counter !== 1) return
