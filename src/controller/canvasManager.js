@@ -12,8 +12,8 @@ async function drawBattlefield(topDeck)
 {
     const canvas = Canvas.createCanvas(700, 500)
     const context = canvas.getContext('2d')
-    const backgroundPromise = Canvas.loadImage('src/assets/td/board.png')
-    const vsPromise = Canvas.loadImage('src/assets/td/vs.png')
+    const backgroundPromise = Canvas.loadImage('./src/assets/td/board.png')
+    const vsPromise = Canvas.loadImage('./src/assets/td/vs.png')
     const card1Promise = Canvas.loadImage(host + topDeck.card1.imageURL)
     const card2Promise = Canvas.loadImage(host + topDeck.card2.imageURL)
     const [
@@ -49,7 +49,7 @@ async function drawBattlefield(topDeck)
     console.log(user1, user2)
     // Write the image to file
     const buffer = canvas.toBuffer("image/png")
-    const file = "src/tmp/" + topDeck.id + ".png"
+    const file = "./src/tmp/" + topDeck.id + ".png"
     fs.writeFileSync(file, buffer)
 
     return file
