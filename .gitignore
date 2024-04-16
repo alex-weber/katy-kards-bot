@@ -1,5 +1,5 @@
 .idea/
 node_modules/
 .env
-export/
-cache.json
+src/export/
+src/tmp/cache.json

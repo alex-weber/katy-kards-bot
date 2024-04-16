@@ -1,10 +1,10 @@
-const {getLanguageByInput} = require("./language")
-const {getStats} = require("./stats")
+const {getLanguageByInput} = require("../tools/language")
+const {getStats} = require("../tools/stats")
 const bot = require("./bot")
-const {getUser, updateUser, getSynonym} = require("./db")
-const {translate} = require("./translator")
-const {getCards, getFiles} = require("./search")
-const {getMediaGroup} = require("./telegram")
+const {getUser, updateUser, getSynonym} = require("../database/db")
+const {translate} = require("../tools/translator")
+const {getCards, getFiles} = require("../tools/search")
+const {getMediaGroup} = require("../clients/telegram")
 const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)

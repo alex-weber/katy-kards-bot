@@ -1,6 +1,6 @@
-const {myTDRank, topDeck} = require("../topDeck")
-const {getUser} = require('../db')
-const {drawBattlefield} = require("../canvasManager")
+const {myTDRank, topDeck} = require("../src/games/topDeck")
+const {getUser} = require('../src/database/db')
+const {drawBattlefield} = require("../src/controller/canvasManager")
 const fs = require("fs")
 
 test('playing TD', async () => {
@@ -16,7 +16,7 @@ test('playing TD', async () => {
         //delete the battle image
         await fs.rm(battleImage, () => {})
     } catch (e) {
-        console.error(e.toString())
+        console.error(e)
     }
     expect(td.state).toEqual('finished')
 

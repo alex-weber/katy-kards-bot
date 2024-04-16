@@ -1,11 +1,11 @@
 const bot = require("./bot")
-const {getUser, updateUser, getTopDeckStats, getSynonym} = require("./db")
-const {defaultLanguage, getLanguageByInput, APILanguages} = require("./language")
-const {translate} = require("./translator")
-const {myTDRank, topDeck} = require("./topDeck")
-const {getStats} = require("./stats")
-const {isManager, isBotCommandChannel, listSynonyms, handleSynonym, getCards, getFiles} = require("./search")
-const dictionary = require("./dictionary")
+const {getUser, updateUser, getTopDeckStats, getSynonym} = require("../database/db")
+const {defaultLanguage, getLanguageByInput, APILanguages} = require("../tools/language")
+const {translate} = require("../tools/translator")
+const {myTDRank, topDeck} = require("../games/topDeck")
+const {getStats} = require("../tools/stats")
+const {isManager, isBotCommandChannel, listSynonyms, handleSynonym, getCards, getFiles} = require("../tools/search")
+const dictionary = require("../tools/dictionary")
 const {drawBattlefield} = require("./canvasManager")
 const fs = require("fs")
 const axios = require("axios")
@@ -42,7 +42,7 @@ async function discordHandler(message, client) {
 
     //it's a bot command
     //create a DM channel
-    await message.author.createDM()
+    message.author.createDM()
     let guildName = ''
     let channelName = ''
     if (message.guildId) {
@@ -154,6 +154,11 @@ async function discordHandler(message, client) {
     if (command.length < minStrLen && !qSearch)
     {
         return message.reply('Minimum ' + minStrLen + ' chars, please')
+    }
+
+    if (command.startsWith('servers') && isManager(user)) {
+        const guildNames = client.guilds.cache.map(g => g.name).join('\n')
+        return message.reply(guildNames)
     }
 
     //list all synonyms

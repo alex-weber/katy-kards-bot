@@ -1,4 +1,4 @@
-const {createCard} = require('./db')
+const {createCard} = require('../database/db')
 const {getCards} = require("./search")
 
 /**

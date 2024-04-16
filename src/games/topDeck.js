@@ -5,7 +5,7 @@ const {
     updateTopDeck,
     getRandomCard,
     getOpenTopDeck
-} = require("./db")
+} = require("../database/db")
 
 /**
  *

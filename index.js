@@ -2,10 +2,10 @@ const express = require('express')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
 //handlers
-const {discordHandler} = require('./discordHandler')
-const {telegramHandler} = require('./telegramHandler')
+const {discordHandler} = require('./src/controller/discordHandler')
+const {telegramHandler} = require('./src/controller/telegramHandler')
 //telegram
-const {telegramClient, telegramMessage, Input} = require('./telegram')
+const {telegramClient, telegramMessage, Input} = require('./src/clients/telegram')
 const {message} = require("telegraf/filters")
 //start http server
 app.get('/', (req, res) => res.send('Katyusha Kards Bot is online.'))
