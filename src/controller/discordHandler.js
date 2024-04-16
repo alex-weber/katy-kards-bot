@@ -157,7 +157,11 @@ async function discordHandler(message, client) {
     }
 
     if (command.startsWith('servers') && isManager(user)) {
-        const guildNames = client.guilds.cache.map(g => g.name).join('\n')
+        let i = 0
+        const guildNames = client.guilds.cache.map(function (g) {
+            return ++i + ' ' + g.name
+        }).join('\n')
+
         return message.reply(guildNames)
     }
 
