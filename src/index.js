@@ -2,13 +2,13 @@ const express = require('express')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
 //handlers
-const {discordHandler} = require('./src/controller/discordHandler')
-const {telegramHandler} = require('./src/controller/telegramHandler')
+const {discordHandler} = require('./controller/discordHandler')
+const {telegramHandler} = require('./controller/telegramHandler')
 //telegram
-const {telegramClient, telegramMessage, Input} = require('./src/clients/telegram')
+const {telegramClient, telegramMessage, Input} = require('./clients/telegram')
 const {message} = require("telegraf/filters")
-//start http server
-app.get('/', (req, res) => res.send('Katyusha Kards Bot is online.'))
+const {getServerList} = require("./tools/stats")
+
 //start listening for messages
 app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 // ================= DISCORD JS ===================
@@ -20,11 +20,16 @@ const client = new Client({
             Intents.FLAGS.GUILD_MEMBERS,
             Intents.FLAGS.DIRECT_MESSAGES,
         ]})
+const servers = ""
+//start http server
+app.get('/', (req, res) => res.send('Katyusha Kards Bot is online'))
 //Discord-Bot login event
 client.on('ready', () =>
 {
     console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
-    const guildNames = client.guilds.cache.map(g => g.name).join('\n')
+    const guildNames = getServerList(client)
+    app.get('/servers', (req, res) => res.send('Watching '+client.guilds.cache.size+
+        ' servers<br><br>'+guildNames))
     console.log(guildNames)
     client.user.setActivity(client.guilds.cache.size + ' servers', { type: 'WATCHING'})
 })

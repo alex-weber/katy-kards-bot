@@ -3,7 +3,7 @@ const {getUser, updateUser, getTopDeckStats, getSynonym} = require("../database/
 const {defaultLanguage, getLanguageByInput, APILanguages} = require("../tools/language")
 const {translate} = require("../tools/translator")
 const {myTDRank, topDeck} = require("../games/topDeck")
-const {getStats} = require("../tools/stats")
+const {getStats, getServerList} = require("../tools/stats")
 const {isManager, isBotCommandChannel,
     listSynonyms, handleSynonym, getCards, getFiles} = require("../tools/search")
 const dictionary = require("../tools/dictionary")
@@ -158,12 +158,8 @@ async function discordHandler(message, client) {
     }
 
     if (command.startsWith('servers') && isManager(user)) {
-        let i = 0
-        const guildNames = client.guilds.cache.map(function (g) {
-            return ++i + ' ' + g.name
-        }).join('\n')
 
-        return message.reply(guildNames)
+        return message.reply(await getServerList(client))
     }
 
     //list all synonyms

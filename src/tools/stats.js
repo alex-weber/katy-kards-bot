@@ -55,4 +55,18 @@ async function getStats(language)
     return await getPlayers(language) + await formatStats()
 }
 
-module.exports = {getStats}
+/**
+ *
+ * @param client
+ * @returns {string}
+ */
+function getServerList(client) {
+    let i = 0
+    const guildNames = client.guilds.cache.map(function (g) {
+        return ++i + ' ' + g.name
+    }).join('\n')
+
+    return guildNames
+}
+
+module.exports = { getStats, getServerList}
