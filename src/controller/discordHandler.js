@@ -15,7 +15,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5*1024*1024 //5MB
 const jsoning = require("jsoning")
-const cache = new jsoning("../tmp/cache.json")
+const cache = new jsoning("./src/tmp/cache.json")
 /**
  *
  * @param message
