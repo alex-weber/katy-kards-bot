@@ -2,10 +2,10 @@
   "name": "katyusha-kards-bot",
   "version": "2.5.0",
   "description": "cards search and more",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "test": "jest",
-    "start": "node index.js",
+    "start": "node src/index.js",
     "heroku-postbuild": "npx prisma generate"
   },
   "keywords": [
