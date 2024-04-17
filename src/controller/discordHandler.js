@@ -4,7 +4,8 @@ const {defaultLanguage, getLanguageByInput, APILanguages} = require("../tools/la
 const {translate} = require("../tools/translator")
 const {myTDRank, topDeck} = require("../games/topDeck")
 const {getStats} = require("../tools/stats")
-const {isManager, isBotCommandChannel, listSynonyms, handleSynonym, getCards, getFiles} = require("../tools/search")
+const {isManager, isBotCommandChannel,
+    listSynonyms, handleSynonym, getCards, getFiles} = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {drawBattlefield} = require("./canvasManager")
 const fs = require("fs")
@@ -14,7 +15,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5*1024*1024 //5MB
 const jsoning = require("jsoning")
-const cache = new jsoning("cache.json")
+const cache = new jsoning("../tmp/cache.json")
 /**
  *
  * @param message
