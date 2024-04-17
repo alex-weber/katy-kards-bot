@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "start": "node index.js",
+    "start": "node src/index.js",
     "heroku-postbuild": "npx prisma generate"
   },
   "keywords": [
@@ -27,6 +27,7 @@
     "npm": "^10.5.0",
     "pg": "^8.11.3",
     "prisma": "^5.11.0",
+    "pug": "^3.0.2",
     "telegraf": "^4.16.3"
   },
   "engines": {

@@ -159,7 +159,7 @@ async function discordHandler(message, client) {
 
     if (command.startsWith('servers') && isManager(user)) {
 
-        return message.reply(await getServerList(client))
+        return message.reply(getServerList(client).join('\n'))
     }
 
     //list all synonyms

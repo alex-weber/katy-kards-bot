@@ -58,13 +58,13 @@ async function getStats(language)
 /**
  *
  * @param client
- * @returns {string}
+ * @returns {array}
  */
 function getServerList(client) {
     let i = 0
     const guildNames = client.guilds.cache.map(function (g) {
         return ++i + ' ' + g.name
-    }).join('\n')
+    })
 
     return guildNames
 }
