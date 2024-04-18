@@ -33,7 +33,6 @@ async function syncDB()
             }
         } catch (e) {
             i = i -20
-            continue
         }
     }
 }
