@@ -39,7 +39,7 @@ client.on('ready', () =>
         title: 'Discord servers',
         servers: guildNames,
     }))
-    console.log(guildNames)
+    //console.log(guildNames)
     client.user.setActivity(client.guilds.cache.size + ' servers', { type: 'WATCHING'})
 })
 //trigger on new messages
