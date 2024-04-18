@@ -161,7 +161,10 @@ async function discordHandler(message, client) {
 
         return message.reply(
             getServerList(client).map(
-                (item, index) => `${index + 1}. ${item}`)
+                (item, index) =>
+                {
+                    return index + 1 + '. ' + item[1]
+                })
                 .join('\n'))
     }
 
