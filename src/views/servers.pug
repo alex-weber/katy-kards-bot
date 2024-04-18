@@ -5,20 +5,24 @@ block content
 
   h1= title
 
-  table.table.bg-dark
+  table.table.table-dark
     thead
       tr
         th(scope='col') #
-        th(scope='col') First
-        th(scope='col') Last
-        th(scope='col') Handle
+        th(scope='col') Icon
+        th(scope='col') Name
+        th(scope='col') ID
     tbody
       each server, index in servers
         tr
           th(scope='row')= index+1
-          td= server
-          td Otto
-          td @mdo
+          each attr in server
+            if attr.startsWith('http')
+              td
+                img(src=attr, alt="No icon")
+            else
+              td= attr
+
 
 
 

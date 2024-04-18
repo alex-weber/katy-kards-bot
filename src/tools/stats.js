@@ -61,7 +61,11 @@ async function getStats(language)
  * @returns {array}
  */
 function getServerList(client) {
-    return client.guilds.cache.map((g) => {return g.name})
+    return client.guilds.cache.map((g) => {
+        let icon = 'https://cdn.discordapp.com/icons/'+
+            g.id+'/'+ g.icon+'.webp?size=48'
+        return [icon, g.name, g.id]
+    })
 }
 
 module.exports = { getStats, getServerList}

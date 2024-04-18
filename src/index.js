@@ -1,9 +1,10 @@
 const express = require('express')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
-const path = require('path')
+const favicon = require('serve-favicon')
+app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
-app.set('views', __dirname + path.sep +'views')
+app.set('views', __dirname + '/views')
 //handlers
 const {discordHandler} = require('./controller/discordHandler')
 const {telegramHandler} = require('./controller/telegramHandler')
