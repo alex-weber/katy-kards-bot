@@ -1,0 +1,26 @@
+header
+    div.px-3.py-2.text-bg-dark.border-bottom
+        div.container
+            div.d-flex.flex-wrap.align-items-center.justify-content-center.justify-content-lg-start
+                a(href='/', class='d-flex align-items-center my-2 my-lg-0 me-lg-auto text-white text-decoration-none')
+                    svg.bi(me-2, width='40', height='32', role='img', aria-label='Bootstrap')
+                        use(xlink:href='#bootstrap')
+                ul.nav.col-12.col-lg-auto.my-2.justify-content-center.my-md-0.text-small
+                    li
+                        a(href='/', class='nav-link text-secondary')
+                            svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+                                use(xlink:href='#home')
+                            | Home
+                    li
+                        a(href='/servers', class='nav-link text-white')
+                            svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+                                use(xlink:href='#speedometer2')
+                            | Dashboard
+
+    div.px-3.py-2.text-bg-dark.border-bottom.mb-3
+        div.container.d-flex.flex-wrap.justify-content-center
+            form.col-12.col-lg-auto.mb-2.mb-lg-0.me-lg-auto(role='search')
+                input(type='search', class='form-control', placeholder='Search...', aria-label='Search')
+            div.text-end
+                button.btn.btn-light.text-dark.me-2(type='button') Login
+                button.btn.btn-primary(type='button') Sign-up
