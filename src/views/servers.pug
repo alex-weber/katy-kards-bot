@@ -1,8 +1,24 @@
-html
-  head
-    title= title
-  body
-    h1= title
-    ul
-      each val in servers
-        li= val
+extends layout
+
+block content
+  // Your content goes here
+
+  h1= title
+
+  table.table.bg-dark
+    thead
+      tr
+        th(scope='col') #
+        th(scope='col') First
+        th(scope='col') Last
+        th(scope='col') Handle
+    tbody
+      each server, index in servers
+        tr
+          th(scope='row')= index+1
+          td= server
+          td Otto
+          td @mdo
+
+
+

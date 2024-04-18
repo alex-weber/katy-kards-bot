@@ -61,12 +61,7 @@ async function getStats(language)
  * @returns {array}
  */
 function getServerList(client) {
-    let i = 0
-    const guildNames = client.guilds.cache.map(function (g) {
-        return ++i + ' ' + g.name
-    })
-
-    return guildNames
+    return client.guilds.cache.map((g) => {return g.name})
 }
 
 module.exports = { getStats, getServerList}
