@@ -26,8 +26,8 @@ const servers = ""
 //start http server
 app.get('/', (req, res) =>
     res.render('index', {
-        title: 'Huy',
-        message: 'Katyusha Kards Bot is online!'
+        title: 'Katyusha Kards Bot',
+        message: 'I am online!'
     }))
 //Discord-Bot login event
 client.on('ready', () =>
