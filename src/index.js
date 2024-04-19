@@ -8,23 +8,15 @@ app.set('views', __dirname + '/views')
 //handlers
 const {discordHandler} = require('./controller/discordHandler')
 const {telegramHandler} = require('./controller/telegramHandler')
+//discord
+const {client} = require('./clients/discordClient.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
 const {getServerList} = require("./tools/stats")
 
 //start listening for messages
 app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
-// ================= DISCORD JS ===================
-const {Client, Intents, Permissions} = require('discord.js')
-const client = new Client({
-        intents: [
-            Intents.FLAGS.GUILDS,
-            Intents.FLAGS.GUILD_MESSAGES,
-            Intents.FLAGS.GUILD_MEMBERS,
-            Intents.FLAGS.DIRECT_MESSAGES,
-        ]})
-const servers = ""
-//start http server
+//http server
 app.get('/', (req, res) =>
     res.render('index', {
         title: 'Katyusha Kards Bot',
@@ -51,7 +43,7 @@ client.login(process.env.DISCORD_TOKEN).then(() =>
 })
 //
 client.on('error', (error) => {
-    console.log(error)
+    console.error(error)
 })
 
 //start Telegram-Bot's session if TOKEN is set
@@ -59,10 +51,13 @@ if (telegramClient)
 {
     telegramClient.on(telegramMessage('text'), async ctx => telegramHandler(ctx))
     telegramClient.catch((err) => {
-        console.log('telegramAPI error occured:', err)
+        console.error('telegramAPI error occurred:', err)
         if (err.on.payload.chat_id)
         {
-            telegramClient.telegram.sendMessage(err.on.payload.chat_id, 'Error: file upload failed')
+            telegramClient.telegram.sendMessage(err.on.payload.chat_id,
+                'Error: file upload failed').then(() => {
+                console.error('Telegram cache error again')
+            })
         }
 
     })
@@ -74,13 +69,13 @@ if (telegramClient)
 //prevent the app from crashing
 process.on('unhandledRejection', (reason, promise) =>
 {
-    console.log('Unhandled Rejection at:', promise, 'reason:', reason)
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason)
 })
 process.on('uncaughtException', (err, origin) =>
 {
-    console.log('uncaught Exception:', err, origin)
+    console.error('uncaught Exception:', err, origin)
 })
 process.on('uncaughtExceptionMonitor', (err, origin) =>
 {
-    console.log('uncaught Exception Monitor:', err, origin)
+    console.error('uncaught Exception Monitor:', err, origin)
 })
