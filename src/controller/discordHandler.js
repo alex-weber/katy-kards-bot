@@ -38,7 +38,9 @@ async function discordHandler(message, client, redis) {
     else if (!message.content.startsWith(prefix)) return
 
     //check for write permissions
+    console.time('permissions')
     if (message.guildId && ! await bot.hasWritePermissions(client, message, redis)) return
+    console.timeEnd('permissions')
 
     //it's a bot command
     //create the DM channel
@@ -55,7 +57,9 @@ async function discordHandler(message, client, redis) {
     let command = bot.parseCommand(prefix, message.content)
     if (!command.length) return
     //set username
+    console.time('getUser')
     const user = await getUser(message.author.id.toString())
+    console.timeEnd('getUser')
     //check the status
     if (user.status !== 'active')
     {
@@ -69,7 +73,9 @@ async function discordHandler(message, client, redis) {
     if (getLanguageByInput(command) === 'ru')
     {
         user.language = 'ru'
+        console.time('updateUser')
         await updateUser(user)
+        console.timeEnd('updateUser')
     }
     if (user.language !== defaultLanguage) language = user.language
 
@@ -151,8 +157,10 @@ async function discordHandler(message, client, redis) {
     const cacheKey = language+command
     let keyExists = await redis.exists(cacheKey)
     if (keyExists) {
+        console.time('cache')
         console.log('serving from cache: ', language, command, limit)
         let answer = JSON.parse(await redis.get(cacheKey))
+        console.timeEnd('cache')
         return message.reply({content: answer.content, files: answer.files.slice(0, limit)})
     }
     //first search on KARDS.com, on no result search in the local DB
