@@ -9,9 +9,6 @@ const {isManager, isBotCommandChannel,
     listSynonyms, handleSynonym, getCards, getFiles} = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {getRandomImage} = require("../tools/nekosAPI")
-const {drawBattlefield} = require("./canvasManager")
-const fs = require("fs")
-const axios = require("axios")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
@@ -82,7 +79,6 @@ async function discordHandler(message, client) {
         getStats(language).
         then(res => { message.reply(res) }).
         catch(error => { console.error(error) })
-
         return
     }
 
@@ -90,14 +86,7 @@ async function discordHandler(message, client) {
     if (bot.isLanguageSwitch(command) && !qSearch)
     {
         language = await bot.switchLanguage(user, command)
-        message.reply(
-            translate(language, 'langChange') + language.toUpperCase()
-        ).then(() =>
-        {
-            console.log('lang changed to', language.toUpperCase(), 'for', message.author.username)
-        })
-
-        return
+        return message.reply(translate(language, 'langChange') + language.toUpperCase())
     }
     //handle command
     if (command === 'help') return message.reply(translate(language, 'help'))
@@ -107,9 +96,7 @@ async function discordHandler(message, client) {
     {
         await cache.clear()
         console.log('clear cache command from user ', user.name)
-        message.reply('cache cleared')
-
-        return
+        return message.reply('cache cleared')
     }
 
     //get top 9 TD ranking
@@ -137,23 +124,11 @@ async function discordHandler(message, client) {
 
     //list all synonyms
     if (command.startsWith('listsyn'))
-    {
-        let listing = await listSynonyms(user, command)
-        if (listing) return message.reply(listing)
+        return message.reply(await listSynonyms(user, command))
 
-        return
-    }
     //handle synonyms
     if (command.startsWith('^'))
-    {
-        let done = await handleSynonym(user, message.content)
-        if (done)
-        {
-            message.reply(done)
-        }
-
-        return
-    }
+        return message.reply(await handleSynonym(user, message.content))
 
     //check for synonyms
     let syn = await getSynonym(command)
@@ -168,7 +143,7 @@ async function discordHandler(message, client) {
     } else if (command in dictionary.synonyms)
     {
         command = dictionary.synonyms[command]
-        console.log('synonym found for ' + command)
+        //console.log('synonym found for ' + command)
     }
 
     //set limit to 10 if it is a bot-commands channel
@@ -179,9 +154,7 @@ async function discordHandler(message, client) {
     if (cache.has(cacheKey)) {
         console.log('serving from cache: ', language, command, limit)
         let answer = await cache.get(cacheKey)
-        message.reply({content: answer.content, files: answer.files.slice(0, limit)})
-
-        return
+        return message.reply({content: answer.content, files: answer.files.slice(0, limit)})
     }
     //first search on KARDS.com, on no result search in the local DB
     let variables = {
@@ -202,8 +175,7 @@ async function discordHandler(message, client) {
         const imageURL = await getRandomImage()
         if (await bot.getFileSize(imageURL) > maxFileSize)
             return message.reply(translate(language, 'noresult'))
-        return message.reply(
-            {
+        return message.reply({
                 content: translate(language, 'noresult'),
                 files: [imageURL]
             })
@@ -215,9 +187,7 @@ async function discordHandler(message, client) {
     //do not show any cards if there are more than 20 cards
     if (counter > 20 && !isBotCommandChannel(message))
     {
-        message.reply(content + translate(language, 'noshow'))
-
-        return
+        return message.reply(content + translate(language, 'noshow'))
     }
     //warn that there are more cards found
     if (counter > limit)
