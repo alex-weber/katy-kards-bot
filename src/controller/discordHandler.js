@@ -2,11 +2,13 @@ const bot = require("./bot")
 const {getUser, updateUser, getTopDeckStats, getSynonym} = require("../database/db")
 const {defaultLanguage, getLanguageByInput, APILanguages} = require("../tools/language")
 const {translate} = require("../tools/translator")
-const {myTDRank, topDeck} = require("../games/topDeck")
+const {myTDRank} = require("../games/topDeck")
+const {handleTD} = require("../games/topDeckController")
 const {getStats, getServerList} = require("../tools/stats")
 const {isManager, isBotCommandChannel,
     listSynonyms, handleSynonym, getCards, getFiles} = require("../tools/search")
 const dictionary = require("../tools/dictionary")
+const {getRandomImage} = require("../tools/nekosAPI")
 const {drawBattlefield} = require("./canvasManager")
 const fs = require("fs")
 const axios = require("axios")
@@ -79,7 +81,7 @@ async function discordHandler(message, client) {
     {
         getStats(language).
         then(res => { message.reply(res) }).
-        catch(error => { console.log(error) })
+        catch(error => { console.error(error) })
 
         return
     }
@@ -119,37 +121,7 @@ async function discordHandler(message, client) {
     //top deck game only in special channels
     if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
     {
-        console.log('starting top deck game')
-        let td = await topDeck(message.channelId, user, command)
-        if (td.state === 'open')
-        {
-            let unitType = ''
-            if (td.unitType) unitType = td.unitType + ' battle\n'
-
-            return message.reply(
-                unitType.toUpperCase() +
-                'Waiting for another player...')
-        }
-        if (td.state === 'finished')
-        {
-            //draw the image
-            message.reply('getting battle results...')
-            try {
-                const battleImage = await drawBattlefield(td)
-                await message.reply({content: td.log, files: [battleImage]})
-                console.log(td.log)
-                //delete the battle image
-                fs.rm(battleImage, function ()
-                {
-                    console.log('image deleted')
-                })
-            } catch (e) {
-                message.reply('could not draw battle image\n' + td.log)
-                console.error(e.toString())
-            }
-        }
-
-        return
+        return await handleTD(user, command, message)
     }
     //check minimums
     if (command.length < minStrLen && !qSearch)
@@ -159,10 +131,8 @@ async function discordHandler(message, client) {
 
     if (command.startsWith('servers') && isManager(user)) {
 
-        return message.reply(
-            getServerList(client).map(
-                (item, index) => `${index + 1}. ${item[1]}`)
-                .join('\n'))
+        return message.reply(getServerList(client).map(
+                (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
     }
 
     //list all synonyms
@@ -228,19 +198,8 @@ async function discordHandler(message, client) {
     const counter = cards.counter
     if (!counter)
     {
-        //don't reply if nothing is found
-        if (qSearch) return
-
-        //get a random cat|dog image for no result
-        let endpoints = ['meow', 'woof']
-        //define the sample function to get a random array value
-        Array.prototype.sample = function()
-        {
-            return this[Math.floor(Math.random()*this.length)]
-        }
-        const endpoint = endpoints.sample()
-        const image = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
-        const imageURL = image.data.url.toString()
+        if (qSearch) return //don't reply if nothing is found
+        const imageURL = await getRandomImage()
         if (await bot.getFileSize(imageURL) > maxFileSize)
             return message.reply(translate(language, 'noresult'))
         return message.reply(
