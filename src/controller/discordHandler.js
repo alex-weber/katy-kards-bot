@@ -1,18 +1,29 @@
 const bot = require("./bot")
-const {getUser, updateUser, getTopDeckStats, getSynonym} = require("../database/db")
-const {defaultLanguage, getLanguageByInput, APILanguages} = require("../tools/language")
+const {
+    getUser,
+    updateUser,
+    getTopDeckStats,
+    getSynonym
+} = require("../database/db")
+const {
+    defaultLanguage,
+    getLanguageByInput,
+    APILanguages
+} = require("../tools/language")
 const {translate} = require("../tools/translator")
 const {myTDRank} = require("../games/topDeck")
 const {handleTD} = require("../games/topDeckController")
 const {getStats, getServerList} = require("../tools/stats")
-const {isManager, isBotCommandChannel,
-    listSynonyms, handleSynonym, getCards, getFiles} = require("../tools/search")
+const {
+    isManager, isBotCommandChannel,
+    listSynonyms, handleSynonym, getCards, getFiles
+} = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {getRandomImage} = require("../tools/nekosAPI")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
-const maxFileSize = 5*1024*1024 //5MB
+const maxFileSize = 5 * 1024 * 1024 //5MB
 
 /**
  *
@@ -21,8 +32,8 @@ const maxFileSize = 5*1024*1024 //5MB
  * @param redis
  * @returns {Promise<*>}
  */
-async function discordHandler(message, client, redis) {
-
+async function discordHandler(message, client, redis)
+{
     if (message.author.bot || message.content.length > maxStrLen) return
     //get a custom sever prefix if set
     let prefix = bot.getPrefix(message)
@@ -39,7 +50,7 @@ async function discordHandler(message, client, redis) {
 
     //check for write permissions
     console.time('permissions')
-    if (message.guildId && ! await bot.hasWritePermissions(client, message, redis)) return
+    if (message.guildId && !await bot.hasWritePermissions(client, message, redis)) return
     console.timeEnd('permissions')
 
     //it's a bot command
@@ -47,11 +58,13 @@ async function discordHandler(message, client, redis) {
     message.author.createDM()
     let guildName = ''
     let channelName = ''
-    if (message.guildId) {
+    if (message.guildId)
+    {
         guildName = message.guild.name
         channelName = message.channel.name
     }
-    console.log('bot command:', guildName, channelName, message.author.username, '->', message.content)
+    console.log('bot command:', guildName, channelName,
+        message.author.username, '->', message.content)
 
     //remove all the prefixes from the beginning
     let command = bot.parseCommand(prefix, message.content)
@@ -63,9 +76,7 @@ async function discordHandler(message, client, redis) {
     //check the status
     if (user.status !== 'active')
     {
-        console.log('blocked user\n', user)
-
-        return
+        return console.log('blocked user\n', user)
     }
     if (!user.name) user.name = message.author.username
     //check the user language
@@ -82,9 +93,13 @@ async function discordHandler(message, client, redis) {
     //show online stats
     if (command === 'ingame' || command === 'online')
     {
-        getStats(language).
-        then(res => { message.reply(res) }).
-        catch(error => { console.error(error) })
+        getStats(language).then(res =>
+        {
+            message.reply(res)
+        }).catch(error =>
+        {
+            console.error(error)
+        })
         return
     }
 
@@ -100,8 +115,9 @@ async function discordHandler(message, client, redis) {
     //clear cache
     if (command === 'cclear' && isManager(user))
     {
-        redis.FLUSHDB('ASYNC',(err, succeeded) => {
-        console.log(succeeded); // will be true if success
+        redis.FLUSHDB('ASYNC', (err, succeeded) =>
+        {
+            console.log(succeeded); // will be true if success
         })
         //console.log('clear cache command from user ', user.name)
         return message.reply('cache cleared')
@@ -124,10 +140,11 @@ async function discordHandler(message, client, redis) {
         return message.reply('Minimum ' + minStrLen + ' chars, please')
     }
 
-    if (command.startsWith('servers') && isManager(user)) {
+    if (command.startsWith('servers') && isManager(user))
+    {
 
         return message.reply(getServerList(client).map(
-                (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
+            (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
     }
 
     //list all synonyms
@@ -154,14 +171,18 @@ async function discordHandler(message, client, redis) {
     let limit = globalLimit
     if (isBotCommandChannel(message)) limit = 10
     //check if in cache
-    const cacheKey = language+command
+    const cacheKey = language + command
     let keyExists = await redis.exists(cacheKey)
-    if (keyExists) {
+    if (keyExists)
+    {
         console.time('cache')
         console.log('serving from cache: ', language, command, limit)
         let answer = JSON.parse(await redis.get(cacheKey))
         console.timeEnd('cache')
-        return message.reply({content: answer.content, files: answer.files.slice(0, limit)})
+        return message.reply({
+            content: answer.content,
+            files: answer.files.slice(0, limit)
+        })
     }
     //first search on KARDS.com, on no result search in the local DB
     let variables = {
@@ -183,9 +204,9 @@ async function discordHandler(message, client, redis) {
         if (await bot.getFileSize(imageURL) > maxFileSize)
             return message.reply(translate(language, 'noresult'))
         return message.reply({
-                content: translate(language, 'noresult'),
-                files: [imageURL]
-            })
+            content: translate(language, 'noresult'),
+            files: [imageURL]
+        })
     }
     //don't reply if more than one card is found via quotations
     if (qSearch && counter !== 1) return
@@ -204,12 +225,17 @@ async function discordHandler(message, client, redis) {
     //attach found images
     const files = getFiles(cards, language, limit)
     //reply to user
-    try {
+    try
+    {
         message.reply({content: content, files: files})
         console.log(counter + ' card(s) found', files)
         //store in the cache
-        await redis.set(cacheKey, JSON.stringify({content: content, files: files}))
-    } catch (e) {
+        await redis.set(cacheKey, JSON.stringify({
+            content: content,
+            files: files
+        }))
+    } catch (e)
+    {
         console.log(e.message)
         message.reply(translate(language, 'error'))
     }
