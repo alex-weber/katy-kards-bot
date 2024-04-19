@@ -39,7 +39,7 @@ async function discordHandler(message, client) {
     else if (!message.content.startsWith(prefix)) return
 
     //check for write permissions
-    if (message.guildId && ! await bot.hasWritePermissions(client, message)) return
+    if (message.guildId && ! await bot.hasWritePermissions(client, message, cache)) return
 
     //it's a bot command
     //create a DM channel

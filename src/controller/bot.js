@@ -42,19 +42,30 @@ function isQuotationSearch(message)
  *
  * @param client
  * @param message
- * @returns Promise {boolean}
+ * @param cache
+ * @returns {Promise<boolean>}
  */
-async function hasWritePermissions(client, message)
+async function hasWritePermissions(client, message, cache)
 {
+    if (cache.has(message.guildId+message.channelId))
+    {
+        //console.log('serving permissions from cache')
+        return cache.get(message.guildId + message.channelId)
+    }
     const clientMember = await message.guild.members.fetch(client.user.id)
     let permissions = message.channel.permissionsFor(clientMember)
     if (!permissions || ! await permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
         ! await permissions.has(Permissions.FLAGS.ATTACH_FILES))
     {
-        console.log('no write permissions.')
-
+        console.log('no write permissions. Caching it')
+        cache.set(message.guildId+message.channelId, false)
         return false
-    } else return true
+    } else
+    {
+        console.log('has write permissions. Caching it')
+        cache.set(message.guildId+message.channelId, true)
+        return true
+    }
 
 
 }
