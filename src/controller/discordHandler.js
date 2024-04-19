@@ -13,15 +13,15 @@ const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5*1024*1024 //5MB
-const jsoning = require("jsoning")
-const cache = new jsoning(__dirname + "/../tmp/cache.json")
+
 /**
  *
  * @param message
  * @param client
+ * @param redis
  * @returns {Promise<*>}
  */
-async function discordHandler(message, client) {
+async function discordHandler(message, client, redis) {
 
     if (message.author.bot || message.content.length > maxStrLen) return
     //get a custom sever prefix if set
@@ -38,10 +38,10 @@ async function discordHandler(message, client) {
     else if (!message.content.startsWith(prefix)) return
 
     //check for write permissions
-    if (message.guildId && ! await bot.hasWritePermissions(client, message, cache)) return
+    if (message.guildId && ! await bot.hasWritePermissions(client, message, redis)) return
 
     //it's a bot command
-    //create a DM channel
+    //create the DM channel
     message.author.createDM()
     let guildName = ''
     let channelName = ''
@@ -94,8 +94,10 @@ async function discordHandler(message, client) {
     //clear cache
     if (command === 'cclear' && isManager(user))
     {
-        await cache.clear()
-        console.log('clear cache command from user ', user.name)
+        redis.FLUSHDB('ASYNC',(err, succeeded) => {
+        console.log(succeeded); // will be true if success
+        })
+        //console.log('clear cache command from user ', user.name)
         return message.reply('cache cleared')
     }
 
@@ -140,20 +142,17 @@ async function discordHandler(message, client) {
         if (syn.value.startsWith('text:')) return message.reply(syn.value.replace('text:', ''))
         //else use the value as command
         command = syn.value
-    } else if (command in dictionary.synonyms)
-    {
-        command = dictionary.synonyms[command]
-        //console.log('synonym found for ' + command)
-    }
+    } else if (command in dictionary.synonyms) command = dictionary.synonyms[command]
 
     //set limit to 10 if it is a bot-commands channel
     let limit = globalLimit
     if (isBotCommandChannel(message)) limit = 10
     //check if in cache
     const cacheKey = language+command
-    if (cache.has(cacheKey)) {
+    let keyExists = await redis.exists(cacheKey)
+    if (keyExists) {
         console.log('serving from cache: ', language, command, limit)
-        let answer = await cache.get(cacheKey)
+        let answer = JSON.parse(await redis.get(cacheKey))
         return message.reply({content: answer.content, files: answer.files.slice(0, limit)})
     }
     //first search on KARDS.com, on no result search in the local DB
@@ -201,7 +200,7 @@ async function discordHandler(message, client) {
         message.reply({content: content, files: files})
         console.log(counter + ' card(s) found', files)
         //store in the cache
-        await cache.set(cacheKey, {content: content, files: files})
+        await redis.set(cacheKey, JSON.stringify({content: content, files: files}))
     } catch (e) {
         console.log(e.message)
         message.reply(translate(language, 'error'))

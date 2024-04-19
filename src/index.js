@@ -13,7 +13,10 @@ const {client} = require('./clients/discordClient.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
 const {getServerList} = require("./tools/stats")
-
+//redis cache
+const { createClient } = require('redis')
+const redis = createClient({url: process.env.REDISCLOUD_URL})
+redis.connect().then(()=>{ console.log('REDIS Client Connected') })
 //start listening for messages
 app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 //http server
@@ -35,17 +38,12 @@ client.on('ready', () =>
     client.user.setActivity(client.guilds.cache.size + ' servers', { type: 'WATCHING'})
 })
 //trigger on new messages
-client.on('messageCreate', async message => discordHandler(message, client))
+client.on('messageCreate', async message => discordHandler(message, client, redis))
 //start Discord-Bot's session
 client.login(process.env.DISCORD_TOKEN).then(() =>
 {
     console.log('Discord client started')
 })
-//
-client.on('error', (error) => {
-    console.error(error)
-})
-
 //start Telegram-Bot's session if TOKEN is set
 if (telegramClient)
 {
@@ -66,6 +64,11 @@ if (telegramClient)
         console.log('Telegram client started')
     })
 }
+//errors
+client.on('error', error => {
+    console.error(error)
+})
+redis.on('error', err => console.error('Redis Client Error', err))
 //prevent the app from crashing
 process.on('unhandledRejection', (reason, promise) =>
 {

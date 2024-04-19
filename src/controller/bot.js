@@ -42,15 +42,15 @@ function isQuotationSearch(message)
  *
  * @param client
  * @param message
- * @param cache
+ * @param redis
  * @returns {Promise<boolean>}
  */
-async function hasWritePermissions(client, message, cache)
+async function hasWritePermissions(client, message, redis)
 {
-    if (cache.has(message.guildId+message.channelId))
+    if (await redis.exists(message.guildId+message.channelId))
     {
-        //console.log('serving permissions from cache')
-        return cache.get(message.guildId + message.channelId)
+        //console.log('serving permissions from redis')
+        return await redis.get(message.guildId + message.channelId)
     }
     const clientMember = await message.guild.members.fetch(client.user.id)
     let permissions = message.channel.permissionsFor(clientMember)
@@ -58,12 +58,12 @@ async function hasWritePermissions(client, message, cache)
         ! await permissions.has(Permissions.FLAGS.ATTACH_FILES))
     {
         console.log('no write permissions. Caching it')
-        cache.set(message.guildId+message.channelId, false)
+        await redis.set(message.guildId+message.channelId, false)
         return false
     } else
     {
         console.log('has write permissions. Caching it')
-        cache.set(message.guildId+message.channelId, true)
+        redis.set(message.guildId+message.channelId, 1)
         return true
     }
 
