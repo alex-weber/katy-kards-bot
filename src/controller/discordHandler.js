@@ -71,7 +71,20 @@ async function discordHandler(message, client, redis)
     if (!command.length) return
     //set username
     console.time('getUser')
-    const user = await getUser(message.author.id.toString())
+    let user = {}
+    const userId = message.author.id.toString()
+    let cachedUser = JSON.parse(await redis.get('user' + userId))
+    if (!cachedUser || !cachedUser.hasOwnProperty('id'))
+    {
+        console.log('no user in cache, caching')
+        user = await getUser(message.author.id.toString())
+        await redis.set('user' + userId, JSON.stringify(user))
+    }
+    else
+    {
+        console.log('getting user from cache')
+        user = cachedUser
+    }
     console.timeEnd('getUser')
     //check the status
     if (user.status !== 'active')
@@ -79,16 +92,17 @@ async function discordHandler(message, client, redis)
         return console.log('blocked user\n', user)
     }
     if (!user.name) user.name = message.author.username
-    //check the user language
-    let language = defaultLanguage
-    if (getLanguageByInput(command) === 'ru')
+    //set the user language
+    let language = user.language
+    if (getLanguageByInput(command) === 'ru' && language !== 'ru')
     {
         user.language = 'ru'
         console.time('updateUser')
         await updateUser(user)
+        //delete user from cache
+        await redis.del('user' + userId)
         console.timeEnd('updateUser')
     }
-    if (user.language !== defaultLanguage) language = user.language
 
     //show online stats
     if (command === 'ingame' || command === 'online')
@@ -107,6 +121,7 @@ async function discordHandler(message, client, redis)
     if (bot.isLanguageSwitch(command) && !qSearch)
     {
         language = await bot.switchLanguage(user, command)
+        await redis.del('user' + userId)
         return message.reply(translate(language, 'langChange') + language.toUpperCase())
     }
     //handle command
