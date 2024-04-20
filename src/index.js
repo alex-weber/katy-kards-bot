@@ -12,7 +12,7 @@ const {telegramHandler} = require('./controller/telegramHandler')
 const {client} = require('./clients/discordClient.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
-const {getServerList} = require("./tools/stats")
+const {getServerList, getUptimeStats} = require("./tools/stats")
 //redis cache
 const { createClient } = require('redis')
 const redis = createClient({url: process.env.REDISCLOUD_URL})
@@ -23,7 +23,11 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 app.get('/', (req, res) =>
     res.render('index', {
         title: 'Katyusha Kards Bot',
-        message: 'I am online!'
+        message: 'I am online!',
+        stats: {
+            test: 'first',
+            test2: 'second',
+        }
     }))
 //Discord-Bot login event
 client.on('ready', () =>

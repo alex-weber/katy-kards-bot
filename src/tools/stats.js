@@ -68,4 +68,13 @@ function getServerList(client) {
     })
 }
 
-module.exports = { getStats, getServerList}
+/**
+ *
+ * @returns {Promise<>}
+ */
+async function getUptimeStats()
+{
+    return await fetch('https://stats.uptimerobot.com/api/getMonitorList/VV5VMf2r0Y')
+}
+
+module.exports = { getStats, getServerList, getUptimeStats}
