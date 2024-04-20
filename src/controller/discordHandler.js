@@ -251,7 +251,7 @@ async function discordHandler(message, client, redis)
         }))
     } catch (e)
     {
-        console.log(e.message)
+        console.error(e.message)
         message.reply(translate(language, 'error'))
     }
 
