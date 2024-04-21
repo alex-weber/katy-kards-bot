@@ -8,7 +8,7 @@ async function takeScreenshot(url) {
 
     const outputPath = __dirname+'/../tmp/deckScreenshot'
     const selector = '.Sidebar_side__scroll__xZp3s'
-    let browser = await puppeteer.launch()
+    let browser
     if (process.env.PATH_TO_CHROME)
     {
         browser = await puppeteer.launch({
@@ -17,6 +17,10 @@ async function takeScreenshot(url) {
             headless: true,
         })
         console.log('setting PATH_TO_CHROME to ', process.env.PATH_TO_CHROME)
+    } else
+    {
+        console.log('starting DEFAULT PUPPETEER browser')
+        browser = await puppeteer.launch()
     }
     const page = await browser.newPage()
     await page.setViewport({ width: 4000, height:2000 })
