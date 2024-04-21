@@ -1,9 +1,8 @@
 const puppeteer = require('puppeteer')
-const path = require("path")
 /**
  *
  * @param url
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>}
  */
 async function takeScreenshot(url) {
 
@@ -13,9 +12,9 @@ async function takeScreenshot(url) {
     const page = await browser.newPage()
     await page.setViewport({ width: 4000, height:2000 })
     console.time('pageLoading')
-    await page.goto(url, { waitUntil: 'load' })
+    const response = await page.goto(url, { waitUntil: 'load' })
+    if (response.status() > 400) return false
     console.timeEnd('pageLoading')
-
     try {
         // Wait for the element to appear
         const selected = await page.waitForSelector(selector, { timeout: 5000 })
@@ -59,6 +58,8 @@ async function takeScreenshot(url) {
     }
 
     await browser.close()
+
+    return true
 
 }
 

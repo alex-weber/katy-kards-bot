@@ -111,8 +111,9 @@ async function discordHandler(message, client, redis)
     {
         message.reply('getting the deck image...')
         takeScreenshot(command)
-            .then(() =>
+            .then((result) =>
             {
+                if (!result) return message.reply('error getting the deck image...')
                 const files = getDeckFiles()
                 message.reply({ files: files })
                 console.log('Screenshot captured and sent successfully')

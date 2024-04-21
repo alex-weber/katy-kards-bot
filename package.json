@@ -7,7 +7,7 @@
     "test": "jest",
     "start": "node src/index.js",
     "sync": "node src/tools/sync.js",
-    "heroku-postbuild": "npx prisma generate"
+    "heroku-postbuild": "npx prisma generate && npx puppeteer browsers install chrome"
   },
   "keywords": [
     "KARDS",
