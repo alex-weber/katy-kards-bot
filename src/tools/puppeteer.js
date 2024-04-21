@@ -13,7 +13,8 @@ async function takeScreenshot(url) {
     {
         browser = await puppeteer.launch({
             executablePath: process.env.PATH_TO_CHROME,
-            args: ['--no-sandbox']
+            args: ['--no-sandbox'],
+            headless: true,
         })
         console.log('setting PATH_TO_CHROME to ', process.env.PATH_TO_CHROME)
     }
