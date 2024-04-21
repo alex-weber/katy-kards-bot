@@ -10,6 +10,8 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)
 const maxFileSize = 5*1024*1024 //5MB
 const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
+const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
+const takeScreenshot = require("../tools/puppeteer")
 /**
  *
  * @param ctx
@@ -57,6 +59,28 @@ async function telegramHandler(ctx) {
     //search
     if (!command.length) return
     if (command.length < minStrLen) return ctx.reply('minimum 2 characters, please')
+    //deck images
+    //show Deck as image
+    if(bot.isDeckCommand(command))
+    {
+        ctx.reply('getting the deck image...')
+        takeScreenshot(command)
+            .then(() =>
+            {
+                const files = getDeckFiles()
+                ctx.replyWithPhoto({ source: files[1] })
+                    .catch((error) =>
+                    {
+                        console.error('Error uploading photo:', error)
+                        ctx.reply(translate(language, 'error'))
+                    })
+                console.log('Screenshot captured and sent successfully')
+                //deleteDeckFiles()
+            })
+            .catch(error => console.error('Error capturing screenshot:', error))
+
+        return
+    }
     //check for synonyms
     let syn = await getSynonym(command)
     if (syn)
@@ -105,7 +129,7 @@ async function telegramHandler(ctx) {
         try {
 
             return ctx.replyWithPhoto(
-                files[0].attachment + '?' + new Date().getTime().toString(),
+                files[0].attachment + '?' + bot.getCurrentTimestamp(),
                 { caption: files[0].description }).
             then((m) => {
                 /*ctx.telegram.setMessageReaction(

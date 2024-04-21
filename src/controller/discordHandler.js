@@ -20,12 +20,13 @@ const {
     getCards, getFiles,
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
+const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
 const {getRandomImage} = require("../tools/nekosAPI")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5 * 1024 * 1024 //5MB
-const fs = require('fs')
+
 
 /**
  *
@@ -106,29 +107,16 @@ async function discordHandler(message, client, redis)
         console.timeEnd('updateUser')
     }
     //show Deck as image
-    if(command.startsWith('https://www.kards.com/') &&
-        command.indexOf('/decks/') !== -1)
+    if(bot.isDeckCommand(command))
     {
         message.reply('getting the deck image...')
         takeScreenshot(command)
             .then(() =>
             {
-                const filePath = __dirname+'/../tmp/deckScreenshot.jpg'
-                const filePath2 = __dirname+'/../tmp/deckScreenshot2.jpg'
-                //if (!fs.existsSync(filePath)) return message.reply(translate(language, 'error'))
-                const fileContent1 = fs.readFileSync(filePath)
-                const fileContent2 = fs.readFileSync(filePath2)
-                message.reply({ files: [{attachment: fileContent1}, {attachment: fileContent2}] })
-                console.log('Screenshot captured successfully')
-                //delete the battle image
-                fs.rm(filePath, function ()
-                {
-                    console.log('deck image1 deleted')
-                })
-                fs.rm(filePath2, function ()
-                {
-                    console.log('deck image2 deleted')
-                })
+                const files = getDeckFiles()
+                message.reply({ files: files })
+                console.log('Screenshot captured and sent successfully')
+                deleteDeckFiles()
             })
             .catch(error => console.error('Error capturing screenshot:', error))
 
