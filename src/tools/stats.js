@@ -70,11 +70,19 @@ function getServerList(client) {
 
 /**
  *
- * @returns {Promise<>}
+ * @param req
+ * @param res
+ * @returns {Promise<http.ServerResponse<IncomingMessage>>}
  */
-async function getUptimeStats()
+async function getUptimeStats(req, res)
 {
-    return await fetch('https://stats.uptimerobot.com/api/getMonitorList/VV5VMf2r0Y')
+    let APIres = await axios.get('https://stats.uptimerobot.com/api/getMonitorList/VV5VMf2r0Y')
+    //let html = await axios.get('https://stats.uptimerobot.com/VV5VMf2r0Y')
+    return res.render('uptime', {
+        title: 'Uptime Stats',
+        stats: APIres.data
+    })
+
 }
 
 module.exports = { getStats, getServerList, getUptimeStats}

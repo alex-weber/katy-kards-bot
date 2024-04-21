@@ -1,0 +1,21 @@
+extends layout
+
+block content
+  div.container
+
+    h1= title
+    div.card-group.grid
+      each lastDays, label in stats.statistics.uptime
+        - let days = parseInt(label.replace('l', ''))
+        - let daysOutput = days === 1 ? 'Last Day' : 'Last ' + days + ' days'
+        each ratio, index in lastDays
+          if index === 'ratio'
+              div.card.text-bg-dark.border-secondary(style="width: 10rem; float:left")
+                div.card-body.text-info
+                  h5.card-title= daysOutput
+                  p.card-text= ratio + '%'
+
+
+
+
+

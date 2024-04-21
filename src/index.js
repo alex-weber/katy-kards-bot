@@ -23,12 +23,12 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 app.get('/', (req, res) =>
     res.render('index', {
         title: 'Katyusha Kards Bot',
-        message: 'I am online!',
         stats: {
-            test: 'first',
-            test2: 'second',
+            test: 'Welcome to Katyusha Kards Bot',
+            test2: 'Here are some cards statistics',
         }
     }))
+app.get('/uptime', async (req, res) => getUptimeStats(req, res))
 //Discord-Bot login event
 client.on('ready', () =>
 {

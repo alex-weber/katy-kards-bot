@@ -3,8 +3,8 @@ header
         div.container
             div.d-flex.flex-wrap.align-items-center.justify-content-center.justify-content-lg-start
                 a(href='/', class='d-flex align-items-center my-2 my-lg-0 me-lg-auto text-white text-decoration-none')
-                    svg.bi(me-2, width='40', height='32', role='img', aria-label='Bootstrap')
-                        use(xlink:href='#bootstrap')
+                    svg.bi(me-2, width='40', height='32', role='img', aria-label='Home')
+                        use(xlink:href='#home')
                 ul.nav.col-12.col-lg-auto.my-2.justify-content-center.my-md-0.text-small
                     li
                         a(href='/', class='nav-link text-secondary')
@@ -14,8 +14,13 @@ header
                     li
                         a(href='/servers', class='nav-link text-white')
                             svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                use(xlink:href='#speedometer2')
-                            | Dashboard
+                                use(xlink:href='#servers')
+                            | Servers
+                    li
+                        a(href='/uptime', class='nav-link text-white')
+                            svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+
+                            | Uptime
 
     div.px-3.py-2.text-bg-dark.border-bottom.mb-3
         div.container.d-flex.flex-wrap.justify-content-center
