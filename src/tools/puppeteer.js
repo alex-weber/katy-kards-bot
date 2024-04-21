@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer')
-
+const path = require("path")
 /**
  *
  * @param url
@@ -7,34 +7,50 @@ const puppeteer = require('puppeteer')
  */
 async function takeScreenshot(url) {
 
-    const outputPath = '../tmp/deckScreenshot.jpg'
+    const outputPath = __dirname+'/../tmp/deckScreenshot'
     const selector = '.Sidebar_side__scroll__xZp3s'
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
     await page.setViewport({ width: 4000, height:2000 })
-    await page.goto(url, { waitUntil: 'networkidle0' })
-    
+    console.time('pageLoading')
+    await page.goto(url, { waitUntil: 'load' })
+    console.timeEnd('pageLoading')
+
     try {
         // Wait for the element to appear
-        await page.waitForSelector(selector, { timeout: 100 })
+        const selected = await page.waitForSelector(selector, { timeout: 5000 })
 
         // Get the bounding box of the element
         const elementHandle = await page.$(selector)
         const boundingBox = await elementHandle.boundingBox()
+        const rightMargin = 60
+        const topMargin = 422
 
         if (boundingBox) {
             // Take a screenshot of the element
-            await elementHandle.screenshot({
-                path: outputPath,
+            let screenshot1 = await elementHandle.screenshot({
+                path: outputPath+'.jpg',
                 type: 'jpeg',
-                quality: 90,
+                quality: 100,
                 clip: {
                     x: 0,
                     y: 0,
-                    width: boundingBox.width - 60,
-                    height: boundingBox.height
+                    width: boundingBox.width - rightMargin,
+                    height: 383,
                 }
             })
+            let screenshot2 = await elementHandle.screenshot({
+                path: outputPath+'2.jpg',
+                type: 'jpeg',
+                quality: 100,
+                clip: {
+                    x: 0,
+                    y: topMargin,
+                    width: boundingBox.width - rightMargin,
+                    height: boundingBox.height - topMargin+5,
+                }
+            })
+
         } else {
             console.error(`Element "${selector}" is not visible or not in the viewport.`)
         }
@@ -43,11 +59,7 @@ async function takeScreenshot(url) {
     }
 
     await browser.close()
+
 }
 
-// Example usage:
-const url = 'https://www.kards.com/en/decks/15222-aviazione-pesante-heavy-aviation'
-
-takeScreenshot(url)
-    .then(() => console.log('Screenshot captured successfully'))
-    .catch(error => console.error('Error capturing screenshot:', error))
+module.exports = takeScreenshot
