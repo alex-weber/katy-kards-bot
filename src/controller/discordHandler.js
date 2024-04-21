@@ -109,11 +109,11 @@ async function discordHandler(message, client, redis)
     //show Deck as image
     if(bot.isDeckCommand(command))
     {
-        message.reply('getting the deck image...')
+        message.reply('capturing a screenshot, this may take some seconds...')
         takeScreenshot(command)
             .then((result) =>
             {
-                if (!result) return message.reply('error getting the deck image...')
+                if (!result) return message.reply(translate(language, 'error'))
                 const files = getDeckFiles()
                 message.reply({ files: files })
                 console.log('Screenshot captured and sent successfully')
