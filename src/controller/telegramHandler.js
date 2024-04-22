@@ -63,7 +63,7 @@ async function telegramHandler(ctx) {
     //show Deck as image
     if(bot.isDeckCommand(command))
     {
-        ctx.reply('getting the deck image...')
+        ctx.reply(translate(language, 'screenshot'))
         takeScreenshot(command)
             .then(() =>
             {

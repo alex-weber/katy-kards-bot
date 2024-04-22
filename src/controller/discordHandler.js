@@ -109,7 +109,7 @@ async function discordHandler(message, client, redis)
     //show Deck as image
     if(bot.isDeckCommand(command))
     {
-        message.reply('capturing a screenshot, this may take some seconds...')
+        message.reply(translate(language, 'screenshot'))
         takeScreenshot(command)
             .then((result) =>
             {

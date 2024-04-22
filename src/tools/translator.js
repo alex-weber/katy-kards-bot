@@ -53,6 +53,7 @@ function translate(language, msg)
             if (msg === 'time') return 'Время сейчас'
             if (msg === 'noresult') return 'Язык поиска: ' + language.toUpperCase() + ', карт не найдено...'
             if (msg === 'langChange') return 'Язык поиска: '
+            if (msg === 'screenshot') return 'Делаю скриншот... Это может занять до 10 секунд.'
             if (msg === 'help')
             {
                 return 'Приветствую!\n\n' +
@@ -79,6 +80,7 @@ function translate(language, msg)
             if (msg === 'time') return 'Die aktuelle Zeit'
             if (msg === 'noresult') return 'Suchsprache: ' + language.toUpperCase() + ', nichts gefunden...'
             if (msg === 'langChange') return 'Suchsprache: '
+            if (msg === 'screenshot') return 'Mache ein Screenshot, das kann dauern...'
             if (msg === 'help')
             {
                 return 'Willkommen!\n\n' +
@@ -100,6 +102,7 @@ function translate(language, msg)
             if (msg === 'time') return 'Time now'
             if (msg === 'noresult') return 'Search language: ' + language.toUpperCase() + '. No cards found...'
             if (msg === 'langChange') return 'Search language: '
+            if (msg === 'screenshot') return 'capturing a screenshot, this may take some seconds...'
             if (msg === 'help')
             {
                 return 'Katyusha Kards Bot commands\n\n' +
