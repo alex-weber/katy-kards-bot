@@ -66,7 +66,7 @@ function translate(language, msg)
                     '!советская пехота охрана 1/8 3k 1ц \n' +
                     'Можете использовать * в качестве заменителя для любой атаки или любой защиты.\n' +
                     'Страны для поиска: Советы Германия Британия США Япония Польша Франция Италия Финляндия.\n' +
-                    '!en [ de| es | fr | it | jp | ko | pl | pt | ru | tw | zh ] - Сменить язык поиска\n'
+                    '!en !de !es !fr !it !jp !ko !pl !pt !ru !tw !zh - Сменить язык поиска\n'
             }
             break
         case 'de':
@@ -86,7 +86,7 @@ function translate(language, msg)
                     '**!leo** - *findet den Leopold*\n' +
                     '**!usa infantry blitz 4k 4/4 4c ** - *findet alle Karten mit den Attributen*\n' +
                     'Nationen: **Soviet Germany Britain USA Japan Poland France Italy Finland**\n' +
-                    '**!de** [ de| es | fr | it | jp | ko | pl | pt | ru | tw | zh ] - Suchsprache ändern\n'
+                    '!de !en !de !es !fr !it !jp !ko !pl !pt !ru !tw !zh - Suchsprache ändern\n'
 
             }
             break
@@ -102,22 +102,26 @@ function translate(language, msg)
             if (msg === 'langChange') return 'Search language: '
             if (msg === 'help')
             {
-                return 'Welcome!\n\n' +
-                    '!! - Steam players online and stats\n\n' +
-                    '!leo - will find the Leopold\n' +
-                    'All not found words will be used for searching in title and text.\n' +
+                return 'Katyusha Kards Bot commands\n\n' +
+                    '!! - Steam players online and stats\n' +
+                    '!leo - matches the part of a title of a card: LEOpold. ' +
+                    'So you will get the LEOPOLD card as result.\n' +
+                    'The bot recognizes all keywords of the game such as BLITZ, GUARD, etc.\n' +
+                    'All not recognized words will be used for searching in title and text.\n' +
                     '3k - Deployment cost\n' +
                     '2c or 2op  - Operation cost\n' +
                     '5-5 or 5/5 - Five attack and five defense\n' +
-                    '!soviet infantry guard 1/8 3k 1c\n' +
-                    'You can use * as placeholder for any attack or any defense\n' +
-                    'You can also trigger the search without a leading prefix - show me %leo% please\n' +
-                    'Nations for search: Soviet Germany Britain USA Japan Poland France Italy Finland\n' +
-                    '!td [infantry | tank | artillery | fighter | bomber] ' +
-                    '- 2 random cards fight. You can pick the unit type or leave it blank.\n' +
+                    '!soviet infantry guard 1/8 3k 1c - will get the only one card which matches all the keywords.\n' +
+                    'You can use * as placeholder for any attack or any defense:\n' +
+                    'You can also trigger the search without a leading prefix - show me %leo% please.\n' +
+                    'It will work only if there is EXACTLY ONE result.\n'+
+                    'Nations for search: SOVIET GERMANY BRITAIN USA JAPAN POLAND FRANCE ITALY FINLAND\n' +
+                    '!td infantry tank artillery fighter bomber\n' +
+                    '2 random cards fight. You can pick the unit type or leave it blank.\n' +
                     '!ranking - Top Deck Ranking\n' +
-                    '!myrank - Your personal Top Deck Ranking with stats.\n\n' +
-                    '!en [ de | es | fr | it | jp | ko | pl | pt | ru | tw | zh ] - change the search language.\n\n'
+                    '!myrank - Your personal Top Deck Ranking with stats.\n' +
+                    '!en !de !es !fr !it !jp !ko !pl !pt !ru !tw !zh - change the search language.\n'+
+                    '!paste here the link to the deck from kards.com - makes a screenshot of the deck.'
 
             }
             //translate meta keywords from ru to en
