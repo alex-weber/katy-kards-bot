@@ -25,7 +25,7 @@ async function takeScreenshot(url) {
     const page = await browser.newPage()
     await page.setViewport({ width: 4000, height:2000 })
     console.time('pageLoading')
-    const response = await page.goto(url, { waitUntil: 'load' })
+    const response = await page.goto(url, { waitUntil: 'domcontentloaded' })
     if (response.status() > 400) return false
     console.timeEnd('pageLoading')
     try {
