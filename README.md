@@ -13,7 +13,7 @@ This bot provides search results from **kards.com** to Discord and Telegram.
 ## Optional Environment Variables
 - `TELEGRAM_TOKEN`: Token for authenticating for the Telegram API.
 - `PORT`: Port number for the Node.js server.
-- `LIMIT`: Limit for Discord API attachments (maximum 10).
+- `LIMIT`: Limit for message attachments (maximum 10).
 
  *Custom Prefix for a Server*
 
@@ -34,12 +34,14 @@ Configure the necessary environment variables, such as `DATABASE_URL`, which sho
 # Generate Prisma Client
 ``npx prisma generate``
 
-# Create the database:
+# Create the database
 `npx prisma db push`
 
 # Test the Application
 `npm start`
 
+Navigate to `http://localhost:PORT/`. 
+You should see the bot's home page.
 Send `!help` in the chat and see if the bot answers.
 
 
