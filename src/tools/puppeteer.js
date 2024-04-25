@@ -107,7 +107,7 @@ async function takeScreenshot(url) {
         return false
     }
 
-    //await browser.close()
+    await browser.close()
 
     return true
 
