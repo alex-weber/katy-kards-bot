@@ -52,7 +52,12 @@ async function discordHandler(message, client, redis)
 
     //check for write permissions
     console.time('permissions')
-    if (message.guildId && !await bot.hasWritePermissions(client, message, redis)) return
+    const permitted = await bot.hasWritePermissions(client, message, redis)
+    if (message.guildId && !permitted)
+    {
+        console.timeEnd('permissions')
+        return
+    }
     console.timeEnd('permissions')
 
     //it's a bot command

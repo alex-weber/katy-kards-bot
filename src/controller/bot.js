@@ -50,7 +50,9 @@ async function hasWritePermissions(client, message, redis)
     if (await redis.exists(message.guildId+message.channelId))
     {
         //console.log('serving permissions from redis')
-        return await redis.get(message.guildId + message.channelId)
+        const permission = await redis.get(message.guildId + message.channelId)
+
+        return permission === 'yes'
     }
     const clientMember = await message.guild.members.fetch(client.user.id)
     let permissions = message.channel.permissionsFor(clientMember)
@@ -58,12 +60,12 @@ async function hasWritePermissions(client, message, redis)
         ! await permissions.has(Permissions.FLAGS.ATTACH_FILES))
     {
         console.log('no write permissions. Caching it')
-        await redis.set(message.guildId+message.channelId, false)
+        await redis.set(message.guildId+message.channelId, 'no')
         return false
     } else
     {
         console.log('has write permissions. Caching it')
-        redis.set(message.guildId+message.channelId, 1)
+        redis.set(message.guildId+message.channelId, 'yes')
         return true
     }
 
