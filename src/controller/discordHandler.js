@@ -11,6 +11,7 @@ const {
 } = require("../tools/language")
 const {translate} = require("../tools/translator")
 const {takeScreenshot} = require("../tools/puppeteer")
+const {uploadImage} = require("../tools/imageUpload")
 const {myTDRank} = require("../games/topDeck")
 const {handleTD} = require("../games/topDeckController")
 const {getStats, getServerList} = require("../tools/stats")
@@ -113,16 +114,36 @@ async function discordHandler(message, client, redis)
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
-        const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
-        const hash = encodeURIComponent(message.content.replace(prefix, ''))
-        let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
-        message.reply(translate(language, 'screenshot'))
-        let result = await takeScreenshot(url)
-        if (!result) return message.reply(translate(language, 'error'))
-        const files = getDeckFiles()
+        //check if in cache
+        let files
+        if (await redis.exists(command))
+        {
+            files = JSON.parse(await redis.get(command))
+            message.reply('getting from cache...')
+        } else {
+            const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+            const hash = encodeURIComponent(message.content.replace(prefix, ''))
+            let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
+            message.reply(translate(language, 'screenshot'))
+            let result = await takeScreenshot(url)
+            if (!result) return message.reply(translate(language, 'error'))
+            files = getDeckFiles()
+            //upload them for caching
+            let file1 = await uploadImage(files[0])
+            let file2 = await uploadImage(files[1])
+            if (file1 && file2) {
+                files = [file1, file2]
+                await redis.set(command, JSON.stringify(files))
+                console.log('setting cache key for deck', command)
+            }
+
+        }
+
         message.reply({files: files})
         console.log('Screenshot captured and sent successfully')
+        //upload files to a free hosting to cache the result
         //deleteDeckFiles()
+
 
         return
     }
@@ -157,7 +178,7 @@ async function discordHandler(message, client, redis)
         {
             console.log(succeeded); // will be true if success
         })
-        //console.log('clear cache command from user ', user.name)
+
         return message.reply('cache cleared')
     }
 
