@@ -89,7 +89,7 @@ async function takeScreenshot(url) {
         console.log(msg.text(), ...args)
     })
 
-    await page.setViewport({ width: 4000, height:2000 })
+    await page.setViewport({ width: 3000, height:2000 })
     console.time('pageLoading')
     const response = await page.goto(url, options)
     await waitFor(2000)

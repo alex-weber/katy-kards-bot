@@ -11,7 +11,7 @@ const maxStrLen = 256 // buffer overflow protection :)
 const maxFileSize = 5*1024*1024 //5MB
 const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
-const takeScreenshot = require("../tools/puppeteer")
+const {takeScreenshot} = require("../tools/puppeteer")
 /**
  *
  * @param ctx
@@ -60,24 +60,19 @@ async function telegramHandler(ctx) {
     if (!command.length) return
     if (command.length < minStrLen) return ctx.reply('minimum 2 characters, please')
     //deck images
-    //show Deck as image
-    if(bot.isDeckCommand(command))
+    //show Deck as images
+    if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
+        const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+        const hash = encodeURIComponent(ctx.update.message.text.replace(prefix, ''))
+        let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
         ctx.reply(translate(language, 'screenshot'))
-        takeScreenshot(command)
-            .then(() =>
-            {
-                const files = getDeckFiles()
-                ctx.replyWithPhoto({ source: files[1] })
-                    .catch((error) =>
-                    {
-                        console.error('Error uploading photo:', error)
-                        ctx.reply(translate(language, 'error'))
-                    })
-                console.log('Screenshot captured and sent successfully')
-                //deleteDeckFiles()
-            })
-            .catch(error => console.error('Error capturing screenshot:', error))
+        let result = await takeScreenshot(url)
+        if (!result) return ctx.reply(translate(language, 'error'))
+        const files = getDeckFiles()
+        ctx.replyWithPhoto({ source: files[1] })
+        console.log('Screenshot captured and sent successfully')
+        //deleteDeckFiles()
 
         return
     }
