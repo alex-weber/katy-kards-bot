@@ -92,8 +92,13 @@ async function takeScreenshot(url) {
     await page.setViewport({ width: 3000, height:2000 })
     console.time('pageLoading')
     const response = await page.goto(url, options)
-    await waitFor(2000)
-    if (!response.status || response.status() > 399) return false
+
+    if (!response.status || response.status() > 399)
+    {
+        await browser.close()
+        return false
+    }
+    await waitFor(700)
     console.timeEnd('pageLoading')
     try {
         // Wait for the element to appear
