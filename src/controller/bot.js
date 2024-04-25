@@ -133,11 +133,20 @@ async function getFileSize(url)
  * @param command
  * @returns {boolean}
  */
-function isDeckCommand(command)
+function isDeckLink(command)
 {
-    return command.startsWith('https://www.kards.com/') &&
-        command.indexOf('/decks/') !== -1
+    return (command.startsWith('https://www.kards.com/') &&
+        command.indexOf('/decks/') !== -1)
+}
 
+/**
+ *
+ * @param command
+ * @returns {boolean}
+ */
+function isDeckCode(command) {
+
+    return command.indexOf('%%') === 0
 }
 
 function getCurrentTimestamp() {
@@ -152,6 +161,7 @@ module.exports = {
     switchLanguage,
     isLanguageSwitch,
     getFileSize,
-    isDeckCommand,
+    isDeckLink,
+    isDeckCode,
     getCurrentTimestamp
 }

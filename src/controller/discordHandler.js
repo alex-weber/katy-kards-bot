@@ -10,7 +10,7 @@ const {
     APILanguages
 } = require("../tools/language")
 const {translate} = require("../tools/translator")
-const takeScreenshot = require("../tools/puppeteer")
+const {takeScreenshot} = require("../tools/puppeteer")
 const {myTDRank} = require("../games/topDeck")
 const {handleTD} = require("../games/topDeckController")
 const {getStats, getServerList} = require("../tools/stats")
@@ -26,7 +26,6 @@ const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5 * 1024 * 1024 //5MB
-
 
 /**
  *
@@ -82,8 +81,7 @@ async function discordHandler(message, client, redis)
         console.log('no user in cache, caching')
         user = await getUser(message.author.id.toString())
         await redis.set('user' + userId, JSON.stringify(user))
-    }
-    else
+    } else
     {
         console.log('getting user from cache')
         user = cachedUser
@@ -106,20 +104,20 @@ async function discordHandler(message, client, redis)
         await redis.del('user' + userId)
         console.timeEnd('updateUser')
     }
-    //show Deck as image
-    if(bot.isDeckCommand(command))
+
+    //show Deck as images
+    if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
+        const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+        const hash = encodeURIComponent(message.content.replace(prefix, ''))
+        let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
         message.reply(translate(language, 'screenshot'))
-        takeScreenshot(command)
-            .then((result) =>
-            {
-                if (!result) return message.reply(translate(language, 'error'))
-                const files = getDeckFiles()
-                message.reply({ files: files })
-                console.log('Screenshot captured and sent successfully')
-                deleteDeckFiles()
-            })
-            .catch(error => console.error('Error capturing screenshot:', error))
+        let result = await takeScreenshot(url)
+        if (!result) return message.reply(translate(language, 'error'))
+        const files = getDeckFiles()
+        message.reply({files: files})
+        console.log('Screenshot captured and sent successfully')
+        //deleteDeckFiles()
 
         return
     }
