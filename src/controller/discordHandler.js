@@ -119,7 +119,7 @@ async function discordHandler(message, client, redis)
         if (await redis.exists(command))
         {
             files = JSON.parse(await redis.get(command))
-            message.reply('getting from cache...')
+            message.reply(translate(language, 'cache'))
         } else {
             const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
             const hash = encodeURIComponent(message.content.replace(prefix, ''))
@@ -135,15 +135,12 @@ async function discordHandler(message, client, redis)
                 files = [file1, file2]
                 await redis.set(command, JSON.stringify(files))
                 console.log('setting cache key for deck', command)
+                console.log('Screenshot captured and sent successfully')
             }
 
         }
 
         message.reply({files: files})
-        console.log('Screenshot captured and sent successfully')
-        //upload files to a free hosting to cache the result
-        //deleteDeckFiles()
-
 
         return
     }

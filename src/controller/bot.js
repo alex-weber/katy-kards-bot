@@ -148,7 +148,9 @@ function isDeckLink(command)
  */
 function isDeckCode(command) {
 
-    return command.indexOf('%%') === 0
+    const regex = /%%\d{2}\|(\d+|\w+);/
+
+    return regex.test(command)
 }
 
 function getCurrentTimestamp() {
