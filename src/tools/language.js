@@ -1,3 +1,10 @@
+const defaultLanguage = 'en'
+
+/**
+ *
+ * @param str
+ * @returns {string}
+ */
 const getLanguageByInput = function (str)
 {
     let language = defaultLanguage
@@ -8,7 +15,11 @@ const getLanguageByInput = function (str)
     return language
 }
 //all supported languages on kards.com
-const languages = ['de', 'en', 'es', 'fr', 'it', 'jp', 'ko', 'pl', 'pt', 'ru', 'tw', 'zh']
+const languages = [
+    'de', 'en', 'es', 'fr',
+    'it', 'jp', 'ko', 'pl',
+    'pt', 'ru', 'tw', 'zh',
+]
 const APILanguages = {
     de: 'de-DE',
     en: 'en-EN',
@@ -21,9 +32,8 @@ const APILanguages = {
     pt: 'pt-BR',
     ru: 'ru-RU',
     tw: 'zh-Hant',
-    'zh-Hant': 'zh-Hant', //support old format
     zh: 'zh-Hans',
+    'zh-Hant': 'zh-Hant', //support old format
 }
-const defaultLanguage = 'en'
 
 module.exports = {getLanguageByInput, languages, APILanguages, defaultLanguage}

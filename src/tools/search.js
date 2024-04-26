@@ -3,10 +3,18 @@ const query = require("./query")
 const dictionary = require('./dictionary')
 const {translate} = require('./translator.js')
 const {MessageAttachment} = require('discord.js')
-const {getCardsDB, getSynonym, createSynonym, updateSynonym, deleteSynonym, getAllSynonyms} = require('../database/db')
+const {
+    getCardsDB,
+    getSynonym,
+    createSynonym,
+    updateSynonym,
+    deleteSynonym,
+    getAllSynonyms
+} = require('../database/db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
 const maxMessageLength = 4000
+
 /**
  *
  * @param variables
@@ -29,151 +37,143 @@ function getVariables(variables)
         variables.text.push(variables.attributes)
         delete variables.attributes
     }
+    //return it anyway
+    return variables
+}
 
-    /**
-     *
-     * @param word
-     * @param variables
-     * @returns {*}
-     */
-    function setAttribute(word, variables)
+/**
+ *
+ * @param word
+ * @param variables
+ * @returns {*}
+ */
+function getKnownWords(word, variables)
+{
+    switch (word)
     {
-        if (typeof word !== 'string') return variables
-        switch (word)
-        {
-            case 'us':
-            case 'america':
-            case 'american':
-                word = 'usa'
-                break
-            case 'french':
-                word = 'france'
-                break
-            case 'russian':
-            case 'russia':
-            case 'rus':
-            case 'ussr':
-                word = 'soviet'
-                break
-            case 'uk':
-            case 'gb':
-            case 'british':
-                word = 'britain'
-                break
-            case 'polish':
-            case 'pl':
-                word = 'poland'
-                break
-            case 'japanese':
-            case 'jp':
-            case 'jpn':
-                word = 'japan'
-                break
-            case 'italian':
-                word = 'italy'
-                break
-            case 'finnish':
-                word = 'finland'
-                break
-            case 'arty':
-                word = 'artillery'
-                break
-            case 'plane':
-            case 'planes':
-                variables.type = { in: ['bomber', 'fighter'] }
-
-                return variables
-            case 'unit':
-            case 'units':
-                variables.type = { notIn: ['order', 'countermeasure'] }
-
-                return variables
-            case 'pin':
-                variables.text = ['pin']
-
-                return variables
-        }
-        let faction = getAttribute(word, dictionary.faction)
-        if (faction)
-        {
-            variables.faction = faction
+        case 'us':
+        case 'america':
+        case 'american':
+            word = 'usa'
+            break
+        case 'french':
+            word = 'france'
+            break
+        case 'russian':
+        case 'russia':
+        case 'rus':
+        case 'ussr':
+            word = 'soviet'
+            break
+        case 'uk':
+        case 'gb':
+        case 'british':
+            word = 'britain'
+            break
+        case 'polish':
+        case 'pl':
+            word = 'poland'
+            break
+        case 'japanese':
+        case 'jp':
+        case 'jpn':
+            word = 'japan'
+            break
+        case 'italian':
+            word = 'italy'
+            break
+        case 'finnish':
+            word = 'finland'
+            break
+        case 'arty':
+            word = 'artillery'
+            break
+        case 'plane':
+        case 'planes':
+            variables.type = {in: ['bomber', 'fighter']}
 
             return variables
-        }
-        if (!variables.type)
-        {
-            let type = getAttribute(word, dictionary.type)
-            if (type)
-            {
-                variables.type = type
-
-                return variables
-            }
-        }
-        let rarity = getAttribute(word, dictionary.rarity)
-        if (rarity)
-        {
-            variables.rarity = rarity
+        case 'unit':
+        case 'units':
+            variables.type = {notIn: ['order', 'countermeasure']}
 
             return variables
-        }
-        //do not set attributes if it is a non-unit card
-        if (variables.type !== 'order' && variables.type !== 'countermeasure')
-        {
-            let attribute = getAttribute(word, dictionary.attribute)
-            if (attribute)
-            {
-                variables.attributes = attribute
-
-                return variables
-            }
-        }
-        let exile = getAttribute(word, ['exile'])
-        if (exile)
-        {
-            variables.exile = {not: ''}
+        case 'pin':
+            variables.text = ['pin']
 
             return variables
-        }
-        if (word.endsWith('k') || word.endsWith('к'))
-        {
-            let kredits = parseInt(word.substring(0, word.length - 1))
-            if (!isNaN(kredits))
-            {
-                variables.kredits = kredits
-
-                return variables
-            }
-        }
-        if (word.endsWith('c') || word.endsWith('ц') || word.endsWith('op'))
-        {
-            let costs = parseInt(word.substring(0, word.length - 1))
-            if (!isNaN(costs))
-            {
-                variables.operationCost = costs
-
-                return variables
-            }
-        }
-        //allow only * as placeholder for attack or defense
-        let stats = word.match('^(\\d{1,2}|\\*)(\\/|-)(\\d{1,2}|\\*)$')
-        if (stats)
-        {
-            let attack = parseInt(stats[1])
-            let defense = parseInt(stats[3])
-            if (!isNaN(attack)) variables.attack = attack
-            if (!isNaN(defense)) variables.defense = defense
-
-            return variables
-        }
-        //so if there is no parameter found - add the word to the search string
-        if (variables.text === undefined) variables.text = []
-        variables.text.push(word)
-
-        return variables
     }
 
-    //return it anyway
+    return variables
+}
+
+/**
+ *
+ * @param word
+ * @param variables
+ * @returns {*}
+ */
+function setAttribute(word, variables)
+{
+    if (typeof word !== 'string') return variables
+    variables = getKnownWords(word, variables)
+    let attributes = ['faction', 'type', 'rarity']
+    for (const attr of attributes) {
+        let dictionaryAttr = getAttribute(word, dictionary[attr])
+        if (dictionaryAttr)
+        {
+            variables[attr] = dictionaryAttr
+            return variables
+        }
+    }
+    
+    //do not set attributes if it is a non-unit card
+    if (variables.type !== 'order' && variables.type !== 'countermeasure')
+    {
+        let attribute = getAttribute(word, dictionary.attribute)
+        if (attribute)
+        {
+            variables.attributes = attribute
+            return variables
+        }
+    }
+    let exile = getAttribute(word, ['exile'])
+    if (exile)
+    {
+        variables.exile = {not: ''}
+        return variables
+    }
+    if (word.endsWith('k') || word.endsWith('к'))
+    {
+        let kredits = parseInt(word.substring(0, word.length - 1))
+        if (!isNaN(kredits))
+        {
+            variables.kredits = kredits
+            return variables
+        }
+    }
+    if (word.endsWith('c') || word.endsWith('ц') || word.endsWith('op'))
+    {
+        let costs = parseInt(word.substring(0, word.length - 1))
+        if (!isNaN(costs))
+        {
+            variables.operationCost = costs
+            return variables
+        }
+    }
+    //allow only * as placeholder for attack or defense
+    let stats = word.match('^(\\d{1,2}|\\*)(\\/|-)(\\d{1,2}|\\*)$')
+    if (stats)
+    {
+        let attack = parseInt(stats[1])
+        let defense = parseInt(stats[3])
+        if (!isNaN(attack)) variables.attack = attack
+        if (!isNaN(defense)) variables.defense = defense
+        return variables
+    }
+    //so if there is no parameter found - add the word to the search string
+    if (variables.text === undefined) variables.text = []
+    variables.text.push(word)
     return variables
 }
 
@@ -219,7 +219,7 @@ async function getCards(variables)
             "variables": variables,
             "query": query
         },
-        { timeout: 3000} //wait 3 seconds for the response
+        {timeout: 3000} //wait 3 seconds for the response
     ).catch(error =>
     {
         console.log('request to kards.com failed ', error.errno, error.data)
@@ -235,8 +235,6 @@ async function getCards(variables)
             return await advancedSearch(variables)
         }
         const cards = response.data.data.cards.edges
-
-
         return {counter: counter, cards: cards}
     }
 
@@ -263,8 +261,7 @@ function getFiles(cards, language, limit)
         {
             imageURL = card.imageURL
             reserved = card.reserved
-        }
-        else if (card.hasOwnProperty('node'))
+        } else if (card.hasOwnProperty('node'))
         {
             imageURL = card.node.imageUrl
             reserved = card.node.reserved
@@ -346,7 +343,7 @@ async function advancedSearch(variables)
         delete variables.text
     }
 
-    console.dir(variables, { depth: null })
+    console.dir(variables, {depth: null})
     console.time('getCardsDB')
     let cards = await getCardsDB(variables)
     console.timeEnd('getCardsDB')
@@ -365,7 +362,7 @@ async function handleSynonym(user, content)
     if (!isManager(user)) return null
     //remove the prefix and the ^ from the beginning and get the key and the value
     const key = content.slice(2, content.indexOf('='))
-    let value = content.slice(content.indexOf('=')+1)
+    let value = content.slice(content.indexOf('=') + 1)
     console.log(key, value)
     //check key & value
     if (!checkSynonymKey(key)) return null
@@ -374,24 +371,18 @@ async function handleSynonym(user, content)
         value = getURL(value)
         if (!value) return 'bad URL'
     }
-    
     let syn = await getSynonym(key)
     if (!syn && value)
     {
         await createSynonym(key, value)
-
         return 'created'
-    }
-    else if (value === 'delete')
+    } else if (value === 'delete')
     {
         await deleteSynonym(key)
-
         return 'deleted'
-    }
-    else
+    } else
     {
         await updateSynonym(key, value)
-
         return 'updated'
     }
 }
@@ -403,13 +394,13 @@ async function handleSynonym(user, content)
  */
 function getURL(value)
 {
-    try {
+    try
+    {
         const url = new URL(value)
-
         return url.toString()
-    } catch (e) {
+    } catch (e)
+    {
         console.log(e.message)
-
         return false
     }
 
@@ -457,8 +448,7 @@ async function listSynonyms(user, command)
         if (synObject)
         {
             return listing + synObject.key + ': ' + synObject.value + '```'
-        }
-        else return 'not found'
+        } else return 'not found'
     }
 
     const synonyms = await getAllSynonyms()
@@ -468,8 +458,9 @@ async function listSynonyms(user, command)
         listing += syn.key + '\n'
     }
     listing += '```' //end code block
-    if (listing.length > maxMessageLength) {
-        listing = listing.slice(0, maxMessageLength-1)
+    if (listing.length > maxMessageLength)
+    {
+        listing = listing.slice(0, maxMessageLength - 1)
     }
 
     return listing
