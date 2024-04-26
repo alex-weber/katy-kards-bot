@@ -16,7 +16,7 @@
     "Telegram"
   ],
   "author": "tortunbator",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@napi-rs/canvas": "^0.1.28",
     "@prisma/client": "^5.11.0",
