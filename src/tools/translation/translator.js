@@ -1,5 +1,5 @@
 const {init} = require('./init')
-let translator = init()
+const translator = init()
 
 /**
  *
