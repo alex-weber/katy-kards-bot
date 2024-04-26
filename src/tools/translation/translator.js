@@ -9,6 +9,31 @@ let translator = init()
  */
 function translate(language, msg)
 {
+    //translate meta keywords from ru to en
+    const reservedWords = getReservedWords(msg)
+    for (const [key, value] of Object.entries(reservedWords))
+    {
+        if (value.indexOf(msg) === 0) return key //found the reserved word
+    }
+
+    //translation found
+    if (translator.exists(msg, {lng: language}))
+    {
+        let message = translator.t(msg, {lng: language})
+        return message.replace('{{language}}', language.toUpperCase())
+    }
+
+    //no translation
+    return msg
+}
+
+/**
+ *
+ * @param msg
+ * @returns {*|string}
+ */
+function getReservedWords(msg)
+{
     const reservedWords = {
         'germany': 'германия',
         'german': 'немецкий',
@@ -44,21 +69,8 @@ function translate(language, msg)
         'exile': 'изгнание',
     }
 
-    if (language === 'en')
-    {
-        //translate meta keywords from ru to en
-        for (const [key, value] of Object.entries(reservedWords))
-        {
-            if (value.indexOf(msg) === 0) return key
-        }
-    }
-    if (translator.exists(msg, {lng: language}))
-    {
-        let message = translator.t(msg, {lng: language})
-        return message.replace('{{language}}', language.toUpperCase())
-    }
+    return reservedWords
 
-    return msg
 }
 
 module.exports = {translate}
