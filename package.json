@@ -23,6 +23,8 @@
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
+    "i18next": "^23.11.2",
+    "i18next-fs-backend": "^2.3.1",
     "jsoning": "^0.13.23",
     "node": "^21.7.1",
     "npm": "^10.5.0",

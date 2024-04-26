@@ -1,0 +1,4 @@
+{
+  "welcomeMessage": "Добро пожаловать!",
+  "greeting": "Привет, {{name}}!"
+}

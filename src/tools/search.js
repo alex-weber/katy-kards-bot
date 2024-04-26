@@ -126,7 +126,7 @@ function setAttribute(word, variables)
             return variables
         }
     }
-    
+
     //do not set attributes if it is a non-unit card
     if (variables.type !== 'order' && variables.type !== 'countermeasure')
     {
