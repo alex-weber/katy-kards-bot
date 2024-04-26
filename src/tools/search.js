@@ -1,7 +1,7 @@
 const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
-const {translate} = require('./translator.js')
+const {translate} = require('./translation/translator.js')
 const {MessageAttachment} = require('discord.js')
 const {
     getCardsDB,

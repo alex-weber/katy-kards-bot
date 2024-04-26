@@ -18,7 +18,11 @@ test('search is working', async () => {
     expect(data.cards[0].node.cardId).toMatch('leopold')
     variables.q = 'sov tank 10k'
     data = await getCards(variables)
-    const files = getFiles(data, 'en', 10)
+    let files = getFiles(data, 'en', 10)
+    expect(files[0].attachment).toMatch('stalin')
+    variables.q = 'совет танк 10к'
+    data = await getCards(variables)
+    files = getFiles(data, 'en', 10)
     expect(files[0].attachment).toMatch('stalin')
 })
 

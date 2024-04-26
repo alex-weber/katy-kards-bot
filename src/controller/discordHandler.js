@@ -9,7 +9,7 @@ const {
     getLanguageByInput,
     APILanguages
 } = require("../tools/language")
-const {translate} = require("../tools/translator")
+const {translate} = require("../tools/translation/translator")
 const {takeScreenshot} = require("../tools/puppeteer")
 const {uploadImage} = require("../tools/imageUpload")
 const {myTDRank} = require("../games/topDeck")
@@ -260,6 +260,7 @@ async function discordHandler(message, client, redis)
     {
         if (qSearch) return //don't reply if nothing is found
         const imageURL = await getRandomImage()
+        if (!imageURL) return message.reply(translate(language, 'noresult'))
         if (await bot.getFileSize(imageURL) > maxFileSize)
             return message.reply(translate(language, 'noresult'))
         return message.reply({

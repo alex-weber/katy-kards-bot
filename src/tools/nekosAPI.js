@@ -10,9 +10,10 @@ async function getRandomImage()
         return this[Math.floor(Math.random() * this.length)]
     }
     const endpoint = endpoints.sample()
-    const image = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
+    const response = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
 
-    return image.data.url.toString()
+    return response.status === 200 ? response.data.url.toString() : false
+
 
 }
 

@@ -1,36 +1,25 @@
-const i18next = require('i18next')
-const Backend = require('i18next-fs-backend')
+const translator = require('i18next')
+const backend = require('i18next-fs-backend')
 const path = require('path')
 
-async function init() {
-    await i18next
-        .use(Backend)
+function init() {
+    translator
+        .use(backend)
         .init({
-            fallbackLng: 'en',
-            debug: false,
-            ns: ['translation'], // Specify the namespace(s)
-            defaultNS: 'translation', // Specify the default namespace
+            lng: 'en',
+            fallbackLng: ['en', 'ru', 'de'],
+            //debug: true,
             backend: {
                 loadPath: path.resolve(__dirname, 'locales/{{lng}}/{{ns}}.json'),
                 addPath: path.resolve(__dirname, 'locales/{{lng}}/{{ns}}.missing.json'),
-            },
-            interpolation: {
-                escapeValue: false,
-                formatSeparator: ',',
-                format: function(value, format, lng) {
-                    if (format === 'uppercase') return value.toUpperCase();
-                    return value;
-                }
             }
         })
+
+    return translator
 }
 
-init().then(() => {
-    //const translatedGreeting = i18next.t('greeting', { name: 'John' })
-    const translationKey = 'welcomeMessage'
-    const translatedText = i18next.t(translationKey)
-    console.log(translatedText)
-})
+module.exports = {init}
+
 
 
 
