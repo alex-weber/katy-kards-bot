@@ -118,4 +118,4 @@ async function takeScreenshot(url) {
 
 }
 
-module.exports = {takeScreenshot, saveScreenshot}
+module.exports = {takeScreenshot}
