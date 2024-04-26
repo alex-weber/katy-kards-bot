@@ -10,31 +10,28 @@ const translator = init()
 function translate(language, msg)
 {
     //translate meta keywords from ru to en
-    const reservedWords = getReservedWords(msg)
+    const reservedWords = getReservedWords()
     for (const [key, value] of Object.entries(reservedWords))
     {
         if (value.indexOf(msg) === 0) return key //found the reserved word
     }
-
     //translation found
     if (translator.exists(msg, {lng: language}))
     {
         let message = translator.t(msg, {lng: language})
         return message.replace('{{language}}', language.toUpperCase())
     }
-
     //no translation
     return msg
 }
 
 /**
  *
- * @param msg
- * @returns {*|string}
+ * @returns {object}
  */
-function getReservedWords(msg)
+function getReservedWords()
 {
-    const reservedWords = {
+    return {
         'germany': 'германия',
         'german': 'немецкий',
         'usa': 'сша',
@@ -68,8 +65,6 @@ function getReservedWords(msg)
         'elite': 'элитная',
         'exile': 'изгнание',
     }
-
-    return reservedWords
 
 }
 
