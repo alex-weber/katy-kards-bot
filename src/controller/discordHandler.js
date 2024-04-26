@@ -120,6 +120,7 @@ async function discordHandler(message, client, redis)
         {
             files = JSON.parse(await redis.get(command))
             message.reply(translate(language, 'cache'))
+            console.log('got deck images from cache')
         } else {
             const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
             const hash = encodeURIComponent(message.content.replace(prefix, ''))
