@@ -130,14 +130,14 @@ async function discordHandler(message, client, redis)
             if (!result) return message.reply(translate(language, 'error'))
             files = getDeckFiles()
             //upload them for caching
-            let file1 = await uploadImage(files[0])
+            /*let file1 = await uploadImage(files[0])
             let file2 = await uploadImage(files[1])
             if (file1 && file2) {
                 files = [file1, file2]
                 await redis.set(command, JSON.stringify(files))
                 console.log('setting cache key for deck', command)
                 console.log('Screenshot captured and sent successfully')
-            }
+            }*/
 
         }
 
