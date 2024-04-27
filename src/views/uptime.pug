@@ -3,17 +3,20 @@ extends layout
 block content
   div.container
 
-    h1= title
+    h1.text-primary.text-center= title
     div.card-group.grid
       each lastDays, label in stats.statistics.uptime
         - let days = parseInt(label.replace('l', ''))
         - let daysOutput = days === 1 ? 'Last Day' : 'Last ' + days + ' days'
         each ratio, index in lastDays
+          - let percentage = Math.floor(ratio)
           if index === 'ratio'
-              div.card.text-bg-dark.border-secondary(style="width: 10rem; float:left")
+              div.card.text-center.text-bg-dark.border-primary(style="width: 10rem; float:left")
                 div.card-body.text-info
-                  h5.card-title= daysOutput
-                  p.card-text= ratio + '%'
+                  h5.card-title.text-primary= daysOutput
+                  div.progress(role="progressbar" aria-label="Success example" aria-valuenow=`"${percentage}"` aria-valuemin="0" aria-valuemax="100" style="height: 40px")
+                    div.progress-bar.bg-success(style=`width: ${percentage}%; font-size:22px`)= ratio + '%'
+
 
 
 

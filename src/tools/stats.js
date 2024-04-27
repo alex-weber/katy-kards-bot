@@ -77,7 +77,6 @@ function getServerList(client) {
 async function getUptimeStats(req, res)
 {
     let APIres = await axios.get('https://stats.uptimerobot.com/api/getMonitorList/VV5VMf2r0Y')
-    //let html = await axios.get('https://stats.uptimerobot.com/VV5VMf2r0Y')
     return res.render('uptime', {
         title: 'Uptime Stats',
         stats: APIres.data

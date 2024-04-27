@@ -29,6 +29,14 @@ app.get('/', (req, res) =>
         }
     }))
 app.get('/uptime', async (req, res) => getUptimeStats(req, res))
+const {getAllSynonyms} = require('./database/db')
+app.get('/synonyms', async (req, res) => {
+    const synonyms = await getAllSynonyms()
+    res.render('synonyms', {
+        title: 'Synonyms',
+        synonyms: synonyms
+    })
+})
 //Discord-Bot login event
 client.on('ready', () =>
 {
