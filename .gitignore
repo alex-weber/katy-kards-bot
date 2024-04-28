@@ -4,3 +4,4 @@ node_modules/
 src/export/
 src/tmp/myChromeSession/
 src/tmp/*jpg
+src/public/

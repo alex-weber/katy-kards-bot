@@ -44,10 +44,9 @@ function getVariables(variables)
 /**
  *
  * @param word
- * @param variables
- * @returns {*}
+ * @returns {word}
  */
-function getKnownWords(word, variables)
+function getKnownWord(word)
 {
     switch (word)
     {
@@ -88,23 +87,9 @@ function getKnownWords(word, variables)
         case 'arty':
             word = 'artillery'
             break
-        case 'plane':
-        case 'planes':
-            variables.type = {in: ['bomber', 'fighter']}
-
-            return variables
-        case 'unit':
-        case 'units':
-            variables.type = {notIn: ['order', 'countermeasure']}
-
-            return variables
-        case 'pin':
-            variables.text = ['pin']
-
-            return variables
     }
 
-    return variables
+    return word
 }
 
 /**
@@ -116,7 +101,21 @@ function getKnownWords(word, variables)
 function setAttribute(word, variables)
 {
     if (typeof word !== 'string') return variables
-    variables = getKnownWords(word, variables)
+    word = getKnownWord(word)
+    switch (word) {
+        case 'plane':
+        case 'planes':
+        case 'air':
+            variables.type = {in: ['bomber', 'fighter']}
+            return variables
+        case 'unit':
+        case 'units':
+            variables.type = {notIn: ['order', 'countermeasure']}
+            return variables
+        case 'pin':
+            variables.text = ['pin']
+            return variables
+    }
     let attributes = ['faction', 'type', 'rarity']
     for (const attr of attributes) {
         let dictionaryAttr = getAttribute(word, dictionary[attr])
