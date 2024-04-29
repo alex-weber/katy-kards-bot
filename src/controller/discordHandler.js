@@ -21,7 +21,7 @@ const {
     getCards, getFiles,
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
-const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
+const {getDeckFiles} = require("../tools/fileManager")
 const {getRandomImage} = require("../tools/nekosAPI")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
@@ -122,51 +122,41 @@ async function discordHandler(message, client, redis)
             files = JSON.parse(await redis.get(command))
             message.reply(translate(language, 'cache'))
             console.log('got deck images from cache')
-        } else {
-            const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
-            const hash = encodeURIComponent(message.content.replace(prefix, ''))
-            let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
-            message.reply(translate(language, 'screenshot'))
-            let result = await takeScreenshot(url)
-            if (!result) return message.reply(translate(language, 'error'))
-            files = getDeckFiles()
-            //upload them for caching
-            let file1 = await uploadImage(files[0])
-            let file2 = await uploadImage(files[1])
-            if (file1 && file2) {
-                let uploadedFiles = [file1, file2]
-                //check if they are uploaded & are served correctly
-
-                let file1size = await bot.getFileSize(file1)
-                let file2size = await bot.getFileSize(file2)
-                if ( await Fs.size(files[0]) === file1size &&
-                    await Fs.size(files[1]) === file2size)
-                {
-                    files = uploadedFiles
-                    await redis.set(command, JSON.stringify(files))
-                    console.log('setting cache key for deck', command)
-                }
-                console.log('Screenshot captured and sent successfully')
-            }
-
+            return message.reply({files: files})
         }
-
-        message.reply({files: files})
-
-        return
+        const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+        const hash = encodeURIComponent(message.content.replace(prefix, ''))
+        let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
+        message.reply(translate(language, 'screenshot'))
+        let result = await takeScreenshot(url)
+        if (!result) return message.reply(translate(language, 'error'))
+        files = getDeckFiles()
+        //upload them for caching
+        let file1 = await uploadImage(files[0])
+        let file2 = await uploadImage(files[1])
+        if (file1 && file2)
+        {
+            let uploadedFiles = [file1, file2]
+            //check if they are uploaded & are served correctly
+            let file1size = await bot.getFileSize(file1)
+            let file2size = await bot.getFileSize(file2)
+            if ( await Fs.size(files[0]) === file1size &&
+                await Fs.size(files[1]) === file2size)
+            {
+                files = uploadedFiles
+                await redis.set(command, JSON.stringify(files))
+                console.log('setting cache key for deck', command)
+            }
+        }
+        console.log('Screenshot captured and sent successfully')
+        return message.reply({files: files})
     }
 
     //show online stats
     if (command === 'ingame' || command === 'online')
     {
-        getStats(language).then(res =>
-        {
-            message.reply(res)
-        }).catch(error =>
-        {
-            console.error(error)
-        })
-        return
+        let stats = await getStats(language)
+        return message.reply(stats)
     }
 
     //switch language
@@ -184,9 +174,8 @@ async function discordHandler(message, client, redis)
     {
         redis.FLUSHDB('ASYNC', (err, succeeded) =>
         {
-            console.log(succeeded); // will be true if success
+            console.log(succeeded)
         })
-
         return message.reply('cache cleared')
     }
 
