@@ -3,7 +3,8 @@ const {
     getUser,
     updateUser,
     getTopDeckStats,
-    getSynonym
+    getSynonym,
+    createMessage,
 } = require("../database/db")
 const {
     getLanguageByInput,
@@ -111,6 +112,8 @@ async function discordHandler(message, client, redis)
         await redis.del('user' + userId)
         console.timeEnd('updateUser')
     }
+    //save the command
+    await createMessage({authorId: user.id, content: command})
 
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))

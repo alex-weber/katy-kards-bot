@@ -6,6 +6,20 @@ const prisma = new PrismaClient()
  * @param data
  * @returns {Promise<*>}
  */
+async function createMessage(data)
+{
+  return await prisma.message.create({
+    data: data
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ *
+ * @param data
+ * @returns {Promise<*>}
+ */
 async function createUser(data)
 {
 
@@ -26,6 +40,9 @@ async function getUser(discordId)
   let User = await prisma.user.findUnique({
     where: {
       discordId: discordId,
+    },
+    include: {
+      messages: true,
     },
   }).
   catch((e) => { throw e }).
@@ -367,6 +384,7 @@ async function getTopDeckStats()
 //exports
 module.exports = {
   getUser,
+  createMessage,
   updateUser,
   createTopDeck,
   updateTopDeck,
