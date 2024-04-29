@@ -17,6 +17,30 @@ async function createMessage(data)
 
 /**
  *
+ * @param userId
+ * @param skip
+ * @param take
+ * @returns {Promise<array>}
+ */
+async function getMessages(userId, skip=0,take=10)
+{
+  return await prisma.message.findMany({
+    skip: skip,
+    take: take,
+    where: {
+      authorId: userId,
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  }).
+  catch((e) => { throw e }).
+  finally(async () => { await prisma.$disconnect() })
+}
+
+
+/**
+ *
  * @param data
  * @returns {Promise<*>}
  */
@@ -40,9 +64,6 @@ async function getUser(discordId)
   let User = await prisma.user.findUnique({
     where: {
       discordId: discordId,
-    },
-    include: {
-      messages: true,
     },
   }).
   catch((e) => { throw e }).
@@ -385,6 +406,7 @@ async function getTopDeckStats()
 module.exports = {
   getUser,
   createMessage,
+  getMessages,
   updateUser,
   createTopDeck,
   updateTopDeck,
