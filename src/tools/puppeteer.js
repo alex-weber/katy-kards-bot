@@ -16,8 +16,8 @@ async function saveScreenshot(page, selector) {
     const topMargin = 422
 
     if (boundingBox) {
-        // Take a screenshot of the element
-        let screenshot1 = await elementHandle.screenshot({
+        // Take 2 screenshots of the deck
+        await elementHandle.screenshot({
             path: outputPath+'.jpg',
             type: 'jpeg',
             quality: 100,
@@ -28,7 +28,7 @@ async function saveScreenshot(page, selector) {
                 height: 383,
             }
         })
-        let screenshot2 = await elementHandle.screenshot({
+        await elementHandle.screenshot({
             path: outputPath+'2.jpg',
             type: 'jpeg',
             quality: 100,
@@ -83,7 +83,7 @@ async function takeScreenshot(url) {
             headless: true
         })
     }
-    let page = await browser.newPage()
+    const page = await browser.newPage()
     page.on('console', async msg => {
         const args = await Promise.all(msg.args().map(arg => describe(arg)))
         console.log(msg.text(), ...args)
