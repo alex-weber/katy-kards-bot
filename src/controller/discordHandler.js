@@ -27,6 +27,7 @@ const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5 * 1024 * 1024 //5MB
+const Fs = require('@supercharge/fs')
 
 /**
  *
@@ -130,14 +131,23 @@ async function discordHandler(message, client, redis)
             if (!result) return message.reply(translate(language, 'error'))
             files = getDeckFiles()
             //upload them for caching
-            /*let file1 = await uploadImage(files[0])
+            let file1 = await uploadImage(files[0])
             let file2 = await uploadImage(files[1])
             if (file1 && file2) {
-                files = [file1, file2]
-                await redis.set(command, JSON.stringify(files))
-                console.log('setting cache key for deck', command)
+                let uploadedFiles = [file1, file2]
+                //check if they are uploaded & are served correctly
+
+                let file1size = await bot.getFileSize(file1)
+                let file2size = await bot.getFileSize(file2)
+                if ( await Fs.size(files[0]) === file1size &&
+                    await Fs.size(files[1]) === file2size)
+                {
+                    files = uploadedFiles
+                    await redis.set(command, JSON.stringify(files))
+                    console.log('setting cache key for deck', command)
+                }
                 console.log('Screenshot captured and sent successfully')
-            }*/
+            }
 
         }
 

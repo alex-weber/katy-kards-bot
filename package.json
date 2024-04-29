@@ -20,6 +20,7 @@
   "dependencies": {
     "@napi-rs/canvas": "^0.1.28",
     "@prisma/client": "^5.11.0",
+    "@supercharge/fs": "^3.4.2",
     "axios": "^1.6.2",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
