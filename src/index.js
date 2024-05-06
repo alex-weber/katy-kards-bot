@@ -1,7 +1,9 @@
 const express = require('express')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
-//app.use('/public', express.static('src/tmp'))
+app.use('/static', express.static('src/js'))
+const cookieParser = require('cookie-parser')
+app.use(cookieParser())
 const favicon = require('serve-favicon')
 app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
@@ -31,6 +33,7 @@ app.get('/', (req, res) =>
     }))
 app.get('/uptime', async (req, res) => getUptimeStats(req, res))
 const {getAllSynonyms} = require('./database/db')
+const axios = require("axios");
 app.get('/synonyms', async (req, res) => {
     const synonyms = await getAllSynonyms()
     res.render('synonyms', {
@@ -38,6 +41,30 @@ app.get('/synonyms', async (req, res) => {
         synonyms: synonyms
     })
 })
+//auth
+app.get('/auth', async (req, res) => {
+    res.render('auth', {
+        title: 'Discord User Auth',
+    })
+})
+//login
+app.get('/login', async (req, res) => {
+
+    const tokenType = req.query.tokenType
+    const accessToken = req.query.accessToken
+
+    let user = await fetch('https://discord.com/api/users/@me', {
+        headers: {
+            authorization: `${tokenType} ${accessToken}`,
+        },
+    })
+    user = await user.json()
+
+    console.log(user.id, user.username, user.avatar)
+
+    res.send('Logged in')
+})
+
 //Discord-Bot login event
 client.on('ready', () =>
 {
