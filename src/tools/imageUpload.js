@@ -3,6 +3,18 @@ const fs = require('fs')
 
 /**
  *
+ * @param url
+ * @returns {Promise<void>}
+ */
+async function downloadImage(url) {
+
+    const response = await axios.get(url, { responseType: 'arraybuffer' })
+
+     return response.data
+}
+
+/**
+ *
  * @param imagePath
  * @returns {Promise<string|boolean>}
  */
@@ -17,9 +29,15 @@ async function uploadImage(imagePath)
     try
     {
         const API_ENDPOINT = 'https://api.imgbb.com/1/upload?key=' + process.env.IMG_UPLOAD_API_KEY
-        const imageData = fs.readFileSync(imagePath)
-        const base64Image = Buffer.from(imageData).toString('base64')
-
+        let base64Image
+        if (imagePath.startsWith('https://'))
+        {
+            let buffer = await downloadImage(imagePath)
+            base64Image = buffer.toString('base64')
+        } else {
+            const imageData = fs.readFileSync(imagePath)
+            base64Image = Buffer.from(imageData).toString('base64')
+        }
         const formData = new FormData()
         formData.append('image', base64Image)
 

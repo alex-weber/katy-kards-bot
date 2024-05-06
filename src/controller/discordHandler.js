@@ -66,7 +66,7 @@ async function discordHandler(message, client, redis)
 
     //it's a bot command
     //create the DM channel
-    message.author.createDM()
+    await message.author.createDM()
     let guildName = ''
     let channelName = ''
     if (message.guildId)
@@ -218,7 +218,7 @@ async function discordHandler(message, client, redis)
 
     //handle synonyms
     if (command.startsWith('^'))
-        return message.reply(await handleSynonym(user, message.content))
+        return message.reply(await handleSynonym(user, message))
 
     //check for synonyms
     let syn = await getSynonym(command)

@@ -14,6 +14,7 @@ const {
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
 const maxMessageLength = 4000
+const {uploadImage} = require("../tools/imageUpload")
 
 /**
  *
@@ -353,18 +354,30 @@ async function advancedSearch(variables)
 /**
  *
  * @param user
- * @param content
- * @returns {Promise<null|*>}
+ * @param message
+ * @returns {Promise<false|*>}
  */
-async function handleSynonym(user, content)
+async function handleSynonym(user, message)
 {
-    if (!isManager(user)) return null
+    if (!isManager(user)) return false
+    const content = message.content
     //remove the prefix and the ^ from the beginning and get the key and the value
     const key = content.slice(2, content.indexOf('='))
-    let value = content.slice(content.indexOf('=') + 1)
+    let value
+    //get the image as attachment
+    if (message.attachments.size)
+    {
+        const attachment = message.attachments.first()
+        value = attachment.url
+        //upload it to a different hosting because Discord's images will expire in 2 weeks
+        const uploaded = await uploadImage(value)
+        if (uploaded) value = uploaded
+        else return false
+    }
+    else value = content.slice(content.indexOf('=') + 1)
     console.log(key, value)
-    //check key & value
-    if (!checkSynonymKey(key)) return null
+    //check key
+    if (!checkSynonymKey(key)) return false
     if (value.startsWith('https'))
     {
         value = getURL(value)
