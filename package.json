@@ -22,13 +22,13 @@
     "@prisma/client": "^5.11.0",
     "@supercharge/fs": "^3.4.2",
     "axios": "^1.6.2",
-    "cookie-parser": "^1.4.6",
+    "connect-redis": "^7.1.1",
     "database": "^0.0.2",
     "discord.js": "^13.6.0",
     "express": "^4.17.3",
+    "express-session": "^1.18.0",
     "i18next": "^23.11.2",
     "i18next-fs-backend": "^2.3.1",
-    "jsoning": "^0.13.23",
     "node": "^21.7.1",
     "npm": "^10.5.0",
     "pg": "^8.11.3",
@@ -37,8 +37,7 @@
     "puppeteer": "^22.6.5",
     "redis": "^4.6.13",
     "serve-favicon": "^2.5.0",
-    "telegraf": "^4.16.3",
-    "undici": "^6.15.0"
+    "telegraf": "^4.16.3"
   },
   "engines": {
     "npm": "^10.5.0",
