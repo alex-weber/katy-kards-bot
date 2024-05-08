@@ -1,4 +1,25 @@
 header
+
+    div.px-3.py-2.text-bg-dark.border-bottom
+        div.container.d-flex.flex-wrap.justify-content-center
+            form.col-12.col-lg-auto.mb-2.mb-lg-0.me-lg-auto(role='search')
+                input(type='search', class='form-control', placeholder='Search...', aria-label='Search')
+            div.text-end
+            if loginLink
+                a.btn.btn-primary(role='button' href=`${loginLink}`) Login
+            if user
+                div.dropdown
+                    button.btn.btn-primary.dropdown-toggle(
+                        type="button",
+                        data-bs-toggle="dropdown",
+                        aria-expanded="false")
+                        img(src='https://cdn.discordapp.com/avatars/452044718591705089/' + user.avatar + '.webp?size=32', alt="No avatar")
+                        | &nbsp; #{user.username}
+                    ul.dropdown-menu
+                        li
+                            a.dropdown-item(href="/profile") Profile
+                        li
+                            a.dropdown-item(href="/logout") Logout
     div.px-3.py-2.text-bg-dark.border-bottom
         div.container
             div.d-flex.flex-wrap.align-items-center.justify-content-center.justify-content-lg-start
@@ -23,25 +44,6 @@ header
                                 svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
                                 | Synonyms
 
-    div.px-3.py-2.text-bg-dark.border-bottom.mb-3
-        div.container.d-flex.flex-wrap.justify-content-center
-            form.col-12.col-lg-auto.mb-2.mb-lg-0.me-lg-auto(role='search')
-                input(type='search', class='form-control', placeholder='Search...', aria-label='Search')
-            div.text-end
-            if loginLink
-                a.btn.btn-primary(role='button' href=`${loginLink}`) Login
-            if user
-                div.dropdown
-                    button.btn.btn-primary.dropdown-toggle(
-                        type="button",
-                        data-bs-toggle="dropdown",
-                        aria-expanded="false")
-                        img(src='https://cdn.discordapp.com/avatars/452044718591705089/'+user.avatar+'.webp?size=32', alt="No avatar")
-                        |&nbsp; #{user.username}
-                    ul.dropdown-menu
-                        li
-                            a.dropdown-item(href="/profile") Profile
-                        li
-                            a.dropdown-item(href="/logout") Logout
+
 
 

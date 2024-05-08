@@ -82,20 +82,28 @@ app.get('/login', async (req, res, next) => {
     })
     user = await user.json()
     //console.log(user.id, user.username, user.avatar)
-    // regenerate the session, which is good practice to help
-    // guard against forms of session fixation
-    await req.session.regenerate(async function (err) {
-        if (err) next(err)
-        // store user information in session, typically a user id
-        req.session.user = user
-        //console.log('setting user session')
-        // save the session before redirection to ensure page
-        // load does not happen before session is saved
-        await req.session.save(function (err) {
-            if (err) return next(err)
-            res.redirect('/')
+    let dbUser = await getUser(user.id)
+    if (isManager(dbUser))
+    {
+        // regenerate the session, which is good practice to help
+        // guard against forms of session fixation
+        await req.session.regenerate(async function (err)
+        {
+            if (err) next(err)
+            // store user information in session
+            req.session.user = user
+            //console.log('setting user session')
+            // save the session before redirection to ensure page
+            // load does not happen before session is saved
+            await req.session.save(function (err)
+            {
+                if (err) return next(err)
+                console.log()
+                res.redirect('/')
+            })
         })
-    })
+    }
+    else res.redirect('/')
 
 })
 
