@@ -192,7 +192,11 @@ async function discordHandler(message, client, redis)
     if (command.startsWith('ranking')) return message.reply(await getTopDeckStats())
 
     //user's TD ranking
-    if (command === 'myrank') return message.reply(myTDRank(user))
+    if (command === 'myrank')
+    {
+        user = await getUser(user.discordId) //get TD stats from DB
+        return message.reply(myTDRank(user))
+    }
 
     //top deck game only in special channels
     if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))

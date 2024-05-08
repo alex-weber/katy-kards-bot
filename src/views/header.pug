@@ -1,46 +1,47 @@
 header
+    div.position-sticky
 
-    div.px-3.py-2.text-bg-dark.border-bottom
-        div.container.d-flex.flex-wrap.justify-content-center
-            form.col-12.col-lg-auto.mb-2.mb-lg-0.me-lg-auto(role='search')
-                input(type='search', class='form-control', placeholder='Search...', aria-label='Search')
-            div.text-end
-            if loginLink
-                a.btn.btn-primary(role='button' href=`${loginLink}`) Login
-            if user
-                div.dropdown
-                    button.btn.btn-primary.dropdown-toggle(
-                        type="button",
-                        data-bs-toggle="dropdown",
-                        aria-expanded="false")
-                        img(src='https://cdn.discordapp.com/avatars/452044718591705089/' + user.avatar + '.webp?size=32', alt="No avatar")
-                        | &nbsp; #{user.username}
-                    ul.dropdown-menu
+        div.px-3.py-2.text-bg-dark.border-bottom
+            div.container.d-flex.flex-wrap.justify-content-center
+                form.col-12.col-lg-auto.mb-2.mb-lg-0.me-lg-auto(role='search')
+                    input(type='search', class='form-control', placeholder='Search...', aria-label='Search')
+                div.text-end
+                if loginLink
+                    a.btn.btn-primary(role='button' href=`${loginLink}`) Login
+                if user
+                    div.dropdown
+                        button.btn.btn-primary.dropdown-toggle(
+                            type="button",
+                            data-bs-toggle="dropdown",
+                            aria-expanded="false")
+                            img(src='https://cdn.discordapp.com/avatars/452044718591705089/' + user.avatar + '.webp?size=32', alt="No avatar")
+                            | &nbsp; #{user.username}
+                        ul.dropdown-menu
+                            li
+                                a.dropdown-item(href="/profile") Profile
+                            li
+                                a.dropdown-item(href="/logout") Logout
+        div.px-3.py-2.text-bg-dark.border-bottom
+            div.container
+                div.d-flex.flex-wrap.align-items-center.justify-content-center.justify-content-lg-start
+                    ul.nav.col-12.col-lg-auto.my-2.justify-content-center.my-md-0.text-small
                         li
-                            a.dropdown-item(href="/profile") Profile
-                        li
-                            a.dropdown-item(href="/logout") Logout
-    div.px-3.py-2.text-bg-dark.border-bottom
-        div.container
-            div.d-flex.flex-wrap.align-items-center.justify-content-center.justify-content-lg-start
-                ul.nav.col-12.col-lg-auto.my-2.justify-content-center.my-md-0.text-small
-                    li
-                        a(href='/', class='nav-link text-secondary')
-                            svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                            | Home
-                    li
-                        a(href='/servers', class='nav-link text-white')
-                            svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                            | Guilds
-                    li
-                        a(href='/uptime', class='nav-link text-white')
-                            svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                            | Bot Uptime
-                    if user
-                        li
-                            a(href='/synonyms', class='nav-link text-white')
+                            a(href='/', class='nav-link text-white')
                                 svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                | Synonyms
+                                | Home
+                        li
+                            a(href='/servers', class='nav-link text-white')
+                                svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+                                | Guilds
+                        li
+                            a(href='/uptime', class='nav-link text-white')
+                                svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+                                | Bot Uptime
+                        if user
+                            li
+                                a(href='/synonyms', class='nav-link text-white')
+                                    svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+                                    | Synonyms
 
 
 
