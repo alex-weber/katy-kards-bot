@@ -10,7 +10,7 @@ const {getUser} = require('../database/db')
  */
 async function drawBattlefield(topDeck)
 {
-    const canvas = Canvas.createCanvas(700, 500)
+    let canvas = Canvas.createCanvas(700, 500)
     const context = canvas.getContext('2d')
     const backgroundPromise = Canvas.loadImage('./src/assets/td/board.png')
     const vsPromise = Canvas.loadImage('./src/assets/td/vs.png')
@@ -48,9 +48,12 @@ async function drawBattlefield(topDeck)
     context.fillText(user2.name, 430, 40)
     console.log(user1, user2)
     // Write the image to file
-    const buffer = canvas.toBuffer("image/png")
+    let buffer = canvas.toBuffer("image/png")
     const file = "./src/tmp/" + topDeck.id + ".png"
     fs.writeFileSync(file, buffer)
+    //trying to fix memory leak
+    buffer = null
+    canvas = null
 
     return file
 }

@@ -59,7 +59,6 @@ async function takeScreenshot(url) {
 
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
-    let browser
     let launchOptions =  {
         args: [
             '--no-sandbox',
@@ -73,13 +72,9 @@ async function takeScreenshot(url) {
     if (process.env.PATH_TO_CHROME)
     {
         launchOptions.executablePath = process.env.PATH_TO_CHROME
-        browser = await puppeteer.launch(launchOptions)
         console.log('setting PATH_TO_CHROME to ', process.env.PATH_TO_CHROME)
-    } else
-    {
-        console.log('starting DEFAULT PUPPETEER browser')
-        browser = await puppeteer.launch(launchOptions)
     }
+    let browser = await puppeteer.launch(launchOptions)
     let page = await browser.newPage()
     await page.setViewport({ width: 3000, height:2000 })
     console.time('pageLoading')
@@ -95,6 +90,9 @@ async function takeScreenshot(url) {
         // Wait for the element to appear
         await page.waitForSelector(selector, { timeout: 5000 })
         await saveScreenshot(page, selector)
+        await browser.close()
+
+        return true
 
     } catch (error) {
         console.error('Error:', error)
@@ -102,10 +100,6 @@ async function takeScreenshot(url) {
 
         return false
     }
-
-    await browser.close()
-
-    return true
 
 }
 
