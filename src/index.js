@@ -8,6 +8,8 @@ const favicon = require('serve-favicon')
 app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
 app.set('views', __dirname + '/views')
+const compression = require('compression')
+app.use(compression())
 //handlers
 const {discordHandler} = require('./controller/discordHandler')
 const {telegramHandler} = require('./controller/telegramHandler')
@@ -38,14 +40,14 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Set to true if you are using HTTPS
+    cookie: { secure: true }
 }))
 // middleware to test if authenticated
 function isAuthenticated (req, res, next) {
     if (req.session.user) next()
     else next('route')
 }
-// this is only called when there is an authentication user due to isAuthenticated
+// for authenticated users only
 app.get('/', isAuthenticated, function (req, res) {
     res.render('index', {
         title: 'Welcome, ' + req.session.user.username + '!',
@@ -66,7 +68,7 @@ app.get('/', (req, res) =>
     }))
 app.get('/auth', async (req, res) => {
     res.render('auth', {
-        title: 'Discord User Auth',
+        title: 'Logging in...please wait',
     })
 })
 //login
@@ -74,27 +76,21 @@ app.get('/login', async (req, res, next) => {
 
     const tokenType = req.query.tokenType
     const accessToken = req.query.accessToken
-
     let user = await fetch('https://discord.com/api/users/@me', {
         headers: {
             authorization: `${tokenType} ${accessToken}`,
         },
     })
     user = await user.json()
-    //console.log(user.id, user.username, user.avatar)
     let dbUser = await getUser(user.id)
+    //allow user with change permissions only
     if (isManager(dbUser))
     {
-        // regenerate the session, which is good practice to help
-        // guard against forms of session fixation
         await req.session.regenerate(async function (err)
         {
             if (err) next(err)
             // store user information in session
             req.session.user = user
-            //console.log('setting user session')
-            // save the session before redirection to ensure page
-            // load does not happen before session is saved
             await req.session.save(function (err)
             {
                 if (err) return next(err)
@@ -104,19 +100,13 @@ app.get('/login', async (req, res, next) => {
         })
     }
     else res.redirect('/')
-
 })
 
 app.get('/logout', function (req, res, next) {
-    // logout logic
-
     // clear the user from the session object and save.
     req.session.user = null
     req.session.save(function (err) {
         if (err) next(err)
-
-        // regenerate the session, which is good practice to help
-        // guard against forms of session fixation
         req.session.regenerate(function (err) {
             if (err) next(err)
             res.redirect('/')
