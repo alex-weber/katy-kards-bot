@@ -57,42 +57,33 @@ async function takeScreenshot(url) {
         return new Promise(resolve => setTimeout(resolve, milliseconds))
     }
 
-    // Listen for console events on the page
-    function describe(jsHandle) {
-        return jsHandle.evaluate(obj => {
-            // serialize |obj| however you want
-            return 'beautiful object of type ' + (typeof obj)
-        }, jsHandle)
-    }
-
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
     let browser
+    let launchOptions =  {
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--no-zygote',
+        ],
+        headless: true,
+        devtools: false,
+        ignoreDefaultArgs: ['--disable-extensions']
+    }
     if (process.env.PATH_TO_CHROME)
     {
-        browser = await puppeteer.launch({
-            executablePath: process.env.PATH_TO_CHROME,
-            args: ['--no-sandbox'],
-            headless: true,
-        })
+        launchOptions.executablePath = process.env.PATH_TO_CHROME
+        browser = await puppeteer.launch(launchOptions)
         console.log('setting PATH_TO_CHROME to ', process.env.PATH_TO_CHROME)
     } else
     {
         console.log('starting DEFAULT PUPPETEER browser')
-        browser = await puppeteer.launch({
-            headless: true
-        })
+        browser = await puppeteer.launch(launchOptions)
     }
-    const page = await browser.newPage()
-    page.on('console', async msg => {
-        const args = await Promise.all(msg.args().map(arg => describe(arg)))
-        console.log(msg.text(), ...args)
-    })
-
+    let page = await browser.newPage()
     await page.setViewport({ width: 3000, height:2000 })
     console.time('pageLoading')
     const response = await page.goto(url, options)
-
     if (!response.status || response.status() > 399)
     {
         await browser.close()
@@ -102,7 +93,7 @@ async function takeScreenshot(url) {
     console.timeEnd('pageLoading')
     try {
         // Wait for the element to appear
-        const selected = await page.waitForSelector(selector, { timeout: 5000 })
+        await page.waitForSelector(selector, { timeout: 5000 })
         await saveScreenshot(page, selector)
 
     } catch (error) {
