@@ -40,7 +40,6 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true }
 }))
 // middleware to test if authenticated
 function isAuthenticated (req, res, next) {
@@ -59,10 +58,6 @@ app.get('/', isAuthenticated, function (req, res) {
 app.get('/', (req, res) =>
     res.render('index', {
         title: 'Katyusha Kards Bot',
-        stats: {
-            test: 'Welcome to Katyusha Kards Bot',
-            test2: 'Here are some bot\'s statistics',
-        },
         loginLink: process.env.DISCORD_AUTH_URL,
         user: null,
     }))
