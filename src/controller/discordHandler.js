@@ -4,6 +4,7 @@ const {
     updateUser,
     getTopDeckStats,
     getSynonym,
+    getAllSynonyms,
     createMessage,
     getMessages,
 } = require("../database/db")
@@ -221,7 +222,6 @@ async function discordHandler(message, client, redis)
         return message.reply(getServerList(client).map(
             (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
     }
-
     //list all synonyms
     if (command.startsWith('listsyn'))
         return message.reply(await listSynonyms(user, command))
@@ -245,6 +245,20 @@ async function discordHandler(message, client, redis)
     //set limit to 10 if it is a bot-commands channel
     let limit = globalLimit
     if (isBotCommandChannel(message)) limit = 10
+    //get all alt art images
+    if (command === 'alt')
+    {
+        let syns = await getAllSynonyms()
+        let files = syns.filter(syn => syn.key.startsWith('alt ')).map(syn => syn.value)
+        if (files.length) {
+            return message.reply({
+                content:'Alternate art cards found: ' + files.length,
+                files: files.slice(0, limit)
+            })
+        }
+
+        return message.reply(translate(language, 'noresult'))
+    }
     //check if in cache
     const cacheKey = language+ ':' + command
     let keyExists = await redis.exists(cacheKey)
