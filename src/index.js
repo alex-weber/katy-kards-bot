@@ -8,6 +8,8 @@ const favicon = require('serve-favicon')
 app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
 app.set('views', __dirname + '/views')
+//cloud hosting
+app.set('trust proxy', true)
 const compression = require('compression')
 app.use(compression())
 //handlers
@@ -35,11 +37,13 @@ const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
 const {getAllSynonyms, getUser} = require('./database/db')
 //auth
+let secure = process.env.NODE_ENV === 'production'
 app.use(session({
     store: redisStore,
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    cookie: {secure: secure}
 }))
 // middleware to test if authenticated
 function isAuthenticated (req, res, next) {
