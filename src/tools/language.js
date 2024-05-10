@@ -20,6 +20,11 @@ const languages = [
     'it', 'jp', 'ko', 'pl',
     'pt', 'ru', 'tw', 'zh',
 ]
+const deckBuilderLanguages = [
+    'de', 'es', 'fr',
+    'it', 'ko', 'pl',
+    'pt', 'ru', 'zh',
+]
 const APILanguages = {
     de: 'de-DE',
     en: 'en-EN',
@@ -36,4 +41,10 @@ const APILanguages = {
     'zh-Hant': 'zh-Hant', //support old format
 }
 
-module.exports = {getLanguageByInput, languages, APILanguages, defaultLanguage}
+module.exports = {
+    getLanguageByInput,
+    languages,
+    APILanguages,
+    defaultLanguage,
+    deckBuilderLanguages,
+}

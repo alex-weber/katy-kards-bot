@@ -9,7 +9,8 @@ const {
 } = require("../database/db")
 const {
     getLanguageByInput,
-    APILanguages
+    APILanguages,
+    deckBuilderLanguages,
 } = require("../tools/language")
 const {translate} = require("../tools/translation/translator")
 const {takeScreenshot} = require("../tools/puppeteer")
@@ -84,12 +85,13 @@ async function discordHandler(message, client, redis)
     console.time('getUser')
     let user = {}
     const userId = message.author.id.toString()
-    let cachedUser = JSON.parse(await redis.get('user' + userId))
+    const userKey = 'user:' + userId
+    let cachedUser = JSON.parse(await redis.get(userKey))
     if (!cachedUser || !cachedUser.hasOwnProperty('id'))
     {
         console.log('no user in cache, caching')
         user = await getUser(message.author.id.toString())
-        await redis.set('user' + userId, JSON.stringify(user))
+        await redis.set(userKey, JSON.stringify(user))
     } else
     {
         console.log('getting user from cache')
@@ -110,7 +112,7 @@ async function discordHandler(message, client, redis)
         console.time('updateUser')
         await updateUser(user)
         //delete user from cache
-        await redis.del('user' + userId)
+        await redis.del(userKey)
         console.timeEnd('updateUser')
     }
     //save the command in the DB Message table
@@ -125,15 +127,19 @@ async function discordHandler(message, client, redis)
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
         //check if in cache
+        let deckKey = 'deck:'+language+':' + command
         let files
-        if (await redis.exists(command))
+        if (await redis.exists(deckKey))
         {
-            files = JSON.parse(await redis.get(command))
+            files = JSON.parse(await redis.get(deckKey))
             message.reply(translate(language, 'cache'))
             console.log('got deck images from cache')
             return message.reply({files: files})
         }
-        const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+        let deckBuilderLang = ''
+        if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
+        const deckBuilderURL = 'https://www.kards.com/' +
+            deckBuilderLang+ 'decks/deck-builder?hash='
         const hash = encodeURIComponent(message.content.replace(prefix, ''))
         let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
         message.reply(translate(language, 'screenshot'))
@@ -153,7 +159,7 @@ async function discordHandler(message, client, redis)
                 await Fs.size(files[1]) === file2size)
             {
                 files = uploadedFiles
-                await redis.set(command, JSON.stringify(files))
+                await redis.set(deckKey, JSON.stringify(files))
                 console.log('setting cache key for deck', command)
             }
         }
@@ -172,7 +178,7 @@ async function discordHandler(message, client, redis)
     if (bot.isLanguageSwitch(command) && !qSearch)
     {
         language = await bot.switchLanguage(user, command)
-        await redis.del('user' + userId)
+        await redis.del(userKey)
         return message.reply(translate(language, 'langChange') + language.toUpperCase())
     }
     //handle command
@@ -200,7 +206,7 @@ async function discordHandler(message, client, redis)
     //top deck game only in special channels
     if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
     {
-        await redis.del('user' + user.discordId)
+        await redis.del(userKey)
         return await handleTD(user, command, message)
     }
     //check minimums
@@ -240,7 +246,7 @@ async function discordHandler(message, client, redis)
     let limit = globalLimit
     if (isBotCommandChannel(message)) limit = 10
     //check if in cache
-    const cacheKey = language + command
+    const cacheKey = language+ ':' + command
     let keyExists = await redis.exists(cacheKey)
     if (keyExists)
     {

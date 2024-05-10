@@ -1,4 +1,4 @@
-const {getLanguageByInput} = require("../tools/language")
+const {getLanguageByInput, deckBuilderLanguages} = require("../tools/language")
 const {getStats} = require("../tools/stats")
 const bot = require("./bot")
 const {getUser, updateUser, getSynonym} = require("../database/db")
@@ -63,7 +63,10 @@ async function telegramHandler(ctx) {
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
-        const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+        let deckBuilderLang = ''
+        if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
+        const deckBuilderURL = 'https://www.kards.com/' +
+            deckBuilderLang+ 'decks/deck-builder?hash='
         const hash = encodeURIComponent(ctx.update.message.text.replace(prefix, ''))
         let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
         ctx.reply(translate(language, 'screenshot'))

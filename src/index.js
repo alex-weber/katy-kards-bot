@@ -134,7 +134,6 @@ app.get('/uptime', async (req, res) =>
     })
 })
 
-
 //Discord-Bot login event
 client.on('ready', () =>
 {
