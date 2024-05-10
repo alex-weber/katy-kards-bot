@@ -47,10 +47,11 @@ function isQuotationSearch(message)
  */
 async function hasWritePermissions(client, message, redis)
 {
-    if (await redis.exists(message.guildId+message.channelId))
+    let key = 'permissions:' + message.guildId + ':' + message.channelId
+    if (await redis.exists(key))
     {
         //console.log('serving permissions from redis')
-        const permission = await redis.get(message.guildId + message.channelId)
+        const permission = await redis.get(key)
 
         return permission === 'yes'
     }
@@ -65,7 +66,7 @@ async function hasWritePermissions(client, message, redis)
     } else
     {
         console.log('has write permissions. Caching it')
-        redis.set(message.guildId+message.channelId, 'yes')
+        redis.set(key, 'yes')
         return true
     }
 
