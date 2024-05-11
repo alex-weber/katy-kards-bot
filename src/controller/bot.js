@@ -149,7 +149,7 @@ function isDeckLink(command)
  */
 function isDeckCode(command) {
 
-    const regex = /%%\d{2}\|(\d+|\w+);/
+    const regex = /%%\d{2}\|(\d*|\w*);/
 
     return regex.test(command)
 }
