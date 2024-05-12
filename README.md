@@ -32,8 +32,8 @@ The other servers recognize commands with the default prefix `!`
 
 # Set up Environment Variables
 
-Rename `.env.example` to `.env` and set the required ones. Or set them directly in your environment.
-Configure the necessary environment variables, such as `DATABASE_URL`, which should point to your database connection string.
+Rename `.env.example` to `.env` and set the required ones, remove the unused. 
+Alternatively set them directly in your environment.
 
 # Generate Prisma Client
 ``npx prisma generate``
@@ -46,6 +46,8 @@ Configure the necessary environment variables, such as `DATABASE_URL`, which sho
 
 Navigate to `http://localhost:PORT/`. 
 You should see the bot's home page.
-Send `!help` in the chat and see if the bot answers.
+
+Add bot to a server.
+Send `!help` in a chat and see if the bot answers.
 
 
