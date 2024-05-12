@@ -180,7 +180,8 @@ async function discordHandler(message, client, redis)
     if (bot.isLanguageSwitch(command) && !qSearch)
     {
         language = await bot.switchLanguage(user, command)
-        await redis.del(userKey)
+        user.language = language
+        await redis.json.set(userKey, '$.language', language)
         return message.reply(translate(language, 'langChange') + language.toUpperCase())
     }
     //handle command
