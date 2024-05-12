@@ -26,18 +26,19 @@ const redis = createClient({url: process.env.REDISCLOUD_URL})
 redis.connect().then(()=>{ console.log('REDIS Client Connected') })
 const RedisStore = require("connect-redis").default
 // Initialize store.
+let secure = process.env.NODE_ENV === 'production'
+let cachePrefix = secure ? 'katy-prod:' : 'katy-dev:'
 let redisStore = new RedisStore({
     client: redis,
-    prefix: "katyusha:",
+    prefix: cachePrefix,
 })
 //start listening for messages
 app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
-
+//for web pages
 const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
 const {getAllSynonyms, getUser} = require('./database/db')
 //auth
-let secure = process.env.NODE_ENV === 'production'
 app.use(session({
     store: redisStore,
     secret: process.env.SESSION_SECRET,
@@ -170,7 +171,7 @@ if (telegramClient)
     })
     telegramClient.launch().then(() =>
     {
-        console.log('Telegram client started')
+        console.log('This message will never be displayed')
     })
 }
 //errors

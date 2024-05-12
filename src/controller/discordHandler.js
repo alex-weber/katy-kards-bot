@@ -32,7 +32,7 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5 * 1024 * 1024 //5MB
 const Fs = require('@supercharge/fs')
-
+let cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 /**
  *
  * @param message
@@ -86,13 +86,13 @@ async function discordHandler(message, client, redis)
     console.time('getUser')
     let user = {}
     const userId = message.author.id.toString()
-    const userKey = 'user:' + userId
-    let cachedUser = JSON.parse(await redis.get(userKey))
+    const userKey = cacheKeyPrefix + 'user:' + userId
+    let cachedUser = await redis.json.get(userKey, '$')
     if (!cachedUser || !cachedUser.hasOwnProperty('id'))
     {
         console.log('no user in cache, caching')
         user = await getUser(message.author.id.toString())
-        await redis.set(userKey, JSON.stringify(user))
+        await redis.json.set(userKey, '$', user)
     } else
     {
         console.log('getting user from cache')
@@ -128,11 +128,11 @@ async function discordHandler(message, client, redis)
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
         //check if in cache
-        let deckKey = 'deck:'+language+':' + command
+        let deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         let files
         if (await redis.exists(deckKey))
         {
-            files = JSON.parse(await redis.get(deckKey))
+            files = await redis.json.get(deckKey, '$')
             message.reply(translate(language, 'cache'))
             console.log('got deck images from cache')
             return message.reply({files: files})
@@ -160,7 +160,8 @@ async function discordHandler(message, client, redis)
                 await Fs.size(files[1]) === file2size)
             {
                 files = uploadedFiles
-                await redis.set(deckKey, JSON.stringify(files))
+
+                await redis.json.set(deckKey, '$', files)
                 console.log('setting cache key for deck', command)
             }
         }
@@ -260,13 +261,13 @@ async function discordHandler(message, client, redis)
         return message.reply(translate(language, 'noresult'))
     }
     //check if in cache
-    const cacheKey = language+ ':' + command
+    const cacheKey = cacheKeyPrefix + language+ ':' + command
     let keyExists = await redis.exists(cacheKey)
     if (keyExists)
     {
         console.time('cache')
         console.log('serving from cache: ', language, command, limit)
-        let answer = JSON.parse(await redis.get(cacheKey))
+        let answer = await redis.json.get(cacheKey, '$')
         console.timeEnd('cache')
         return message.reply({
             content: answer.content,
@@ -320,10 +321,11 @@ async function discordHandler(message, client, redis)
         message.reply({content: content, files: files})
         console.log(counter + ' card(s) found', files)
         //store in the cache
-        await redis.set(cacheKey, JSON.stringify({
+        await redis.json.set(cacheKey, '$', {
             content: content,
             files: files
-        }))
+        })
+
     } catch (e)
     {
         console.error(e.message)
