@@ -61,12 +61,14 @@ async function hasWritePermissions(client, message, redis)
         ! await permissions.has(Permissions.FLAGS.ATTACH_FILES))
     {
         console.log('no write permissions. Caching it')
-        await redis.set(message.guildId+message.channelId, 'no')
+        await redis.set(key, 'no')
+
         return false
     } else
     {
         console.log('has write permissions. Caching it')
         redis.set(key, 'yes')
+
         return true
     }
 

@@ -78,7 +78,7 @@ function getTitle(card)
 /**
  *
  * @param td
- * @returns {Promise<boolean>}
+ * @returns {Promise<td>}
  */
 async function battle(td)
 {

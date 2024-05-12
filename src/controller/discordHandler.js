@@ -84,7 +84,7 @@ async function discordHandler(message, client, redis)
     if (!command.length) return
     //set username
     console.time('getUser')
-    let user = {}
+    let user
     const userId = message.author.id.toString()
     const userKey = cacheKeyPrefix + 'user:' + userId
     let cachedUser = await redis.json.get(userKey, '$')
@@ -112,8 +112,8 @@ async function discordHandler(message, client, redis)
         user.language = 'ru'
         console.time('updateUser')
         await updateUser(user)
-        //delete user from cache
-        await redis.del(userKey)
+        //change user language to ru
+        await redis.set(userKey, '$.language', user.language)
         console.timeEnd('updateUser')
     }
     //save the command in the DB Message table
