@@ -149,6 +149,7 @@ async function discordHandler(message, client, redis)
         if (!result) return message.reply(translate(language, 'error'))
         files = getDeckFiles()
         message.reply({files: files})
+        console.log('Screenshot captured and sent successfully')
         //upload them for caching
         let file1 = await uploadImage(files[0])
         let file2 = await uploadImage(files[1])
@@ -161,13 +162,11 @@ async function discordHandler(message, client, redis)
             if ( await Fs.size(files[0]) === file1size &&
                 await Fs.size(files[1]) === file2size)
             {
-                files = uploadedFiles
-
-                await redis.json.set(deckKey, '$', files)
+                await redis.json.set(deckKey, '$', uploadedFiles)
                 console.log('setting cache key for deck', command)
             }
         }
-        console.log('Screenshot captured and sent successfully')
+
         return
     }
 
