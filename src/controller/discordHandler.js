@@ -113,8 +113,9 @@ async function discordHandler(message, client, redis)
         console.time('updateUser')
         await updateUser(user)
         //change user language to ru
-        await redis.set(userKey, '$.language', user.language)
+        await redis.json.set(userKey, '$.language', 'ru')
         console.timeEnd('updateUser')
+        language = 'ru'
     }
     //save the command in the DB Message table
     let messages = await getMessages(user.id)
