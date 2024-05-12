@@ -148,6 +148,7 @@ async function discordHandler(message, client, redis)
         let result = await takeScreenshot(url)
         if (!result) return message.reply(translate(language, 'error'))
         files = getDeckFiles()
+        message.reply({files: files})
         //upload them for caching
         let file1 = await uploadImage(files[0])
         let file2 = await uploadImage(files[1])
@@ -167,7 +168,7 @@ async function discordHandler(message, client, redis)
             }
         }
         console.log('Screenshot captured and sent successfully')
-        return message.reply({files: files})
+        return
     }
 
     //show online stats
