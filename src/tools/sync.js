@@ -11,8 +11,6 @@ async function syncDB()
     console.log('starting DB sync...')
     for (let i = 0; i < 10000; i = i + 20)
     {
-        console.log('cards done: ' + i)
-
         let variables = {
             language: language,
             q: '',
@@ -25,14 +23,25 @@ async function syncDB()
             //console.log(response)
             let cards = response.cards
             if (!cards.length) break
+            let counter = 0
             for (const [, item] of Object.entries(cards))
             {
                 let card = item.node
                 card.language = language
                 await createCard(card)
+                counter++
             }
+            let done = i + counter
+            let percentDone = (done/response.counter*100).toFixed(2)
+            if (process.send) process.send({
+                total: response.counter,
+                current: done,
+                percentDone
+            })
+            console.log('cards done: ' + done)
+
         } catch (e) {
-            i = i -20
+            i = i-20
         }
     }
 }

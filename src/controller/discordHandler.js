@@ -198,6 +198,32 @@ async function discordHandler(message, client, redis)
         return message.reply('cache cleared')
     }
 
+    if (command === 'sync' && isManager(user))
+    {
+        const spawn = require('child_process').spawn
+        const child = spawn('node', ['src/tools/sync.js'],
+            { stdio: ['inherit', 'inherit', 'inherit', 'ipc']})
+        message.reply('starting DB sync...')
+        child.on('close', function(code) {
+            //Here you can get the exit code of the script
+            console.log('sync closing code: ' + code)
+            if (code === 0) return message.reply('DB sync done')
+        })
+        child.on('message', function(stats) {
+            //console.log('message from child: ' + count)
+            if (stats.current%100 === 0 || stats.current >= stats.total)
+            {
+                message.reply(`${stats.current}/${stats.total} ${stats.percentDone}% of cards updated`)
+            }
+        })
+        child.on('error', function(error) {
+            console.log(error)
+        })
+
+        return
+
+    }
+
     //get top 9 TD ranking
     if (command.startsWith('ranking')) return message.reply(await getTopDeckStats())
 
