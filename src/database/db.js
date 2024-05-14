@@ -389,13 +389,16 @@ async function getTopDeckStats()
   for (const [, user] of Object.entries(users))
   {
     user.score = user.tdWins*2 + user.tdDraws - user.tdLoses*2
+    if (!user.tdLoses) user.winRatio = user.tdWins
+    else user.winRatio = (user.tdWins / user.tdLoses).toFixed(2)
     ranking.push(user)
   }
   ranking.sort((a, b) => b.score - a.score)
   let counter = 1
   ranking.forEach((user) => {
-    if (counter > 9) return
-    answer += counter +'. ' + user.name + ' ('+ user.score +')\n'
+    if (counter > 20) return
+    answer += counter +'. ' +
+    `${user.name} (${user.score}) W:${user.tdWins} L:${user.tdLoses} D:${user.tdDraws} WR:${user.winRatio}\n`
     counter++
   })
 
