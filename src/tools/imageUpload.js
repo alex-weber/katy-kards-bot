@@ -16,9 +16,10 @@ async function downloadImage(url) {
 /**
  *
  * @param imagePath
- * @returns {Promise<string|boolean>}
+ * @param expiration
+ * @returns {Promise<*|boolean>}
  */
-async function uploadImage(imagePath)
+async function uploadImage(imagePath, expiration = 0)
 {
 
     if (!process.env.IMG_UPLOAD_API_KEY)
@@ -28,7 +29,10 @@ async function uploadImage(imagePath)
     }
     try
     {
-        const API_ENDPOINT = 'https://api.imgbb.com/1/upload?key=' + process.env.IMG_UPLOAD_API_KEY
+        let API_URL =
+            'https://api.imgbb.com/1/upload?'+
+            'key=' + process.env.IMG_UPLOAD_API_KEY
+        if (expiration) API_URL += '&expiration=' + expiration
         let base64Image
         if (imagePath.startsWith('https://'))
         {
@@ -41,7 +45,7 @@ async function uploadImage(imagePath)
         const formData = new FormData()
         formData.append('image', base64Image)
 
-        const response = await axios.post(API_ENDPOINT, formData, {
+        const response = await axios.post(API_URL, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

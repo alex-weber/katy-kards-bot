@@ -151,8 +151,9 @@ async function discordHandler(message, client, redis)
         message.reply({files: files})
         console.log('Screenshot captured and sent successfully')
         //upload them for caching
-        let file1 = await uploadImage(files[0])
-        let file2 = await uploadImage(files[1])
+        const expiration = 2592000 //30 days
+        let file1 = await uploadImage(files[0], expiration)
+        let file2 = await uploadImage(files[1], expiration)
         if (file1 && file2)
         {
             let uploadedFiles = [file1, file2]
