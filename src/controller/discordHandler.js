@@ -187,6 +187,7 @@ async function discordHandler(message, client, redis)
         await redis.json.set(userKey, '$.language', language)
         return message.reply(translate(language, 'langChange') + language.toUpperCase())
     }
+
     //handle command
     if (command === 'help') return message.reply(translate(language, 'help'))
 
@@ -223,7 +224,6 @@ async function discordHandler(message, client, redis)
         })
 
         return
-
     }
 
     //get top 9 TD ranking
@@ -277,10 +277,10 @@ async function discordHandler(message, client, redis)
     let limit = globalLimit
     if (isBotCommandChannel(message)) limit = 10
     //get all alt art images
-    if (command === 'alt')
+    if (command.startsWith('alt '))
     {
         let syns = await getAllSynonyms()
-        let files = syns.filter(syn => syn.key.startsWith('alt ')).map(syn => syn.value)
+        let files = syns.filter(syn => syn.key.startsWith(command)).map(syn => syn.value)
         if (files.length) {
             return message.reply({
                 content:'Alternate art cards found: ' + files.length,
