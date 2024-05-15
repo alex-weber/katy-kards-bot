@@ -164,6 +164,7 @@ async function discordHandler(message, client, redis)
                 await Fs.size(files[1]) === file2size)
             {
                 await redis.json.set(deckKey, '$', uploadedFiles)
+                redis.expire(deckKey, expiration)
                 console.log('setting cache key for deck', command)
             }
         }

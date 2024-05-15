@@ -199,12 +199,19 @@ async function battle(td)
  */
 function myTDRank(user)
 {
+    if (!user.tdLoses) user.winRatio = user.tdWins
+    else user.winRatio = (user.tdWins / user.tdLoses).toFixed(2)
 
-    return user.name + '(' + (user.tdWins * 2 + user.tdDraws - user.tdLoses * 2).toString() + ')\n\n' +
+    return user.name +
+        '(' + (user.tdWins * 2 + user.tdDraws - user.tdLoses * 2).toString()
+        + ')\n\n' +
+        'Win Ratio: ' + user.winRatio.toString() + '\n' +
         'Games: ' + user.tdGames.toString() + '\n' +
         'Wins: ' + user.tdWins.toString() + '\n' +
-        'Draws: ' + user.tdDraws.toString() + '\n' +
-        'Loses: ' + user.tdLoses.toString()
+        'Loses: ' + user.tdLoses.toString() + '\n' +
+        'Draws: ' + user.tdDraws.toString() + '\n'
+
+
 }
 
 module.exports = {topDeck, myTDRank}
