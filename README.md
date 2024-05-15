@@ -18,6 +18,7 @@ This bot provides search results from **kards.com** to Discord and Telegram.
 - `TELEGRAM_TOKEN`: Token for authenticating for the Telegram API.
 - `PORT`: Port number for the Node.js server.
 - `LIMIT`: Limit for message attachments (maximum 10).
+- `PATH_TO_CHROME`: Path to the Chrome executable, if you get the "not found" error
 
  *Custom Prefix for a Server*
 
