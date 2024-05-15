@@ -277,7 +277,7 @@ async function discordHandler(message, client, redis)
     let limit = globalLimit
     if (isBotCommandChannel(message)) limit = 10
     //get all alt art images
-    if (command.startsWith('alt '))
+    if (command.startsWith('alt'))
     {
         let syns = await getAllSynonyms()
         let files = syns.filter(syn => syn.key.startsWith(command)).map(syn => syn.value)
