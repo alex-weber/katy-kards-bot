@@ -27,7 +27,7 @@ function isQuotationSearch(message)
     //check if it's a link (false detection)
     if (message.content.startsWith('http')) return false
 
-    let botCommand = /[^0-9]+%.+%/
+    let botCommand = /(^%.+%)|([^0-9]+%.+%)/
     if (botCommand.test(message.content))
     {
         let arr = message.content.split('%')
