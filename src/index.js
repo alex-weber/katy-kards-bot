@@ -37,7 +37,7 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 //for web pages
 const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
-const {getAllSynonyms, getUser} = require('./database/db')
+const {getAllSynonyms, getUser, getLastDayMessages} = require('./database/db')
 //auth
 app.use(session({
     store: redisStore,
@@ -119,6 +119,15 @@ app.get('/synonyms', isAuthenticated, async (req, res) => {
     res.render('synonyms', {
         title: 'Synonyms',
         synonyms: synonyms,
+        user: req.session.user
+    })
+})
+
+app.get('/messages', isAuthenticated, async (req, res) => {
+    const messages = await getLastDayMessages()
+    res.render('messages', {
+        title: 'Recent bot commands',
+        messages: messages,
         user: req.session.user
     })
 })

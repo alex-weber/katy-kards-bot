@@ -1,0 +1,22 @@
+extends layout
+
+block content
+
+  p.h2.text-primary.text-center= title + '(' + messages.length + ')'
+
+  table.table.table-dark.table-striped.table-bordered.table-hover
+    thead
+      tr
+        th(scope='col') User
+        th(scope='col') Message
+        th(scope='col') Date and Time
+    tbody
+      each message in messages
+        tr
+          td #{message.author.name}
+          td #{message.content}
+          td #{message.createdAt}
+
+
+
+
