@@ -47,6 +47,7 @@ function isQuotationSearch(message)
  */
 async function hasWritePermissions(client, message, redis)
 {
+    if (!message.guildId) return true
     let key = 'permissions:' + message.guildId + ':' + message.channelId
     if (await redis.exists(key))
     {

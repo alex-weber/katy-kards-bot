@@ -62,10 +62,8 @@ async function discordHandler(message, client, redis)
     console.timeEnd('permissions')
 
     //it's a bot command
-    //create the DM channel
-    await message.author.createDM()
     let guildName = ''
-    let channelName = ''
+    let channelName = 'DM'
     if (message.guildId)
     {
         guildName = message.guild.name
@@ -113,9 +111,7 @@ async function discordHandler(message, client, redis)
         language = 'ru'
     }
     //save the command in the DB Message table
-    console.time('createMessage')
-    await createMessage({authorId: user.id, content: command})
-    console.timeEnd('createMessage')
+    createMessage({authorId: user.id, content: command})
 
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
@@ -141,6 +137,14 @@ async function discordHandler(message, client, redis)
     {
         let stats = await getStats(language)
         return message.reply(stats)
+    }
+    //create DM only if needed to avoid unneeded loop latency
+    if (command === 'dm')
+    {
+        //create the DM channel
+        console.log('creating DM...')
+        await message.author.createDM()
+        return message.reply(translate(language, 'dm'))
     }
 
     //switch language
