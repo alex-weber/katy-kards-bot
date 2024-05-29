@@ -6,16 +6,13 @@ const {
     getSynonym,
     getAllSynonyms,
     createMessage,
-    getMessages,
 } = require("../database/db")
 const {
     getLanguageByInput,
     APILanguages,
-    deckBuilderLanguages,
 } = require("../tools/language")
 const {translate} = require("../tools/translation/translator")
-const {takeScreenshot} = require("../tools/puppeteer")
-const {uploadImage} = require("../tools/imageUpload")
+const {createDeckImages} = require("../tools/deck")
 const {myTDRank} = require("../games/topDeck")
 const {handleTD} = require("../games/topDeckController")
 const {getStats, getServerList} = require("../tools/stats")
@@ -25,13 +22,11 @@ const {
     getCards, getFiles,
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
-const {getDeckFiles} = require("../tools/fileManager")
 const {getRandomImage} = require("../tools/nekosAPI")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5 * 1024 * 1024 //5MB
-const Fs = require('@supercharge/fs')
 let cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 /**
  *
@@ -118,56 +113,25 @@ async function discordHandler(message, client, redis)
         language = 'ru'
     }
     //save the command in the DB Message table
-    let messages = await getMessages(user.id)
-    if(messages.length)
-    {
-        console.log(messages[0].content)
-    }
+    console.time('createMessage')
     await createMessage({authorId: user.id, content: command})
+    console.timeEnd('createMessage')
 
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
         //check if in cache
         let deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
-        let files
         if (await redis.exists(deckKey))
         {
-            files = await redis.json.get(deckKey, '$')
-            message.reply(translate(language, 'cache'))
-            console.log('got deck images from cache')
+            let files = await redis.json.get(deckKey, '$')
             return message.reply({files: files})
         }
-        let deckBuilderLang = ''
-        if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
-        const deckBuilderURL = 'https://www.kards.com/' +
-            deckBuilderLang+ 'decks/deck-builder?hash='
-        const hash = encodeURIComponent(message.content.replace(prefix, ''))
-        let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
-        message.reply(translate(language, 'screenshot'))
-        let result = await takeScreenshot(url)
-        if (!result) return message.reply(translate(language, 'error'))
-        files = getDeckFiles()
-        message.reply({files: files})
-        console.log('Screenshot captured and sent successfully')
-        //upload them for caching
-        const expiration = 2592000 //30 days
-        let file1 = await uploadImage(files[0], expiration)
-        let file2 = await uploadImage(files[1], expiration)
-        if (file1 && file2)
+        createDeckImages(prefix, message, command, language, redis, deckKey).
+        then(()=>
         {
-            let uploadedFiles = [file1, file2]
-            //check if they are uploaded & are served correctly
-            let file1size = await bot.getFileSize(file1)
-            let file2size = await bot.getFileSize(file2)
-            if ( await Fs.size(files[0]) === file1size &&
-                await Fs.size(files[1]) === file2size)
-            {
-                await redis.json.set(deckKey, '$', uploadedFiles)
-                redis.expire(deckKey, expiration)
-                console.log('setting cache key for deck', command)
-            }
-        }
+            console.log('createDeckImages finished')
+        })
 
         return
     }
