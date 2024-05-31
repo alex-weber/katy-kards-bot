@@ -11,6 +11,7 @@
   "screenshot": "Mache ein Screenshot, das kann dauern...",
   "cache": "Lade vom Cache...",
   "dm": "DM Channel aktiviert",
+  "screenshotRunning": "Ich bin gerade beim Erstellen, bitte warte doch ein wenig...",
   "help": "Katyusha Kards Bot Befehle\n\n!! - Steam-Spieler online\n!leo - entspricht einem Teil des Titels einer Karte: LEOpold. Sie erhalten also die LEOPOLD-Karte als Ergebnis.\nDer Bot erkennt alle Schlüsselwörter des Spiels wie BLITZ, GUARD, etc.\nAlle nicht erkannten Wörter werden zur Suche im Titel und Text verwendet.\n3k - Bereitstellungskosten\n2c oder 2op - Betriebskosten\n5-5 oder 5/5 - Angriff: 5, Verteidigung: 5\n!soviet infantry guard 1/8 3k 1c - erhält die einzige Karte, die allen Schlüsselwörtern entspricht.\nSie können * als Platzhalter für jeden Angriff oder jede Verteidigung verwenden:\nSie können auch die Suche mitten in einem Satz auslösen - zeige mir bitte %leo%.\nEs funktioniert nur, wenn es GENAU EIN Ergebnis gibt.\nNationen zur Suche: SOVIET GERMANY BRITAIN USA JAPAN POLAND FRANCE ITALY FINLAND\n!td infantry tank artillery fighter bomber\n2 zufällige Karten kämpfen. Sie können den Einheitstyp auswählen oder leer lassen.\n!ranking - Top-Deck-Rangliste\n!myrank - Ihre persönliche Top-Deck-Rangliste mit Statistiken.\n!en !de !es !fr !it !jp !ko !pl !pt !ru !tw !zh - Ändern Sie die Suchsprache.\n!Link zum Deck oder Import Code - liefert einen Screenshot des Decks.\n"
 }
 

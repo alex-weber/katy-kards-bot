@@ -123,9 +123,18 @@ async function discordHandler(message, client, redis)
             let files = await redis.json.get(deckKey, '$')
             return message.reply({files: files})
         }
+
+        //check if screenshot capturing is running, ask user to wait
+        let screenshotKey = cacheKeyPrefix + 'screenshot'
+        if (await redis.exists(screenshotKey))
+        {
+            return message.reply(translate(language, 'screenshotRunning'))
+        }
+        redis.set(screenshotKey, 'running')
         createDeckImages(prefix, message, command, language, redis, deckKey).
         then(()=>
         {
+            redis.del(screenshotKey)
             console.log('createDeckImages finished')
         })
 
