@@ -38,15 +38,7 @@ async function telegramHandler(ctx) {
     if (bot.isLanguageSwitch(command))
     {
         language = await bot.switchLanguage(user, command)
-        ctx.reply(
-            translate(language, 'langChange') + language.toUpperCase()
-        ).then(() =>
-        {
-            console.log('lang changed to', language.toUpperCase(), 'for',
-                ctx.update.message.from.username)
-        })
-
-        return
+        return ctx.reply(translate(language, 'langChange') + language.toUpperCase())
     }
     //update user
     if (!user.name) user.name = ctx.update.message.from.first_name
