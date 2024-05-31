@@ -12,6 +12,7 @@
   "cache": "getting from cache...",
   "dm": "DM channel active",
   "screenshotRunning": "Another capturing job is running... please wait",
+  "min": "minimum 2 characters, please",
   "help": "Katyusha Kards Bot commands\n\n\n!! - Steam players online and stats\n\n!leo - matches the part of a title of a card: LEOpold. So you will get the LEOPOLD card as result.\n\nThe bot recognizes all keywords of the game such as BLITZ, GUARD, etc.\n\nAll not recognized words will be used for searching in title and text.\n\n3k - Deployment cost\n\n2c or 2op  - Operation cost\n\n5-5 or 5/5 - Five attack and five defense\n\n!soviet infantry guard 1/8 3k 1c - will get the only one card which matches all the keywords.\n\nYou can use * as placeholder for any attack or any defense:\n\nYou can also trigger the search without a leading prefix - show me %leo% please.\n\nIt will work only if there is EXACTLY ONE result.\n\nNations for search: SOVIET GERMANY BRITAIN USA JAPAN POLAND FRANCE ITALY FINLAND\n\n!td infantry tank artillery fighter bomber\n\n2 random cards fight. You can pick the unit type or leave it blank.\n\n!ranking - Top Deck Ranking\n\n!myrank - Your personal Top Deck Ranking with stats.\n\n!en !de !es !fr !it !jp !ko !pl !pt !ru !tw !zh - change the search language.\n\n!link to the deck or import code - make screenshot of the deck.\n\n"
 }
 

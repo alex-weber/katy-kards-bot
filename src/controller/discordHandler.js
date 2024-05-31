@@ -221,7 +221,7 @@ async function discordHandler(message, client, redis)
     //check minimums
     if (command.length < minStrLen && !qSearch)
     {
-        return message.reply('Minimum ' + minStrLen + ' chars, please')
+        return message.reply(translate(language, 'min'))
     }
 
     if (command.startsWith('servers') && isManager(user))

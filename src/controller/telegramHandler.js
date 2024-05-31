@@ -27,8 +27,6 @@ async function telegramHandler(ctx, redis) {
         ctx.update.message.from.is_bot ||
         command.length > maxStrLen) return
     let language = getLanguageByInput(command)
-    //online players
-    if (command === prefix+prefix) return ctx.reply(await getStats(language))
     //set attachment limit to 10 if it is a private chat
     let limit = globalLimit
     if (ctx.update.message.chat.type === 'private') limit = 10
@@ -51,13 +49,13 @@ async function telegramHandler(ctx, redis) {
     if (language === 'ru') user.language = 'ru'
     else language = user.language
     await updateUser(user)
+    //online players
+    if (ctx.update.message.text === prefix+prefix) return ctx.reply(await getStats(language))
     //help
     if (command === 'help') return ctx.reply(translate(language, 'help'))
-    //search
-    //if (!command.length) return
-    if (command.length < minStrLen) return ctx.reply('minimum 2 characters, please')
-    //deck images
-    //show Deck as images
+    if (!command.length) return //do nothing if it's just the prefix !
+    if (command.length < minStrLen) return ctx.reply(translate(language, 'min'))
+    //deck image
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
         //check if screenshot capturing is running, ask user to wait
@@ -81,7 +79,7 @@ async function telegramHandler(ctx, redis) {
             const files = getDeckFiles()
             return ctx.replyWithPhoto({ source: files[1] })
         })
-  
+
         return
     }
     //check for synonyms
