@@ -12,12 +12,15 @@ const maxFileSize = 5*1024*1024 //5MB
 const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
 const {takeScreenshot} = require("../tools/puppeteer")
+const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
+
 /**
  *
  * @param ctx
+ * @param redis
  * @returns {Promise<*>}
  */
-async function telegramHandler(ctx) {
+async function telegramHandler(ctx, redis) {
     let prefix = defaultPrefix
     let command = ctx.update.message.text
     if (!command.startsWith(prefix) ||
@@ -33,6 +36,8 @@ async function telegramHandler(ctx) {
     command = bot.parseCommand(prefix, command)
     //get or create user
     let userID = ctx.update.message.from.id.toString()
+    //try to get from cache
+
     const user = await getUser(userID)
     //switch language
     if (bot.isLanguageSwitch(command))
@@ -43,18 +48,25 @@ async function telegramHandler(ctx) {
     //update user
     if (!user.name) user.name = ctx.update.message.from.first_name
     //change user language to RU if cyrillic is detected
-    if (language === 'ru') user.language = language
-    else if (user.language !== language) language = user.language
+    if (language === 'ru') user.language = 'ru'
+    else language = user.language
     await updateUser(user)
     //help
     if (command === 'help') return ctx.reply(translate(language, 'help'))
     //search
-    if (!command.length) return
+    //if (!command.length) return
     if (command.length < minStrLen) return ctx.reply('minimum 2 characters, please')
     //deck images
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
+        //check if screenshot capturing is running, ask user to wait
+        let screenshotKey = cacheKeyPrefix + 'screenshot'
+        if (await redis.exists(screenshotKey))
+        {
+            return ctx.reply(translate(language, 'screenshotRunning'))
+        }
+        await redis.set(screenshotKey, 'running')
         let deckBuilderLang = ''
         if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
         const deckBuilderURL = 'https://www.kards.com/' +
@@ -62,13 +74,14 @@ async function telegramHandler(ctx) {
         const hash = encodeURIComponent(ctx.update.message.text.replace(prefix, ''))
         let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
         ctx.reply(translate(language, 'screenshot'))
-        let result = await takeScreenshot(url)
-        if (!result) return ctx.reply(translate(language, 'error'))
-        const files = getDeckFiles()
-        ctx.replyWithPhoto({ source: files[1] })
-        console.log('Screenshot captured and sent successfully')
-        //deleteDeckFiles()
-
+        takeScreenshot(url).then(()=>
+        {
+            redis.del(screenshotKey)
+            console.log('createDeckImages finished')
+            const files = getDeckFiles()
+            return ctx.replyWithPhoto({ source: files[1] })
+        })
+  
         return
     }
     //check for synonyms

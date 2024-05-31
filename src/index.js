@@ -166,7 +166,7 @@ client.login(process.env.DISCORD_TOKEN).then(() =>
 //start Telegram-Bot's session if TOKEN is set
 if (telegramClient)
 {
-    telegramClient.on(telegramMessage('text'), async ctx => telegramHandler(ctx))
+    telegramClient.on(telegramMessage('text'), async ctx => telegramHandler(ctx, redis))
     telegramClient.catch((err) => {
         console.error('telegramAPI error occurred:', err)
         if (err.on.payload.chat_id)

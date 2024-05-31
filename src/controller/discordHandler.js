@@ -27,7 +27,7 @@ const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5 * 1024 * 1024 //5MB
-let cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
+const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 /**
  *
  * @param message
@@ -130,7 +130,7 @@ async function discordHandler(message, client, redis)
         {
             return message.reply(translate(language, 'screenshotRunning'))
         }
-        redis.set(screenshotKey, 'running')
+        await redis.set(screenshotKey, 'running')
         createDeckImages(prefix, message, command, language, redis, deckKey).
         then(()=>
         {
