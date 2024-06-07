@@ -231,8 +231,8 @@ async function discordHandler(message, client, redis)
             (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
     }
     //list all synonyms
-    if (command.startsWith('listsyn'))
-        return message.reply(await listSynonyms(user, command))
+    if (command.startsWith('commands'))
+        return message.reply(await listSynonyms(command))
 
     //handle synonyms
     if (command.startsWith('^'))

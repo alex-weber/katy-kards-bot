@@ -445,13 +445,11 @@ function checkSynonymValue(value)
 
 /**
  *
- * @param user
  * @param command
  * @returns {Promise<string|null>}
  */
-async function listSynonyms(user, command)
+async function listSynonyms(command)
 {
-    if (!isManager(user)) return null
     const data = command.split('=')
     let listing = '```' //start code block to avoid Discord to parse hyperlinks
     if (data.length === 2 && checkSynonymKey(data[1]))
@@ -469,11 +467,12 @@ async function listSynonyms(user, command)
     {
         listing += syn.key + '\n'
     }
-    listing += '```' //end code block
+
     if (listing.length > maxMessageLength)
     {
-        listing = listing.slice(0, maxMessageLength - 1)
+        listing = listing.slice(0, maxMessageLength - 4)
     }
+    listing += '```' //end code block
 
     return listing
 }
