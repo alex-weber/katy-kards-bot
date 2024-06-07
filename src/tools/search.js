@@ -298,7 +298,7 @@ async function advancedSearch(variables)
     delete variables.language
     delete variables.showSpawnables
     delete variables.showReserved
-
+    //search for attributes also in text
     if (variables.hasOwnProperty('attributes'))
     {
         if (!variables.OR) variables.OR = []
@@ -311,6 +311,17 @@ async function advancedSearch(variables)
         variables.text.push(variables.attributes)
         delete variables.attributes
 
+    }
+    //search for exile also in text
+    if (variables.hasOwnProperty('exile'))
+    {
+        if (!variables.OR) variables.OR = []
+        variables.OR.push({
+            exile: {not: ''}
+        })
+        if (!variables.text) variables.text = []
+        variables.text.push('exile')
+        delete variables.exile
     }
 
     if (variables.hasOwnProperty('text'))

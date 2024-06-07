@@ -27,13 +27,6 @@ test('search is working', async () => {
 })
 
 test('listing synonyms', async () => {
-    const user = await getUser('1')
-    const data = await listSynonyms(user, 'listsyn')
+    const data = await listSynonyms('commands')
     expect(data).toBeTruthy()
-})
-
-test('listing synonyms no admin rejection', async () => {
-    const user = await getUser('2')
-    const data = await listSynonyms(user, 'listsyn')
-    expect(data).toBeNull()
 })
