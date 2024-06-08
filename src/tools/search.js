@@ -462,7 +462,7 @@ function checkSynonymValue(value)
 async function listSynonyms(command)
 {
     const data = command.split('=')
-    let listing = '```' //start code block to avoid Discord to parse hyperlinks
+    let listing = '```\n' //start code block to avoid Discord to parse hyperlinks
     if (data.length === 2 && checkSynonymKey(data[1]))
     {
         let synObject = await getSynonym(data[1])
@@ -483,7 +483,7 @@ async function listSynonyms(command)
     {
         listing = listing.slice(0, maxMessageLength - 4)
     }
-    listing += '```' //end code block
+    listing += '```\n' //end code block
 
     return listing
 }
