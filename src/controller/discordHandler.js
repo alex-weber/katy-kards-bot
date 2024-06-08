@@ -299,8 +299,13 @@ async function discordHandler(message, client, redis)
         if (qSearch) return //don't reply if nothing is found
         const imageURL = await getRandomImage()
         if (!imageURL) return message.reply(translate(language, 'noresult'))
-        if (await bot.getFileSize(imageURL) > maxFileSize)
+        const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif']
+        const imageExtention = imageURL.split('.').pop()
+        if (await bot.getFileSize(imageURL) > maxFileSize ||
+            !allowedExtensions.includes(imageExtention))
+        {
             return message.reply(translate(language, 'noresult'))
+        }
         return message.reply({
             content: translate(language, 'noresult'),
             files: [imageURL]
