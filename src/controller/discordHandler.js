@@ -300,9 +300,9 @@ async function discordHandler(message, client, redis)
         const imageURL = await getRandomImage()
         if (!imageURL) return message.reply(translate(language, 'noresult'))
         const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif']
-        const imageExtention = imageURL.split('.').pop()
+        const imageExtension = imageURL.split('.').pop()
         if (await bot.getFileSize(imageURL) > maxFileSize ||
-            !allowedExtensions.includes(imageExtention))
+            !allowedExtensions.includes(imageExtension))
         {
             return message.reply(translate(language, 'noresult'))
         }
