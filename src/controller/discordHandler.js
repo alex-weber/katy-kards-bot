@@ -298,11 +298,11 @@ async function discordHandler(message, client, redis)
     {
         if (qSearch) return //don't reply if nothing is found
         const imageURL = await getRandomImage()
-        if (!imageURL) return message.reply(translate(language, 'noresult'))
         const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif']
-        const imageExtension = imageURL.split('.').pop()
-        if (await bot.getFileSize(imageURL) > maxFileSize ||
-            !allowedExtensions.includes(imageExtension))
+        const imageExtension = imageURL.split('.').pop().toLowerCase()
+        if (!imageURL ||
+            !allowedExtensions.includes(imageExtension) ||
+            await bot.getFileSize(imageURL) > maxFileSize)
         {
             return message.reply(translate(language, 'noresult'))
         }
