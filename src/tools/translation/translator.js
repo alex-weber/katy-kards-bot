@@ -13,7 +13,7 @@ function translate(language, msg)
     const reservedWords = getReservedWords()
     for (const [key, value] of Object.entries(reservedWords))
     {
-        if (value.indexOf(msg) === 0) return key //found the reserved word
+        if (msg.length > 2 && value.indexOf(msg) === 0) return key //found the reserved word
     }
     //translation found
     if (translator.exists(msg, {lng: language}))
