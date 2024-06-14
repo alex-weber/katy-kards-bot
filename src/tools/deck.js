@@ -2,7 +2,7 @@ const {deckBuilderLanguages} = require("./language")
 const bot = require("../controller/bot")
 const {translate} = require("./translation/translator")
 const {takeScreenshot} = require("./puppeteer")
-const {getDeckFiles} = require("./fileManager")
+const {getDeckFiles, deleteDeckFiles} = require("./fileManager")
 const {uploadImage} = require("./imageUpload")
 const Fs = require("@supercharge/fs")
 
@@ -16,7 +16,13 @@ const Fs = require("@supercharge/fs")
  * @param deckKey
  * @returns {Promise<*>}
  */
-async function createDeckImages(prefix, message, command, language, redis, deckKey)
+async function createDeckImages(
+    prefix,
+    message,
+    command,
+    language,
+    redis,
+    deckKey)
 {
     let deckBuilderLang = ''
     if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
@@ -31,7 +37,7 @@ async function createDeckImages(prefix, message, command, language, redis, deckK
     message.reply({files: files})
     console.log('Screenshot captured and sent successfully')
     //upload them for caching
-    const expiration = 2592000 //30 days
+    const expiration = 604800 //7 days
     let file1 = await uploadImage(files[0], expiration)
     let file2 = await uploadImage(files[1], expiration)
     if (file1 && file2)
@@ -46,6 +52,7 @@ async function createDeckImages(prefix, message, command, language, redis, deckK
             await redis.json.set(deckKey, '$', uploadedFiles)
             redis.expire(deckKey, expiration)
             console.log('setting cache key for deck', command)
+            deleteDeckFiles()
         }
     }
 }
