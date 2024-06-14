@@ -22,17 +22,14 @@ async function downloadImage(url) {
 async function uploadImage(imagePath, expiration = 0)
 {
 
-    if (!process.env.IMG_UPLOAD_API_KEY)
+    if (!process.env.IMG_UPLOAD_API_KEY || !process.env.IMG_UPLOAD_API_ENDPOINT)
     {
-        console.log('no upload api key set')
+        console.log('no upload api key or endpoint set')
         return false
     }
     try
     {
-        let API_URL =
-            'https://api.imgbb.com/1/upload?'+
-            'key=' + process.env.IMG_UPLOAD_API_KEY
-        if (expiration) API_URL += '&expiration=' + expiration
+        const API_URL = process.env.IMG_UPLOAD_API_ENDPOINT
         let base64Image
         if (imagePath.startsWith('https://'))
         {
@@ -42,22 +39,16 @@ async function uploadImage(imagePath, expiration = 0)
             const imageData = fs.readFileSync(imagePath)
             base64Image = Buffer.from(imageData).toString('base64')
         }
-        const formData = new FormData()
-        formData.append('image', base64Image)
-
-        const response = await axios.post(API_URL, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        })
-
-        console.log('Image uploaded successfully:', response.data.data.url)
-
-        return response.data.data.url
+        const postData = {
+            image: base64Image,
+            key: process.env.IMG_UPLOAD_API_KEY
+        }
+        const response = await axios.post(API_URL, postData)
+        console.log('Image uploaded successfully:', response.data.url)
+        return response.data.url
     } catch (error)
     {
-        console.error('Error uploading image:', error.response ? error.response.data : error.message)
-
+        console.error('Error uploading image:', error)
         return false
     }
 }
