@@ -25,7 +25,7 @@ async function createDeckImages(
     deckKey)
 {
     let deckBuilderLang = ''
-    if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
+    //if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
     const deckBuilderURL = 'https://www.kards.com/' +
         deckBuilderLang+ 'decks/deck-builder?hash='
     const hash = encodeURIComponent(message.content.replace(prefix, ''))

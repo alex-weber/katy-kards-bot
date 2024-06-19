@@ -66,7 +66,7 @@ async function telegramHandler(ctx, redis) {
         }
         await redis.set(screenshotKey, 'running')
         let deckBuilderLang = ''
-        if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
+        //if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
         const deckBuilderURL = 'https://www.kards.com/' +
             deckBuilderLang+ 'decks/deck-builder?hash='
         const hash = encodeURIComponent(ctx.update.message.text.replace(prefix, ''))
