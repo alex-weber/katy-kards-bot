@@ -28,6 +28,8 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
 const maxFileSize = 5 * 1024 * 1024 //5MB
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
+//wait for 5 sec. before processing the TD command
+const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
 /**
  *
  * @param message
@@ -215,7 +217,14 @@ async function discordHandler(message, client, redis)
     //top deck game only in special channels
     if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
     {
+        // TD command spam protection.
+        // Next command is allowed only after the time of slowModeInterval is passed
+        const userTDKey = cacheKeyPrefix + 'td:' + user.id
+        let unblockTime = await redis.get(userTDKey)
+        if (Date.now() < unblockTime) return //not allowed, just do nothing
+
         await redis.del(userKey)
+        redis.set(userTDKey, Date.now() + slowModeInterval)
         return await handleTD(user, command, message)
     }
     //check minimums
