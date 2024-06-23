@@ -45,6 +45,7 @@ async function topDeck(channelID, user, command = null)
             const types = ['infantry', 'artillery', 'bomber', 'fighter', 'tank']
             for (let i = 0; i < types.length; i++)
             {
+                if (!command) break
                 if (types[i].indexOf(command) === 0)
                 {
                     data['unitType'] = types[i]
