@@ -38,12 +38,14 @@ async function topDeck(channelID, user, command = null)
             log: ''
         }
         //check params in command
+
         if (command)
         {
+            command = command.replace('td', '').trim()
             const types = ['infantry', 'artillery', 'bomber', 'fighter', 'tank']
             for (let i = 0; i < types.length; i++)
             {
-                if (command.search(types[i]) !== -1)
+                if (types[i].indexOf(command) === 0)
                 {
                     data['unitType'] = types[i]
                     break
