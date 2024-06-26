@@ -110,13 +110,13 @@ async function telegramHandler(ctx, redis) {
         showSpawnables: true,
         showReserved: true,
     }
-    let searchResult = await getCards(variables)
-    if (!searchResult) return
-    if (!searchResult.counter) return ctx.reply(translate(language, 'noresult'))
-    let files = getFiles(searchResult, language, limit)
+    let cards = await getCards(variables)
+    if (!cards) return
+    if (!cards.counter) return ctx.reply(translate(language, 'noresult'))
+    let files = getFiles(cards, language, limit)
     console.log(files)
-    ctx.reply(translate(language, 'search') + ': ' + searchResult.counter)
-    if (searchResult.counter > 1)
+    ctx.reply(translate(language, 'search') + ': ' + cards.counter)
+    if (cards.counter > 1)
     {
         try {
             return ctx.replyWithMediaGroup(getMediaGroup(files))
@@ -125,7 +125,7 @@ async function telegramHandler(ctx, redis) {
             return ctx.reply(translate(language, 'error'))
         }
     }
-    else if (searchResult.counter === 1)
+    else if (cards.counter === 1)
     {
         try {
 
