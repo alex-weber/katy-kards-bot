@@ -4,7 +4,7 @@ block content
 
   p.h2.text-primary.text-center= title + '(' + messages.length + ')'
 
-  table.table.table-dark.table-striped.table-bordered.table-hover
+  table.table.table-dark.table-striped.table-bordered.border-primary.table-hover
     thead
       tr
         th(scope='col') User
@@ -16,7 +16,8 @@ block content
           td #{message.author.name}
           td #{message.content}
           td #{message.createdAt}
-
+  p &nbsp;
+  p &nbsp;
 
 
 

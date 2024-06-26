@@ -2,9 +2,9 @@ extends layout
 
 block content
 
-  h1= title + '(' + servers.length + ')'
+  p.h2.text-primary.text-center= title + '(' + servers.length + ')'
 
-  table.table.table-dark
+  table.table.table-dark.table-striped.table-bordered.border-primary.table-hover
     thead
       tr
         th(scope='col') #
@@ -21,7 +21,8 @@ block content
                 img(src=attr, alt="No icon")
             else
               td= attr
-
+  p &nbsp;
+  p &nbsp;
 
 
 
