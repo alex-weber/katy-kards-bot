@@ -31,18 +31,21 @@ async function uploadImage(imagePath, expiration = 0)
     {
         const API_URL = process.env.IMG_UPLOAD_API_ENDPOINT
         let base64Image
+        const postData = {
+            key: process.env.IMG_UPLOAD_API_KEY,
+        }
+        //custom image. should never expire
         if (imagePath.startsWith('https://'))
         {
             let buffer = await downloadImage(imagePath)
             base64Image = buffer.toString('base64')
-        } else {
+            postData.path = 'custom'
+        } else { //cache image. should expire
             const imageData = fs.readFileSync(imagePath)
             base64Image = Buffer.from(imageData).toString('base64')
         }
-        const postData = {
-            image: base64Image,
-            key: process.env.IMG_UPLOAD_API_KEY
-        }
+
+        postData.image = base64Image
         const response = await axios.post(API_URL, postData)
         console.log('Image uploaded successfully:', response.data.url)
         return response.data.url

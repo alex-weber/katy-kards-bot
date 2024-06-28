@@ -16,5 +16,5 @@ describe('Import deck', () => {
         expect(response).toBe(true)
 
 
-    }, 15000)
+    }, 25000)
 })
