@@ -34,6 +34,7 @@ async function uploadImage(imagePath, expiration = 0)
         const postData = {
             key: process.env.IMG_UPLOAD_API_KEY,
         }
+        if (expiration) postData.expiration = expiration
         //custom image. should never expire
         if (imagePath.startsWith('https://'))
         {
