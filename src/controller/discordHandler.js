@@ -252,7 +252,7 @@ async function discordHandler(message, client, redis)
     if (syn)
     {
         //check if there is an image link
-        if (syn.value.startsWith('https:')) return message.reply({files: [syn.value]})
+        if (syn.value.startsWith('http:')) return message.reply({files: [syn.value]})
         //check if it should reply with a text message
         if (syn.value.startsWith('text:')) return message.reply(syn.value.replace('text:', ''))
         //else use the value as command
