@@ -391,7 +391,7 @@ async function handleSynonym(user, message)
     console.log(key, value)
     //check key
     if (!checkSynonymKey(key)) return false
-    if (value.startsWith('https'))
+    if (value.startsWith('http'))
     {
         value = getURL(value)
         if (!value) return 'bad URL'
