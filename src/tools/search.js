@@ -372,7 +372,7 @@ async function advancedSearch(variables)
  */
 async function handleSynonym(user, message)
 {
-    if (!isManager(user)) return false
+    if (!isManager(user)) return 'not allowed'
     const content = message.content
     //remove the prefix and the ^ from the beginning and get the key and the value
     const key = content.slice(2, content.indexOf('='))
@@ -385,7 +385,7 @@ async function handleSynonym(user, message)
         //upload it to a different hosting because Discord's images will expire in 2 weeks
         const uploaded = await uploadImage(value)
         if (uploaded) value = uploaded
-        else return false
+        else return 'file upload error'
     }
     else value = content.slice(content.indexOf('=') + 1)
     console.log(key, value)

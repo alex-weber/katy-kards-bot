@@ -36,7 +36,7 @@ async function uploadImage(imagePath, expiration = 0)
         }
         if (expiration) postData.expiration = expiration
         //custom image. should never expire
-        if (imagePath.startsWith('https://'))
+        if (imagePath.startsWith('http'))
         {
             let buffer = await downloadImage(imagePath)
             base64Image = buffer.toString('base64')
@@ -48,6 +48,10 @@ async function uploadImage(imagePath, expiration = 0)
 
         postData.image = base64Image
         const response = await axios.post(API_URL, postData)
+        if (response.status !== 200) {
+            console.error('Error uploading image:', response.message)
+            return false
+        }
         console.log('Image uploaded successfully:', response.data.url)
         return response.data.url
     } catch (error)
