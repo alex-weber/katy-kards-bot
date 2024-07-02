@@ -8,7 +8,10 @@ const fs = require('fs')
  */
 async function downloadImage(url) {
 
-    const response = await axios.get(url, { responseType: 'arraybuffer' })
+    const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 5000,
+    })
 
      return response.data
 }
