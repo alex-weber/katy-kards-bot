@@ -191,13 +191,7 @@ async function discordHandler(message, client, redis)
             console.log('sync closing code: ' + code)
             if (code === 0) return message.reply('DB sync done')
         })
-        child.on('message', function(stats) {
-            //console.log('message from child: ' + count)
-            if (stats.current%100 === 0 || stats.current >= stats.total)
-            {
-                message.reply(`${stats.current}/${stats.total} ${stats.percentDone}% of cards updated`)
-            }
-        })
+        child.on('message', (m) => message.reply(m))
         child.on('error', function(error) {
             console.log(error)
         })
@@ -291,11 +285,12 @@ async function discordHandler(message, client, redis)
         })
     }
     //first search on KARDS.com, on no result search in the local DB
-    let variables = {
+    const variables = {
         language: APILanguages[language],
         q: command,
         showSpawnables: true,
         showReserved: true,
+        first: limit,
     }
     const cards = await getCards(variables)
     if (!cards)

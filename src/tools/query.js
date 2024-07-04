@@ -1,5 +1,7 @@
 module.exports = `
-query getCards($language: String, 
+query getCards(
+  $language: String,
+  $first: Int, 
   $offset: Int, 
   $nationIds: [Int], 
   $kredits: [Int], 
@@ -12,7 +14,7 @@ query getCards($language: String,
   $showReserved: Boolean) 
   { cards(
     language: $language, 
-    first: 20, 
+    first: $first, 
     offset: $offset, 
     nationIds: $nationIds, 
     kredits: $kredits, 

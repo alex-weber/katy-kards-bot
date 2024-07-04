@@ -299,6 +299,7 @@ async function advancedSearch(variables)
     delete variables.language
     delete variables.showSpawnables
     delete variables.showReserved
+    delete variables.first
     //search for attributes also in text
     if (variables.hasOwnProperty('attributes'))
     {
