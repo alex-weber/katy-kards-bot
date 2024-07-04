@@ -100,7 +100,7 @@ async function discordHandler(message, client, redis)
         return console.log('blocked user\n', user)
     }
     if (!user.name) user.name = message.author.username
-    //set the user language
+    //set user language to russian if they type in cyrillic
     let language = user.language
     if (getLanguageByInput(command) === 'ru' && language !== 'ru')
     {
@@ -126,7 +126,7 @@ async function discordHandler(message, client, redis)
             return message.reply({files: files})
         }
 
-        //check if screenshot capturing is running, ask user to wait
+        //check if screenshot capturing is running, tell user to wait
         let screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
         {
@@ -186,27 +186,29 @@ async function discordHandler(message, client, redis)
         const child = spawn('node', ['src/tools/sync.js'],
             { stdio: ['inherit', 'inherit', 'inherit', 'ipc']})
         message.reply('starting DB sync...')
-        child.on('close', function(code) {
-            //Here you can get the exit code of the script
-            console.log('sync closing code: ' + code)
+        console.time('db_sync')
+        child.on('close', function(code)
+        {
+            console.timeEnd('db_sync')
             if (code === 0) return message.reply('DB sync done')
         })
         child.on('message', (m) => message.reply(m))
-        child.on('error', function(error) {
+        child.on('error', function(error)
+        {
             console.log(error)
+            console.timeEnd('db_sync')
         })
 
         return
     }
 
     //get top 9 TD ranking
-    if (command.startsWith('ranking')) return message.reply(await getTopDeckStats())
+    if (command.startsWith('ranking'))
+        return message.reply(await getTopDeckStats())
 
     //user's TD ranking
     if (command === 'myrank')
-    {
         return message.reply(myTDRank(user))
-    }
 
     //top deck game only in special channels
     if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
@@ -223,16 +225,13 @@ async function discordHandler(message, client, redis)
     }
     //check minimums
     if (command.length < minStrLen && !qSearch)
-    {
         return message.reply(translate(language, 'min'))
-    }
+
 
     if (command.startsWith('servers') && isManager(user))
-    {
-
         return message.reply(getServerList(client).map(
             (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
-    }
+
     //list all synonyms
     if (command.startsWith('commands'))
         return message.reply(await listSynonyms(command))

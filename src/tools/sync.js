@@ -28,8 +28,9 @@ async function syncDB()
             card.language = language
             createCard(card)
         }
-        console.log(cards.length, 'cards updated')
-        //if (process.send) process.send('sync done')
+        let message = cards.length + ' total -> updating...'
+        console.log(message)
+        if (process.send) process.send(message)
 
     } catch (e) {
         console.log(e)

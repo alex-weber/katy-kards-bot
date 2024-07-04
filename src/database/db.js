@@ -289,7 +289,7 @@ async function createCard(card)
     catch((e) => { throw e }).finally(async () =>
     {
       await prisma.$disconnect()
-      console.log('card ' + card.cardId + ' updated')
+      //console.log('card ' + card.cardId + ' updated')
     })
   }
 
