@@ -22,16 +22,13 @@ async function syncDB()
         //console.log(response)
         let cards = response.cards
         if (!cards.length) return false
-        let count = 0
         for (const [, item] of Object.entries(cards))
         {
             let card = item.node
             card.language = language
             createCard(card)
-            count++
         }
-        console.log(count, 'cards updated')
-
+        console.log(cards.length, 'cards updated')
         //if (process.send) process.send('sync done')
 
     } catch (e) {
