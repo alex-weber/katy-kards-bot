@@ -1,4 +1,45 @@
-module.exports = "query getCards($language: String, $offset: Int, $nationIds: [Int], $kredits: [Int], $q: String, $type: [String], $rarity: [String], $set: [String], $showSpawnables: Boolean, $showExiles: Boolean, $showReserved: Boolean) {  cards(language: $language, first: 20, offset: $offset, nationIds: $nationIds, kredits: $kredits, q: $q, type: $type, set: $set, rarity: $rarity, showSpawnables: $showSpawnables, showExiles: $showExiles, showReserved: $showReserved) {    pageInfo {      count      hasNextPage      __typename    }    edges {      node {        id        cardId        importId        json        reserved        imageUrl: image(language: $language)        thumbUrl: image(type: thumb, language: $language)        __typename      }      __typename    }    __typename  }}"
-
-//this query is copied from kards.com
-
+module.exports = `
+query getCards($language: String, 
+  $offset: Int, 
+  $nationIds: [Int], 
+  $kredits: [Int], 
+  $q: String, 
+  $type: [String], 
+  $rarity: [String], 
+  $set: [String], 
+  $showSpawnables: Boolean, 
+  $showExiles: Boolean, 
+  $showReserved: Boolean) 
+  { cards(
+    language: $language, 
+    first: 20, 
+    offset: $offset, 
+    nationIds: $nationIds, 
+    kredits: $kredits, 
+    q: $q, 
+    type: $type, 
+    set: $set, 
+    rarity: $rarity, 
+    showSpawnables: $showSpawnables, 
+    showExiles: $showExiles, 
+    showReserved: $showReserved) 
+    { pageInfo
+      { count
+        hasNextPage
+      }
+      edges 
+      { 
+        node 
+        { 
+          id
+          cardId
+          importId
+          json
+          reserved
+          imageUrl: image(language: $language)
+          thumbUrl: image(type: thumb, language: $language)
+        }    
+      }
+    }
+  }
+  `
