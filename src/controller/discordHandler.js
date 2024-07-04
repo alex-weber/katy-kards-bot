@@ -185,18 +185,24 @@ async function discordHandler(message, client, redis)
         const spawn = require('child_process').spawn
         const child = spawn('node', ['src/tools/sync.js'],
             { stdio: ['inherit', 'inherit', 'inherit', 'ipc']})
-        message.reply('starting DB sync...')
+        message.reply('starting DB sync with kards.com...')
+        const startTime = Date.now()
         console.time('db_sync')
         child.on('close', function(code)
         {
             console.timeEnd('db_sync')
-            if (code === 0) return message.reply('DB sync done')
+            const endTime = Date.now()
+            let duration = (endTime - startTime)/1000
+            duration = duration.toFixed(3)
+            if (code === 0)
+                return message.reply('DB sync done in ' + duration + 's')
         })
         child.on('message', (m) => message.reply(m))
         child.on('error', function(error)
         {
             console.log(error)
             console.timeEnd('db_sync')
+            return message.reply('DB sync error. Check log for details.')
         })
 
         return
