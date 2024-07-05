@@ -288,7 +288,7 @@ async function createCard(card)
     return await prisma.card.update({ where: { cardId: card.cardId}, data: data }).
     catch((e) => { throw e }).finally(async () =>
     {
-      await prisma.$disconnect()
+      //await prisma.$disconnect()
       console.log('card ' + card.cardId + ' updated')
     })
   }
@@ -296,7 +296,7 @@ async function createCard(card)
   return await prisma.card.create({ data: data }).
   catch((e) => { throw e }).finally(async () =>
   {
-    await prisma.$disconnect()
+    //await prisma.$disconnect()
     console.log('card ' + card.cardId + ' created')
   })
 }
@@ -313,8 +313,7 @@ async function cardExists(card) {
       cardId: card.cardId,
     },
   }).
-  catch((e) => { throw e }).
-  finally(async () => { await prisma.$disconnect() })
+  catch((e) => { throw e })
 }
 
 /**

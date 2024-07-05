@@ -22,15 +22,23 @@ async function syncDB()
         //console.log(response)
         let cards = response.cards
         if (!cards.length) return false
-        for (const [, item] of Object.entries(cards))
+        const cardsPromises = cards.map(async (cardItem) =>
         {
-            let card = item.node
+            let card = cardItem.node
             card.language = language
             await createCard(card)
+        })
+
+        try {
+            let message = cards.length + ' cards total -> updating...'
+            console.log(message)
+            if (process.send) process.send(message)
+            await Promise.all(cardsPromises)
+            console.log('All cards created successfully')
+        } catch (error) {
+            console.error('Error creating cards:', error)
         }
-        let message = cards.length + ' cards total -> updating...'
-        console.log(message)
-        if (process.send) process.send(message)
+
 
     } catch (e) {
         console.log(e)
