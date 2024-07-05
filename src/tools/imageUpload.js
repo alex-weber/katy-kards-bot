@@ -4,7 +4,7 @@ const fs = require('fs')
 /**
  *
  * @param url
- * @returns {Promise<void>}
+ * @returns {Promise<mixed|boolean>}
  */
 async function downloadImage(url) {
 
@@ -12,6 +12,9 @@ async function downloadImage(url) {
         responseType: 'arraybuffer',
         timeout: 5000,
     })
+
+    if (!response || response.status !== 200 || response.data.status !== 'success')
+        return false
 
      return response.data
 }
@@ -42,6 +45,10 @@ async function uploadImage(imagePath, expiration = 0)
         if (imagePath.startsWith('http'))
         {
             let buffer = await downloadImage(imagePath)
+            if (!buffer) {
+                console.error('Error uploading image, bad API response')
+                return false
+            }
             base64Image = buffer.toString('base64')
             postData.path = 'custom'
         } else { //cache image. should expire
