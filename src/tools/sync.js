@@ -26,7 +26,7 @@ async function syncDB()
         {
             let card = item.node
             card.language = language
-            createCard(card)
+            await createCard(card)
         }
         let message = cards.length + ' cards total -> updating...'
         console.log(message)
