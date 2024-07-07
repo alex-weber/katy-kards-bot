@@ -13,7 +13,7 @@ async function downloadImage(url) {
         timeout: 5000,
     })
 
-    if (!response || response.status !== 200 || response.data.status !== 'success')
+    if (!response || response.status !== 200)
         return false
 
      return response.data
