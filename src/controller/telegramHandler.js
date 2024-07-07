@@ -91,7 +91,14 @@ async function telegramHandler(ctx, redis) {
         {
             try {
                 const fileSize = await bot.getFileSize(syn.value)
-                if (fileSize && fileSize < maxFileSize) return ctx.replyWithPhoto(syn.value)
+                if (fileSize && fileSize < maxFileSize)
+                {
+                    //we need a different method for gif images
+                    if(syn.value.endsWith('.gif'))
+                        return ctx.replyWithAnimation(syn.value)
+                    //reply with a static image
+                    return ctx.replyWithPhoto(syn.value)
+                }
                 else return ctx.reply(translate(language, 'error'))
 
             } catch (e) {
