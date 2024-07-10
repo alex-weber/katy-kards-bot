@@ -150,13 +150,16 @@ function isDeckLink(command)
  * @param command
  * @returns {boolean}
  */
-function isDeckCode(command) {
-
-    const regex = /%%\d{2}\|(\d*|\w*);/
-
+function isDeckCode(command)
+{
+    const regex = /%%\d{2}\|\w*;\w*;\w*;\w*/
     return regex.test(command)
 }
 
+/**
+ *
+ * @returns {string}
+ */
 function getCurrentTimestamp() {
     return new Date().getTime().toString()
 }
