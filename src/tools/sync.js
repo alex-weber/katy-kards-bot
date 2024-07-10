@@ -18,9 +18,9 @@ async function syncDB()
         first: 10000
     }
     try {
-        let response = await getCards(variables)
+        const response = await getCards(variables)
         //console.log(response)
-        let cards = response.cards
+        const cards = response.cards
         if (!cards.length) return false
         const cardsPromises = cards.map(async (cardItem) =>
         {
@@ -30,7 +30,7 @@ async function syncDB()
         })
 
         try {
-            let message = cards.length + ' cards total -> updating...'
+            const message = cards.length + ' cards total -> updating...'
             console.log(message)
             if (process.send) process.send(message)
             await Promise.all(cardsPromises)

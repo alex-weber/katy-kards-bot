@@ -23,6 +23,7 @@ const {
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {getRandomImage} = require("../tools/nekosAPI")
+const {getDeckCode} = require("./bot");
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
@@ -47,8 +48,8 @@ async function discordHandler(message, client, redis)
     if (qSearch)
     {
         //rewrite the message content with only needed information
-        message.content = qSearch
         console.log('bot command with quotes inside a message:', message.content)
+        message.content = qSearch
     }
     //not a bot command or bot
     else if (!message.content.startsWith(prefix)) return
@@ -112,12 +113,13 @@ async function discordHandler(message, client, redis)
         console.timeEnd('updateUser')
         language = 'ru'
     }
-    //save the command in the DB Message table
-    createMessage({authorId: user.id, content: command})
+    //save the command in the DB Message table, no need to wait
+    createMessage({authorId: user.id, content: command}).then()
 
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
+        command = getDeckCode(command)
         //check if in cache
         let deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))

@@ -3,6 +3,8 @@ const {updateUser} = require("../database/db")
 const {languages} = require("../tools/language")
 const axios = require("axios")
 
+const regex = /%%\d{2}\|(\w*;){1,3}\w*/
+
 /**
  *
  * @param message
@@ -152,8 +154,19 @@ function isDeckLink(command)
  */
 function isDeckCode(command)
 {
-    const regex = /%%\d{2}\|\w*;\w*;\w*;\w*/
     return regex.test(command)
+}
+/**
+ *
+ * @param command
+ * @returns {string}
+ */
+function getDeckCode(command)
+{
+    const match = regex.exec(command)
+    console.log(match[0])
+
+    return match[0]
 }
 
 /**
@@ -174,5 +187,6 @@ module.exports = {
     getFileSize,
     isDeckLink,
     isDeckCode,
+    getDeckCode,
     getCurrentTimestamp
 }
