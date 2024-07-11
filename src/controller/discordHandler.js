@@ -98,7 +98,8 @@ async function discordHandler(message, client, redis)
     //check the status
     if (user.status !== 'active')
     {
-        return console.log('blocked user\n', user)
+        console.log('blocked user\n', user)
+        return message.reply("I'm a useless bot, I do absolutely nothing. Cheers!")
     }
     if (!user.name) user.name = message.author.username
     //set user language to russian if they type in cyrillic
@@ -119,7 +120,9 @@ async function discordHandler(message, client, redis)
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
-        command = getDeckCode(command)
+        //overwrite message.content with the deck code only
+        //because command is lowercased, but we need the original
+        message.content = getDeckCode(message.content)
         //check if in cache
         let deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))

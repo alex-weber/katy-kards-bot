@@ -3,7 +3,7 @@ const {updateUser} = require("../database/db")
 const {languages} = require("../tools/language")
 const axios = require("axios")
 
-const regex = /%%\d{2}\|(\w*;){1,3}\w*/
+const deckCodeRegEx = /%%\d{2}\|(\w*;){1,3}\w*/
 
 /**
  *
@@ -154,7 +154,7 @@ function isDeckLink(command)
  */
 function isDeckCode(command)
 {
-    return regex.test(command)
+    return deckCodeRegEx.test(command)
 }
 /**
  *
@@ -163,7 +163,7 @@ function isDeckCode(command)
  */
 function getDeckCode(command)
 {
-    const match = regex.exec(command)
+    const match = deckCodeRegEx.exec(command)
     console.log(match[0])
 
     return match[0]
