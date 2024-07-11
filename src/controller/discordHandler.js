@@ -101,7 +101,11 @@ async function discordHandler(message, client, redis)
         console.log('blocked user\n', user)
         return message.reply("I'm a useless bot, I do absolutely nothing. Cheers!")
     }
-    if (!user.name) user.name = message.author.username
+    if (!user.name)
+    {
+        user.name = message.author.username
+        await updateUser(user)
+    }
     //set user language to russian if they type in cyrillic
     let language = user.language
     if (getLanguageByInput(command) === 'ru' && language !== 'ru')
