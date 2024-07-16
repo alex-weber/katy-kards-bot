@@ -135,6 +135,7 @@ app.get('/messages', isAuthenticated, async (req, res) => {
 app.get('/uptime', async (req, res) =>
 {
     let APIres = await getUptimeStats()
+    if (!APIres) return res.redirect('/')
 
     return res.render('uptime', {
         title: 'Uptime Stats',
