@@ -126,7 +126,7 @@ async function discordHandler(message, client, redis)
     {
         //overwrite message.content with the deck code only
         //because command is lowercased, but we need the original
-        message.content = getDeckCode(message.content)
+        command = getDeckCode(message.content)
         //check if in cache
         let deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
