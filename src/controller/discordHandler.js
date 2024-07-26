@@ -42,9 +42,9 @@ async function discordHandler(message, client, redis)
 {
     if (message.author.bot || message.content.length > maxStrLen) return
     //get a custom sever prefix if set
-    let prefix = bot.getPrefix(message)
+    const prefix = bot.getPrefix(message)
     //is there a "bot command" marked with double quotation marks?
-    let qSearch = bot.isQuotationSearch(message)
+    const qSearch = bot.isQuotationSearch(message)
     if (qSearch)
     {
         //rewrite the message content with only needed information
@@ -83,7 +83,7 @@ async function discordHandler(message, client, redis)
     let user
     const userId = message.author.id.toString()
     const userKey = cacheKeyPrefix + 'user:' + userId
-    let cachedUser = await redis.json.get(userKey, '$')
+    const cachedUser = await redis.json.get(userKey, '$')
     if (!cachedUser || !cachedUser.hasOwnProperty('id'))
     {
         console.log('no user in cache, caching')
@@ -100,7 +100,7 @@ async function discordHandler(message, client, redis)
     {
         console.log('blocked user\n', user)
         if (user.mode) return message.reply(user.mode)
-        
+
         return
     }
     if (!user.name)
@@ -133,7 +133,7 @@ async function discordHandler(message, client, redis)
         const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
         {
-            let files = await redis.json.get(deckKey, '$')
+            const files = await redis.json.get(deckKey, '$')
             return message.reply({files: files})
         }
 
@@ -157,7 +157,7 @@ async function discordHandler(message, client, redis)
     //show online stats
     if (command === 'ingame' || command === 'online')
     {
-        let stats = await getStats(language)
+        const stats = await getStats(language)
         return message.reply(stats)
     }
     //create DM only if needed to avoid unneeded loop latency
@@ -203,12 +203,11 @@ async function discordHandler(message, client, redis)
         {
             console.timeEnd('db_sync')
             const endTime = Date.now()
-            let duration = (endTime - startTime)/1000
-            duration = duration.toFixed(3)
+            const duration = ((endTime - startTime)/1000).toFixed(3)
             if (code === 0)
                 return message.reply('DB sync done in ' + duration + 's')
         })
-        child.on('message', (m) => message.reply(m))
+        child.on('message', m => message.reply(m))
         child.on('error', function(error)
         {
             console.log(error)
@@ -233,7 +232,7 @@ async function discordHandler(message, client, redis)
         // TD command spam protection.
         // Next command is allowed only after the time of slowModeInterval is passed
         const userTDKey = cacheKeyPrefix + 'td:' + user.id
-        let unblockTime = await redis.get(userTDKey)
+        const unblockTime = await redis.get(userTDKey)
         if (Date.now() < unblockTime) return //not allowed, just do nothing
 
         await redis.del(userKey)
@@ -258,7 +257,7 @@ async function discordHandler(message, client, redis)
         return message.reply(await handleSynonym(user, message))
 
     //check for synonyms
-    let syn = await getSynonym(command)
+    const syn = await getSynonym(command)
     if (syn)
     {
         //check if there is an image link
@@ -275,8 +274,8 @@ async function discordHandler(message, client, redis)
     //get all alt art images
     if (command.startsWith('alt'))
     {
-        let syns = await getAllSynonyms()
-        let files = syns.filter(syn => syn.key.startsWith(command)).map(syn => syn.value)
+        const syns = await getAllSynonyms()
+        const files = syns.filter(syn => syn.key.startsWith(command)).map(syn => syn.value)
         if (files.length) {
             return message.reply({
                 content:'Alternate art cards found: ' + files.length,
@@ -288,12 +287,12 @@ async function discordHandler(message, client, redis)
     }
     //check if in cache
     const cacheKey = cacheKeyPrefix + language+ ':' + command
-    let keyExists = await redis.exists(cacheKey)
+    const keyExists = await redis.exists(cacheKey)
     if (keyExists)
     {
         console.time('cache')
         console.log('serving from cache: ', language, command, limit)
-        let answer = await redis.json.get(cacheKey, '$')
+        const answer = await redis.json.get(cacheKey, '$')
         console.timeEnd('cache')
         return message.reply({
             content: answer.content,
