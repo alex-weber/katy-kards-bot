@@ -99,7 +99,9 @@ async function discordHandler(message, client, redis)
     if (user.status !== 'active')
     {
         console.log('blocked user\n', user)
-        return message.reply("I'm a useless bot, I do absolutely nothing. Cheers!")
+        if (user.mode) return message.reply(user.mode)
+        
+        return
     }
     if (!user.name)
     {
@@ -128,7 +130,7 @@ async function discordHandler(message, client, redis)
         //because command is lowercased, but we need the original
         command = getDeckCode(message.content)
         //check if in cache
-        let deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
+        const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
         {
             let files = await redis.json.get(deckKey, '$')
@@ -136,7 +138,7 @@ async function discordHandler(message, client, redis)
         }
 
         //check if screenshot capturing is running, tell user to wait
-        let screenshotKey = cacheKeyPrefix + 'screenshot'
+        const screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
         {
             return message.reply(translate(language, 'screenshotRunning'))
