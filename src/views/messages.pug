@@ -4,18 +4,20 @@ block content
 
   p.h2.text-primary.text-center= title + '(' + messages.length + ')'
 
-  table.table.table-dark.table-striped.table-bordered.border-primary.table-hover
+  table.table.table-dark.table-striped.table-hover
     thead
       tr
+        th(scope='col') Date and Time
         th(scope='col') User
         th(scope='col') Message
-        th(scope='col') Date and Time
+
     tbody
       each message in messages
         tr
+          td #{message.createdAt}
           td #{message.author.name}
           td #{message.content}
-          td #{message.createdAt}
+
   p &nbsp;
   p &nbsp;
 
