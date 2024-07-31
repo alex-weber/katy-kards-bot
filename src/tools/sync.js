@@ -1,4 +1,4 @@
-const {createCard} = require('../database/db')
+const {createCard, disconnect} = require('../database/db')
 const {getCards} = require("./search")
 
 /**
@@ -34,9 +34,9 @@ async function syncDB()
             console.log(message)
             if (process.send) process.send(message)
             await Promise.all(cardsPromises)
-            console.log('All cards created successfully')
+            console.log('All cards updated successfully')
         } catch (error) {
-            console.error('Error creating cards:', error)
+            console.error('Error updating cards:', error)
         }
 
 
@@ -44,6 +44,8 @@ async function syncDB()
         console.log(e)
         return false
     }
+
+    await disconnect()
 
     return true
 }

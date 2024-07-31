@@ -37,7 +37,7 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 //for web pages
 const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
-const {getAllSynonyms, getUser, getLastDayMessages} = require('./database/db')
+const {getAllSynonyms, getUser, getLastDayMessages, disconnect} = require('./database/db')
 //auth
 app.use(session({
     store: redisStore,
@@ -201,4 +201,13 @@ process.on('uncaughtException', (err, origin) =>
 process.on('uncaughtExceptionMonitor', (err, origin) =>
 {
     console.error('uncaught Exception Monitor:', err, origin)
+})
+//shutdown
+process.on('SIGINT', async () => {
+    await disconnect()
+    process.exit()
+})
+process.on('SIGTERM', async () => {
+    await disconnect()
+    process.exit()
 })

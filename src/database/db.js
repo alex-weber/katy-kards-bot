@@ -455,6 +455,12 @@ async function getTopDeckStats()
   return answer
 }
 
+//disconnect on app shutdown
+async function disconnect()
+{
+  await prisma.$disconnect()
+}
+
 //exports
 module.exports = {
   getUser,
@@ -474,4 +480,5 @@ module.exports = {
   getCardsDB,
   getRandomCard,
   getLastDayMessages,
+  disconnect,
 }
