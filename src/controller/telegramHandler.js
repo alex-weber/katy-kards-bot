@@ -58,6 +58,7 @@ async function telegramHandler(ctx, redis) {
     //deck image
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
+        command = bot.getDeckCode(ctx.update.message.text)
         //check if screenshot capturing is running, ask user to wait
         let screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
@@ -69,7 +70,7 @@ async function telegramHandler(ctx, redis) {
         //if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
         const deckBuilderURL = 'https://www.kards.com/' +
             deckBuilderLang+ 'decks/deck-builder?hash='
-        const hash = encodeURIComponent(ctx.update.message.text.replace(prefix, ''))
+        const hash = encodeURIComponent(command)
         let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
         ctx.reply(translate(language, 'screenshot'))
         takeScreenshot(url).then(()=>
