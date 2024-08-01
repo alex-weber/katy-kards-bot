@@ -77,7 +77,16 @@ async function discordHandler(message, client, redis)
 
     //remove all the prefixes from the beginning
     let command = bot.parseCommand(prefix, message.content)
+    //return if the message is empty
     if (!command.length) return
+
+    //set a relative timer to the next day 00:00 UTC
+    if (command === 'midnight')
+    {
+        const midnight = bot.getMidnight().toString()
+        return message.reply('<t:'+midnight+':R>')
+    }
+
     //set username
     console.time('getUser')
     let user

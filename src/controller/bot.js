@@ -177,6 +177,19 @@ function getCurrentTimestamp() {
     return new Date().getTime().toString()
 }
 
+/**
+ *
+ * @returns {number}
+ */
+function getMidnight()
+{
+    const midnight = new Date()
+    midnight.setDate(midnight.getDate() + 1) //add one day
+    midnight.setUTCHours(0, 0, 0, 0) //set hours to zero
+
+    return midnight.getTime() / 1000
+}
+
 module.exports = {
     getPrefix,
     isQuotationSearch,
@@ -188,5 +201,6 @@ module.exports = {
     isDeckLink,
     isDeckCode,
     getDeckCode,
-    getCurrentTimestamp
+    getCurrentTimestamp,
+    getMidnight,
 }
