@@ -339,8 +339,7 @@ async function discordHandler(message, client, redis)
             files: [imageURL]
         })
     }
-    //don't reply if more than one card is found via quotations
-    if (qSearch && counter !== 1) return
+
     //if any cards are found - attach them
     let content = translate(language, 'search') + ': ' + counter
     //do not show any cards if there are more than 20 cards
