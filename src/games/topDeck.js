@@ -202,8 +202,7 @@ async function battle(td)
  */
 function myTDRank(user)
 {
-    if (!user.tdLoses) user.winRatio = user.tdWins
-    else user.winRatio = (user.tdWins / user.tdLoses).toFixed(2)
+    user.winRatio = (user.tdWins / user.tdGames).toFixed(2)
 
     return user.name +
         '(' + (user.tdWins * 2 + user.tdDraws - user.tdLoses * 2).toString()

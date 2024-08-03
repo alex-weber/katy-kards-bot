@@ -439,8 +439,7 @@ async function getTopDeckStats()
   for (const [, user] of Object.entries(users))
   {
     user.score = user.tdWins*2 + user.tdDraws - user.tdLoses*2
-    if (!user.tdLoses) user.winRatio = user.tdWins
-    else user.winRatio = (user.tdWins / user.tdLoses).toFixed(2)
+    user.winRatio = (user.tdWins / user.tdGames).toFixed(2)
     ranking.push(user)
   }
   ranking.sort((a, b) => b.score - a.score)
