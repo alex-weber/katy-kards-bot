@@ -2,7 +2,7 @@ const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
 const {translate} = require('./translation/translator.js')
-const {MessageAttachment} = require('discord.js')
+const {AttachmentBuilder} = require('discord.js')
 const {
     getCardsDB,
     getSynonym,
@@ -271,7 +271,7 @@ function getFiles(cards, language, limit)
         imageURL = imageURL.replace('en-EN', language)
         let imageName = null
         if (reserved) imageName = 'reserved'
-        let attachment = new MessageAttachment(host + imageURL)
+        let attachment = new AttachmentBuilder(host + imageURL)
         attachment = attachment.setDescription(imageName)
         files.push(attachment)
         if (files.length === limit) break
