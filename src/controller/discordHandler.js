@@ -139,7 +139,8 @@ async function discordHandler(message, client, redis)
     }
     //save the command in the DB and in cache, no need to wait
     createMessage({authorId: user.id, content: command}).then()
-    redis.set(userKey+':command', prefix+command)
+    const UserCommandKey = userKey + ':command'
+    redis.set(UserCommandKey, prefix+command)
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
@@ -399,6 +400,8 @@ async function discordHandler(message, client, redis)
         }
         message.reply(answer)
         console.log(counter + ' card(s) found', files)
+        //set offset to 0
+        await redis.set(UserOffsetKey, '0')
         //store in cache
         if (counter <= limit)
             await redis.json.set(cacheKey, '$', answer)
