@@ -139,8 +139,7 @@ async function discordHandler(message, client, redis)
     }
     //save the command in the DB and in cache, no need to wait
     createMessage({authorId: user.id, content: command}).then()
-    const UserCommandKey = userKey + ':command'
-    redis.set(UserCommandKey, prefix+command)
+
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
@@ -372,6 +371,7 @@ async function discordHandler(message, client, redis)
     //warn that there are more cards found
     if (counter > limit)
     {
+        await redis.set(userKey + ':command', prefix+command)
         let toCounter = offset + limit
         if (toCounter > counter) toCounter = counter
         content += translate(language, 'limit') +
