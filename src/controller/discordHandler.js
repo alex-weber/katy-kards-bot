@@ -88,9 +88,9 @@ async function discordHandler(message, client, redis)
     }
 
     //set username
-    console.time('getUser')
     let user
     const userId = message.author.id.toString()
+    console.time('getUser_'+userId)
     const userKey = cacheKeyPrefix + 'user:' + userId
     const cachedUser = await redis.json.get(userKey, '$')
     if (!cachedUser || !cachedUser.hasOwnProperty('id'))
@@ -103,7 +103,7 @@ async function discordHandler(message, client, redis)
         console.log('getting user from cache')
         user = cachedUser
     }
-    console.timeEnd('getUser')
+    console.timeEnd('getUser_'+userId)
     //check the status
     if (user.status !== 'active')
     {
@@ -122,11 +122,11 @@ async function discordHandler(message, client, redis)
     if (getLanguageByInput(command) === 'ru' && language !== 'ru')
     {
         user.language = 'ru'
-        console.time('updateUser')
+        console.time('updateUser'+userId)
         await updateUser(user)
         //change user language to ru
         await redis.json.set(userKey, '$.language', 'ru')
-        console.timeEnd('updateUser')
+        console.timeEnd('updateUser'+userId)
         language = 'ru'
     }
     //save the command in the DB Message table, no need to wait

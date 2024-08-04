@@ -1,4 +1,4 @@
-const {Permissions} = require("discord.js")
+const { PermissionsBitField } = require('discord.js')
 const {updateUser} = require("../database/db")
 const {languages} = require("../tools/language")
 const axios = require("axios")
@@ -58,24 +58,24 @@ async function hasWritePermissions(client, message, redis)
 
         return permission === 'yes'
     }
+
     const clientMember = await message.guild.members.fetch(client.user.id)
     let permissions = message.channel.permissionsFor(clientMember)
-    if (!permissions || ! await permissions.has(Permissions.FLAGS.SEND_MESSAGES) ||
-        ! await permissions.has(Permissions.FLAGS.ATTACH_FILES))
+
+    if (!permissions ||
+        !permissions.has(PermissionsBitField.Flags.SendMessages) ||
+        !permissions.has(PermissionsBitField.Flags.AttachFiles))
     {
         console.log('no write permissions. Caching it')
         await redis.set(key, 'no')
 
         return false
-    } else
-    {
-        console.log('has write permissions. Caching it')
-        redis.set(key, 'yes')
-
-        return true
     }
 
+    console.log('has write permissions. Caching it')
+    await redis.set(key, 'yes')
 
+    return true
 }
 
 /**
