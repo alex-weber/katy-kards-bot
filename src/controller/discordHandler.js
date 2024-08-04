@@ -377,8 +377,8 @@ async function discordHandler(message, client, redis)
         content += translate(language, 'limit') +
             (offset+1).toString() + ' - ' +
             toCounter.toString()
-        //add the "Next" button
-        if (counter - offset > limit)
+        //add the "Next" button (only in bot-command channels
+        if (counter - offset > limit && isBotCommandChannel(message))
             answer.components = getButtonRow(translate(language, 'next'))
         else await redis.set(UserOffsetKey, '0')
     }
