@@ -301,7 +301,7 @@ async function advancedSearch(variables)
     delete variables.showSpawnables
     delete variables.showReserved
     delete variables.first
-    let skip
+    let skip = 0
     if (variables.offset !== undefined) {
         skip = variables.offset
         delete variables.offset
