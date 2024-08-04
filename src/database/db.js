@@ -319,13 +319,18 @@ async function cardExists(card) {
 /**
  *
  * @param data
+ * @param skip
  * @returns {Promise<*>}
  */
-async function getCardsDB(data)
+async function getCardsDB(data, skip = 0)
 {
 
   return await prisma.card.findMany({
     where: data,
+    skip: skip,
+    orderBy: {
+      kredits: 'asc',
+    },
   }).
   catch((e) => { throw e }).
   finally(async () => { await prisma.$disconnect() })

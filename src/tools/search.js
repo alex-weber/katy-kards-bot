@@ -294,12 +294,18 @@ async function advancedSearch(variables)
 
         return {counter: 0, cards: []}
     }
+
     //delete non DB fields
     delete variables.q
     delete variables.language
     delete variables.showSpawnables
     delete variables.showReserved
     delete variables.first
+    let skip
+    if (variables.offset !== undefined) {
+        skip = variables.offset
+        delete variables.offset
+    }
     //search for attributes also in text
     if (variables.hasOwnProperty('attributes'))
     {
@@ -359,10 +365,10 @@ async function advancedSearch(variables)
     console.dir(variables, {depth: null})
     const label = 'getCardsDB_' + Date.now()
     console.time(label)
-    let cards = await getCardsDB(variables)
+    let cards = await getCardsDB(variables, skip)
     console.timeEnd(label)
 
-    return {counter: cards.length, cards: cards}
+    return {counter: cards.length + skip, cards: cards}
 }
 
 /**

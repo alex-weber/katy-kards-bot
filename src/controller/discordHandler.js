@@ -23,14 +23,15 @@ const {
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {getRandomImage} = require("../tools/nekosAPI")
-const {getDeckCode} = require("./bot");
+const {getDeckCode} = require("./bot")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
-const maxFileSize = 5 * 1024 * 1024 //5MB
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 //wait for 5 sec. before processing the TD command
 const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
+//load more results button
+const {getButtonRow} = require("../tools/button")
 /**
  *
  * @param message
@@ -40,6 +41,13 @@ const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
  */
 async function discordHandler(message, client, redis)
 {
+    //buttonInteraction for next results
+    if (message.customId) {
+        message.author = message.user
+        message.author.bot = false
+        let userCommandCacheKey = cacheKeyPrefix + 'user:' + message.user.id + ':command'
+        message.content = await redis.get(userCommandCacheKey)
+    }
     if (message.author.bot || message.content.length > maxStrLen) return
     //get a custom sever prefix if set
     const prefix = bot.getPrefix(message)
@@ -129,9 +137,9 @@ async function discordHandler(message, client, redis)
         console.timeEnd('updateUser'+userId)
         language = 'ru'
     }
-    //save the command in the DB Message table, no need to wait
+    //save the command in the DB and in cache, no need to wait
     createMessage({authorId: user.id, content: command}).then()
-
+    redis.set(userKey+':command', prefix+command)
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
@@ -181,6 +189,7 @@ async function discordHandler(message, client, redis)
     //switch language
     if (bot.isLanguageSwitch(command) && !qSearch)
     {
+
         language = await bot.switchLanguage(user, command)
         user.language = language
         await redis.json.set(userKey, '$.language', language)
@@ -297,7 +306,7 @@ async function discordHandler(message, client, redis)
     //check if in cache
     const cacheKey = cacheKeyPrefix + language+ ':' + command
     const keyExists = await redis.exists(cacheKey)
-    if (keyExists)
+    if (keyExists && !message.customId)
     {
         console.time('cache')
         console.log('serving from cache: ', language, command, limit)
@@ -309,12 +318,27 @@ async function discordHandler(message, client, redis)
         })
     }
     //first search on KARDS.com, on no result search in the local DB
+    const UserOffsetKey = userKey + ':offset'
+    let offset = 0
     const variables = {
         language: APILanguages[language],
         q: command,
         showSpawnables: true,
         showReserved: true,
         first: limit,
+        offset: offset,
+    }
+    //check if we need next page instead
+    if (message.customId) {
+        let result = await redis.get(UserOffsetKey)
+        result = parseInt(result)
+        if (!isNaN(result) && result > 0)
+            offset = result
+        else
+            offset = limit
+        variables.offset = offset
+        //add limit to offset for the next fetch
+        await redis.set(UserOffsetKey, (offset+limit).toString())
     }
     const cards = await getCards(variables)
     if (!cards)
@@ -324,16 +348,12 @@ async function discordHandler(message, client, redis)
     const counter = cards.counter
     if (!counter)
     {
+
         if (qSearch) return //don't reply if nothing is found
         const imageURL = await getRandomImage()
-        const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif']
-        const imageExtension = imageURL.split('.').pop().toLowerCase()
-        if (!imageURL ||
-            !allowedExtensions.includes(imageExtension) ||
-            await bot.getFileSize(imageURL) > maxFileSize)
-        {
+        if (!imageURL)
             return message.reply(translate(language, 'noresult'))
-        }
+
         return message.reply({
             content: translate(language, 'noresult'),
             files: [imageURL]
@@ -347,23 +367,41 @@ async function discordHandler(message, client, redis)
     {
         return message.reply(content + translate(language, 'noshow'))
     }
+    let answer = {}
     //warn that there are more cards found
     if (counter > limit)
     {
-        content += translate(language, 'limit') + limit
+        let toCounter = offset + limit
+        if (toCounter > counter) toCounter = counter
+        content += translate(language, 'limit') +
+            (offset+1).toString() + ' - ' +
+            toCounter.toString()
+        //add the "Next" button
+        if (counter - offset > limit)
+            answer.components = getButtonRow(translate(language, 'next'))
+        else await redis.set(UserOffsetKey, '0')
     }
     //attach found images
     const files = getFiles(cards, language, limit)
+    answer.content = content
+    answer.files = files
     //reply to user
     try
     {
-        message.reply({content: content, files: files})
+        if (message.customId)
+        {
+            // remove the button
+            await message.message.edit({ components: [] })
+
+            await message.reply({ content: translate(language, 'fetching') , ephemeral: true })
+
+            return await message.followUp(answer)
+        }
+        message.reply(answer)
         console.log(counter + ' card(s) found', files)
-        //store in the cache
-        await redis.json.set(cacheKey, '$', {
-            content: content,
-            files: files
-        })
+        //store in cache
+        if (counter <= limit)
+            await redis.json.set(cacheKey, '$', answer)
 
     } catch (e)
     {

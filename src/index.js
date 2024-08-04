@@ -159,6 +159,12 @@ client.on('ready', () =>
 })
 //trigger on new messages
 client.on('messageCreate', async message => discordHandler(message, client, redis))
+//trigger on interactions
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isButton()) return
+    if (interaction.customId === 'next_button')
+        return await discordHandler(interaction, client, redis)
+})
 //start Discord-Bot's session
 client.login(process.env.DISCORD_TOKEN).then(() =>
 {

@@ -1,5 +1,6 @@
 const axios = require("axios")
-
+const bot = require("../controller/bot")
+const maxFileSize = 5 * 1024 * 1024 //5MB
 async function getRandomImage()
 {
     //get a random cat|dog image for no result
@@ -11,10 +12,17 @@ async function getRandomImage()
     }
     const endpoint = endpoints.sample()
     const response = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
+    if (response.status !== 200) return false
+    const imageURL = response.data.url.toString()
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif']
+    const imageExtension = imageURL.split('.').pop().toLowerCase()
+    if (!imageURL || !allowedExtensions.includes(imageExtension) ||
+        await bot.getFileSize(imageURL) > maxFileSize)
+    {
+        return false
+    }
 
-    return response.status === 200 ? response.data.url.toString() : false
-
-
+    return imageURL
 }
 
 module.exports = {getRandomImage}
