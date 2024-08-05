@@ -210,10 +210,18 @@ process.on('uncaughtExceptionMonitor', (err, origin) =>
 })
 //shutdown
 process.on('SIGINT', async () => {
-    await disconnect()
-    process.exit()
+    await exit('SIGINT', 130)
 })
 process.on('SIGTERM', async () => {
-    await disconnect()
-    process.exit()
+    await exit('SIGTERM', 143)
 })
+
+async function exit(event, code)
+{
+    //disconnect from DB
+    await disconnect()
+    //unblock deck screenshots service if currently running
+    await redis.del('screenshot')
+    console.log('exiting on', event)
+    process.exit(code)
+}
