@@ -47,7 +47,7 @@ async function discordHandler(message, client, redis)
         message.author.bot = false
         let userCommandCacheKey = cacheKeyPrefix + 'user:' + message.user.id + ':command'
         message.content = await redis.get(userCommandCacheKey)
-        if (!message.content) return message.reply('Invalid input!')
+        if (!message.content) return
     }
     if (message.author.bot || message.content.length > maxStrLen) return
     //get a custom sever prefix if set
