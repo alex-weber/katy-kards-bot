@@ -29,7 +29,9 @@ async function createDeckImages(
     const deckBuilderURL = 'https://www.kards.com/' +
         deckBuilderLang+ 'decks/deck-builder?hash='
     const hash = encodeURIComponent(command.replace(prefix, ''))
-    let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
+    let url = bot.isDeckLink(bot.parseCommand(prefix, command)) ?
+        bot.parseCommand(prefix, command) :
+        deckBuilderURL+hash
     message.reply(translate(language, 'screenshot'))
     let result = await takeScreenshot(url)
     if (!result) return message.reply(translate(language, 'error'))

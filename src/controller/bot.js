@@ -164,6 +164,10 @@ function isDeckCode(command)
 function getDeckCode(command)
 {
     const match = deckCodeRegEx.exec(command)
+
+    if (!match)
+        return command
+
     console.log(match[0])
 
     return match[0]

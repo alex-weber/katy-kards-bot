@@ -71,7 +71,9 @@ async function telegramHandler(ctx, redis) {
         const deckBuilderURL = 'https://www.kards.com/' +
             deckBuilderLang+ 'decks/deck-builder?hash='
         const hash = encodeURIComponent(command)
-        let url = bot.isDeckLink(command) ? command : deckBuilderURL+hash
+        let url = bot.isDeckLink(bot.parseCommand(prefix, command)) ?
+            bot.parseCommand(prefix, command) :
+            deckBuilderURL+hash
         ctx.reply(translate(language, 'screenshot'))
         takeScreenshot(url).then(()=>
         {
