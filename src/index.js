@@ -38,6 +38,7 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
 const {getAllSynonyms, getUser, getLastDayMessages, disconnect} = require('./database/db')
+const {translate} = require("./tools/translation/translator")
 //auth
 app.use(session({
     store: redisStore,
@@ -168,7 +169,10 @@ client.on('interactionCreate', async (interaction) => {
         message.buttonId = interaction.customId
         // remove the button
         await interaction.message.edit({ components: [] })
-        await interaction.message.reply({ content: 'fetching...' , ephemeral: true })
+
+        const user = await getUser(interaction.user.id)
+        const content = translate(user.language,'fetching')
+        await interaction.reply({ content: content , ephemeral: true })
 
         return await discordHandler(message, client, redis)
     }

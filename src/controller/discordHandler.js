@@ -54,7 +54,7 @@ async function discordHandler(message, client, redis)
     {
         CommandCacheKey += message.buttonId
         let result = await redis.json.get(CommandCacheKey, '$')
-        if (!result) return message.reply(translate('en', 'error'))
+        if (!result) return
         message.content = result.command
         message.author.bot = false
         if (!message.content) return
