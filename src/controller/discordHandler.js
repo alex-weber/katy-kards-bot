@@ -41,17 +41,26 @@ const {getButtonRow} = require("../tools/button")
  */
 async function discordHandler(message, client, redis)
 {
-    //buttonInteraction for next results
-    if (message.customId) {
-        message.author = message.user
+    //get a custom sever prefix if set
+    const prefix = bot.getPrefix(message)
+
+    let CommandCacheKey = 'command:'
+    if (!message.buttonId)
+    {
+        CommandCacheKey += 'next_button_' +
+            bot.parseCommand(prefix, message.content).replace(' ', '_')
+    }
+    if (message.buttonId)
+    {
+        CommandCacheKey += message.buttonId
+        let result = await redis.json.get(CommandCacheKey, '$')
+        if (!result) return message.reply(translate('en', 'error'))
+        message.content = result.command
         message.author.bot = false
-        let userCommandCacheKey = cacheKeyPrefix + 'user:' + message.user.id + ':command'
-        message.content = await redis.get(userCommandCacheKey)
         if (!message.content) return
     }
     if (message.author.bot || message.content.length > maxStrLen) return
-    //get a custom sever prefix if set
-    const prefix = bot.getPrefix(message)
+
     //is there a "bot command" marked with double quotation marks?
     const qSearch = bot.isQuotationSearch(message)
     if (qSearch)
@@ -307,7 +316,7 @@ async function discordHandler(message, client, redis)
     //check if in cache
     const cacheKey = cacheKeyPrefix + language+ ':' + command
     const keyExists = await redis.exists(cacheKey)
-    if (keyExists && !message.customId)
+    if (keyExists && !message.buttonId)
     {
         console.time('cache')
         console.log('serving from cache: ', language, command, limit)
@@ -319,7 +328,7 @@ async function discordHandler(message, client, redis)
         })
     }
     //first search on KARDS.com, on no result search in the local DB
-    const UserOffsetKey = userKey + ':offset'
+
     let offset = 0
     const variables = {
         language: APILanguages[language],
@@ -330,16 +339,15 @@ async function discordHandler(message, client, redis)
         offset: offset,
     }
     //check if we need next page instead
-    if (message.customId) {
-        let result = await redis.get(UserOffsetKey)
-        result = parseInt(result)
-        if (!isNaN(result) && result > 0)
-            offset = result
-        else
-            offset = limit
+    if (message.buttonId) {
+        offset = limit
+        let result = await redis.json.get(CommandCacheKey, '$')
+        result = parseInt(result.offset)
+        if (!isNaN(result) && result > 0) offset = result
+
         variables.offset = offset
         //add limit to offset for the next fetch
-        await redis.set(UserOffsetKey, (offset+limit).toString())
+        await redis.json.set(CommandCacheKey, '$.offset', offset+limit)
     }
     const cards = await getCards(variables)
     if (!cards)
@@ -372,7 +380,15 @@ async function discordHandler(message, client, redis)
     //warn that there are more cards found
     if (counter > limit)
     {
-        await redis.set(userKey + ':command', prefix+command)
+        //init pagination object in cache
+        if (!message.buttonId) {
+            const cachedCommand = {
+                command: message.content,
+                offset: offset,
+            }
+            await redis.json.set(CommandCacheKey, '$', cachedCommand)
+        }
+
         let toCounter = offset + limit
         if (toCounter > counter) toCounter = counter
         content += translate(language, 'limit') +
@@ -380,8 +396,11 @@ async function discordHandler(message, client, redis)
             toCounter.toString()
         //add the "Next" button (only in bot-command channels
         if (counter - offset > limit && isBotCommandChannel(message))
-            answer.components = getButtonRow(translate(language, 'next'))
-        else await redis.set(UserOffsetKey, '0')
+        {
+            const id = command.replace(' ', '_')
+            answer.components = getButtonRow(translate(language, 'next'), id)
+        }
+        else await redis.del(CommandCacheKey)
     }
     //attach found images
     const files = getFiles(cards, language, limit)
@@ -390,19 +409,8 @@ async function discordHandler(message, client, redis)
     //reply to user
     try
     {
-        if (message.customId)
-        {
-            // remove the button
-            await message.message.edit({ components: [] })
-
-            await message.reply({ content: translate(language, 'fetching') , ephemeral: true })
-
-            return await message.followUp(answer)
-        }
         message.reply(answer)
         console.log(counter + ' card(s) found', files)
-        //set offset to 0
-        await redis.set(UserOffsetKey, '0')
         //store in cache
         if (counter <= limit)
             await redis.json.set(cacheKey, '$', answer)

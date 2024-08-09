@@ -162,8 +162,17 @@ client.on('messageCreate', async message => discordHandler(message, client, redi
 //trigger on interactions
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isButton()) return
-    if (interaction.customId === 'next_button')
-        return await discordHandler(interaction, client, redis)
+    if (interaction.customId.startsWith('next_button'))
+    {
+        const message = interaction.message
+        message.buttonId = interaction.customId
+        // remove the button
+        await interaction.message.edit({ components: [] })
+        await interaction.message.reply({ content: 'fetching...' , ephemeral: true })
+
+        return await discordHandler(message, client, redis)
+    }
+
 })
 //start Discord-Bot's session
 client.login(process.env.DISCORD_TOKEN).then(() =>
