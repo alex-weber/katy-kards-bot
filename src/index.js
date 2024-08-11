@@ -17,6 +17,7 @@ const {discordHandler} = require('./controller/discordHandler')
 const {telegramHandler} = require('./controller/telegramHandler')
 //discord
 const {client} = require('./clients/discordClient.js')
+const {ActivityType} = require('discord.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
 
@@ -156,7 +157,7 @@ client.on('ready', () =>
         user: req.session.user
     }))
     //console.log(guildNames)
-    client.user.setActivity(client.guilds.cache.size + ' servers', { type: 'WATCHING'})
+    client.user.setActivity(client.guilds.cache.size + ' servers', { type: ActivityType.Watching})
 })
 //trigger on new messages
 client.on('messageCreate', async message => discordHandler(message, client, redis))
