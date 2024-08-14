@@ -50,4 +50,4 @@ async function syncDB()
     return true
 }
 //update all cards
-syncDB().catch(console.log)
+syncDB().catch(console.error)
