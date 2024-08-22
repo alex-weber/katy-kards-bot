@@ -54,10 +54,10 @@ async function discordHandler(message, client, redis)
     {
         CommandCacheKey += message.buttonId
         let result = await redis.json.get(CommandCacheKey, '$')
-        if (!result) return
+        if (!result || !result.command) return
         message.content = result.command
         message.author.bot = false
-        if (!message.content) return
+        message.language = result.language
     }
     if (message.author.bot || message.content.length > maxStrLen) return
 
@@ -340,6 +340,8 @@ async function discordHandler(message, client, redis)
     }
     //check if we need next page instead
     if (message.buttonId) {
+        //set language of the command, not the user
+        variables.language = APILanguages[message.language]
         offset = limit
         let result = await redis.json.get(CommandCacheKey, '$')
         result = parseInt(result.offset)
@@ -385,6 +387,7 @@ async function discordHandler(message, client, redis)
             const cachedCommand = {
                 command: message.content,
                 offset: offset,
+                language: language,
             }
             await redis.json.set(CommandCacheKey, '$', cachedCommand)
         }
@@ -394,7 +397,7 @@ async function discordHandler(message, client, redis)
         content += translate(language, 'limit') +
             (offset+1).toString() + ' - ' +
             toCounter.toString()
-        //add the "Next" button (only in bot-command channels
+        //add the "Next" button (only in bot-command channels)
         if (counter - offset > limit && isBotCommandChannel(message))
         {
             const id = command.replace(' ', '_')
