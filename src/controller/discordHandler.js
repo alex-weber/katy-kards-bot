@@ -102,7 +102,7 @@ async function discordHandler(message, client, redis)
     if (command === 'midnight')
     {
         const midnight = bot.getMidnight().toString()
-        return message.reply('<t:'+midnight+':R>')
+        return message.channel.send('<t:'+midnight+':R>')
     }
 
     //set username
@@ -126,7 +126,7 @@ async function discordHandler(message, client, redis)
     if (user.status !== 'active')
     {
         console.log('blocked user\n', user)
-        if (user.mode) return message.reply(user.mode)
+        if (user.mode) return message.channel.send(user.mode)
 
         return
     }
@@ -161,14 +161,14 @@ async function discordHandler(message, client, redis)
         if (await redis.exists(deckKey))
         {
             const files = await redis.json.get(deckKey, '$')
-            return message.reply({files: files})
+            return message.channel.send({files: files})
         }
 
         //check if screenshot capturing is running, tell user to wait
         const screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
         {
-            return message.reply(translate(language, 'screenshotRunning'))
+            return message.channel.send(translate(language, 'screenshotRunning'))
         }
         await redis.set(screenshotKey, 'running')
         createDeckImages(prefix, message, command, language, redis, deckKey).
@@ -185,7 +185,7 @@ async function discordHandler(message, client, redis)
     if (command === 'ingame' || command === 'online')
     {
         const stats = await getStats(language)
-        return message.reply(stats)
+        return message.channel.send(stats)
     }
     //create DM only if needed to avoid unneeded loop latency
     if (command === 'dm')
@@ -193,7 +193,7 @@ async function discordHandler(message, client, redis)
         //create the DM channel
         console.log('creating DM...')
         await message.author.createDM()
-        return message.reply(translate(language, 'dm'))
+        return message.channel.send(translate(language, 'dm'))
     }
 
     //switch language
@@ -203,11 +203,11 @@ async function discordHandler(message, client, redis)
         language = await bot.switchLanguage(user, command)
         user.language = language
         await redis.json.set(userKey, '$.language', language)
-        return message.reply(translate(language, 'langChange') + language.toUpperCase())
+        return message.channel.send(translate(language, 'langChange') + language.toUpperCase())
     }
 
     //handle command
-    if (command === 'help') return message.reply(translate(language, 'help'))
+    if (command === 'help') return message.channel.send(translate(language, 'help'))
 
     //clear cache
     if (command === 'cclear' && isManager(user))
@@ -216,7 +216,7 @@ async function discordHandler(message, client, redis)
         {
             console.log(succeeded)
         })
-        return message.reply('cache cleared')
+        return message.channel.send('cache cleared')
     }
 
     if (command === 'sync' && isManager(user))
@@ -224,7 +224,7 @@ async function discordHandler(message, client, redis)
         const spawn = require('child_process').spawn
         const child = spawn('node', ['src/tools/sync.js'],
             { stdio: ['inherit', 'inherit', 'inherit', 'ipc']})
-        message.reply('starting DB sync with kards.com...')
+        message.channel.send('starting DB sync with kards.com...')
         const startTime = Date.now()
         console.time('db_sync')
         child.on('close', function(code)
@@ -233,14 +233,14 @@ async function discordHandler(message, client, redis)
             const endTime = Date.now()
             const duration = ((endTime - startTime)/1000).toFixed(3)
             if (code === 0)
-                return message.reply('DB sync done in ' + duration + 's')
+                return message.channel.send('DB sync done in ' + duration + 's')
         })
-        child.on('message', m => message.reply(m))
+        child.on('message', m => message.channel.send(m))
         child.on('error', function(error)
         {
             console.log(error)
             console.timeEnd('db_sync')
-            return message.reply('DB sync error. Check log for details.')
+            return message.channel.send('DB sync error. Check log for details.')
         })
 
         return
@@ -248,11 +248,11 @@ async function discordHandler(message, client, redis)
 
     //get top 9 TD ranking
     if (command.startsWith('ranking'))
-        return message.reply(await getTopDeckStats())
+        return message.channel.send(await getTopDeckStats())
 
     //user's TD ranking
     if (command === 'myrank')
-        return message.reply(myTDRank(user))
+        return message.channel.send(myTDRank(user))
 
     //top deck game only in special channels
     if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
@@ -269,29 +269,29 @@ async function discordHandler(message, client, redis)
     }
     //check minimums
     if (command.length < minStrLen && !qSearch)
-        return message.reply(translate(language, 'min'))
+        return message.channel.send(translate(language, 'min'))
 
 
     if (command.startsWith('servers') && isManager(user))
-        return message.reply(getServerList(client).map(
+        return message.channel.send(getServerList(client).map(
             (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
 
     //list all synonyms
     if (command.startsWith('commands'))
-        return message.reply(await listSynonyms(command))
+        return message.channel.send(await listSynonyms(command))
 
     //handle synonyms
     if (command.startsWith('^'))
-        return message.reply(await handleSynonym(user, message))
+        return message.channel.send(await handleSynonym(user, message))
 
     //check for synonyms
     const syn = await getSynonym(command)
     if (syn)
     {
         //check if there is an image link
-        if (syn.value.startsWith('http')) return message.reply({files: [syn.value]})
+        if (syn.value.startsWith('http')) return message.channel.send({files: [syn.value]})
         //check if it should reply with a text message
-        if (syn.value.startsWith('text:')) return message.reply(syn.value.replace('text:', ''))
+        if (syn.value.startsWith('text:')) return message.channel.send(syn.value.replace('text:', ''))
         //else use the value as command
         command = syn.value
     } else if (command in dictionary.synonyms) command = dictionary.synonyms[command]
@@ -305,13 +305,13 @@ async function discordHandler(message, client, redis)
         const syns = await getAllSynonyms()
         const files = syns.filter(syn => syn.key.startsWith(command)).map(syn => syn.value)
         if (files.length) {
-            return message.reply({
+            return message.channel.send({
                 content:'Alternate art cards found: ' + files.length,
                 files: files.slice(0, limit)
             })
         }
 
-        return message.reply(translate(language, 'noresult'))
+        return message.channel.send(translate(language, 'noresult'))
     }
     //check if in cache
     const cacheKey = cacheKeyPrefix + language+ ':' + command
@@ -322,7 +322,7 @@ async function discordHandler(message, client, redis)
         console.log('serving from cache: ', language, command, limit)
         const answer = await redis.json.get(cacheKey, '$')
         console.timeEnd('cache')
-        return message.reply({
+        return message.channel.send({
             content: answer.content,
             files: answer.files.slice(0, limit)
         })
@@ -354,7 +354,7 @@ async function discordHandler(message, client, redis)
     const cards = await getCards(variables)
     if (!cards)
     {
-        return message.reply(translate(language, 'error'))
+        return message.channel.send(translate(language, 'error'))
     }
     const counter = cards.counter
     if (!counter)
@@ -363,9 +363,9 @@ async function discordHandler(message, client, redis)
         if (qSearch) return //don't reply if nothing is found
         const imageURL = await getRandomImage()
         if (!imageURL)
-            return message.reply(translate(language, 'noresult'))
+            return message.channel.send(translate(language, 'noresult'))
 
-        return message.reply({
+        return message.channel.send({
             content: translate(language, 'noresult'),
             files: [imageURL]
         })
@@ -376,7 +376,7 @@ async function discordHandler(message, client, redis)
     //do not show any cards if there are more than 20 cards
     if (counter > 20 && !isBotCommandChannel(message))
     {
-        return message.reply(content + translate(language, 'noshow'))
+        return message.channel.send(content + translate(language, 'noshow'))
     }
     let answer = {}
     //warn that there are more cards found
@@ -412,7 +412,7 @@ async function discordHandler(message, client, redis)
     //reply to user
     try
     {
-        message.reply(answer)
+        message.channel.send(answer)
         console.log(counter + ' card(s) found', files)
         //store in cache
         if (counter <= limit)
@@ -421,7 +421,7 @@ async function discordHandler(message, client, redis)
     } catch (e)
     {
         console.error(e.message)
-        message.reply(translate(language, 'error'))
+        message.channel.send(translate(language, 'error'))
     }
 
 }

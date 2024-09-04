@@ -32,11 +32,11 @@ async function createDeckImages(
     let url = bot.isDeckLink(bot.parseCommand(prefix, command)) ?
         bot.parseCommand(prefix, command) :
         deckBuilderURL+hash
-    message.reply(translate(language, 'screenshot'))
+    message.channel.send(translate(language, 'screenshot'))
     let result = await takeScreenshot(url)
-    if (!result) return message.reply(translate(language, 'error'))
+    if (!result) return message.channel.send(translate(language, 'error'))
     let files = getDeckFiles()
-    message.reply({files: files})
+    message.channel.send({files: files})
     console.log('Screenshot captured and sent successfully')
     //upload them for caching
     const expiration = 604800 //7 days

@@ -18,17 +18,17 @@ async function handleTD(user, command, message) {
         let unitType = ''
         if (td.unitType) unitType = td.unitType + ' battle\n'
 
-        return message.reply(
+        return message.channel.send(
             unitType.toUpperCase() +
             'Waiting for another player...')
     }
     if (td.state === 'finished')
     {
         //draw the image
-        message.reply('getting battle results...')
+        message.channel.send('getting battle results...')
         try {
             const battleImage = await drawBattlefield(td)
-            await message.reply({content: td.log, files: [battleImage]})
+            await message.channel.send({content: td.log, files: [battleImage]})
             message.channel.send(Formatters.userMention(td.player1))
             console.log(td.log)
             //delete the battle image
@@ -37,7 +37,7 @@ async function handleTD(user, command, message) {
                 console.log('image deleted')
             })
         } catch (e) {
-            message.reply('could not draw battle image\n' + td.log)
+            message.channel.send('could not draw battle image\n' + td.log)
             console.error(e.toString())
         }
     }
