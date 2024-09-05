@@ -3,5 +3,6 @@ node_modules/
 .env
 src/export/
 src/tmp/myChromeSession/
-src/tmp/*jpg
+src/tmp/*
+!src/tmp/notEmpty.txt
 src/public/
