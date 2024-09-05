@@ -48,8 +48,8 @@ async function drawBattlefield(topDeck)
     context.fillText(user2.name, 430, 40)
     console.log(user1, user2)
     // Write the image to file
-    let buffer = canvas.toBuffer("image/png")
-    const file = "./src/tmp/" + topDeck.id + ".png"
+    let buffer = canvas.toBuffer("image/webp")
+    const file = "./src/tmp/" + topDeck.id + ".webp"
     fs.writeFileSync(file, buffer)
     //trying to fix memory leak
     buffer = null
