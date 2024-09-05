@@ -7,8 +7,8 @@ const fs = require("fs")
 function getDeckFiles()
 {
     return [
-        __dirname+'/../tmp/deckScreenshot.jpg',
-        __dirname+'/../tmp/deckScreenshot2.jpg'
+        __dirname+'/../tmp/deckScreenshot.webp',
+        __dirname+'/../tmp/deckScreenshot2.webp'
     ]
 }
 

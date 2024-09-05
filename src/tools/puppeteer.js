@@ -18,8 +18,8 @@ async function saveScreenshot(page, selector) {
     if (boundingBox) {
         // Take 2 screenshots of the deck
         await elementHandle.screenshot({
-            path: outputPath+'.jpg',
-            type: 'jpeg',
+            path: outputPath+'.webp',
+            type: 'webp',
             quality: 100,
             clip: {
                 x: 0,
@@ -29,8 +29,8 @@ async function saveScreenshot(page, selector) {
             }
         })
         await elementHandle.screenshot({
-            path: outputPath+'2.jpg',
-            type: 'jpeg',
+            path: outputPath+'2.webp',
+            type: 'webp',
             quality: 100,
             clip: {
                 x: 0,
