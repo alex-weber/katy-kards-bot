@@ -135,8 +135,11 @@ async function discordHandler(message, client, redis)
         user.name = message.author.username
         await updateUser(user)
     }
-    //set user language to russian if they type in cyrillic
+
     let language = user.language
+    //use the message language if it's the "next" button
+    if (message.buttonId) language = message.language
+    //set user language to russian if they type in cyrillic
     if (getLanguageByInput(command) === 'ru' && language !== 'ru')
     {
         user.language = 'ru'
