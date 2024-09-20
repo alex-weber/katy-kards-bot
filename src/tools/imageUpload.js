@@ -39,7 +39,7 @@ async function downloadImageAsFile(url) {
 /**
  * 
  * @param url
- * @returns {Promise<any|boolean>}
+ * @returns {Promise<Buffer|boolean>}
  */
 async function downloadImageAsBuffer(url) {
 
