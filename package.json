@@ -24,7 +24,7 @@
     "compression": "^1.7.4",
     "connect-redis": "^7.1.1",
     "discord.js": "^14.15.3",
-    "express": "^4.17.3",
+    "express": "^4.21.0",
     "express-session": "^1.18.0",
     "i18next": "^23.11.2",
     "i18next-fs-backend": "^2.3.1",
