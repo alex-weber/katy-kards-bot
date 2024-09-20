@@ -40,13 +40,17 @@ const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
 const {getAllSynonyms, getUser, getLastDayMessages, disconnect} = require('./database/db')
 const {translate} = require("./tools/translation/translator")
-//auth
+//session
+const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 app.use(session({
     store: redisStore,
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: {secure: secure}
+    cookie: {
+        secure: secure,
+        maxAge: cookieMaxAge,
+    }
 }))
 // middleware to test if authenticated
 function isAuthenticated (req, res, next) {
