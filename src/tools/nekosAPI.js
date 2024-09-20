@@ -14,7 +14,7 @@ async function getRandomImage()
     const response = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
     if (response.status !== 200) return false
     const imageURL = response.data.url.toString()
-    const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif']
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp']
     const imageExtension = imageURL.split('.').pop().toLowerCase()
     if (!imageURL || !allowedExtensions.includes(imageExtension) ||
         await bot.getFileSize(imageURL) > maxFileSize)
