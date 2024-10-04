@@ -382,7 +382,7 @@ async function handleSynonym(user, message)
     if (!isManager(user)) return 'not allowed'
     const content = message.content
     //remove the prefix and the ^ from the beginning and get the key and the value
-    const key = content.slice(2, content.indexOf('='))
+    const key = content.slice(2, content.indexOf('=')).toLowerCase()
     let value
     //get the image as attachment
     if (message.attachments.size)
