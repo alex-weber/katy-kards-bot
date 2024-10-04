@@ -395,9 +395,9 @@ async function handleSynonym(user, message)
         else return 'file upload error'
     }
     else value = content.slice(content.indexOf('=') + 1)
-    console.log(key, value)
+    console.log(key,'=', value)
     //check key
-    if (!checkSynonymKey(key)) return false
+    if (!checkSynonymKey(key)) return 'invalid key name'
     if (value.startsWith('http'))
     {
         value = getURL(value)
@@ -407,15 +407,15 @@ async function handleSynonym(user, message)
     if (!syn && value)
     {
         await createSynonym(key, value)
-        return 'created'
+        return key + ' created'
     } else if (value === 'delete')
     {
         await deleteSynonym(key)
-        return 'deleted'
+        return key + ' deleted'
     } else
     {
         await updateSynonym(key, value)
-        return 'updated'
+        return key + ' updated'
     }
 }
 
