@@ -485,7 +485,10 @@ async function listSynonyms(command)
 
     for (const [, syn] of Object.entries(synonyms))
     {
-        listing += syn.key + '\n'
+        if (syn.value.startsWith('http') || syn.value.startsWith('text:'))
+        {
+            listing += syn.key + '\n'
+        }
     }
 
     if (listing.length > maxMessageLength)
