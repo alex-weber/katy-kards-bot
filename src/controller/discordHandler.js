@@ -364,7 +364,11 @@ async function discordHandler(message, client, redis)
     {
 
         if (qSearch) return //don't reply if nothing is found
-        const imageURL = await getRandomImage()
+        //check whether there is "cat" or "dog" in the command
+        let endpoint = false
+        if (command.includes('cat')) endpoint = 'meow'
+        if (command.includes('dog')) endpoint = 'woof'
+        const imageURL = await getRandomImage(endpoint)
         if (!imageURL)
             return message.channel.send(translate(language, 'noresult'))
 
