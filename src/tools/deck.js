@@ -87,13 +87,11 @@ async function analyseDeck(deckCode, language)
         },
     })
 
-    console.log('total found: ' + dbCards.length)
-
     return calculateAverages(dbCards, cardsArray, language)
 }
 
 function splitByTwoChars(str) {
-    return str.match(/.{1,2}/g);
+    return str.match(/.{1,2}/g)
 }
 
 function getCardCount(importId, cardsArray) {
@@ -109,12 +107,10 @@ function getCardCount(importId, cardsArray) {
 
 function calculateAverages(cards, cardsArray, language) {
 
-    // Initialize accumulators
-    let totalAttack = 0;
-    let totalDefense = 0;
-    let totalKredits = 0;
-    let totalOperationCost = 0;
-
+    let totalAttack = 0
+    let totalDefense = 0
+    let totalKredits = 0
+    let totalOperationCost = 0
     let units = 0
     let orders = 0
     let countermeasures = 0
@@ -124,7 +120,6 @@ function calculateAverages(cards, cardsArray, language) {
         const amount = getCardCount(card.importId, cardsArray)
         if (card.type !== 'order' && card.type !== 'countermeasure')
         {
-
             totalAttack += card.attack * amount
             totalDefense += card.defense * amount
             totalOperationCost += card.operationCost * amount
@@ -134,15 +129,14 @@ function calculateAverages(cards, cardsArray, language) {
         } else if (card.type === 'order') {
             orders += amount
         }
-        totalKredits += card.kredits;
-
-    });
+        totalKredits += card.kredits
+    })
 
     // Calculate averages
-    const averageAttack = (totalAttack / units).toFixed(2);
-    const averageDefense = (totalDefense / units).toFixed(2);
-    const averageKredits = (totalKredits / cards.length).toFixed(2);
-    const averageOperationCost = (totalOperationCost / units).toFixed(2);
+    const averageAttack = (totalAttack / units).toFixed(2)
+    const averageDefense = (totalDefense / units).toFixed(2)
+    const averageKredits = (totalKredits / cards.length).toFixed(2)
+    const averageOperationCost = (totalOperationCost / units).toFixed(2)
 
     const info = '```' +
         translate(language, 'units') + units + '\n' +
