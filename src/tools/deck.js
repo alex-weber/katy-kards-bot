@@ -1,10 +1,10 @@
-const {deckBuilderLanguages} = require("./language")
 const bot = require("../controller/bot")
 const {translate} = require("./translation/translator")
 const {takeScreenshot} = require("./puppeteer")
 const {getDeckFiles, deleteDeckFiles} = require("./fileManager")
 const {uploadImage} = require("./imageUpload")
 const Fs = require("@supercharge/fs")
+const {getCardsDB} = require("../database/db")
 
 /**
  *
@@ -24,20 +24,26 @@ async function createDeckImages(
     redis,
     deckKey)
 {
-    let deckBuilderLang = ''
-    //if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
-    const deckBuilderURL = 'https://www.kards.com/' +
-        deckBuilderLang+ 'decks/deck-builder?hash='
-    const hash = encodeURIComponent(command.replace(prefix, ''))
-    let url = bot.isDeckLink(bot.parseCommand(prefix, command)) ?
-        bot.parseCommand(prefix, command) :
-        deckBuilderURL+hash
+
+    const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+    const deckCode = command.replace(prefix, '')
+    const hash = encodeURIComponent(deckCode)
+    command = bot.parseCommand(prefix, command)
+    let url
+    let deckInfo = ''
+    if (bot.isDeckLink(command)) {
+        url = command
+    } else {
+        url = deckBuilderURL+hash
+        deckInfo = await analyseDeck(deckCode, language)
+    }
     message.channel.send(translate(language, 'screenshot'))
     let result = await takeScreenshot(url)
     if (!result) return message.channel.send(translate(language, 'error'))
     let files = getDeckFiles()
-    message.channel.send({files: files})
+    message.channel.send({content: deckInfo, files: files})
     console.log('Screenshot captured and sent successfully')
+
     //upload them for caching
     const expiration = 604800 //7 days
     let file1 = await uploadImage(files[0], expiration)
@@ -51,12 +57,104 @@ async function createDeckImages(
         if ( await Fs.size(files[0]) === file1size &&
             await Fs.size(files[1]) === file2size)
         {
-            await redis.json.set(deckKey, '$', uploadedFiles)
+            const cached = {
+                content: deckInfo,
+                files: uploadedFiles
+            }
+            await redis.json.set(deckKey, '$', cached)
             redis.expire(deckKey, expiration)
             console.log('setting cache key for deck', command)
             deleteDeckFiles()
         }
     }
+}
+
+/**
+ *
+ * @param deckCode
+ * @param language
+ * @returns {Promise<string>}
+ */
+async function analyseDeck(deckCode, language)
+{
+    const cardsCode = deckCode.slice(deckCode.indexOf('|')+1).replace(/;/g, '')
+    const cards = splitByTwoChars(cardsCode)
+    const cardsArray = deckCode.slice(deckCode.indexOf('|')+1).split(';')
+
+    const dbCards = await getCardsDB({
+        importId: {
+            in: cards,
+        },
+    })
+
+    console.log('total found: ' + dbCards.length)
+
+    return calculateAverages(dbCards, cardsArray, language)
+}
+
+function splitByTwoChars(str) {
+    return str.match(/.{1,2}/g);
+}
+
+function getCardCount(importId, cardsArray) {
+
+    for (let i = 0; i < cardsArray.length; i++) {
+        if (cardsArray[i].includes(importId)) {
+            return i + 1
+        }
+    }
+
+    return 0
+}
+
+function calculateAverages(cards, cardsArray, language) {
+
+    // Initialize accumulators
+    let totalAttack = 0;
+    let totalDefense = 0;
+    let totalKredits = 0;
+    let totalOperationCost = 0;
+
+    let units = 0
+    let orders = 0
+    let countermeasures = 0
+
+    // Loop through each card and accumulate the values
+    cards.forEach(card => {
+        const amount = getCardCount(card.importId, cardsArray)
+        if (card.type !== 'order' && card.type !== 'countermeasure')
+        {
+
+            totalAttack += card.attack * amount
+            totalDefense += card.defense * amount
+            totalOperationCost += card.operationCost * amount
+            units += amount
+        } else if (card.type === 'countermeasure') {
+            countermeasures += amount
+        } else if (card.type === 'order') {
+            orders += amount
+        }
+        totalKredits += card.kredits;
+
+    });
+
+    // Calculate averages
+    const averageAttack = (totalAttack / units).toFixed(2);
+    const averageDefense = (totalDefense / units).toFixed(2);
+    const averageKredits = (totalKredits / cards.length).toFixed(2);
+    const averageOperationCost = (totalOperationCost / units).toFixed(2);
+
+    const info = '```' +
+        translate(language, 'units') + units + '\n' +
+        translate(language, 'orders') + orders + '\n' +
+        translate(language, 'countermeasures') + countermeasures + '\n' +
+        translate(language, 'averageAttack') + averageAttack + '\n' +
+        translate(language, 'averageDefense') + averageDefense + '\n' +
+        translate(language, 'averageKredits') + averageKredits + '\n' +
+        translate(language, 'averageOperationCost') + averageOperationCost + '\n' +
+        '```'
+
+    return info
 }
 
 module.exports = {createDeckImages}

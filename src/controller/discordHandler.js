@@ -163,8 +163,8 @@ async function discordHandler(message, client, redis)
         const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
         {
-            const files = await redis.json.get(deckKey, '$')
-            return message.channel.send({files: files})
+            const response = await redis.json.get(deckKey, '$')
+            return message.channel.send(response)
         }
 
         //check if screenshot capturing is running, tell user to wait
