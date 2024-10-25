@@ -1,7 +1,7 @@
 const axios = require("axios")
 const query = require("./query")
 const dictionary = require('./dictionary')
-const {translate} = require('./translation/translator.js')
+const {translate, getReservedWords} = require('./translation/translator.js')
 const {AttachmentBuilder} = require('discord.js')
 const {
     getCardsDB,
@@ -188,10 +188,13 @@ function getAttribute(word, attributes)
     let result = ''
     //do not search if the word is shorter than 3 chars
     if (word.length < 3) return result
-
+    const reservedWords = getReservedWords()
     for (const [key, value] of Object.entries(attributes))
     {
-        if (key.indexOf(word) === 0 || (typeof value === 'string' && value.indexOf(word) === 0))
+        if (
+            (reservedWords.hasOwnProperty(value) && reservedWords[value].slice(0,3) === word.slice(0,3)) ||
+            (key.startsWith(word) || value.startsWith(word))
+        )
         {
             result = value
             break

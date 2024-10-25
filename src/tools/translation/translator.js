@@ -68,4 +68,4 @@ function getReservedWords()
 
 }
 
-module.exports = {translate}
+module.exports = {translate, getReservedWords}
