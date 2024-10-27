@@ -2,7 +2,11 @@ extends layout
 
 block content
   div.container
-    h1= title
+    h3.text-center.text-primary= title
+    figure.figure
+      canvas#messagesChart
+  script(src="/static/vendor/chart.js")
+  script(src="/static/dashboard.js")
 
 
 

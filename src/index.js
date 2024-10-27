@@ -60,7 +60,7 @@ function isAuthenticated (req, res, next) {
 // for authenticated users only
 app.get('/', isAuthenticated,  (req, res) => {
     res.render('index', {
-        title: 'Welcome, ' + req.session.user.username + '!',
+        title: 'Dashboard',
         user: req.session.user,
         loginLink: false
     })
