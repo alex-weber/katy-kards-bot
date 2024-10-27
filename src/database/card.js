@@ -98,4 +98,25 @@ async function getCardsDB(data, skip = 0)
     finally(async () => { await prisma.$disconnect() })
 }
 
-module.exports = {createCard, getCardsDB}
+async function getCardsByFaction()
+{
+    const groupedCards = await prisma.card.groupBy({
+        by: ['faction'], // group by faction
+        _count: {
+            faction: true // count the number of records in each faction group
+        },
+        orderBy: {
+            _count: {
+                faction: 'desc' // order by the count of faction in descending order
+            }
+        },
+    })
+
+    return groupedCards.map(group => ({
+        faction: group.faction,
+        count: group._count.faction
+    }))
+
+}
+
+module.exports = {getCardsByFaction, createCard, getCardsDB}

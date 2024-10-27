@@ -21,6 +21,8 @@ const {ActivityType} = require('discord.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
 
+//API
+const API = require('./controller/api')
 //redis cache
 const { createClient } = require('redis')
 const redis = createClient({url: process.env.REDISCLOUD_URL})
@@ -38,7 +40,7 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 //for web pages
 const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
-const {getAllSynonyms, getUser, getLastDayMessages, disconnect} = require('./database/db')
+const {getAllSynonyms, getUser, getLastDayMessages, disconnect, getCardsDB, getCardsByFaction} = require('./database/db')
 const {translate} = require("./tools/translation/translator")
 //session
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
@@ -151,10 +153,10 @@ app.get('/uptime', async (req, res) =>
 })
 
 //API
-app.get('/api/:method', (req, res) => {
+app.get('/api/:method', async (req, res) => {
     const method = req.params.method
-    console.log(method)
-    res.send('you used ' + method)
+    const apiResponse = await API.run(method)
+    res.json(apiResponse)
 })
 
 //Discord-Bot login event

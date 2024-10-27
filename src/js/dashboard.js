@@ -1,16 +1,20 @@
 async function renderChart() {
     try {
-        //const response = await fetch('/data')
+        const response = await fetch('/api/cards-by-faction')
+        const apiData = await response.json()
+        console.log(apiData)
+        const labels = apiData.data.map(item => item.faction)
+        const dataPoints = apiData.data.map(item => item.count)
+
         //const data = await response.json()
-        const data = { labels: ["Jan", "Feb", "Mar"], data: [10, 20, 30] }
         const ctx = document.getElementById('messagesChart').getContext('2d')
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: data.labels,
+                labels: labels,
                 datasets: [{
-                    label: 'Monthly Sales',
-                    data: data.data,
+                    label: 'Cards by faction',
+                    data: dataPoints,
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1
