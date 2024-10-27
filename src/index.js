@@ -150,6 +150,13 @@ app.get('/uptime', async (req, res) =>
     })
 })
 
+//API
+app.get('/api/:method', (req, res) => {
+    const method = req.params.method
+    console.log(method)
+    res.send('you used ' + method)
+})
+
 //Discord-Bot login event
 client.on('ready', () =>
 {
