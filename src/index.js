@@ -58,7 +58,7 @@ function isAuthenticated (req, res, next) {
     else next('route')
 }
 // for authenticated users only
-app.get('/', isAuthenticated, function (req, res) {
+app.get('/', isAuthenticated,  (req, res) => {
     res.render('index', {
         title: 'Welcome, ' + req.session.user.username + '!',
         user: req.session.user,
@@ -72,11 +72,11 @@ app.get('/', (req, res) =>
         loginLink: process.env.DISCORD_AUTH_URL,
         user: null,
     }))
-app.get('/auth', async (req, res) => {
+app.get('/auth', async (req, res) =>
     res.render('auth', {
         title: 'Logging in...please wait',
     })
-})
+)
 //login
 app.get('/login', async (req, res, next) => {
 
@@ -92,12 +92,12 @@ app.get('/login', async (req, res, next) => {
     //allow user with change permissions only
     if (isManager(dbUser))
     {
-        await req.session.regenerate(async function (err)
+        await req.session.regenerate(async err =>
         {
             if (err) next(err)
             // store user information in session
             req.session.user = user
-            await req.session.save(function (err)
+            await req.session.save( err =>
             {
                 if (err) return next(err)
                 console.log()
@@ -108,12 +108,12 @@ app.get('/login', async (req, res, next) => {
     else res.redirect('/')
 })
 
-app.get('/logout', function (req, res, next) {
+app.get('/logout',  (req, res, next) => {
     // clear the user from the session object and save.
     req.session.user = null
-    req.session.save(function (err) {
+    req.session.save( err => {
         if (err) next(err)
-        req.session.regenerate(function (err) {
+        req.session.regenerate( err => {
             if (err) next(err)
             res.redirect('/')
         })
