@@ -75,6 +75,36 @@ async function getLastDayMessages()
 
 }
 
+async function getLastMonthMessages()
+{
+    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+    const messages = await prisma.message.findMany({
+        where: {
+            createdAt: {
+                gte: monthAgo,
+            },
+        },
+        orderBy: {
+            createdAt: 'asc',
+        },
+    })
+
+    // Aggregate message counts by day
+    const messageCountsByDay = messages.reduce((acc, message) => {
+        const day = message.createdAt.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        acc[day] = (acc[day] || 0) + 1;
+        return acc;
+    }, {})
+
+    // Format data for Chart.js, with MM-DD for labels
+    return Object.keys(messageCountsByDay).map((day) => ({
+        label: new Date(day).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit' }),
+        count: messageCountsByDay[day],
+    }))
+
+}
+
 /**
  *
  * @param date
@@ -91,4 +121,4 @@ function formatDate(date) {
 
 }
 
-module.exports = {createMessage, getMessages, getLastDayMessages }
+module.exports = {createMessage, getMessages, getLastDayMessages, getLastMonthMessages}

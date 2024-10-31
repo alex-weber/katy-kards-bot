@@ -1,5 +1,5 @@
 const {getCardsByFaction} = require('../database/card')
-const {response} = require("express");
+const {getMessages, getLastMonthMessages} = require("../database/message")
 
 async function run(method)
 {
@@ -13,7 +13,11 @@ async function run(method)
     switch (method) {
         case 'cards-by-faction':
             response.success = true
-            response.data = await getCardsByFaction(method)
+            response.data = await getCardsByFaction()
+            break
+        case 'messages':
+            response.success = true
+            response.data = await getLastMonthMessages()
             break
 
         default:
