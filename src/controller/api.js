@@ -1,5 +1,5 @@
 const {getCardsByFaction} = require('../database/card')
-const {getMessages, getLastMonthMessages} = require("../database/message")
+const {getLastMonthMessages} = require("../database/message")
 
 async function run(method)
 {
