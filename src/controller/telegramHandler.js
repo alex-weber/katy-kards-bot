@@ -66,6 +66,7 @@ async function telegramHandler(ctx, redis) {
             return ctx.reply(translate(language, 'screenshotRunning'))
         }
         await redis.set(screenshotKey, 'running')
+        redis.expire(screenshotKey, 30) //delete screenshot lock key after 30 seconds anyway
         let deckBuilderLang = ''
         //if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
         const deckBuilderURL = 'https://www.kards.com/' +
