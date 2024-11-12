@@ -15,15 +15,20 @@ function drawChart(canvasId, mainLabel='', labels, dataPoints)
 {
     const ctx = document.getElementById(canvasId).getContext('2d')
     new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: labels,
             datasets: [{
                 label: mainLabel,
                 data: dataPoints,
-                backgroundColor: '#4F5D4E',
+                backgroundColor: '#3F6EFD',
                 borderColor: '#3F6EFD',
-                borderWidth: 1
+                borderWidth: 4,
+                pointBackgroundColor: '#3b879c',
+                pointBorderColor: '#3b879c',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+
             }]
         },
         options: {
