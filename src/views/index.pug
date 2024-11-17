@@ -4,7 +4,9 @@ block content
   div.container
     h3.text-center.text-primary= title
     div
-      canvas#messagesChart(style="height: 300px; width: 100%")
+      div#loadingSpinner(class="d-flex justify-content-center align-items-center", style="height: 300px; display: flex;")
+        div.spinner-border.text-primary(role="status")
+      canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
   script(src="/static/vendor/chart.js")
   script(src="/static/dashboard.js")
 

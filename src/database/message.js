@@ -75,20 +75,9 @@ async function getLastDayMessages()
 
 }
 
-async function getLastMonthMessages()
+async function getMessagesByArgs(args)
 {
-    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
-
-    const messages = await prisma.message.findMany({
-        where: {
-            createdAt: {
-                gte: monthAgo,
-            },
-        },
-        orderBy: {
-            createdAt: 'asc',
-        },
-    })
+    const messages = await prisma.message.findMany(args)
 
     // Aggregate message counts by day
     const messageCountsByDay = messages.reduce((acc, message) => {
@@ -102,7 +91,47 @@ async function getLastMonthMessages()
         label: new Date(day).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit' }),
         count: messageCountsByDay[day],
     }))
+}
 
+async function getLastMonthMessages()
+{
+    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+    const args = {
+        where: {
+            createdAt: {
+                gte: monthAgo,
+            },
+        },
+        orderBy: {
+            createdAt: 'asc',
+        },
+    }
+
+    return await getMessagesByArgs(args)
+
+}
+
+async function getTopDeckMessages()
+{
+    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+    const args = {
+        where: {
+            createdAt: {
+                gte: monthAgo,
+            },
+            content: {
+                startsWith: 'td',
+            }
+        },
+        orderBy: {
+            createdAt: 'asc',
+        },
+    }
+
+
+    return await getMessagesByArgs(args)
 }
 
 /**
@@ -121,4 +150,10 @@ function formatDate(date) {
 
 }
 
-module.exports = {createMessage, getMessages, getLastDayMessages, getLastMonthMessages}
+module.exports = {
+    createMessage,
+    getLastDayMessages,
+    getLastMonthMessages,
+    getMessages,
+    getTopDeckMessages,
+}
