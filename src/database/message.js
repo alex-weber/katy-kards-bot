@@ -134,6 +134,36 @@ async function getTopDeckMessages()
     return await getMessagesByArgs(args)
 }
 
+async function getTopMessages()
+{
+    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+    const groupedCards = await prisma.message.groupBy({
+        by: ['content'], // group by content
+        _count: {
+            content: true
+        },
+        where: {
+            createdAt: {
+                gte: monthAgo,
+            },
+        },
+        orderBy: {
+            _count: {
+                content: 'desc'
+            }
+        },
+        skip:3,
+        take: 30,
+    })
+
+    return groupedCards.map(group => ({
+        command: group.content,
+        count: group._count.content
+    }))
+
+}
+
 /**
  *
  * @param date
@@ -156,4 +186,5 @@ module.exports = {
     getLastMonthMessages,
     getMessages,
     getTopDeckMessages,
+    getTopMessages,
 }

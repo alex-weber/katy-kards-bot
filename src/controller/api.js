@@ -1,5 +1,9 @@
 const {getCardsByFaction} = require('../database/card')
-const {getLastMonthMessages, getTopDeckMessages} = require("../database/message")
+const {
+    getLastMonthMessages,
+    getTopDeckMessages,
+    getTopMessages
+} = require("../database/message")
 
 async function run(method)
 {
@@ -22,6 +26,10 @@ async function run(method)
         case 'td-messages':
             response.success = true
             response.data = await getTopDeckMessages()
+            break
+        case 'top-messages':
+            response.success = true
+            response.data = await getTopMessages()
             break
 
         default:

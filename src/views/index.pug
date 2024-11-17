@@ -7,6 +7,12 @@ block content
       div#loadingSpinner(class="d-flex justify-content-center align-items-center", style="height: 300px; display: flex;")
         div.spinner-border.text-primary(role="status")
       canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
+    h4.text-primary='Cards by factions'
+    div(style="height: 500px; width: 800px; margin-bottom: 100px")
+      div#loadingSpinnerTopMessages(class="d-flex justify-content-center align-items-center", style="height: 500px; display: flex;")
+        div.spinner-border.text-primary(role="status")
+      canvas#topMessagesChart(style="height: 500px; width: 800px; display: none;")
+
   script(src="/static/vendor/chart.js")
   script(src="/static/dashboard.js")
 
