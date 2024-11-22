@@ -9,7 +9,7 @@ const {
 } = require("../database/db")
 const {
     getLanguageByInput,
-    APILanguages,
+    APILanguages, defaultLanguage,
 } = require("../tools/language")
 const {translate} = require("../tools/translation/translator")
 const {createDeckImages} = require("../tools/deck")
@@ -52,12 +52,20 @@ async function discordHandler(message, client, redis)
     }
     if (message.buttonId)
     {
-        CommandCacheKey += message.buttonId
-        let result = await redis.json.get(CommandCacheKey, '$')
-        if (!result || !result.command) return
-        message.content = result.command
+        const isAltArtButton = message.buttonId.startsWith('next_button_alt')
+        if (isAltArtButton) {
+            message.content = message.buttonId.replace('next_button_', prefix)
+            message.language = defaultLanguage
+        } else {
+            CommandCacheKey += message.buttonId
+            let result = await redis.json.get(CommandCacheKey, '$')
+            if (!result || !result.command) return
+            message.content = result.command
+            message.language = result.language
+        }
+
         message.author.bot = false
-        message.language = result.language
+
     }
     if (message.author.bot || message.content.length > maxStrLen) return
 
@@ -307,12 +315,23 @@ async function discordHandler(message, client, redis)
     if (command.startsWith('alt'))
     {
         const syns = await getAllSynonyms()
-        const files = syns.filter(syn => syn.key.startsWith(command)).map(syn => syn.value)
+        const files = syns.filter(syn => syn.key.startsWith('alt ')).map(syn => syn.value)
         if (files.length) {
-            return message.channel.send({
-                content:'Alternate art cards found: ' + files.length,
-                files: files.slice(0, limit)
-            })
+
+            let offset = parseInt(command.replace('alt', ''))
+            if (isNaN(offset)) offset = 0
+            let last = offset + limit
+            if (last > files.length) last = files.length
+            const answer = {
+                content:'Alternate art cards found: ' + files.length + ', showing ' + (offset+1) + '-' + last,
+                files: files.slice(offset, offset + limit)
+            }
+            if (offset + limit < files.length)
+                answer.components = getButtonRow(translate(language, 'next'), 'alt' + (offset+limit))
+
+            return message.channel.send(answer)
+
+
         }
 
         return message.channel.send(translate(language, 'noresult'))
