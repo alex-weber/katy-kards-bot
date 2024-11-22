@@ -1,18 +1,14 @@
-async function renderChart() {
+async function renderMessagesChart(data, dataTD) {
     try {
 
         const loadingSpinner = document.getElementById('loadingSpinner')
         const chartCanvas = document.getElementById('messagesChart')
-        //get the data
-        const response = await fetch('/api/messages')
-        const apiData = await response.json()
-        const labels = apiData.data.map(item => item.label)
-        const dataPoints = apiData.data.map(item => item.count)
 
-        const responseTD = await fetch('/api/td-messages')
-        const apiDataTD = await responseTD.json();
-        const labelsTD = apiDataTD.data.map(item => item.label)
-        const dataPointsTD = apiDataTD.data.map(item => item.count)
+        const labels = data.data.map(item => item.label)
+        const dataPoints = data.data.map(item => item.count)
+
+        const labelsTD = dataTD.data.map(item => item.label)
+        const dataPointsTD = dataTD.data.map(item => item.count)
 
         // Combine all unique labels
         const allLabels = Array.from(new Set([...labels, ...labelsTD]))
@@ -36,9 +32,9 @@ async function renderChart() {
             labels: allLabels,
             datasets: [
                 {
-                    label: 'Commands',
+                    label: 'TOTAL',
                     data: commandsDataPoints,
-                    backgroundColor: '#3F6EFD',
+                    backgroundColor: '#435488',
                     borderColor: '#3F6EFD',
                     borderWidth: 4,
                     pointBackgroundColor: '#3b879c',
@@ -49,8 +45,8 @@ async function renderChart() {
                 {
                     label: 'TD',
                     data: tdDataPoints,
-                    backgroundColor: '#b0c032',
-                    borderColor: '#536e07',
+                    backgroundColor: '#536e07',
+                    borderColor: '#b0c032',
                     borderWidth: 4,
                     pointBackgroundColor: '#e5e516',
                     pointBorderColor: '#e5e516',
@@ -95,55 +91,119 @@ function drawChart(chartSettings)
     })
 }
 
-async function renderFactionsChart()
+async function renderFactionsChart(apiData)
 {
     const loadingSpinner = document.getElementById('loadingSpinnerTopMessages')
     const chartCanvas = document.getElementById('topMessagesChart')
-    //get the data
-    const response = await fetch('/api/cards-by-faction')
-    const apiData = await response.json()
+
     const labels = apiData.data.map(item => item.faction.toUpperCase() + '(' + item.count + ')')
     const data = apiData.data.map(item => item.count)
     // Hide loading spinner and show canvas
     loadingSpinner.classList.add('d-none')
     chartCanvas.style.display = 'block'
 
-    const donutChartConfig = {
-        type: 'doughnut', // 'doughnut' for a donut chart
+    // Define faction colors
+    const baseColors = {
+        soviet: '#604F3D',
+        usa: '#63694C',
+        japan: '#9D7C41',
+        germany: '#5E6965',
+        britain: '#928F7C',
+        france: '#4C566F',
+        italy: '#626260',
+        poland: '#645E4B',
+        finland: '#B8B8A0'
+    }
+
+// Generate background gradients
+    const backgroundColors = apiData.data.map(faction => {
+        return baseColors[faction.faction]
+    })
+
+// Bar chart configuration
+    const config = {
+        type: 'bar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Factions',
                 data: data,
+                backgroundColor: backgroundColors
             }]
         },
         options: {
             responsive: true,
             plugins: {
                 legend: {
-                    display: true,
-                    position: 'top', // Position of the legend
+                    display: false
                 },
                 tooltip: {
-                    enabled: true, // Enable tooltips
                     callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.raw || 0;
-                            return `${label}: ${value}`;
+                        label: function (context) {
+                            const label = context.label || ''
+                            const value = context.raw || 0
+                            return `${label}: ${value}`
                         }
                     }
                 }
             },
-            cutout: '50%', // Controls the inner radius for the donut chart
+            scales: {
+                x: {
+                    grid: {
+                        color: '#4B4D4E',
+                    }
+                },
+                y: {
+                    grid: {
+                        color: '#4B4D4E',
+                        lineWidth: 1,
+                    }
+                }
+            },
         }
     }
 
-    const ctx = chartCanvas.getContext('2d')
-    new Chart(ctx, donutChartConfig)
 
+    const ctx = chartCanvas.getContext('2d')
+    new Chart(ctx, config)
 
 }
 
-renderChart().then( ()=> console.log('commands chart rendered') )
-renderFactionsChart().then( ()=> console.log('factions chart rendered') )
+async function getDashboardData()
+{
+    //get the data
+    const [
+        responseMessages,
+        responseTdMessages,
+        responseFactions,
+    ] = await Promise.all([
+        fetch('/api/messages'),
+        fetch('/api/td-messages'),
+        fetch('/api/cards-by-faction')
+    ])
+
+    const [
+        dataMessages,
+        dataTdMessages,
+        dataFactions
+    ] = await Promise.all([
+        responseMessages.json(),
+        responseTdMessages.json(),
+        responseFactions.json(),
+    ])
+
+    return {
+        dataMessages,
+        dataTdMessages,
+        dataFactions
+    }
+
+}
+
+getDashboardData().then(
+    data => {
+        renderMessagesChart(data.dataMessages, data.dataTdMessages,)
+            .then( ()=> console.log('commands chart rendered') )
+        renderFactionsChart(data.dataFactions)
+            .then( ()=> console.log('factions chart rendered') )
+    }
+)

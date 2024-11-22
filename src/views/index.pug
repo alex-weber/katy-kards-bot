@@ -2,16 +2,28 @@ extends layout
 
 block content
   div.container
-    h3.text-center.text-primary= title
+    // Page Title
+    h3.text-center.text-primary.mt-4.mb-5 Commands
+
+    // Chart Section for Messages
     div
-      div#loadingSpinner(class="d-flex justify-content-center align-items-center", style="height: 300px; display: flex;")
+      // Loading Spinner for Messages Chart
+      div#loadingSpinner.d-flex.justify-content-center.align-items-center(style="height: 300px; display: flex;")
         div.spinner-border.text-primary(role="status")
+      // Canvas for Messages Chart
       canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
-    h4.text-primary='Cards by factions'
-    div(style="height: 500px; width: 800px; margin-bottom: 100px")
-      div#loadingSpinnerTopMessages(class="d-flex justify-content-center align-items-center", style="height: 500px; display: flex;")
+
+    // Subtitle
+    h4.text-center.text-primary.mt-5.mb-3 Cards by Factions
+
+    // Chart Section for Top Messages
+    div(style="height: 500px; width: 100%; margin-bottom: 100px;")
+      // Loading Spinner for Top Messages Chart
+      div#loadingSpinnerTopMessages.d-flex.justify-content-center.align-items-center(style="height: 500px; display: flex;")
         div.spinner-border.text-primary(role="status")
-      canvas#topMessagesChart(style="height: 500px; width: 800px; display: none;")
+      // Canvas for Top Messages Chart
+      canvas#topMessagesChart(style="height: 500px; width: 100%; display: none;")
+
 
   script(src="/static/vendor/chart.js")
   script(src="/static/dashboard.js")
