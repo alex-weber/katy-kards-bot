@@ -328,7 +328,7 @@ async function discordHandler(message, client, redis)
                 content:'Alternate art cards found: ' + files.length + ', showing ' + (offset+1) + '-' + last,
                 files: files.slice(offset, offset + limit)
             }
-            if (offset + limit < files.length)
+            if (offset + limit < files.length && isBotCommandChannel(message))
                 answer.components = getButtonRow(translate(language, 'next'), 'alt' + (offset+limit))
 
             return message.channel.send(answer)
