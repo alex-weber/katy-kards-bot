@@ -219,7 +219,9 @@ async function discordHandler(message, client, redis)
     }
 
     //handle command
-    if (command === 'help') return message.channel.send(translate(language, 'help'))
+    if (command === 'help') return message.channel.send(
+        '```' + translate(language, 'help') + '```'
+    )
 
     //clear cache
     if (command === 'cclear' && isManager(user))
