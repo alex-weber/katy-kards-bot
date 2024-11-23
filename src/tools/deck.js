@@ -36,6 +36,7 @@ async function createDeckImages(
     } else {
         url = deckBuilderURL+hash
         deckInfo = await analyseDeck(deckCode, language)
+        if (!deckInfo) return message.channel.send(translate(language, 'error'))
     }
     message.channel.send(translate(language, 'screenshot'))
     let result = await takeScreenshot(url)
@@ -73,12 +74,13 @@ async function createDeckImages(
  *
  * @param deckCode
  * @param language
- * @returns {Promise<string>}
+ * @returns {Promise<string>|false}
  */
 async function analyseDeck(deckCode, language)
 {
     const cardsCode = deckCode.slice(deckCode.indexOf('|')+1).replace(/;/g, '')
     const cards = splitByTwoChars(cardsCode)
+    if (!cards) return false
     const cardsArray = deckCode.slice(deckCode.indexOf('|')+1).split(';')
 
     const dbCards = await getCardsDB({
@@ -107,6 +109,8 @@ function getCardCount(importId, cardsArray) {
 
 function calculateAverages(cards, cardsArray, language) {
 
+    if (!cards) return false
+
     let totalAttack = 0
     let totalDefense = 0
     let totalKredits = 0
@@ -132,11 +136,17 @@ function calculateAverages(cards, cardsArray, language) {
         totalKredits += card.kredits
     })
 
-    // Calculate averages
-    const averageAttack = (totalAttack / units).toFixed(2)
-    const averageDefense = (totalDefense / units).toFixed(2)
+    let averageAttack = 0
+    let averageDefense = 0
+    let averageOperationCost = 0
+
+    if (units) {
+        averageAttack = (totalAttack / units).toFixed(2)
+        averageDefense = (totalDefense / units).toFixed(2)
+        averageOperationCost = (totalOperationCost / units).toFixed(2)
+    }
+
     const averageKredits = (totalKredits / cards.length).toFixed(2)
-    const averageOperationCost = (totalOperationCost / units).toFixed(2)
 
     const info = '```' +
         translate(language, 'units') + units + '\n' +
