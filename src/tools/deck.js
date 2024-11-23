@@ -148,7 +148,7 @@ function calculateAverages(cards, cardsArray, language) {
 
     const averageKredits = (totalKredits / cards.length).toFixed(2)
 
-    const info = '```' +
+    return '```' +
         translate(language, 'units') + units + '\n' +
         translate(language, 'orders') + orders + '\n' +
         translate(language, 'countermeasures') + countermeasures + '\n' +
@@ -157,8 +157,6 @@ function calculateAverages(cards, cardsArray, language) {
         translate(language, 'averageKredits') + averageKredits + '\n' +
         translate(language, 'averageOperationCost') + averageOperationCost + '\n' +
         '```'
-
-    return info
 }
 
 module.exports = {createDeckImages}
