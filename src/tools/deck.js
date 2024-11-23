@@ -5,7 +5,7 @@ const {getDeckFiles, deleteDeckFiles} = require("./fileManager")
 const {uploadImage} = require("./imageUpload")
 const Fs = require("@supercharge/fs")
 const {getCardsDB} = require("../database/db")
-
+const {deckBuilderLanguages} = require("../tools/language")
 /**
  *
  * @param prefix
@@ -24,8 +24,9 @@ async function createDeckImages(
     redis,
     deckKey)
 {
-
-    const deckBuilderURL = 'https://www.kards.com/decks/deck-builder?hash='
+    let urlLanguage = ''
+    if (deckBuilderLanguages.includes(language)) urlLanguage = language + '/'
+    const deckBuilderURL = 'https://www.kards.com/' + urlLanguage + 'decks/deck-builder?hash='
     const deckCode = command.replace(prefix, '')
     const hash = encodeURIComponent(deckCode)
     command = bot.parseCommand(prefix, command)
