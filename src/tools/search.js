@@ -455,18 +455,6 @@ function checkSynonymKey(key)
 
 /**
  *
- * @param value
- * @returns {boolean}
- */
-function checkSynonymValue(value)
-{
-    let allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/
-
-    return allowedChars.test(value)
-}
-
-/**
- *
  * @param command
  * @returns {Promise<string|null>}
  */
