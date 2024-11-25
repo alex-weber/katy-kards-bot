@@ -30,30 +30,31 @@ model Message {
 }
 
 model Synonym {
-  id       Int    @id @default(autoincrement())
-  key      String @unique
-  value    String
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
 }
 
 model Card {
-  id             Int    @id @default(autoincrement())
-  cardId         String @unique
-  importId       String
-  imageURL       String
-  thumbURL       String
-  set            String
-  title          String
-  text           String?
-  type           String
-  attack         Int?
-  defense        Int?
-  kredits        Int
-  operationCost  Int?
-  rarity         String
-  faction        String
-  attributes     String?
-  exile          String?
-  reserved       Boolean?
+  id            Int      @id @default(autoincrement())
+  cardId        String   @unique
+  importId      String
+  imageURL      String
+  thumbURL      String
+  set           String
+  title         String
+  text          String?
+  type          String
+  attack        Int?
+  defense       Int?
+  kredits       Int
+  operationCost Int?
+  rarity        String
+  faction       String
+  attributes    String?
+  exile         String?
+  reserved      Boolean?
+  fullText      String?
 }
 
 model Topdeck {
