@@ -117,7 +117,7 @@ function setAttribute(word, variables)
             variables.text = ['pin']
             return variables
     }
-    let attributes = ['faction', 'type', 'rarity']
+    let attributes = ['faction', 'rarity']
     for (const attr of attributes) {
         let dictionaryAttr = getAttribute(word, dictionary[attr])
         if (dictionaryAttr)
@@ -127,16 +127,6 @@ function setAttribute(word, variables)
         }
     }
 
-    //do not set attributes if it is a non-unit card
-    if (variables.type !== 'order' && variables.type !== 'countermeasure')
-    {
-        let attribute = getAttribute(word, dictionary.attribute)
-        if (attribute)
-        {
-            variables.attributes = attribute
-            return variables
-        }
-    }
     let exile = getAttribute(word, ['exile'])
     if (exile)
     {
@@ -302,20 +292,7 @@ async function advancedSearch(variables)
         skip = variables.offset
         delete variables.offset
     }
-    //search for attributes also in text
-    if (variables.hasOwnProperty('attributes'))
-    {
-        if (!variables.OR) variables.OR = []
-        variables.OR.push({
-            attributes: {
-                contains: variables.attributes,
-            }
-        })
-        if (!variables.text) variables.text = []
-        variables.text.push(variables.attributes)
-        delete variables.attributes
 
-    }
     //search for exile also in text
     if (variables.hasOwnProperty('exile'))
     {
@@ -330,30 +307,18 @@ async function advancedSearch(variables)
 
     if (variables.hasOwnProperty('text'))
     {
-        let andConditionsTitle = []
+
         let andConditionsText = []
         for (const word of variables.text)
         {
-            andConditionsTitle.push({
-                title: {
-                    contains: word,
-                    mode: 'insensitive',
-                }
-            })
             andConditionsText.push({
-                text: {
+                fullText: {
                     contains: word,
                     mode: 'insensitive',
                 }
             })
         }
-        if (!variables.OR) variables.OR = []
-        variables.OR.push({
-            AND: andConditionsTitle
-        })
-        variables.OR.push({
-            AND: andConditionsText
-        })
+        variables.AND = andConditionsText
 
         delete variables.text
     }
@@ -451,18 +416,6 @@ function checkSynonymKey(key)
     let allowedChars = /^[\sa-z0-9_-]+$/
 
     return allowedChars.test(key)
-}
-
-/**
- *
- * @param value
- * @returns {boolean}
- */
-function checkSynonymValue(value)
-{
-    let allowedChars = /^[\sa-zA-Z:0-9\/\._-]+$/
-
-    return allowedChars.test(value)
 }
 
 /**

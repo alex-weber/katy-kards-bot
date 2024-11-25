@@ -24,6 +24,13 @@ async function createCard(card)
     let exile = ''
     if (card.json.hasOwnProperty('exile')) exile = card.json.exile
 
+    let fullText =
+        card.json.title['en-EN'] +
+        card.json.title['ru-RU'] +
+        card.json.type.toLowerCase() +
+        card.json.attributes.toString().toLowerCase()
+    if (text.length) fullText += text
+
     const data = {
         cardId:         card.cardId,
         importId:       card.importId,
@@ -31,6 +38,7 @@ async function createCard(card)
         thumbURL:       card.thumbUrl,
         title:          card.json.title['en-EN'] + '%%' + card.json.title['ru-RU'],
         text:           text,
+        fullText:       fullText,
         set:            card.json.set.toLowerCase(),
         type:           card.json.type.toLowerCase(),
         attack:         card.json.attack,
