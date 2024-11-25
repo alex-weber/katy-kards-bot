@@ -291,13 +291,6 @@ function getFiles(cards, language, limit)
 async function advancedSearch(variables)
 {
     variables = getVariables(variables)
-    if (Object.keys(variables).length === 0)
-    {
-        console.log('no variables set')
-
-        return {counter: 0, cards: []}
-    }
-
     //delete non DB fields
     delete variables.q
     delete variables.language
@@ -366,6 +359,12 @@ async function advancedSearch(variables)
     }
 
     console.dir(variables, {depth: null})
+    if (Object.keys(variables).length === 0)
+    {
+        console.log('no variables set')
+
+        return {counter: 0, cards: []}
+    }
     const label = 'getCardsDB_' + Date.now()
     console.time(label)
     let cards = await getCardsDB(variables, skip)
