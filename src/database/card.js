@@ -25,9 +25,9 @@ async function createCard(card)
     if (card.json.hasOwnProperty('exile')) exile = card.json.exile
 
     let fullText =
-        card.json.title['en-EN'] +
-        card.json.title['ru-RU'] +
-        card.json.type.toLowerCase() +
+        card.json.title['en-EN'] + ' ' +
+        card.json.title['ru-RU'] + ' ' +
+        card.json.type.toLowerCase() + ' ' +
         card.json.attributes.toString().toLowerCase()
     if (text.length) fullText += text
 
