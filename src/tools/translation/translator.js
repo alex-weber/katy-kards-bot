@@ -64,6 +64,8 @@ function getReservedWords()
         'special': 'особая',
         'elite': 'элитная',
         'exile': 'изгнание',
+        'covert': 'скрытность',
+        'shock': 'штурм'
     }
 
 }

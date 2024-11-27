@@ -41,6 +41,7 @@ module.exports = {
         'veteran',
         'salvage',
         'covert',
+        'shock',
     ],
     synonyms: {
 
