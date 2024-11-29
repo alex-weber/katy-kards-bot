@@ -21,15 +21,19 @@ async function createCard(card)
         //console.log(card.json.text)
         text = card.json.text['en-EN'].toLowerCase() + '%%' + card.json.text['ru-RU'].toLowerCase()
     }
-    let exile = ''
-    if (card.json.hasOwnProperty('exile')) exile = card.json.exile
 
     let fullText =
         card.json.title['en-EN'] + ' ' +
         card.json.title['ru-RU'] + ' ' +
         card.json.type.toLowerCase() + ' ' +
-        card.json.attributes.toString().toLowerCase()
+        card.json.attributes.toString().toLowerCase() + ' '
     if (text.length) fullText += text
+
+    let exile = ''
+    if (card.json.hasOwnProperty('exile')) {
+        exile = card.json.exile
+        fullText += ' exile изгнание' // add exile to the fulltext
+    }
 
     const data = {
         cardId:         card.cardId,
