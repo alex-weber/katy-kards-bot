@@ -13,16 +13,40 @@ block content
       // Canvas for Messages Chart
       canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
 
-    // Subtitle
-    h4.text-center.text-primary.mt-5.mb-3 Cards by Factions
 
+
+    div.row
+      div.col-md-6
+        h4.text-primary.mt-5.mb-3 Top 100 Messages
+        div(style="height: 500px; overflow: auto;")
+          table.table.table-dark.table-striped.table-hover
+            thead(style="position: sticky; top: 0;")
+              tr
+                th(scope='col') Command
+                th(scope='col') Count
+            tbody#topMessages
+
+      div.col-md-6
+        h4.text-primary.mt-5.mb-3 Top 100 Users
+        div(style="height: 500px; overflow: auto;")
+          table.table.table-dark.table-striped.table-hover
+            thead(style="position: sticky; top: 0;")
+              tr
+                th(scope='col') #
+                th(scope='col') User
+                th(scope='col') Commands Count
+            tbody#topUsers
+
+    h4.text-center.text-primary.mt-5.mb-3
+      | Cards by Factions
+      span#factionsTotalCardsCount
     // Chart Section for Top Messages
     div(style="height: 500px; width: 100%; margin-bottom: 100px;")
       // Loading Spinner for Top Messages Chart
-      div#loadingSpinnerTopMessages.d-flex.justify-content-center.align-items-center(style="height: 500px; display: flex;")
+      div#loadingSpinnerFactions.d-flex.justify-content-center.align-items-center(style="height: 500px; display: flex;")
         div.spinner-border.text-primary(role="status")
       // Canvas for Top Messages Chart
-      canvas#topMessagesChart(style="height: 500px; width: 100%; display: none;")
+      canvas#factionsChart(style="height: 500px; width: 100%; display: none;")
 
 
   script(src="/static/vendor/chart.js")

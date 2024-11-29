@@ -147,20 +147,72 @@ async function getTopMessages()
             createdAt: {
                 gte: monthAgo,
             },
+            AND: [
+                { content: { not: { startsWith: 'td' } } },
+                { content: { not: { startsWith: 'command' } } },
+                { content: { not: { startsWith: 'alt' } } },
+            ]
         },
         orderBy: {
             _count: {
                 content: 'desc'
             }
         },
-        skip:3,
-        take: 30,
+        take: 100,
     })
 
     return groupedCards.map(group => ({
         command: group.content,
         count: group._count.content
     }))
+
+}
+
+async function getTopUsers()
+{
+    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+    const groupedMessages = await prisma.message.groupBy({
+        by: ['authorId'],
+        _count: {
+            content: true
+        },
+        where: {
+            createdAt: {
+                gte: monthAgo,
+            }
+        },
+        orderBy: {
+            _count: {
+                content: 'desc'
+            }
+        },
+        take: 100,
+    })
+
+    const userIds = groupedMessages.map(group => group.authorId)
+
+    const users = await prisma.user.findMany({
+        where: {
+            id: { in: userIds }
+        },
+        select: {
+            id: true,
+            name: true,
+            discordId: true,
+        }
+    })
+
+    return groupedMessages.map((group, index) => {
+        const user = users.find(u => u.id === group.authorId)
+        return {
+            authorId: group.authorId,
+            position: index + 1,
+            username: user?.name || 'Unknown',
+            discordId: user?.discordId || 'N/A',
+            count: group._count.content
+        }
+    })
 
 }
 
@@ -187,4 +239,5 @@ module.exports = {
     getMessages,
     getTopDeckMessages,
     getTopMessages,
+    getTopUsers,
 }

@@ -1,4 +1,4 @@
-async function renderMessagesChart(data, dataTD) {
+function renderMessagesChart(data, dataTD) {
     try {
 
         const loadingSpinner = document.getElementById('loadingSpinner')
@@ -91,16 +91,24 @@ function drawChart(chartSettings)
     })
 }
 
-async function renderFactionsChart(apiData)
+function hideSpinner(loadingSpinner, chartCanvas)
 {
-    const loadingSpinner = document.getElementById('loadingSpinnerTopMessages')
-    const chartCanvas = document.getElementById('topMessagesChart')
+    loadingSpinner.classList.add('d-none')
+    chartCanvas.style.display = 'block'
+}
+
+function renderFactionsChart(apiData)
+{
+    const loadingSpinner = document.getElementById('loadingSpinnerFactions')
+    const chartCanvas = document.getElementById('factionsChart')
+    const totalCardsCountElement = document.getElementById('factionsTotalCardsCount')
 
     const labels = apiData.data.map(item => item.faction.toUpperCase() + '(' + item.count + ')')
     const data = apiData.data.map(item => item.count)
+    const totalCount = data.reduce((sum, count) => sum + count, 0)
+    totalCardsCountElement.innerText = ' (' + totalCount + ')'
     // Hide loading spinner and show canvas
-    loadingSpinner.classList.add('d-none')
-    chartCanvas.style.display = 'block'
+    hideSpinner(loadingSpinner, chartCanvas)
 
     // Define faction colors
     const baseColors = {
@@ -168,6 +176,24 @@ async function renderFactionsChart(apiData)
 
 }
 
+function renderTopMessages(apiData)
+{
+    const topMessagesDiv = document.getElementById('topMessages')
+    topMessagesDiv.innerHTML = apiData.data.map(
+        item =>
+            '<tr><td>' + item.command + '</td><td>' + item.count + '</td></tr>').join('')
+
+}
+
+function renderTopUsers(apiData) {
+    const topUsersElement = document.getElementById('topUsers')
+    topUsersElement.innerHTML = apiData.data.map(
+        item =>
+            '<tr><td>' + item.position + '</td><td>' + item.username + '</td><td>' + item.count + '</td></tr>')
+        .join('')
+
+}
+
 async function getDashboardData()
 {
     //get the data
@@ -175,35 +201,45 @@ async function getDashboardData()
         responseMessages,
         responseTdMessages,
         responseFactions,
+        responseTopMessages,
+        responseTopUsers,
     ] = await Promise.all([
         fetch('/api/messages'),
         fetch('/api/td-messages'),
-        fetch('/api/cards-by-faction')
+        fetch('/api/cards-by-faction'),
+        fetch('/api/top-messages'),
+        fetch('/api/top-users'),
     ])
 
     const [
         dataMessages,
         dataTdMessages,
-        dataFactions
+        dataFactions,
+        dataTopMessages,
+        dataTopUsers,
     ] = await Promise.all([
         responseMessages.json(),
         responseTdMessages.json(),
         responseFactions.json(),
+        responseTopMessages.json(),
+        responseTopUsers.json(),
     ])
 
     return {
         dataMessages,
         dataTdMessages,
-        dataFactions
+        dataFactions,
+        dataTopMessages,
+        dataTopUsers,
     }
 
 }
 
 getDashboardData().then(
     data => {
-        renderMessagesChart(data.dataMessages, data.dataTdMessages,)
-            .then( ()=> console.log('commands chart rendered') )
+        renderMessagesChart(data.dataMessages, data.dataTdMessages)
+        renderTopMessages(data.dataTopMessages)
+        renderTopUsers(data.dataTopUsers)
         renderFactionsChart(data.dataFactions)
-            .then( ()=> console.log('factions chart rendered') )
     }
 )
