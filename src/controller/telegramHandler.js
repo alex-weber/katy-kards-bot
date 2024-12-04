@@ -33,9 +33,9 @@ async function telegramHandler(ctx, redis) {
     console.log(ctx.update.message.from)
     command = bot.parseCommand(prefix, command)
     //get or create user
-    let userID = ctx.update.message.from.id.toString()
+    const userID = ctx.update?.message?.from?.id?.toString() || null
+    if (!userID) return
     //try to get from cache
-
     const user = await getUser(userID)
     //switch language
     if (bot.isLanguageSwitch(command))
