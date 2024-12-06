@@ -17,9 +17,13 @@ const {myTDRank} = require("../games/topDeck")
 const {handleTD} = require("../games/topDeckController")
 const {getStats, getServerList} = require("../tools/stats")
 const {
-    isManager, isBotCommandChannel,
-    listSynonyms, handleSynonym,
-    getCards, getFiles,
+    isManager,
+    isBotCommandChannel,
+    isEnglishOnlyChannel,
+    listSynonyms,
+    handleSynonym,
+    getCards,
+    getFiles,
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {getRandomImage} = require("../tools/nekosAPI")
@@ -158,6 +162,9 @@ async function discordHandler(message, client, redis)
         console.timeEnd('updateUser'+userId)
         language = 'ru'
     }
+    //switch to English for English only channels
+    if (isEnglishOnlyChannel(message)) language = 'en'
+
     //save the command in the DB and in cache, no need to wait
     createMessage({authorId: user.id, content: command}).then()
 

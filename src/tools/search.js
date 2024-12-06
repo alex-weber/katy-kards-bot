@@ -473,11 +473,17 @@ function isBotCommandChannel(message)
     else return true
 }
 
+function isEnglishOnlyChannel(message)
+{
+    return dictionary.englishOnly.channels.includes(message.channelId.toString())
+}
+
 module.exports = {
     getCards,
     getFiles,
     listSynonyms,
     handleSynonym,
     isBotCommandChannel,
+    isEnglishOnlyChannel,
     isManager,
 }
