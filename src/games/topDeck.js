@@ -132,7 +132,7 @@ async function battle(td)
             //check for ambush
             if (defender.attributes.search('ambush') !== -1 && defAttack >= attacker.defense)
             {
-                console.log('ambush!')
+                td.log += 'Ambush!\n'
                 attack = 0
             }
             attacker.defense -= defAttack
@@ -187,7 +187,7 @@ async function battle(td)
         user2.tdDraws = parseInt(user2.tdDraws) + 1
         await updateUser(user1)
         await updateUser(user2)
-        td.log += 'draw'
+        td.log += 'DRAW'
     }
     td.log += '```' //add code block end
     await updateTopDeck(td)
