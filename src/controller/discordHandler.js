@@ -328,7 +328,7 @@ async function discordHandler(message, client, redis)
         if (files.length) {
 
             let offset = parseInt(command.replace('alt', ''))
-            if (isNaN(offset)) offset = 0
+            if (isNaN(offset) || offset > files.length) offset = 0
             let last = offset + limit
             if (last > files.length) last = files.length
             const answer = {
