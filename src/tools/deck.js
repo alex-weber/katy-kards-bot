@@ -39,8 +39,9 @@ async function createDeckImages(
         deckInfo = await analyseDeck(deckCode, language)
         if (!deckInfo) return message.channel.send(translate(language, 'error'))
     }
-    message.channel.send(translate(language, 'screenshot'))
+    const sentMessage = await message.channel.send(translate(language, 'screenshot'))
     let result = await takeScreenshot(url)
+    sentMessage.delete()
     if (!result) return message.channel.send(translate(language, 'error'))
     let files = getDeckFiles()
     message.channel.send({content: deckInfo, files: files})
