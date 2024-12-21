@@ -51,4 +51,6 @@ You should see the bot's home page.
 Add bot to a server.
 Send `!help` in a chat and see if the bot answers.
 
+test1
+
 
