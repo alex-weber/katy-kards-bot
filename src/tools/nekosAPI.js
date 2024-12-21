@@ -9,8 +9,13 @@ const maxFileSize = 5 * 1024 * 1024 //5MB
 async function getRandomImage(endpoint=false)
 {
     if (!endpoint) endpoint = getRandomEndpoint()
-    const response = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
-    if (response.status !== 200) return false
+    try {
+        const response = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
+        if (response.status !== 200) return false
+    } catch (e) {
+        console.error(e)
+        return false
+    }
     const imageURL = response.data.url.toString()
     const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp']
     const imageExtension = imageURL.split('.').pop().toLowerCase()
