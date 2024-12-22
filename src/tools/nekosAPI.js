@@ -11,21 +11,23 @@ async function getRandomImage(endpoint=false)
     if (!endpoint) endpoint = getRandomEndpoint()
     try {
         const response = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
-        if (response.status !== 200) return false
+        if (response === undefined || response.status !== 200) return false
+        if (!response.data.url) return false
+        const imageURL = response.data.url.toString()
+        const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp']
+        const imageExtension = imageURL.split('.').pop().toLowerCase()
+        if (!imageURL || !allowedExtensions.includes(imageExtension) ||
+            await bot.getFileSize(imageURL) > maxFileSize)
+        {
+            return false
+        }
+
+        return imageURL
     } catch (e) {
         console.error(e)
         return false
     }
-    const imageURL = response.data.url.toString()
-    const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp']
-    const imageExtension = imageURL.split('.').pop().toLowerCase()
-    if (!imageURL || !allowedExtensions.includes(imageExtension) ||
-        await bot.getFileSize(imageURL) > maxFileSize)
-    {
-        return false
-    }
 
-    return imageURL
 }
 
 function getRandomEndpoint()
