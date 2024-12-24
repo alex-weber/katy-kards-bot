@@ -29,9 +29,9 @@ const redis = createClient({url: process.env.REDISCLOUD_URL})
 redis.connect().then(()=>{ console.log('REDIS Client Connected') })
 const RedisStore = require("connect-redis").default
 // Initialize store.
-let secure = process.env.NODE_ENV === 'production'
-let cachePrefix = secure ? 'katy-prod:' : 'katy-dev:'
-let redisStore = new RedisStore({
+const secure = process.env.NODE_ENV === 'production'
+const cachePrefix = secure ? 'katy-prod:' : 'katy-dev:'
+const redisStore = new RedisStore({
     client: redis,
     prefix: cachePrefix,
 })
@@ -42,6 +42,8 @@ const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
 const {getAllSynonyms, getUser, getLastDayMessages, disconnect,} = require('./database/db')
 const {translate} = require("./tools/translation/translator")
+const CardMaker = require("./tools/cardmaker/cardmaker")
+
 //session
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 app.use(session({
@@ -178,6 +180,7 @@ client.on('messageCreate', async message => discordHandler(message, client, redi
 client.on('interactionCreate', async (interaction) => {
 
     const message = interaction.message
+    const user = await getUser(interaction.user.id)
 
     if (interaction.isButton() && interaction.customId.startsWith('next_button'))
     {
@@ -185,8 +188,6 @@ client.on('interactionCreate', async (interaction) => {
         message.buttonId = interaction.customId
         // remove the button
         await interaction.message.edit({ components: [] })
-
-        const user = await getUser(interaction.user.id)
         const content = translate(user.language,'fetching')
         await interaction.reply({ content: content , ephemeral: true })
 
@@ -204,7 +205,11 @@ client.on('interactionCreate', async (interaction) => {
 
             await interaction.deferUpdate() //end it properly
 
-            return await discordHandler(message, client, redis)
+            await CardMaker.handeInteraction(
+                message,
+                interaction.user.id,
+                redis
+            )
         } catch (e) {
             console.error(e)
         }

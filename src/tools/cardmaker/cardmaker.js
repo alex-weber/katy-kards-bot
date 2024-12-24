@@ -7,6 +7,76 @@ const {
 
 const dictionary = require('../dictionary')
 
+function getDefaultCMObject()
+{
+    return {
+        faction: '',
+        type: '',
+        rarity: '',
+        title: '',
+        text: '',
+        kredits: null,
+        operationCost: null,
+        attack: null,
+        defense: null,
+        link: '',
+    }
+}
+
+/**
+ *
+ * @param message
+ * @param userId
+ * @param redis
+ * @returns {Promise<void>}
+ */
+async function handeInteraction(message, userId, redis)
+{
+    const command = message.cardmakerId
+    const cmKey = 'card_maker:' + userId
+    let cmObject = getDefaultCMObject()
+
+    const cachedCMObject = await redis.json.get(cmKey, '$')
+
+    if (cachedCMObject)
+    {
+       cmObject = cachedCMObject
+    }
+
+    if (command.includes('_button_'))
+    {
+        return message.channel.send(JSON.stringify(cmObject))
+    }
+    cmObject = setCMProperties(command, cmObject)
+    await redis.json.set(cmKey, '$', cmObject)
+
+}
+
+function setCMProperties(id, cmObject)
+{
+    const action = id.replace('cardmaker_', '').split('_')
+    const command = action[0]
+    const value = action[1]
+    switch (command) {
+        case 'button':
+            return cmObject
+        case 'faction':
+            cmObject.faction = value
+            break
+        case 'type':
+            cmObject.type = value
+            break
+        case 'rarity':
+            cmObject.rarity = value
+            break
+        default:
+            return cmObject
+    }
+
+    return cmObject
+}
+
+
 // Generate random options for the select menus
 function generateOptions(type, options) {
     const selectOptions = []
@@ -19,7 +89,7 @@ function generateOptions(type, options) {
     return selectOptions
 }
 
-function getCardmakerActionRows()
+function getFirstStepRows()
 {
     const selectMenus = []
 
@@ -50,8 +120,8 @@ function getCardmakerActionRows()
     )
 
     const button = new ButtonBuilder()
-        .setCustomId('cardmaker_create')
-        .setLabel('Create')
+        .setCustomId('cardmaker_button_step1')
+        .setLabel('Next')
         .setStyle(ButtonStyle.Primary)
     const buttonRow = new ActionRowBuilder().addComponents(button)
     actionRows.push(buttonRow)
@@ -60,5 +130,6 @@ function getCardmakerActionRows()
 }
 
 module.exports = {
-    getCardmakerActionRows,
+    getFirstStepRows,
+    handeInteraction,
 }

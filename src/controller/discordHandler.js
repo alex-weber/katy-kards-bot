@@ -36,7 +36,7 @@ const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
 //load more results button
 const {getButtonRow} = require("../tools/button")
-const {getCardmakerActionRows} = require("../tools/cardmaker/cardmaker")
+const CardMaker = require("../tools/cardmaker/cardmaker")
 /**
  *
  * @param message
@@ -48,12 +48,6 @@ async function discordHandler(message, client, redis)
 {
     //get a custom sever prefix if set
     const prefix = bot.getPrefix(message)
-
-    //cardmaker
-    if (message.cardmakerId) {
-        message.author.bot = false
-        message.content = prefix + message.cardmakerId
-    }
 
     let CommandCacheKey = 'command:'
     if (!message.cardmakerId && !message.buttonId)
@@ -173,22 +167,13 @@ async function discordHandler(message, client, redis)
     if (isEnglishOnlyChannel(message)) language = 'en'
 
     if (command === 'cardmaker') {
-        const components = getCardmakerActionRows()
+        const components = CardMaker.getFirstStepRows()
         message.channel.send({
-            content: 'Select Faction, Card Type and Rarity ',
+            content: 'Select Faction, Card Type and Rarity',
             components: components,
         })
 
         return
-    }
-
-    if (command.startsWith('cardmaker_'))
-    {
-
-        await message.channel.send(command)
-
-        return
-
     }
 
     //save the command in the DB and in cache, no need to wait
