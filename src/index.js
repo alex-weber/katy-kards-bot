@@ -42,6 +42,7 @@ const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
 const {getAllSynonyms, getUser, getLastDayMessages, disconnect, getCardsDB, getCardsByFaction} = require('./database/db')
 const {translate} = require("./tools/translation/translator")
+const {message} = require("telegraf/filters");
 //session
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 app.use(session({
@@ -176,10 +177,12 @@ client.on('ready', () =>
 client.on('messageCreate', async message => discordHandler(message, client, redis))
 //trigger on interactions
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isButton()) return
-    if (interaction.customId.startsWith('next_button'))
+
+    const message = interaction.message
+
+    if (interaction.isButton() && interaction.customId.startsWith('next_button'))
     {
-        const message = interaction.message
+
         message.buttonId = interaction.customId
         // remove the button
         await interaction.message.edit({ components: [] })
@@ -189,6 +192,23 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.reply({ content: content , ephemeral: true })
 
         return await discordHandler(message, client, redis)
+    }
+    //handle card maker
+    if (interaction.customId.startsWith('cardmaker_'))
+    {
+        try {
+            if (interaction.values) {
+                message.cardmakerId = 'cardmaker_' + interaction.values[0]
+            } else {
+                message.cardmakerId = interaction.customId
+            }
+
+            await interaction.deferUpdate() //end it properly
+
+            return await discordHandler(message, client, redis)
+        } catch (e) {
+            console.error(e)
+        }
     }
 
 })
