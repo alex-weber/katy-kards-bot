@@ -40,9 +40,8 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 //for web pages
 const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
-const {getAllSynonyms, getUser, getLastDayMessages, disconnect, getCardsDB, getCardsByFaction} = require('./database/db')
+const {getAllSynonyms, getUser, getLastDayMessages, disconnect,} = require('./database/db')
 const {translate} = require("./tools/translation/translator")
-const {message} = require("telegraf/filters");
 //session
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 app.use(session({
