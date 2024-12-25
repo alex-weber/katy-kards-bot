@@ -169,7 +169,7 @@ async function discordHandler(message, client, redis)
     if (command === 'cardmaker') {
         const components = CardMaker.getFirstStepRows()
         message.channel.send({
-            content: 'Select Faction, Card Type and Rarity',
+            content: 'Card Maker: Step 1',
             components: components,
         })
 

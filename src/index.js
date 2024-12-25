@@ -207,7 +207,7 @@ client.on('interactionCreate', async (interaction) => {
 
             await CardMaker.handeInteraction(
                 message,
-                interaction.user.id,
+                interaction,
                 redis
             )
         } catch (e) {
