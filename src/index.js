@@ -197,16 +197,7 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.customId.startsWith('cardmaker_'))
     {
         try {
-            if (interaction.values) {
-                message.cardmakerId = 'cardmaker_' + interaction.values[0]
-            } else {
-                message.cardmakerId = interaction.customId
-            }
-
-            await interaction.deferUpdate() //end it properly
-
             await CardMaker.handeInteraction(
-                message,
                 interaction,
                 redis
             )

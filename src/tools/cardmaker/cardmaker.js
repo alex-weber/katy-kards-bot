@@ -6,7 +6,6 @@ const {
 } = require('discord.js')
 
 const dictionary = require('../dictionary')
-const {translate} = require("../translation/translator")
 
 function getDefaultCMObject()
 {
@@ -27,15 +26,20 @@ function getDefaultCMObject()
 
 /**
  *
- * @param message
- * @param userId
+ * @param interaction
  * @param redis
  * @returns {Promise<void>}
  */
-async function handeInteraction(message, userId, redis)
+async function handeInteraction(interaction, redis)
 {
-    const command = message.cardmakerId
-    const cmKey = 'card_maker:' + userId
+    let command = ''
+    if (interaction.values) {
+        command = 'cardmaker_' + interaction.values[0]
+    } else {
+        command = interaction.customId
+    }
+
+    const cmKey = 'card_maker:' + interaction.user.id
     let cmObject = getDefaultCMObject()
 
     const cachedCMObject = await redis.json.get(cmKey, '$')
@@ -47,50 +51,58 @@ async function handeInteraction(message, userId, redis)
     cmObject = setCMProperties(command, cmObject)
     await redis.json.set(cmKey, '$', cmObject)
 
-    if (cmObject.stage === 'step2')
+    if (!interaction.isModalSubmit() && !interaction.isButton())
     {
-        if (!cmObject.faction || !cmObject.rarity || !cmObject.kredits || !cmObject.type )
-        {
-            await redis.json.set(cmKey, '$.stage', 'step1')
+        await interaction.deferUpdate() //end it properly
+    }
 
-            return message.reply({
-                content: 'all fields are mandatory in step 1',
-            })
-        }
-
-        await message.channel.send(JSON.stringify(cmObject))
-
-        if (cmObject.type === 'order' || cmObject.type === 'countermeasure')
-        {
-            await redis.json.set(cmKey, '$.stage', 'step4')
-
-            return message.reply({
-                content: 'proceed to step 4',
-            })
-
-        }
-
-        await redis.json.set(cmKey, '$.stage', 'step3')
-
-        message.channel.send({
-            content: 'Card Maker: Step 2',
-            components: getSecondStepRows(),
+    if (interaction.isModalSubmit() && interaction.customId === 'cardmaker_button_title')
+    {
+        const userInput = interaction.fields.getTextInputValue('text_input_title')
+        cmObject.title = userInput
+        cmObject.stage = 'stage4'
+        await redis.json.set(cmKey, '$', cmObject)
+        interaction.reply({
+            content: interaction.customId +'\n' + JSON.stringify(cmObject),
+            ephemeral: true,
         })
 
-        message.delete()
     }
-
-    if (cmObject.stage === 'step3')
+    if (interaction.customId === 'cardmaker_button_text')
     {
 
-        if (!cmObject.operationCost || !cmObject.attack || !cmObject.defense)
-        {
-            return message.reply({
-                content: 'all fields are mandatory in step 2',
-            })
-        }
+        cmObject.text = interaction.fields.getTextInputValue('text_input_text')
+        cmObject.stage = 'stage5'
+        await redis.json.set(cmKey, '$', cmObject)
+        interaction.reply({
+            content: interaction.customId +'\n' + JSON.stringify(cmObject),
+            ephemeral: true,
+        })
+
     }
 
+
+    if (interaction.customId === 'cardmaker_button_step2')
+    {
+        if (cmObject.type === 'order' || cmObject.type === 'countermeasure') {
+
+            interaction.showModal(getTextModal('title'), TextInputStyle.Short)
+        } else {
+            interaction.reply({
+                content: interaction.customId +'\n' + JSON.stringify(cmObject),
+                components: getSecondStepRows(),
+                ephemeral: true,
+            })
+        }
+
+    }
+
+    if (interaction.customId === 'cardmaker_button_step3')
+    {
+        interaction.showModal(
+            getTextModal('title', TextInputStyle.Short)
+        )
+    }
 
 
 }
@@ -101,9 +113,6 @@ function setCMProperties(id, cmObject)
     const command = action[0]
     const value = action[1]
     switch (command) {
-        case 'button':
-            cmObject.stage = value
-            break
         case 'faction':
             cmObject.faction = value
             break
@@ -257,18 +266,18 @@ function getSecondStepRows()
     return actionRows
 }
 
-function getTextModal()
+function getTextModal(id, style)
 {
     // Create a modal
     const modal = new ModalBuilder()
-        .setCustomId('cardmaker_button_title')
+        .setCustomId('cardmaker_button_' + id)
         .setTitle('Enter Title');
 
     // Create a text input field
     const textInput = new TextInputBuilder()
-        .setCustomId('text_input_title')
-        .setLabel('Enter Title')
-        .setStyle(TextInputStyle.Short) // Single-line input
+        .setCustomId('text_input_'  + id)
+        .setLabel('Enter ' + id.toUpperCase())
+        .setStyle(style) // Single-line input
         .setPlaceholder('Type something...')
         .setRequired(true);
 
