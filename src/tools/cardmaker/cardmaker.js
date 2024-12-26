@@ -32,22 +32,13 @@ function getDefaultCMObject()
  */
 async function handeInteraction(interaction, redis)
 {
-    let command = ''
-    if (interaction.values) {
-        command = 'cardmaker_' + interaction.values[0]
-    } else {
-        command = interaction.customId
-    }
+    const command = interaction.values ? interaction.values[0] : interaction.customId
 
     const cmKey = 'card_maker:' + interaction.user.id
-    let cmObject = getDefaultCMObject()
+    let cmObject = await redis.json.get(cmKey, '$')
 
-    const cachedCMObject = await redis.json.get(cmKey, '$')
+    if (!cmObject) cmObject = getDefaultCMObject()
 
-    if (cachedCMObject)
-    {
-        cmObject = cachedCMObject
-    }
     cmObject = setCMProperties(command, cmObject)
     await redis.json.set(cmKey, '$', cmObject)
 
