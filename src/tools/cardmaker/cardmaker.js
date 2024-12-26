@@ -58,24 +58,15 @@ async function handeInteraction(interaction, redis)
 
     if (interaction.isModalSubmit() && interaction.customId === 'cardmaker_button_title')
     {
-        const userInput = interaction.fields.getTextInputValue('text_input_title')
-        cmObject.title = userInput
-        cmObject.stage = 'stage4'
+        const title = interaction.fields.getTextInputValue('text_input_title')
+        const text = interaction.fields.getTextInputValue('text_input_text')
+        cmObject.title = title
+        cmObject.text = text
+        cmObject.stage = 'step4'
         await redis.json.set(cmKey, '$', cmObject)
-        interaction.reply({
-            content: interaction.customId +'\n' + JSON.stringify(cmObject),
-            ephemeral: true,
-        })
 
-    }
-    if (interaction.customId === 'cardmaker_button_text')
-    {
-
-        cmObject.text = interaction.fields.getTextInputValue('text_input_text')
-        cmObject.stage = 'stage5'
-        await redis.json.set(cmKey, '$', cmObject)
         interaction.reply({
-            content: interaction.customId +'\n' + JSON.stringify(cmObject),
+            content: 'Upload your image',
             ephemeral: true,
         })
 
@@ -84,24 +75,45 @@ async function handeInteraction(interaction, redis)
 
     if (interaction.customId === 'cardmaker_button_step2')
     {
-        if (cmObject.type === 'order' || cmObject.type === 'countermeasure') {
-
-            interaction.showModal(getTextModal('title'), TextInputStyle.Short)
-        } else {
+        if (!cmObject.faction || !cmObject.type || !cmObject.kredits || !cmObject.rarity)
+        {
             interaction.reply({
-                content: interaction.customId +'\n' + JSON.stringify(cmObject),
-                components: getSecondStepRows(),
+                content: 'Nuh Uh!',
                 ephemeral: true,
             })
+        } else
+        {
+            if (cmObject.type === 'order' || cmObject.type === 'countermeasure') {
+
+                interaction.showModal(
+                    getTextModal()
+                )
+            } else
+            {
+                interaction.reply({
+                    content: 'Step 2',
+                    components: getSecondStepRows(),
+                    ephemeral: true,
+                })
+            }
         }
 
     }
 
     if (interaction.customId === 'cardmaker_button_step3')
     {
-        interaction.showModal(
-            getTextModal('title', TextInputStyle.Short)
-        )
+        if (cmObject.operationCost === null || cmObject.attack === null || !cmObject.defense)
+        {
+            interaction.reply({
+                content: 'Nuh Uh!',
+                ephemeral: true,
+            })
+        } else {
+            interaction.showModal(
+                getTextModal()
+            )
+        }
+
     }
 
 
@@ -194,12 +206,10 @@ function getFirstStepRows()
         .addOptions(generateOptions('kredits', kredits))
     selectMenus.push(kreditsMenu)
 
-
     // Build action rows
     const actionRows = selectMenus.map(
         menu => new ActionRowBuilder().addComponents(menu)
     )
-
 
     const buttonRow = getButtonActionRow('cardmaker_button_step2', 'Next')
     actionRows.push(buttonRow)
@@ -266,26 +276,35 @@ function getSecondStepRows()
     return actionRows
 }
 
-function getTextModal(id, style)
+function getTextModal()
 {
     // Create a modal
     const modal = new ModalBuilder()
-        .setCustomId('cardmaker_button_' + id)
-        .setTitle('Enter Title');
+        .setCustomId('cardmaker_button_title')
+        .setTitle('Enter Title and Text')
 
     // Create a text input field
-    const textInput = new TextInputBuilder()
-        .setCustomId('text_input_'  + id)
-        .setLabel('Enter ' + id.toUpperCase())
-        .setStyle(style) // Single-line input
+    const title = new TextInputBuilder()
+        .setCustomId('text_input_title')
+        .setLabel('Enter Title')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('Type something...')
+        .setRequired(true);
+
+    // Create a text input field
+    const the_text = new TextInputBuilder()
+        .setCustomId('text_input_text')
+        .setLabel('Enter Text')
+        .setStyle(TextInputStyle.Paragraph) // Single-line input
         .setPlaceholder('Type something...')
         .setRequired(true);
 
     // Add the text input to an action row
-    const actionRow = new ActionRowBuilder().addComponents(textInput);
+    const actionRowTitle = new ActionRowBuilder().addComponents(title)
+    const actionRowText = new ActionRowBuilder().addComponents(the_text)
 
     // Add the action row to the modal
-    modal.addComponents(actionRow)
+    modal.addComponents(actionRowTitle, actionRowText)
 
     return modal
 }
