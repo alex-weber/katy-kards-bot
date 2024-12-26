@@ -37,6 +37,7 @@ const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
 //load more results button
 const {getButtonRow} = require("../tools/button")
 const CardMaker = require("../tools/cardmaker/cardmaker")
+const {downloadImageAsFile} = require("../tools/imageUpload");
 /**
  *
  * @param message
@@ -46,11 +47,30 @@ const CardMaker = require("../tools/cardmaker/cardmaker")
  */
 async function discordHandler(message, client, redis)
 {
+    //card maker upload
+    if (message.attachments.size)
+    {
+        const uID = message.author.id.toString()
+        const cmKey = 'card_maker:' + uID
+        const cm = await redis.json.get(cmKey,'$')
+        if (cm && cm.stage === 'upload')
+        {
+            const attachment = message.attachments.first()
+            const imageFile = await downloadImageAsFile(attachment.url)
+            console.log(imageFile)
+            await redis.json.set(cmKey, '$.stage', 'in progress')
+
+            message.channel.send('image uploaded. Creating your card...')
+            //to Do CardMaker.generate(uID)
+        }
+
+    }
+
     //get a custom sever prefix if set
     const prefix = bot.getPrefix(message)
 
     let CommandCacheKey = 'command:'
-    if (!message.cardmakerId && !message.buttonId)
+    if (!message.buttonId)
     {
         CommandCacheKey += 'next_button_' +
             bot.parseCommand(prefix, message.content).replace(' ', '_')
@@ -167,6 +187,9 @@ async function discordHandler(message, client, redis)
     if (isEnglishOnlyChannel(message)) language = 'en'
 
     if (command === 'cardmaker') {
+        //delete from cache
+        const cmKey = 'card_maker:' + userId
+        await redis.json.del(cmKey)
         const components = CardMaker.getFirstStepRows()
         message.channel.send({
             content: 'Card Maker: Step 1',

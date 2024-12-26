@@ -138,6 +138,6 @@ async function convertImageToWEBP(imagePath) {
 
 }
 
-module.exports = {uploadImage}
+module.exports = {uploadImage, downloadImageAsFile}
 
 

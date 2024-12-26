@@ -46,7 +46,7 @@ async function handeInteraction(interaction, redis)
 
     if (cachedCMObject)
     {
-       cmObject = cachedCMObject
+        cmObject = cachedCMObject
     }
     cmObject = setCMProperties(command, cmObject)
     await redis.json.set(cmKey, '$', cmObject)
@@ -62,7 +62,7 @@ async function handeInteraction(interaction, redis)
         const text = interaction.fields.getTextInputValue('text_input_text')
         cmObject.title = title
         cmObject.text = text
-        cmObject.stage = 'step4'
+        cmObject.stage = 'upload'
         await redis.json.set(cmKey, '$', cmObject)
 
         interaction.reply({
@@ -91,7 +91,7 @@ async function handeInteraction(interaction, redis)
             } else
             {
                 interaction.reply({
-                    content: 'Step 2',
+                    content: 'Enter additional data',
                     components: getSecondStepRows(),
                     ephemeral: true,
                 })
