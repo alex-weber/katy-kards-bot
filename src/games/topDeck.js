@@ -139,6 +139,7 @@ async function battle(td)
             if (attacker.attributes.search('shock') !== -1)
             {
                 td.log += 'Shock!\n'
+                attack = attacker.attack
                 defAttack = 0
             }
             attacker.defense -= defAttack
