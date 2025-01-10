@@ -194,6 +194,19 @@ function getMidnight()
     return midnight.getTime() / 1000
 }
 
+function getUTC()
+{
+    const now = new Date()
+    const day = String(now.getUTCDate()).padStart(2, '0')
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0')
+    const year = now.getUTCFullYear()
+    const hours = String(now.getUTCHours()).padStart(2, '0')
+    const minutes = String(now.getUTCMinutes()).padStart(2, '0')
+    const seconds = String(now.getUTCSeconds()).padStart(2, '0')
+
+    return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`
+}
+
 module.exports = {
     getPrefix,
     isQuotationSearch,
@@ -207,4 +220,5 @@ module.exports = {
     getDeckCode,
     getCurrentTimestamp,
     getMidnight,
+    getUTC,
 }

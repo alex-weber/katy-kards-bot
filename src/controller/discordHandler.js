@@ -27,7 +27,7 @@ const {
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {getRandomImage} = require("../tools/nekosAPI")
-const {getDeckCode} = require("./bot")
+const {getDeckCode, getUTC} = require("./bot")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
@@ -115,6 +115,12 @@ async function discordHandler(message, client, redis)
     {
         const midnight = bot.getMidnight().toString()
         return message.channel.send('<t:'+midnight+':R>')
+    }
+    //current UTC time
+    if (command === 'utc')
+    {
+        const utc = bot.getUTC()
+        return message.channel.send(utc)
     }
 
     //set username
