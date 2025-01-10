@@ -27,7 +27,6 @@ const {
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
 const {getRandomImage} = require("../tools/nekosAPI")
-const {getDeckCode, getUTC} = require("./bot")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
@@ -179,7 +178,7 @@ async function discordHandler(message, client, redis)
     {
         //overwrite message.content with the deck code only
         //because command is lowercased, but we need the original
-        command = getDeckCode(message.content)
+        command = bot.getDeckCode(message.content)
         //check if in cache
         const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
