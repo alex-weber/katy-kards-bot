@@ -136,10 +136,11 @@ async function battle(td)
                 attack = 0
             }
             //check for shock
-            if (attacker.attributes.search('shock') !== -1)
+            if (attacker.attributes.search('shock') !== -1 && !attacker.shocked)
             {
                 td.log += 'Shock!\n'
                 attack = attacker.attack
+                attacker.shocked = true
                 defAttack = 0
             }
             attacker.defense -= defAttack
