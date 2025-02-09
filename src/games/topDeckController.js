@@ -1,7 +1,7 @@
 const {topDeck: topDeckController} = require("./topDeck")
 const {drawBattlefield} = require("../controller/canvasManager")
 const fs = require("fs")
-const {Formatters} = require('discord.js')
+const {userMention} = require('discord.js')
 
 /**
  *
@@ -29,7 +29,7 @@ async function handleTD(user, command, message) {
         try {
             const battleImage = await drawBattlefield(td)
             await message.channel.send({content: td.log, files: [battleImage]})
-            message.channel.send(Formatters.userMention(td.player1))
+            message.channel.send(userMention(td.player1))
             console.log(td.log)
             //delete the battle image
             fs.rm(battleImage, function ()
