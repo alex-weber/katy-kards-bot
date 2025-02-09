@@ -163,6 +163,8 @@ async function battle(td)
             loser = attacker.owner
             td.winner = defender.owner.discordId
             td.loser = attacker.owner.discordId
+            td.log += defender.title.toUpperCase() + ' ' +
+                defender.attack + '/' + defender.defense + ' survived\n'
             break
         } else if (defender.defense < 1 && attacker.defense > 0)
         {
@@ -170,6 +172,8 @@ async function battle(td)
             loser = defender.owner
             td.winner = attacker.owner.discordId
             td.loser = defender.owner.discordId
+            td.log += attacker.title.toUpperCase() + ' ' +
+                attacker.attack + '/' + attacker.defense + ' -> ' + ' survived\n'
             break
         } else if (defender.defense < 1 && attacker.defense < 1) break
         //switch sides and repeat
