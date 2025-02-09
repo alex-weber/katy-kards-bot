@@ -17,7 +17,7 @@ const {discordHandler} = require('./controller/discordHandler')
 const {telegramHandler} = require('./controller/telegramHandler')
 //discord
 const {client} = require('./clients/discordClient.js')
-const {ActivityType} = require('discord.js')
+const {ActivityType, MessageFlags} = require('discord.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
 
@@ -186,7 +186,10 @@ client.on('interactionCreate', async (interaction) => {
 
         const user = await getUser(interaction.user.id)
         const content = translate(user.language,'fetching')
-        await interaction.reply({ content: content , ephemeral: true })
+        await interaction.reply({
+            content: content,
+            flags: MessageFlags.Ephemeral
+        })
 
         return await discordHandler(message, client, redis)
     }
