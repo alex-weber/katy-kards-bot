@@ -1,4 +1,4 @@
-const {getLanguageByInput, deckBuilderLanguages} = require("../tools/language")
+const {getLanguageByInput} = require("../tools/language")
 const {getStats} = require("../tools/stats")
 const bot = require("./bot")
 const {getUser, updateUser, getSynonym} = require("../database/db")
@@ -37,6 +37,7 @@ async function telegramHandler(ctx, redis) {
     if (!userID) return
     //try to get from cache
     const user = await getUser(userID)
+    if (user.status !== 'active') return
     //switch language
     if (bot.isLanguageSwitch(command))
     {
@@ -68,7 +69,6 @@ async function telegramHandler(ctx, redis) {
         await redis.set(screenshotKey, 'running')
         redis.expire(screenshotKey, 30) //delete screenshot lock key after 30 seconds anyway
         let deckBuilderLang = ''
-        //if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
         const deckBuilderURL = 'https://www.kards.com/' +
             deckBuilderLang+ 'decks/deck-builder?hash='
         const hash = encodeURIComponent(command)
