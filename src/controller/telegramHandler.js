@@ -37,7 +37,13 @@ async function telegramHandler(ctx, redis) {
     if (!userID) return
     //try to get from cache
     const user = await getUser(userID)
-    if (user.status !== 'active') return
+
+    if (user.status !== 'active') {
+        console.log('banned user' , user, command)
+
+        return
+    }
+
     //switch language
     if (bot.isLanguageSwitch(command))
     {

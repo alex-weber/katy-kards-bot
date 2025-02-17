@@ -1,4 +1,5 @@
 const express = require('express')
+const axios = require('axios')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
 app.use('/static', express.static('src/js'))
@@ -84,12 +85,13 @@ app.get('/login', async (req, res, next) => {
 
     const tokenType = req.query.tokenType
     const accessToken = req.query.accessToken
-    let user = await fetch('https://discord.com/api/users/@me', {
+    let user = await axios.get('https://discord.com/api/users/@me', {
         headers: {
             authorization: `${tokenType} ${accessToken}`,
         },
     })
-    user = await user.json()
+
+    user = user.data
     let dbUser = await getUser(user.id)
     //allow user with change permissions only
     if (isManager(dbUser))
@@ -175,7 +177,7 @@ client.on('ready', () =>
 //trigger on new messages
 client.on('messageCreate', async message => discordHandler(message, client, redis))
 //trigger on interactions
-client.on('interactionCreate', async (interaction) => {
+client.on('interactionCreate', async interaction => {
     if (!interaction.isButton()) return
     if (interaction.customId.startsWith('next_button'))
     {
