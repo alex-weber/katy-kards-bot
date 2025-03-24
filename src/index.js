@@ -45,6 +45,10 @@ const {getAllSynonyms, getUser, getLastDayMessages, disconnect} = require('./dat
 const {translate} = require("./tools/translation/translator")
 //session
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
+
+const RequestQueue = require("./tools/queue")
+const requestQueue = new RequestQueue()
+
 app.use(session({
     store: redisStore,
     secret: process.env.SESSION_SECRET,
@@ -205,7 +209,12 @@ client.login(process.env.DISCORD_TOKEN).then(() =>
 //start Telegram-Bot's session if TOKEN is set
 if (telegramClient)
 {
-    telegramClient.on(telegramMessage('text'), async ctx => telegramHandler(ctx, redis))
+    telegramClient.on(telegramMessage('text'), ctx => {
+        requestQueue.enqueue(async () => {
+            await telegramHandler(ctx, redis)
+        })
+    })
+
     telegramClient.catch((err) => {
         console.error('telegramAPI error occurred:', err)
         if (err.on.payload.chat_id)
