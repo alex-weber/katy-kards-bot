@@ -194,7 +194,7 @@ async function discordHandler(message, client, redis)
             return message.channel.send(translate(language, 'screenshotRunning'))
         }
         await redis.set(screenshotKey, 'running')
-        redis.expire(screenshotKey, 30) //delete screenshot lock key after 30 seconds anyway
+        redis.expire(screenshotKey, 120) //delete screenshot lock key after 120 seconds anyway
         createDeckImages(prefix, message, command, language, redis, deckKey).
         then(()=>
         {
