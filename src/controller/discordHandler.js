@@ -26,7 +26,6 @@ const {
     getFiles,
 } = require("../tools/search")
 const dictionary = require("../tools/dictionary")
-const {getRandomImage} = require("../tools/nekosAPI")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
@@ -395,22 +394,7 @@ async function discordHandler(message, client, redis)
     }
     const counter = cards.counter
     if (!counter)
-    {
-
-        if (qSearch) return //don't reply if nothing is found
-        //check whether there is "cat" or "dog" in the command
-        let endpoint = false
-        if (command.includes('cat')) endpoint = 'meow'
-        if (command.includes('dog')) endpoint = 'woof'
-        const imageURL = await getRandomImage(endpoint)
-        if (!imageURL)
-            return message.channel.send(translate(language, 'noresult'))
-
-        return message.channel.send({
-            content: translate(language, 'noresult'),
-            files: [imageURL]
-        })
-    }
+        return message.channel.send(translate(language, 'noresult'))
 
     //if any cards are found - attach them
     let content = translate(language, 'search') + ': ' + counter

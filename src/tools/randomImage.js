@@ -3,17 +3,16 @@ const bot = require("../controller/bot")
 const maxFileSize = 5 * 1024 * 1024 //5MB
 /**
  *
- * @param endpoint
  * @returns {Promise<string|boolean>}
  */
-async function getRandomImage(endpoint=false)
+async function getRandomImage()
 {
-    if (!endpoint) endpoint = getRandomEndpoint()
+
     try {
-        const response = await axios.get(`https://nekos.life/api/v2/img/${endpoint}`)
+        const response = await axios.get(`https://api.thecatapi.com/v1/images/search`)
         if (response === undefined || response.status !== 200) return false
-        if (!response.data.url) return false
-        const imageURL = response.data.url.toString()
+        if (!response.data[0].url) return false
+        const imageURL = response.data[0].url.toString()
         const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp']
         const imageExtension = imageURL.split('.').pop().toLowerCase()
         if (!imageURL || !allowedExtensions.includes(imageExtension) ||
