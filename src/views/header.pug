@@ -10,7 +10,7 @@ header
                     a.btn.btn-primary(role='button' href=`${loginLink}`) Login
                 if user
                     div.dropdown
-                        button.btn.btn-primary.dropdown-toggle(
+                        button.btn.btn-outline-primary.dropdown-toggle(
                             type="button",
                             data-bs-toggle="dropdown",
                             aria-expanded="false")
@@ -26,26 +26,27 @@ header
                 div.d-flex.flex-wrap.align-items-center.justify-content-center.justify-content-lg-start
                     ul.nav.col-12.col-lg-auto.my-2.justify-content-center.my-md-0.text-small
                         li
-                            a(href='/', class='nav-link text-white')
+                            a(href='/', class='nav-link text-primary')
                                 svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
                                 | Home
                         li
-                            a(href='/servers', class='nav-link text-white')
+                            a(href='/servers', class='nav-link text-primary')
                                 svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
                                 | Guilds
                         li
-                            a(href='/uptime', class='nav-link text-white')
+                            a(href='/uptime', class='nav-link text-primary')
                                 svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
                                 | Bot Uptime
                         if user
-                            li
-                                a(href='/synonyms', class='nav-link text-white')
-                                    svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                    | Synonyms
-                            li
-                                a(href='/messages', class='nav-link text-white')
-                                    svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                    | Messages
+                            if user.isManager
+                                li
+                                    a(href='/commands', class='nav-link text-primary')
+                                        svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+                                        | Custom Commands
+                                li
+                                    a(href='/messages', class='nav-link text-primary')
+                                        svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
+                                        | Log
 
 
 

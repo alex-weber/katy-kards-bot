@@ -2,21 +2,23 @@ extends layout
 
 block content
 
-  p.h2.text-primary.text-center= title + '(' + messages.length + ')'
+  p.h2.text-primary.text-center= title + ' (' + messages.length + ')'
 
   table.table.table-dark.table-striped.table-hover
     thead
       tr
-        th(scope='col') Date and Time
+        th(scope='col') #
         th(scope='col') User
         th(scope='col') Message
+        th(scope='col') Time
 
     tbody
-      each message in messages
+      each message, index in messages
         tr
-          td #{message.createdAt}
+          td #{index+1}
           td #{message.author.name}
           td #{message.content}
+          td #{message.createdAt}
 
   p &nbsp;
   p &nbsp;

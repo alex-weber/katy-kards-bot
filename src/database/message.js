@@ -25,7 +25,7 @@ async function createMessage(data)
  */
 async function getMessages(userId, skip=0,take=10)
 {
-    return await prisma.message.findMany({
+    const messages =  await prisma.message.findMany({
         skip: skip,
         take: take,
         where: {
@@ -33,10 +33,24 @@ async function getMessages(userId, skip=0,take=10)
         },
         orderBy: {
             createdAt: 'desc'
-        }
+        },
+        include: {
+            author: {
+                select: {
+                    name: true,
+                },
+            },
+        },
     }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
+
+    return messages.map(message => ({
+        ...message,
+        timestamp: message.createdAt,
+        createdAt: formatDate(new Date(message.createdAt), true)
+    }))
+
 }
 
 /**
@@ -161,7 +175,8 @@ async function getTopMessages()
         take: 100,
     })
 
-    return groupedCards.map(group => ({
+    return groupedCards.map( (group, index)  => ({
+        position: index + 1,
         command: group.content,
         count: group._count.content
     }))
@@ -219,11 +234,25 @@ async function getTopUsers()
 /**
  *
  * @param date
+ * @param full
  * @returns {string}
  */
-function formatDate(date) {
+function formatDate(date, full=false)
+{
+
+    if (!full) {
+        return new Intl.DateTimeFormat('en-GB', {
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            timeZoneName: 'short',
+        }).format(date)
+    }
 
     return new Intl.DateTimeFormat('en-GB', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
         hour: 'numeric',
         minute: 'numeric',
         second: 'numeric',

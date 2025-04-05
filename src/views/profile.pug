@@ -1,0 +1,34 @@
+extends layout
+
+block content
+
+    p.h2.text-primary.text-center= title
+
+    .card.mb-3.border-primary.shadow-sm.p-2.bg-body-tertiary.rounded(style="max-width: 540px;")
+        .row.g-0
+            .col-md-4
+                img.img-fluid.rounded-start.border.border-2.border-primary-subtle(src='https://cdn.discordapp.com/avatars/452044718591705089/' + user.avatar + '.webp', alt="No avatar")
+            .col-md-8
+                .card-body
+                    h4.card-title.text-primary #{user.username}
+                    p.card-text Total messages: #{messages.length}
+                    p.card-text Last 30 days: #{lastMonthMessages.length}
+                    p.card-text Last 24 hours: #{lastDayMessages.length}
+                    p.card-text
+
+
+    h3.text-primary Last 24 hours commands
+    table.table.table-dark.table-striped.table-hover
+        thead
+            tr
+                th(scope='col') Time
+                th(scope='col') Command
+
+        tbody
+            each message in lastDayMessages
+                tr
+                    td #{message.createdAt}
+                    td #{message.content}
+
+    p &nbsp;
+    p &nbsp;

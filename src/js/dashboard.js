@@ -181,7 +181,7 @@ function renderTopMessages(apiData)
     const topMessagesDiv = document.getElementById('topMessages')
     topMessagesDiv.innerHTML = apiData.data.map(
         item =>
-            '<tr><td>' + item.command + '</td><td>' + item.count + '</td></tr>').join('')
+            '<tr><td>' + item.position + '<td>' + item.command + '</td><td>' + item.count + '</td></tr>').join('')
 
 }
 

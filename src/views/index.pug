@@ -22,6 +22,7 @@ block content
           table.table.table-dark.table-striped.table-hover
             thead(style="position: sticky; top: 0;")
               tr
+                th(scope='col') #
                 th(scope='col') Command
                 th(scope='col') Count
             tbody#topMessages
@@ -34,7 +35,7 @@ block content
               tr
                 th(scope='col') #
                 th(scope='col') User
-                th(scope='col') Commands Count
+                th(scope='col') Commands
             tbody#topUsers
 
     h4.text-center.text-primary.mt-5.mb-3

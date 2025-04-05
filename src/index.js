@@ -30,9 +30,9 @@ const redis = createClient({url: process.env.REDISCLOUD_URL})
 redis.connect().then(()=>{ console.log('REDIS Client Connected') })
 const RedisStore = require("connect-redis").default
 // Initialize store.
-let secure = process.env.NODE_ENV === 'production'
-let cachePrefix = secure ? 'katy-prod:' : 'katy-dev:'
-let redisStore = new RedisStore({
+const secure = process.env.NODE_ENV === 'production'
+const cachePrefix = secure ? 'katy-prod:' : 'katy-dev:'
+const redisStore = new RedisStore({
     client: redis,
     prefix: cachePrefix,
 })
@@ -41,7 +41,13 @@ app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 //for web pages
 const {getServerList, getUptimeStats} = require("./tools/stats")
 const {isManager} = require("./tools/search")
-const {getAllSynonyms, getUser, getLastDayMessages, disconnect} = require('./database/db')
+const {
+    getAllSynonyms,
+    getUser,
+    getMessages,
+    getLastDayMessages,
+    disconnect
+} = require('./database/db')
 const {translate} = require("./tools/translation/translator")
 //session
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
@@ -97,23 +103,21 @@ app.get('/login', async (req, res, next) => {
 
     user = user.data
     let dbUser = await getUser(user.id)
-    //allow user with change permissions only
-    if (isManager(dbUser))
+    if (isManager(dbUser)) user.isManager = true
+
+    await req.session.regenerate(async err =>
     {
-        await req.session.regenerate(async err =>
+        if (err) next(err)
+        // store user information in session
+        req.session.user = user
+        await req.session.save( err =>
         {
-            if (err) next(err)
-            // store user information in session
-            req.session.user = user
-            await req.session.save( err =>
-            {
-                if (err) return next(err)
-                console.log()
-                res.redirect('/')
-            })
+            if (err) return next(err)
+            console.log()
+            res.redirect('/')
         })
-    }
-    else res.redirect('/')
+    })
+
 })
 
 app.get('/logout',  (req, res, next) => {
@@ -128,23 +132,62 @@ app.get('/logout',  (req, res, next) => {
     })
 })
 
-app.get('/synonyms', isAuthenticated, async (req, res) => {
-    const synonyms = await getAllSynonyms()
+app.get('/commands', isAuthenticated, async (req, res) => {
+
+    let title = 'Custom Bot Commands'
+    let synonyms = []
+    if (!req.session.user.isManager) title = 'Not permitted'
+    else synonyms = await getAllSynonyms()
+
     res.render('synonyms', {
-        title: 'Synonyms',
+        title: title,
         synonyms: synonyms,
         user: req.session.user
     })
 })
 
 app.get('/messages', isAuthenticated, async (req, res) => {
-    const messages = await getLastDayMessages()
+
+    let messages = []
+    let title = 'Bot commands in the last 24 hours'
+    if (!req.session.user.isManager) title = 'Not permitted'
+    else messages = await getLastDayMessages()
+
     res.render('messages', {
-        title: 'Recent bot commands',
+        title: title,
         messages: messages,
         user: req.session.user
     })
 })
+
+app.get('/profile', isAuthenticated, async (req, res) => {
+    const user = await getUser(req.session.user.id)
+    const messages = await getMessages(user.id, 0, 100000)
+
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const lastMonthMessages = messages.filter(m => {
+        const createdTimestamp = Date.parse(m.timestamp)
+
+        return createdTimestamp > oneMonthAgo.getTime()
+    })
+
+    const lastDayMessages = messages.filter(m => {
+        const createdTimestamp = Date.parse(m.timestamp)
+
+        return createdTimestamp > oneDayAgo.getTime()
+    })
+
+    res.render('profile', {
+        title: 'Profile',
+        messages: messages,
+        lastMonthMessages: lastMonthMessages,
+        lastDayMessages: lastDayMessages,
+        user: req.session.user
+    })
+})
+
 //uptime
 app.get('/uptime', async (req, res) =>
 {
@@ -210,9 +253,9 @@ client.login(process.env.DISCORD_TOKEN).then(() =>
 if (telegramClient)
 {
     telegramClient.on(telegramMessage('text'), ctx => {
-        requestQueue.enqueue(async () => {
+        requestQueue.enqueue(async () =>
             await telegramHandler(ctx, redis)
-        })
+        )
     })
 
     telegramClient.catch((err) => {
@@ -222,14 +265,12 @@ if (telegramClient)
             telegramClient.telegram.sendMessage(err.on.payload.chat_id,
                 'Error: file upload failed').then(() => {
                 console.error('Telegram cache error again')
+                telegramClient.launch()
             })
         }
 
     })
-    telegramClient.launch().then(() =>
-    {
-        console.log('This message will never be displayed')
-    })
+    telegramClient.launch()
 }
 //errors
 client.on('error', error => {
