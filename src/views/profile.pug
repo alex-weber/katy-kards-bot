@@ -21,14 +21,15 @@ block content
     table.table.table-dark.table-striped.table-hover
         thead
             tr
-                th(scope='col') Time
                 th(scope='col') Command
+                th(scope='col') Time
 
         tbody
             each message in lastDayMessages
                 tr
-                    td #{message.createdAt}
                     td #{message.content}
+                    td #{message.createdAt}
+
 
     p &nbsp;
     p &nbsp;
