@@ -263,10 +263,7 @@ if (telegramClient)
         if (err.on.payload.chat_id)
         {
             telegramClient.telegram.sendMessage(err.on.payload.chat_id,
-                'Error: file upload failed').then(() => {
-                console.error('Telegram cache error again')
-                telegramClient.launch()
-            })
+                'Error: file upload failed')
         }
 
     })
