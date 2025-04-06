@@ -253,8 +253,9 @@ client.login(process.env.DISCORD_TOKEN).then(() =>
 if (telegramClient)
 {
     telegramClient.on(telegramMessage('text'), ctx => {
-        requestQueue.enqueue(async () =>
-            await telegramHandler(ctx, redis)
+        requestQueue.enqueue(async () => {
+                await telegramHandler(ctx, redis)
+            }
         )
     })
 
@@ -263,11 +264,12 @@ if (telegramClient)
         if (err.on.payload.chat_id)
         {
             telegramClient.telegram.sendMessage(err.on.payload.chat_id,
-                'Error: file upload failed')
+                'Error: file upload failed').then()
         }
 
     })
-    telegramClient.launch()
+    console.log('Telegram client started')
+    telegramClient.launch().then()
 }
 //errors
 client.on('error', error => {
