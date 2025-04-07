@@ -161,8 +161,8 @@ app.get('/messages', isAuthenticated, async (req, res) => {
 })
 
 app.get('/profile', isAuthenticated, async (req, res) => {
-    const user = await getUser(req.session.user.id)
-    const messages = await getMessages(user.id, 0, 100000)
+    //const user = await getUser(req.session.user.id)
+    const messages = []
 
     const oneMonthAgo = new Date()
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)

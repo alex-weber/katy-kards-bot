@@ -23,7 +23,7 @@ async function createMessage(data)
  * @param take
  * @returns {Promise<array>}
  */
-async function getMessages(userId, skip=0,take=10)
+async function getMessages(userId, skip=0,take=100)
 {
     const messages =  await prisma.message.findMany({
         skip: skip,
@@ -33,13 +33,6 @@ async function getMessages(userId, skip=0,take=10)
         },
         orderBy: {
             createdAt: 'desc'
-        },
-        include: {
-            author: {
-                select: {
-                    name: true,
-                },
-            },
         },
     }).
     catch((e) => { throw e }).
