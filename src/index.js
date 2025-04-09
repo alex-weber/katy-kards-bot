@@ -161,29 +161,12 @@ app.get('/messages', isAuthenticated, async (req, res) => {
 })
 
 app.get('/profile', isAuthenticated, async (req, res) => {
-    //const user = await getUser(req.session.user.id)
-    const messages = []
-
-    const oneMonthAgo = new Date()
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    const lastMonthMessages = messages.filter(m => {
-        const createdTimestamp = Date.parse(m.timestamp)
-
-        return createdTimestamp > oneMonthAgo.getTime()
-    })
-
-    const lastDayMessages = messages.filter(m => {
-        const createdTimestamp = Date.parse(m.timestamp)
-
-        return createdTimestamp > oneDayAgo.getTime()
-    })
+    const user = await getUser(req.session.user.id)
+    const messages = await getMessages(user.id)
 
     res.render('profile', {
         title: 'Profile',
         messages: messages,
-        lastMonthMessages: lastMonthMessages,
-        lastDayMessages: lastDayMessages,
         user: req.session.user
     })
 })

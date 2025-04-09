@@ -19,30 +19,63 @@ async function createMessage(data)
 /**
  *
  * @param userId
- * @param skip
- * @param take
  * @returns {Promise<array>}
  */
-async function getMessages(userId, skip=0,take=100)
+async function getMessages(userId)
 {
-    const messages =  await prisma.message.findMany({
-        skip: skip,
-        take: take,
+    const messages = {}
+    const now = new Date()
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    let lastDayMessages = await prisma.message.findMany({
+
         where: {
             authorId: userId,
+            createdAt: {
+                gte: dayAgo,
+            },
         },
         orderBy: {
             createdAt: 'desc'
         },
     }).
+    catch((e) => { throw e })
+
+    messages.lastDayMessages =  lastDayMessages.map(message => ({
+        ...message,
+        timestamp: message.createdAt,
+        createdAt: formatDate(new Date(message.createdAt))
+    }))
+
+    const totalMessages = await prisma.message.findMany({
+        where: {
+            authorId: userId,
+        },
+        select: {
+            id: true,
+        }
+    }).
+    catch((e) => { throw e })
+
+    messages.totalCount = totalMessages.length
+
+    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+    const lastMonthMessages = await prisma.message.findMany({
+        where: {
+            authorId: userId,
+            createdAt: {
+                gte: monthAgo,
+            },
+        },
+        select: {
+            id: true,
+        }
+    }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
 
-    return messages.map(message => ({
-        ...message,
-        timestamp: message.createdAt,
-        createdAt: formatDate(new Date(message.createdAt), true)
-    }))
+    messages.lastMonthMessagesCount =  lastMonthMessages.length
+
+    return messages
 
 }
 

@@ -11,9 +11,9 @@ block content
             .col-md-8
                 .card-body
                     h4.card-title.text-primary #{user.username}
-                    p.card-text Total messages: #{messages.length}
-                    p.card-text Last 30 days: #{lastMonthMessages.length}
-                    p.card-text Last 24 hours: #{lastDayMessages.length}
+                    p.card-text Total messages: #{messages.totalCount}
+                    p.card-text Last 30 days: #{messages.lastMonthMessagesCount}
+                    p.card-text Last 24 hours: #{messages.lastDayMessages.length}
                     p.card-text
 
 
@@ -25,7 +25,7 @@ block content
                 th(scope='col') Time
 
         tbody
-            each message in lastDayMessages
+            each message in messages.lastDayMessages
                 tr
                     td #{message.content}
                     td #{message.createdAt}
