@@ -10,7 +10,7 @@
   "langChange": "Suchsprache: ",
   "screenshot": "Mache ein Screenshot, das kann dauern...",
   "cache": "Lade vom Cache...",
-  "dm": "DM Channel aktiviert",
+  "dm": "DM Channel aktiviert bis der Bot neustartet (täglich)",
   "screenshotRunning": "Ich bin gerade beim Erstellen, bitte warte doch ein wenig...",
   "min": "mindestens 2 Zeichen, bitte",
   "fetching": "Laden...",
