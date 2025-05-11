@@ -130,7 +130,7 @@ async function discordHandler(message, client, redis)
     if (!cachedUser || !cachedUser.hasOwnProperty('id'))
     {
         console.log('no user in cache, caching')
-        user = await getUser(message.author.id.toString())
+        user = await getUser(userId)
         await redis.json.set(userKey, '$', user)
     } else
     {
@@ -193,7 +193,7 @@ async function discordHandler(message, client, redis)
             return message.channel.send(translate(language, 'screenshotRunning'))
         }
         await redis.set(screenshotKey, 'running')
-        redis.expire(screenshotKey, 120) //delete screenshot lock key after 120 seconds anyway
+        redis.expire(screenshotKey, 300) //delete screenshot lock key after 300 seconds anyway
         createDeckImages(prefix, message, command, language, redis, deckKey).
         then(()=>
         {
