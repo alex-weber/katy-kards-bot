@@ -15,10 +15,10 @@ async function syncDB()
         q: '',
         showSpawnables: true,
         showReserved: true,
-        first: 10000
+        first: 10000,
     }
     try {
-        const response = await getCards(variables)
+        const response = await getCards(variables, 5000)
         //console.log(response)
         const cards = response.cards
         if (!cards.length) return false
@@ -34,7 +34,7 @@ async function syncDB()
             console.log(message)
             if (process.send) process.send(message)
             await Promise.all(cardsPromises)
-            console.log('All cards updated successfully')
+            console.log('All '+cards.length+' cards updated successfully')
         } catch (error) {
             console.error('Error updating cards:', error)
         }

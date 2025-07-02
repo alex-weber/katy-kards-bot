@@ -10,6 +10,7 @@ module.exports = {
         'italy',
         'poland',
         'finland',
+        'neutral',
     ],
     type: [
         'infantry',

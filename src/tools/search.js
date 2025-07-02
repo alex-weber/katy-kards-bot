@@ -197,23 +197,24 @@ function getAttribute(word, attributes)
 /**
  *
  * @param variables
- * @returns {Promise<boolean|*>}
+ * @param timeout
+ * @returns {Promise<{cards: Set | Set<any>, counter: *}|*>}
  */
-async function getCards(variables)
+async function getCards(variables, timeout=3000)
 {
     //log request
     console.log(variables)
     const label = 'getCards_' + Date.now()
     console.time(label)
     //search on kards.com
-    let response = await axios.post(
+    const response = await axios.post(
         'https://api.kards.com/graphql',
         {
             "operationName": "getCards",
             "variables": variables,
             "query": query
         },
-        {timeout: 3000} //wait 3 seconds for the response
+        {timeout: timeout} //wait for the response
     ).catch(error =>
     {
         console.log('request to kards.com failed ', error.errno, error.data)
