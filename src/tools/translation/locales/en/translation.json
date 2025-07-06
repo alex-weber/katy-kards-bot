@@ -11,7 +11,7 @@
   "screenshot": "capturing a screenshot, this may take some seconds...",
   "cache": "getting from cache...",
   "dm": "DM channel is active until the bot restarts (every 24 hours).",
-  "screenshotRunning": "Another capturing job is running... please wait",
+  "screenshotRunning": "Another capturing job is running... please try again later",
   "min": "Minimum 2 characters, please",
   "fetching": "Fetching results...",
   "next": "Next",
