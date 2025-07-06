@@ -1,12 +1,12 @@
 {
   "name": "katyusha-kards-bot",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "description": "cards search and more",
   "main": "src/index.js",
   "scripts": {
     "test": "jest",
     "start": "node src/index.js",
-    "heroku-postbuild": "npx prisma generate && npx puppeteer browsers install chrome && mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
+    "heroku-postbuild": "npx prisma generate"
   },
   "keywords": [
     "KARDS",
@@ -33,7 +33,7 @@
     "pg": "^8.11.3",
     "prisma": "^5.22.0",
     "pug": "^3.0.3",
-    "puppeteer": "^22.15.0",
+    "puppeteer-core": "^24.11.2",
     "redis": "^4.6.13",
     "serve-favicon": "^2.5.0",
     "sharp": "^0.33.5",
