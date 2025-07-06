@@ -65,7 +65,7 @@ async function takeScreenshot(url) {
             '--disable-setuid-sandbox',
             '--no-zygote',
         ],
-        headless: true,
+        headless: 'new',
         devtools: false,
         ignoreDefaultArgs: ['--disable-extensions']
     }
