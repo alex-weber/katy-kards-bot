@@ -11,7 +11,7 @@ async function formatStats()
     let output = ''
     const response = await axios.get(statsURL)
     const body = response.data
-    const divider = 300
+    const divider = parseInt(process.env.STATS_DIVIDER) || 500
     for (let i = 1; i < 25; i++)
     {
         let date = new Date(body[body.length - i][0])
