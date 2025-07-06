@@ -12,7 +12,7 @@ async function saveScreenshot(page, selector) {
     // Get the bounding box of the element
     const elementHandle = await page.$(selector)
     const boundingBox = await elementHandle.boundingBox()
-    const rightMargin = 60
+    const rightMargin = 40
     const topMargin = 422
 
     if (boundingBox) {
@@ -65,19 +65,15 @@ async function takeScreenshot(url) {
         devtools: false,
         ignoreDefaultArgs: ['--disable-extensions']
     }
-    if (process.env.PATH_TO_CHROME)
-    {
-        launchOptions.executablePath = process.env.PATH_TO_CHROME
-        console.log('setting PATH_TO_CHROME to ', process.env.PATH_TO_CHROME)
-    }
     let browser
     if (process.env.BROWSERLESS_API_KEY)
     {
+        let browserOptions = JSON.stringify(launchOptions)
         let wsHost = 'production-ams.browserless.io'
         if (process.env.BROWSERLESS_HOST) wsHost = process.env.BROWSERLESS_HOST
         // Connecting to Browserless
         browser = await puppeteer.connect({
-            browserWSEndpoint: `wss://${wsHost}?token=${process.env.BROWSERLESS_API_KEY}`
+            browserWSEndpoint: `wss://${wsHost}?token=${process.env.BROWSERLESS_API_KEY}&launch=${browserOptions}`
         })
         console.log('using Browserless.io Puppeteer service')
     } else {
