@@ -73,9 +73,11 @@ async function takeScreenshot(url) {
     let browser
     if (process.env.BROWSERLESS_API_KEY)
     {
+        let wsHost = 'production-ams.browserless.io'
+        if (process.env.BROWSERLESS_HOST) wsHost = process.env.BROWSERLESS_HOST
         // Connecting to Browserless
         browser = await puppeteer.connect({
-            browserWSEndpoint: `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_API_KEY}`
+            browserWSEndpoint: `wss://${wsHost}?token=${process.env.BROWSERLESS_API_KEY}`
         })
         console.log('using Browserless.io Puppeteer service')
     } else {
