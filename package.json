@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "start": "node src/index.js",
-    "heroku-postbuild": "npx prisma generate && npx puppeteer browsers install chrome@125.0.6422.60 && mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
+    "heroku-postbuild": "npx prisma generate && mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
   },
   "keywords": [
     "KARDS",
