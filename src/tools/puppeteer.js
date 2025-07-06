@@ -53,10 +53,6 @@ async function saveScreenshot(page, selector) {
  */
 async function takeScreenshot(url) {
 
-    function waitFor(milliseconds) {
-        return new Promise(resolve => setTimeout(resolve, milliseconds))
-    }
-
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
     const launchOptions =  {
@@ -74,8 +70,21 @@ async function takeScreenshot(url) {
         launchOptions.executablePath = process.env.PATH_TO_CHROME
         console.log('setting PATH_TO_CHROME to ', process.env.PATH_TO_CHROME)
     }
-    const browser = await puppeteer.launch(launchOptions)
-    let page = await browser.newPage()
+    let browser
+    if (process.env.BROWSERLESS_API_KEY)
+    {
+        // Connecting to Browserless
+        browser = await puppeteer.connect({
+            browserWSEndpoint: `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_API_KEY}`
+        })
+        console.log('using Browserless.io Puppeteer service')
+    } else {
+        //start a local browser
+        browser = await puppeteer.launch(launchOptions)
+        console.log('using local browser')
+    }
+
+    const page = await browser.newPage()
     await page.setViewport({ width: 3000, height:2000 })
     console.time('pageLoading')
     try {
@@ -90,7 +99,6 @@ async function takeScreenshot(url) {
         return false
     }
 
-    await waitFor(700)
     console.timeEnd('pageLoading')
     try {
         // Wait for the element to appear
