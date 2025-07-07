@@ -1,4 +1,4 @@
-const {getLanguageByInput} = require("../tools/language")
+const {getLanguageByInput, deckBuilderLanguages} = require("../tools/language")
 const {getStats} = require("../tools/stats")
 const bot = require("./bot")
 const {getUser, updateUser, getSynonym} = require("../database/db")
@@ -75,6 +75,7 @@ async function telegramHandler(ctx, redis) {
         await redis.set(screenshotKey, 'running')
         redis.expire(screenshotKey, 120) //delete screenshot lock key after 120 seconds anyway
         let deckBuilderLang = ''
+        if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
         const deckBuilderURL = 'https://www.kards.com/' +
             deckBuilderLang+ 'decks/deck-builder?hash='
         const hash = encodeURIComponent(command)

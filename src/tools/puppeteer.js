@@ -12,7 +12,6 @@ async function saveScreenshot(page, selector) {
     // Get the bounding box of the element
     const elementHandle = await page.$(selector)
     const boundingBox = await elementHandle.boundingBox()
-    const rightMargin = 40
     const topMargin = 422
 
     if (boundingBox) {
@@ -24,7 +23,7 @@ async function saveScreenshot(page, selector) {
             clip: {
                 x: 0,
                 y: 0,
-                width: boundingBox.width - rightMargin,
+                width: boundingBox.width - 60,
                 height: 383,
             }
         })
@@ -35,7 +34,7 @@ async function saveScreenshot(page, selector) {
             clip: {
                 x: 0,
                 y: topMargin,
-                width: boundingBox.width - rightMargin,
+                width: boundingBox.width + 30,
                 height: boundingBox.height - topMargin+5,
             }
         })

@@ -23,6 +23,7 @@ const languages = [
 const deckBuilderLanguages = [
     'de', 'es', 'fr',
     'it', 'pl', 'pt',
+    'ru', 'zh',
 ]
 const APILanguages = {
     de: 'de-DE',
