@@ -347,8 +347,10 @@ async function advancedSearch(variables)
  */
 async function handleSynonym(user, message)
 {
+
     if (!isManager(user)) return 'not allowed'
     const content = message.content
+    if (!content.includes('=')) return 'error: no value provided'
     //remove the prefix and the ^ from the beginning and get the key and the value
     const key = content.slice(2, content.indexOf('=')).toLowerCase()
     let value
