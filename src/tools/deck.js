@@ -40,23 +40,24 @@ async function createDeckImages(
         if (!deckInfo) return message.channel.send(translate(language, 'error'))
     }
     const sentMessage = await message.channel.send(translate(language, 'screenshot'))
-    let result = await takeScreenshot(url)
+    const result = await takeScreenshot(url)
     sentMessage.delete()
     if (!result) return message.channel.send(translate(language, 'error'))
-    let files = getDeckFiles()
+    const files = getDeckFiles()
     message.channel.send({content: deckInfo, files: files})
     console.log('Screenshot captured and sent successfully')
 
     //upload them for caching
-    const expiration = 604800 //7 days
-    let file1 = await uploadImage(files[0], expiration)
-    let file2 = await uploadImage(files[1], expiration)
+    const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
+
+    const file1 = await uploadImage(files[0], expiration)
+    const file2 = await uploadImage(files[1], expiration)
     if (file1 && file2)
     {
-        let uploadedFiles = [file1, file2]
+        const uploadedFiles = [file1, file2]
         //check if they are uploaded & are served correctly
-        let file1size = await bot.getFileSize(file1)
-        let file2size = await bot.getFileSize(file2)
+        const file1size = await bot.getFileSize(file1)
+        const file2size = await bot.getFileSize(file2)
         if ( await Fs.size(files[0]) === file1size &&
             await Fs.size(files[1]) === file2size)
         {
