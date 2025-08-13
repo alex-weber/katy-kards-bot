@@ -34,7 +34,7 @@ async function saveScreenshot(page, selector) {
             clip: {
                 x: 0,
                 y: topMargin,
-                width: boundingBox.width + 30,
+                width: boundingBox.width - 40,
                 height: boundingBox.height - topMargin+5,
             }
         })
@@ -52,34 +52,18 @@ async function saveScreenshot(page, selector) {
  */
 async function takeScreenshot(url) {
 
+    if (!process.env.BROWSERLESS_API_KEY) return false
+
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
-    const launchOptions =  {
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--no-zygote',
-        ],
-        headless: 'new',
-        devtools: false,
-        ignoreDefaultArgs: ['--disable-extensions']
-    }
-    let browser
-    if (process.env.BROWSERLESS_API_KEY)
-    {
-        let browserOptions = JSON.stringify(launchOptions)
-        let wsHost = 'production-ams.browserless.io'
-        if (process.env.BROWSERLESS_HOST) wsHost = process.env.BROWSERLESS_HOST
-        // Connecting to Browserless
-        browser = await puppeteer.connect({
-            browserWSEndpoint: `wss://${wsHost}?token=${process.env.BROWSERLESS_API_KEY}&launch=${browserOptions}`
-        })
-        console.log('using Browserless.io Puppeteer service')
-    } else {
-        //start a local browser
-        browser = await puppeteer.launch(launchOptions)
-        console.log('using local browser')
-    }
+
+    let wsHost = 'ws://production-ams.browserless.io'
+    if (process.env.BROWSERLESS_HOST) wsHost = process.env.BROWSERLESS_HOST
+    // Connecting to Browserless
+    const browser = await puppeteer.connect({
+        browserWSEndpoint: `${wsHost}?token=${process.env.BROWSERLESS_API_KEY}`
+    })
+    console.log('using Browserless.io Puppeteer service')
 
     const page = await browser.newPage()
     await page.setViewport({ width: 3000, height:2000 })

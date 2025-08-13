@@ -17,34 +17,34 @@
   "author": "tortunbator",
   "license": "MIT",
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.28",
-    "@prisma/client": "^5.22.0",
+    "@napi-rs/canvas": "^0.1.73",
+    "@prisma/client": "^6.11.1",
     "@supercharge/fs": "^3.4.2",
-    "axios": "1.8.2",
+    "axios": "1.10.0",
     "compression": "^1.7.4",
     "connect-redis": "^7.1.1",
-    "discord.js": "^14.17.3",
-    "express": "^4.21.2",
+    "discord.js": "^14.21.0",
+    "express": "^5.1.0",
     "express-session": "^1.18.1",
-    "i18next": "^23.11.2",
-    "i18next-fs-backend": "^2.3.1",
-    "node": "^22.9.0",
-    "npm": "^10.9.2",
-    "pg": "^8.11.3",
-    "prisma": "^5.22.0",
+    "i18next": "^25.3.2",
+    "i18next-fs-backend": "^2.6.0",
+    "node": "^24.4.0",
+    "npm": "^11.4.2",
+    "pg": "^8.16.3",
+    "prisma": "^6.11.1",
     "pug": "^3.0.3",
-    "puppeteer-core": "^24.11.2",
-    "redis": "^4.6.13",
-    "serve-favicon": "^2.5.0",
-    "sharp": "^0.33.5",
+    "puppeteer-core": "^24.12.1",
+    "redis": "^5.6.0",
+    "serve-favicon": "^2.5.1",
+    "sharp": "^0.34.3",
     "telegraf": "^4.16.3"
   },
   "engines": {
-    "npm": "^10.9.2",
-    "node": "22.9.0"
+    "npm": "^11.4.2",
+    "node": "24.4.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "supertest": "^7.0.0"
+    "jest": "^30.0.4",
+    "supertest": "^7.1.3"
   }
 }
