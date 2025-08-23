@@ -97,6 +97,11 @@ async function telegramHandler(ctx, redis) {
     let syn = await getSynonym(command)
     if (syn)
     {
+        if (syn.value.startsWith('{')) {
+            const m = JSON.parse(syn.value)
+            if (m.content) syn.value = m.content
+            if (m.files) syn.value = m.files[0]
+        }
         //check if there is an image link
         if (syn.value.startsWith('https'))
         {
