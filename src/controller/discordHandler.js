@@ -5,7 +5,7 @@ const {
     getTopDeckStats,
     getSynonym,
     getAllSynonyms,
-    createMessage,
+    createMessage, updateSynonym,
 } = require("../database/db")
 const {
     getLanguageByInput,
@@ -313,12 +313,38 @@ async function discordHandler(message, client, redis)
     const syn = await getSynonym(command)
     if (syn)
     {
-        //check if there is an image link
-        if (syn.value.startsWith('http')) return message.channel.send({files: [syn.value]})
+        let answer = {}
+        let altCommand = ''
+        if (syn.value.startsWith('{')) { //json formatted
+
+            const m = JSON.parse(syn.value)
+
+            if (m.content && m.content.startsWith('text:')) answer.content = m.content.replace('text:', '')
+            else if (m.content && !m.content.startsWith('text:')) altCommand = m.content
+
+            if (m.files) answer.files = m.files
+            if (!altCommand) return message.channel.send(answer)
+        }
+        //check if there is an image link (old format) and update it to JSON
+        if (syn.value.startsWith('http'))
+        {
+            answer.files = syn.value
+            await updateSynonym(syn.key, JSON.stringify(answer))
+
+            return message.channel.send(answer)
+        }
         //check if it should reply with a text message
-        if (syn.value.startsWith('text:')) return message.channel.send(syn.value.replace('text:', ''))
-        //else use the value as command
-        command = syn.value
+        if (syn.value.startsWith('text:'))
+        {
+            answer.content = syn.value
+            await updateSynonym(syn.key, JSON.stringify(answer))
+            answer.content = answer.content.replace('text:', '')
+            return message.channel.send(answer)
+        }
+        //else use the value as alternate command for search
+        if (altCommand) command = altCommand
+        else command = syn.value
+
     } else if (command in dictionary.synonyms) command = dictionary.synonyms[command]
 
     //set limit to 10 if it is a bot-commands channel

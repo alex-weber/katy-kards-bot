@@ -353,59 +353,49 @@ async function handleSynonym(user, message)
     if (!content.includes('=')) return 'error: no value provided'
     //remove the prefix and the ^ from the beginning and get the key and the value
     const key = content.slice(2, content.indexOf('=')).toLowerCase()
-    let value
-    //get the image as attachment
-    if (message.attachments.size)
-    {
-        const attachment = message.attachments.first()
-        value = attachment.url
-        //upload it to a different hosting because Discord's images will expire in 2 weeks
-        const uploaded = await uploadImage(value)
-        if (uploaded) value = uploaded
-        else return 'file upload error'
-    }
-    else value = content.slice(content.indexOf('=') + 1)
-    console.log(key,'=', value)
     //check key
     if (!checkSynonymKey(key)) return 'invalid key name'
-    if (value.startsWith('http'))
+
+    let value = {}
+    const text = content.slice(content.indexOf('=') + 1)
+
+    if (text.length && text === 'delete')
     {
-        value = getURL(value)
-        if (!value) return 'bad URL'
+        await deleteSynonym(key)
+        return key + ' deleted'
     }
+    if (text.length) value.content = text
+
+    //get the attachments
+    if (message.attachments.size)
+    {
+        let files = []
+        for (const [, attachment] of message.attachments)
+        {
+            //upload it to a different hosting because Discord's images will expire in 2 weeks
+            const uploaded = await uploadImage(attachment.url)
+            if (uploaded) files.push(uploaded)
+            else return 'file upload error'
+        }
+        value.files = files
+
+    }
+
+    if (!value.files && !value.content) return 'error: empty message'
+
+    value = JSON.stringify(value)
+    console.log(key,'=', value)
+
     let syn = await getSynonym(key)
     if (!syn && value)
     {
         await createSynonym(key, value)
         return key + ' created'
-    } else if (value === 'delete')
-    {
-        await deleteSynonym(key)
-        return key + ' deleted'
     } else
     {
         await updateSynonym(key, value)
         return key + ' updated'
     }
-}
-
-/**
- *
- * @param value
- * @returns {boolean|string}
- */
-function getURL(value)
-{
-    try
-    {
-        const url = new URL(value)
-        return url.toString()
-    } catch (e)
-    {
-        console.log(e.message)
-        return false
-    }
-
 }
 
 /**
@@ -446,6 +436,11 @@ async function listSynonyms(command)
         if (syn.value.startsWith('http') || syn.value.startsWith('text:'))
         {
             listing += syn.key + '\n'
+        }
+        if (syn.value.startsWith('{')) {
+            const m = JSON.parse(syn.value)
+            if (m.content && m.content.startsWith('text:')) listing += syn.key + '\n'
+            if (m.files && !m.content) listing += syn.key + '\n'
         }
     }
 
