@@ -319,11 +319,20 @@ async function discordHandler(message, client, redis)
 
             const m = JSON.parse(syn.value)
 
-            if (m.content && m.content.startsWith('text:')) answer.content = m.content.replace('text:', '')
-            else if (m.content && !m.content.startsWith('text:')) altCommand = m.content
+            if (m.content) {
+                if (m.content.startsWith('text:'))
+                    answer.content = m.content.replace('text:', '')
+                else
+                    altCommand = m.content
+            }
 
-            if (m.files) answer.files = m.files
-            if (!altCommand) return message.channel.send(answer)
+            if (!altCommand)
+            {
+                if (m.files)
+                    answer.files = m.files
+
+                return message.channel.send(answer)
+            }
         }
         //check if there is an image link (old format) and update it to JSON
         if (syn.value.startsWith('http'))
