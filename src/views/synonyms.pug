@@ -15,7 +15,16 @@ block content
         tr
           td= index+1
           each value in synonym
-            if value !== synonym.id
+            if value[0] === '{'
+              - let obj = JSON.parse(value)
+              td
+                if obj.content
+                  p= obj.content
+                if obj.files && obj.files.length
+                  ul
+                    each file in obj.files
+                      li: a(href=file target="_blank")= file
+            else if value !== synonym.id
               td= value
   p &nbsp;
   p &nbsp;
