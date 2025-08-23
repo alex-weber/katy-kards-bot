@@ -328,7 +328,7 @@ async function discordHandler(message, client, redis)
         //check if there is an image link (old format) and update it to JSON
         if (syn.value.startsWith('http'))
         {
-            answer.files = syn.value
+            answer.files = [syn.value]
             await updateSynonym(syn.key, JSON.stringify(answer))
 
             return message.channel.send(answer)
