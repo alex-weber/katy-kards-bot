@@ -1,5 +1,8 @@
 const {takeScreenshot} = require("../src/tools/puppeteer")
+const dotenv = require('dotenv')
 
+// load .env before tests run
+dotenv.config()
 describe('Import deck', () => {
     test('create screenshots', async () => {
 

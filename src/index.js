@@ -66,194 +66,241 @@ app.use(session({
     }
 }))
 // middleware to test if authenticated
-function isAuthenticated (req, res, next) {
+function isAuthenticated(req, res, next) {
     if (req.session.user) next()
     else next('route')
 }
-// for authenticated users only
-app.get('/', isAuthenticated,  (req, res) => {
+
+function renderDashboard(req, res) {
     res.render('index', {
         title: 'Dashboard',
         user: req.session.user,
         loginLink: false
     })
-})
-//this one is for not auth users
-app.get('/', (req, res) =>
+}
+
+function renderLanding(req, res) {
     res.render('index', {
         title: 'Katyusha Kards Bot',
         loginLink: process.env.DISCORD_AUTH_URL,
         user: null,
-    }))
-app.get('/auth', async (req, res) =>
+    })
+}
+
+function renderAuth(req, res) {
     res.render('auth', {
         title: 'Logging in...please wait',
     })
-)
-//login
-app.get('/login', async (req, res, next) => {
+}
 
-    const tokenType = req.query.tokenType
-    const accessToken = req.query.accessToken
-    let user = await axios.get('https://discord.com/api/users/@me', {
-        headers: {
-            authorization: `${tokenType} ${accessToken}`,
-        },
-    })
+async function handleLogin(req, res, next) {
+    try {
+        const tokenType = req.query.tokenType
+        const accessToken = req.query.accessToken
 
-    user = user.data
-    let dbUser = await getUser(user.id)
-    if (isManager(dbUser)) user.isManager = true
+        let user = await axios.get('https://discord.com/api/users/@me', {
+            headers: {
+                authorization: `${tokenType} ${accessToken}`,
+            },
+        })
 
-    await req.session.regenerate(async err =>
-    {
-        if (err) next(err)
-        // store user information in session
-        req.session.user = user
-        await req.session.save( err =>
-        {
+        user = user.data
+        let dbUser = await getUser(user.id)
+        if (isManager(dbUser)) user.isManager = true
+
+        req.session.regenerate(async function onRegenerate(err) {
             if (err) return next(err)
-            console.log()
-            res.redirect('/')
+
+            req.session.user = user
+
+            req.session.save(function onSave(err) {
+                if (err) return next(err)
+                res.redirect('/')
+            })
         })
-    })
+    } catch (err) {
+        next(err)
+    }
+}
 
-})
-
-app.get('/logout',  (req, res, next) => {
-    // clear the user from the session object and save.
+function handleLogout(req, res, next) {
     req.session.user = null
-    req.session.save( err => {
-        if (err) next(err)
-        req.session.regenerate( err => {
-            if (err) next(err)
+    req.session.save(function onSave(err) {
+        if (err) return next(err)
+        req.session.regenerate(function onRegenerate(err) {
+            if (err) return next(err)
             res.redirect('/')
         })
     })
-})
+}
 
-app.get('/commands', isAuthenticated, async (req, res) => {
-
+async function renderCommands(req, res) {
     let title = 'Custom Bot Commands'
     let synonyms = []
-    if (!req.session.user.isManager) title = 'Not permitted'
-    else synonyms = await getAllSynonyms()
+
+    if (!req.session.user.isManager) {
+        title = 'Not permitted'
+    } else {
+        synonyms = await getAllSynonyms()
+    }
 
     res.render('synonyms', {
-        title: title,
-        synonyms: synonyms,
+        title,
+        synonyms,
         user: req.session.user
     })
-})
+}
 
-app.get('/messages', isAuthenticated, async (req, res) => {
-
-    let messages = []
+async function renderMessages(req, res) {
     let title = 'Bot commands in the last 24 hours'
-    if (!req.session.user.isManager) title = 'Not permitted'
-    else messages = await getLastDayMessages()
+    let messages = []
+
+    if (!req.session.user.isManager) {
+        title = 'Not permitted'
+    } else {
+        messages = await getLastDayMessages()
+    }
 
     res.render('messages', {
-        title: title,
-        messages: messages,
+        title,
+        messages,
         user: req.session.user
     })
-})
+}
 
-app.get('/profile', isAuthenticated, async (req, res) => {
+async function renderProfile(req, res) {
     const user = await getUser(req.session.user.id)
     const messages = await getMessages(user.id)
 
     res.render('profile', {
         title: 'Profile',
-        messages: messages,
+        messages,
         user: req.session.user
     })
-})
+}
 
-//uptime
-app.get('/uptime', async (req, res) =>
-{
-    let APIres = await getUptimeStats()
+async function renderUptime(req, res) {
+    const APIres = await getUptimeStats()
     if (!APIres) return res.redirect('/')
 
-    return res.render('uptime', {
+    res.render('uptime', {
         title: 'Uptime Stats',
         stats: APIres.data,
         user: req.session.user,
     })
-})
+}
 
-//API
-app.get('/api/:method', async (req, res) => {
+async function handleApi(req, res) {
     const method = req.params.method
     const apiResponse = await API.run(method)
     res.json(apiResponse)
-})
+}
+
+// ROUTES
+app.get('/', isAuthenticated, renderDashboard)
+app.get('/', renderLanding)
+app.get('/auth', renderAuth)
+app.get('/login', handleLogin)
+app.get('/logout', handleLogout)
+app.get('/commands', isAuthenticated, renderCommands)
+app.get('/messages', isAuthenticated, renderMessages)
+app.get('/profile', isAuthenticated, renderProfile)
+app.get('/uptime', renderUptime)
+app.get('/api/:method', handleApi)
+
+
 
 //Discord-Bot login event
-client.on('ready', () =>
-{
-    console.log(`Logged in as ${client.user.tag}`, 'Server count: ' + client.guilds.cache.size)
+function onClientReady() {
+    console.log(
+        `Logged in as ${client.user.tag}`,
+        'Server count: ' + client.guilds.cache.size
+    )
+
     const guildNames = getServerList(client)
-    app.get('/servers', (req, res) => res.render('servers', {
-        title: 'Discord servers',
-        servers: guildNames,
-        user: req.session.user
-    }))
-    //console.log(guildNames)
-    client.user.setActivity(client.guilds.cache.size + ' servers', { type: ActivityType.Watching})
-})
-//trigger on new messages
-client.on('messageCreate', async message => discordHandler(message, client, redis))
-//trigger on interactions
-client.on('interactionCreate', async interaction => {
+
+    function renderServers(req, res) {
+        res.render('servers', {
+            title: 'Discord servers',
+            servers: guildNames,
+            user: req.session.user
+        })
+    }
+
+    app.get('/servers', renderServers)
+
+    client.user.setActivity(
+        client.guilds.cache.size + ' servers',
+        { type: ActivityType.Watching }
+    )
+}
+
+async function onMessageCreate(message) {
+    await discordHandler(message, client, redis)
+}
+
+async function onInteractionCreate(interaction) {
     if (!interaction.isButton()) return
-    if (interaction.customId.startsWith('next_button'))
-    {
+
+    if (interaction.customId.startsWith('next_button')) {
         const message = interaction.message
         message.buttonId = interaction.customId
+
         // remove the button
         await interaction.message.edit({ components: [] })
 
         const user = await getUser(interaction.user.id)
-        const content = translate(user.language,'fetching')
+        const content = translate(user.language, 'fetching')
+
         await interaction.reply({
-            content: content,
+            content,
             flags: MessageFlags.Ephemeral
         })
 
         return await discordHandler(message, client, redis)
     }
+}
 
-})
+// EVENT BINDINGS
+client.on('ready', onClientReady)
+client.on('messageCreate', onMessageCreate)
+client.on('interactionCreate', onInteractionCreate)
+
 //start Discord-Bot's session
 client.login(process.env.DISCORD_TOKEN).then(() =>
 {
     console.log('Discord client started')
 })
 //start Telegram-Bot's session if TOKEN is set
-if (telegramClient)
-{
-    telegramClient.on(telegramMessage('text'), ctx => {
-        requestQueue.enqueue(async () => {
-                await telegramHandler(ctx, redis)
-            }
-        )
+function onTelegramText(ctx) {
+    requestQueue.enqueue(async function handleTelegramRequest() {
+        await telegramHandler(ctx, redis)
     })
-
-    telegramClient.catch((err) => {
-        console.error('telegramAPI error occurred:', err)
-        if (err.on.payload.chat_id)
-        {
-            telegramClient.telegram.sendMessage(err.on.payload.chat_id,
-                'Error: file upload failed').then()
-        }
-
-    })
-    console.log('Telegram client started')
-    telegramClient.launch().then()
 }
+
+function onTelegramError(err) {
+    console.error('telegramAPI error occurred:', err)
+
+    if (err.on?.payload?.chat_id) {
+        telegramClient.telegram
+            .sendMessage(err.on.payload.chat_id, 'Error: file upload failed')
+            .then()
+    }
+}
+
+async function startTelegramClient() {
+    telegramClient.on(telegramMessage('text'), onTelegramText)
+    telegramClient.catch(onTelegramError)
+
+    console.log('Telegram client started')
+    await telegramClient.launch()
+}
+
+// START TELEGRAM (if available)
+if (telegramClient) {
+    startTelegramClient()
+}
+
 //errors
 client.on('error', error => {
     console.error(error)
