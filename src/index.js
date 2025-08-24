@@ -1,5 +1,4 @@
 const express = require('express')
-const axios = require('axios')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
 app.use('/static', express.static('src/js'))
@@ -21,9 +20,6 @@ const {client} = require('./clients/discordClient.js')
 const {ActivityType, MessageFlags} = require('discord.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
-
-//API
-const API = require('./controller/api')
 //redis cache
 const { createClient } = require('redis')
 const redis = createClient({url: process.env.REDISCLOUD_URL})
@@ -36,25 +32,37 @@ const redisStore = new RedisStore({
     client: redis,
     prefix: cachePrefix,
 })
-//start listening for messages
-app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
-//for web pages
-const {getServerList, getUptimeStats} = require("./tools/stats")
-const {isManager} = require("./tools/search")
+
+const {getServerList} = require("./tools/stats")
 const {
-    getAllSynonyms,
     getUser,
-    getMessages,
-    getLastDayMessages,
     disconnect
 } = require('./database/db')
 const {translate} = require("./tools/translation/translator")
-//session
-const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 
 const RequestQueue = require("./tools/queue")
 const requestQueue = new RequestQueue()
 
+const {
+    isAuthenticated,
+    renderAuth,
+    renderDashboard,
+    renderMessages,
+    renderServers,
+    renderCommands,
+    renderUptime,
+    renderLanding,
+    renderProfile,
+    handleApi,
+    handleLogout,
+    handleLogin
+} = require('./controller/router')
+
+//start listening for messages
+app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
+
+//Redis Session
+const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 app.use(session({
     store: redisStore,
     secret: process.env.SESSION_SECRET,
@@ -65,136 +73,6 @@ app.use(session({
         maxAge: cookieMaxAge,
     }
 }))
-// middleware to test if authenticated
-function isAuthenticated(req, res, next) {
-    if (req.session.user) next()
-    else next('route')
-}
-
-function renderDashboard(req, res) {
-    res.render('index', {
-        title: 'Dashboard',
-        user: req.session.user,
-        loginLink: false
-    })
-}
-
-function renderLanding(req, res) {
-    res.render('index', {
-        title: 'Katyusha Kards Bot',
-        loginLink: process.env.DISCORD_AUTH_URL,
-        user: null,
-    })
-}
-
-function renderAuth(req, res) {
-    res.render('auth', {
-        title: 'Logging in...please wait',
-    })
-}
-
-async function handleLogin(req, res, next) {
-    try {
-        const tokenType = req.query.tokenType
-        const accessToken = req.query.accessToken
-
-        let user = await axios.get('https://discord.com/api/users/@me', {
-            headers: {
-                authorization: `${tokenType} ${accessToken}`,
-            },
-        })
-
-        user = user.data
-        let dbUser = await getUser(user.id)
-        if (isManager(dbUser)) user.isManager = true
-
-        req.session.regenerate(async function onRegenerate(err) {
-            if (err) return next(err)
-
-            req.session.user = user
-
-            req.session.save(function onSave(err) {
-                if (err) return next(err)
-                res.redirect('/')
-            })
-        })
-    } catch (err) {
-        next(err)
-    }
-}
-
-function handleLogout(req, res, next) {
-    req.session.user = null
-    req.session.save(function onSave(err) {
-        if (err) return next(err)
-        req.session.regenerate(function onRegenerate(err) {
-            if (err) return next(err)
-            res.redirect('/')
-        })
-    })
-}
-
-async function renderCommands(req, res) {
-    let title = 'Custom Bot Commands'
-    let synonyms = []
-
-    if (!req.session.user.isManager) {
-        title = 'Not permitted'
-    } else {
-        synonyms = await getAllSynonyms()
-    }
-
-    res.render('synonyms', {
-        title,
-        synonyms,
-        user: req.session.user
-    })
-}
-
-async function renderMessages(req, res) {
-    let title = 'Bot commands in the last 24 hours'
-    let messages = []
-
-    if (!req.session.user.isManager) {
-        title = 'Not permitted'
-    } else {
-        messages = await getLastDayMessages()
-    }
-
-    res.render('messages', {
-        title,
-        messages,
-        user: req.session.user
-    })
-}
-
-async function renderProfile(req, res) {
-    const user = await getUser(req.session.user.id)
-    const messages = await getMessages(user.id)
-
-    res.render('profile', {
-        title: 'Profile',
-        messages,
-        user: req.session.user
-    })
-}
-
-async function renderUptime(req, res) {
-    const APIres = await getUptimeStats()
-    if (!APIres) return res.redirect('/')
-
-    res.render('uptime', {
-        title: 'Uptime Stats',
-        stats: APIres.data,
-        user: req.session.user,
-    })
-}
-
-async function handleApi(req, res) {
-    const method = req.params.method
-    const apiResponse = await API.run(method)
-    res.json(apiResponse)
-}
 
 // ROUTES
 app.get('/', isAuthenticated, renderDashboard)
@@ -205,30 +83,19 @@ app.get('/logout', handleLogout)
 app.get('/commands', isAuthenticated, renderCommands)
 app.get('/messages', isAuthenticated, renderMessages)
 app.get('/profile', isAuthenticated, renderProfile)
+app.get('/servers', (req, res) => renderServers(req, res, servers))
 app.get('/uptime', renderUptime)
 app.get('/api/:method', handleApi)
 
-
+let servers = []
 
 //Discord-Bot login event
-function onClientReady() {
+async function onClientReady() {
     console.log(
         `Logged in as ${client.user.tag}`,
         'Server count: ' + client.guilds.cache.size
     )
-
-    const guildNames = getServerList(client)
-
-    function renderServers(req, res) {
-        res.render('servers', {
-            title: 'Discord servers',
-            servers: guildNames,
-            user: req.session.user
-        })
-    }
-
-    app.get('/servers', renderServers)
-
+    servers = getServerList(client)
     client.user.setActivity(
         client.guilds.cache.size + ' servers',
         { type: ActivityType.Watching }

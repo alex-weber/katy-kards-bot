@@ -176,14 +176,21 @@ function renderFactionsChart(apiData)
 
 }
 
-function renderTopMessages(apiData)
-{
+function renderTopMessages(apiData) {
     const topMessagesDiv = document.getElementById('topMessages')
-    topMessagesDiv.innerHTML = apiData.data.map(
-        item =>
-            '<tr><td>' + item.position + '<td>' + item.command + '</td><td>' + item.count + '</td></tr>').join('')
 
+    topMessagesDiv.innerHTML = apiData.data
+        .filter(item => !item.command.startsWith('%%')) // exclude commands starting with %%
+        .map((item, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.command}</td>
+                <td>${item.count}</td>
+            </tr>
+        `)
+        .join('')
 }
+
 
 function renderTopUsers(apiData) {
     const topUsersElement = document.getElementById('topUsers')
