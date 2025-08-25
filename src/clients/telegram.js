@@ -1,10 +1,20 @@
 
-const {Telegraf, Input} = require('telegraf')
+const {Telegraf} = require('telegraf')
 let {message} = require('telegraf/filters')
 
 let telegramClient = false
 if (process.env.TELEGRAM_TOKEN !== undefined) telegramClient = new Telegraf(process.env.TELEGRAM_TOKEN)
 let telegramMessage = message
+
+function onTelegramError(err) {
+    console.error('telegramAPI error occurred:', err)
+
+    if (err.on?.payload?.chat_id) {
+        telegramClient.telegram
+            .sendMessage(err.on.payload.chat_id, 'Error: file upload failed')
+            .then()
+    }
+}
 
 /**
  *
@@ -26,4 +36,9 @@ function getMediaGroup(files) {
     return mediaGroup
 }
 
-module.exports = {telegramClient, telegramMessage, Input, getMediaGroup}
+module.exports = {
+    telegramClient,
+    telegramMessage,
+    getMediaGroup,
+    onTelegramError,
+}

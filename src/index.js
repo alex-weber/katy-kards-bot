@@ -4,25 +4,18 @@ const port = parseInt(process.env.PORT) || 3000
 const session = require('express-session')
 const favicon = require('serve-favicon')
 const compression = require('compression')
-//handlers
+
+//messenger handlers
 const {discordHandler} = require('./controller/discordHandler')
-const {telegramHandler} = require('./controller/telegramHandler')
-//discord
+const {telegramHandler} = require("./controller/telegramHandler")
+
+//discord client
 const {client} = require('./clients/discordClient.js')
-const {ActivityType, MessageFlags} = require('discord.js')
-//telegram
-const {telegramClient, telegramMessage} = require('./clients/telegram')
-
-
+const {ActivityType} = require('discord.js')
+//stats
 const {getServerList} = require("./tools/stats")
-const {
-    getUser,
-    disconnect
-} = require('./database/db')
-const {translate} = require("./tools/translation/translator")
-
-const RequestQueue = require("./tools/queue")
-const requestQueue = new RequestQueue()
+//for shutdown
+const {disconnect} = require('./database/db')
 
 const {
     isAuthenticated,
@@ -42,13 +35,14 @@ const {
 const {redis, redisStore, secure} = require('./controller/redis')
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 
+//frontend
 app.use('/static', express.static('src/js'))
 app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
 app.set('views', __dirname + '/views')
+app.use(compression())
 //cloud hosting
 app.set('trust proxy', true)
-app.use(compression())
 
 //Redis Session
 app.use(session({
@@ -63,9 +57,9 @@ app.use(session({
 }))
 
 //start listening for messages
-app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
+app.listen(port, () => console.log(`Katyusha-Bot is listening at :${port}`))
 
-// ROUTES
+// WEB ROUTES
 app.get('/', isAuthenticated, renderDashboard)
 app.get('/', renderLanding)
 app.get('/auth', renderAuth)
@@ -78,7 +72,7 @@ app.get('/servers', (req, res) => renderServers(req, res, servers))
 app.get('/uptime', renderUptime)
 app.get('/api/:method', handleApi)
 
-let servers = []
+let servers = [] //we get them when Discord client is ready
 
 //Discord-Bot login event
 async function onClientReady()
@@ -99,30 +93,8 @@ async function onMessageCreate(message)
     await discordHandler(message, client, redis)
 }
 
-async function onInteractionCreate(interaction)
-{
-    if (!interaction.isButton()) return
-
-    if (interaction.customId.startsWith('next_button')) {
-        const message = interaction.message
-        message.buttonId = interaction.customId
-
-        // remove the button
-        await interaction.message.edit({ components: [] })
-
-        const user = await getUser(interaction.user.id)
-        const content = translate(user.language, 'fetching')
-
-        await interaction.reply({
-            content,
-            flags: MessageFlags.Ephemeral
-        })
-
-        return await discordHandler(message, client, redis)
-    }
-}
-
-// EVENT BINDINGS
+const {onInteractionCreate} = require('./clients/discordClient')
+// DISCORD EVENT BINDINGS
 client.on('ready', onClientReady)
 client.on('messageCreate', onMessageCreate)
 client.on('interactionCreate', onInteractionCreate)
@@ -132,35 +104,31 @@ client.login(process.env.DISCORD_TOKEN).then(() =>
 {
     console.log('Discord client started')
 })
-//start Telegram-Bot's session if TOKEN is set
-function onTelegramText(ctx) {
-    requestQueue.enqueue(async function handleTelegramRequest() {
-        await telegramHandler(ctx, redis)
-    })
-}
 
-function onTelegramError(err) {
-    console.error('telegramAPI error occurred:', err)
-
-    if (err.on?.payload?.chat_id) {
-        telegramClient.telegram
-            .sendMessage(err.on.payload.chat_id, 'Error: file upload failed')
-            .then()
-    }
-}
+const RequestQueue = require("./tools/queue")
+const requestQueue = new RequestQueue()
+const {
+    telegramMessage,
+    telegramClient,
+    onTelegramError,
+} = require("./clients/telegram")
 
 async function startTelegramClient() {
-    telegramClient.on(telegramMessage('text'), onTelegramText)
+    telegramClient.on(telegramMessage('text'), ctx => onTelegramText(ctx, redis))
     telegramClient.catch(onTelegramError)
 
     console.log('Telegram client started')
     await telegramClient.launch()
 }
 
-// START TELEGRAM (if available)
-if (telegramClient) {
-    startTelegramClient()
+function onTelegramText(ctx, redis) {
+    requestQueue.enqueue(async function handleTelegramRequest() {
+        await telegramHandler(ctx, redis)
+    })
 }
+
+//start Telegram-Bot's session if TOKEN is set
+if (telegramClient) startTelegramClient()
 
 //errors
 client.on('error', error => {
