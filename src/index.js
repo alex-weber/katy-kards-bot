@@ -1,17 +1,9 @@
 const express = require('express')
 const app = express()
 const port = parseInt(process.env.PORT) || 3000
-app.use('/static', express.static('src/js'))
-//session
 const session = require('express-session')
 const favicon = require('serve-favicon')
-app.use(favicon(__dirname + '/assets/favicon.ico'))
-app.set('view engine', 'pug')
-app.set('views', __dirname + '/views')
-//cloud hosting
-app.set('trust proxy', true)
 const compression = require('compression')
-app.use(compression())
 //handlers
 const {discordHandler} = require('./controller/discordHandler')
 const {telegramHandler} = require('./controller/telegramHandler')
@@ -20,18 +12,7 @@ const {client} = require('./clients/discordClient.js')
 const {ActivityType, MessageFlags} = require('discord.js')
 //telegram
 const {telegramClient, telegramMessage} = require('./clients/telegram')
-//redis cache
-const { createClient } = require('redis')
-const redis = createClient({url: process.env.REDISCLOUD_URL})
-redis.connect().then(()=>{ console.log('REDIS Client Connected') })
-const RedisStore = require("connect-redis").default
-// Initialize store.
-const secure = process.env.NODE_ENV === 'production'
-const cachePrefix = secure ? 'katy-prod:' : 'katy-dev:'
-const redisStore = new RedisStore({
-    client: redis,
-    prefix: cachePrefix,
-})
+
 
 const {getServerList} = require("./tools/stats")
 const {
@@ -58,11 +39,18 @@ const {
     handleLogin
 } = require('./controller/router')
 
-//start listening for messages
-app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
+const {redis, redisStore, secure} = require('./controller/redis')
+const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
+
+app.use('/static', express.static('src/js'))
+app.use(favicon(__dirname + '/assets/favicon.ico'))
+app.set('view engine', 'pug')
+app.set('views', __dirname + '/views')
+//cloud hosting
+app.set('trust proxy', true)
+app.use(compression())
 
 //Redis Session
-const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 app.use(session({
     store: redisStore,
     secret: process.env.SESSION_SECRET,
@@ -73,6 +61,9 @@ app.use(session({
         maxAge: cookieMaxAge,
     }
 }))
+
+//start listening for messages
+app.listen(port, () => console.log(`Discord-Bot is listening at :${port}`))
 
 // ROUTES
 app.get('/', isAuthenticated, renderDashboard)
@@ -90,7 +81,8 @@ app.get('/api/:method', handleApi)
 let servers = []
 
 //Discord-Bot login event
-async function onClientReady() {
+async function onClientReady()
+{
     console.log(
         `Logged in as ${client.user.tag}`,
         'Server count: ' + client.guilds.cache.size
@@ -102,11 +94,13 @@ async function onClientReady() {
     )
 }
 
-async function onMessageCreate(message) {
+async function onMessageCreate(message)
+{
     await discordHandler(message, client, redis)
 }
 
-async function onInteractionCreate(interaction) {
+async function onInteractionCreate(interaction)
+{
     if (!interaction.isButton()) return
 
     if (interaction.customId.startsWith('next_button')) {
