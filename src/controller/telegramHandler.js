@@ -13,6 +13,9 @@ const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
 const {takeScreenshot} = require("../tools/puppeteer")
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
+const {uploadImage} = require("../tools/imageUpload")
+const Fs = require("@supercharge/fs")
+const {analyseDeck} = require("../tools/deck")
 
 /**
  *
@@ -66,8 +69,22 @@ async function telegramHandler(ctx, redis) {
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
         command = bot.getDeckCode(ctx.update.message.text)
+        //check if in cache
+        const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
+        if (await redis.exists(deckKey))
+        {
+            const response = await redis.json.get(deckKey, '$')
+            console.log('serving deck from cache', deckKey)
+            await ctx.reply(response.content.replaceAll('```', ''))
+            await ctx.replyWithPhoto(response.files[1])
+
+            return
+        }
+        //const deckCode = command.replace(prefix, '')
+        const deckInfo = await analyseDeck(command, language)
+        if (!deckInfo) return ctx.reply(translate(language, 'error'))
         //check if screenshot capturing is running, ask user to wait
-        let screenshotKey = cacheKeyPrefix + 'screenshot'
+        const screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
         {
             return ctx.reply(translate(language, 'screenshotRunning'))
@@ -79,17 +96,40 @@ async function telegramHandler(ctx, redis) {
         const deckBuilderURL = 'https://www.kards.com/' +
             deckBuilderLang+ 'decks/deck-builder?hash='
         const hash = encodeURIComponent(command)
-        let url = bot.isDeckLink(bot.parseCommand(prefix, command)) ?
+        const url = bot.isDeckLink(bot.parseCommand(prefix, command)) ?
             bot.parseCommand(prefix, command) :
             deckBuilderURL+hash
         ctx.reply(translate(language, 'screenshot'))
-        takeScreenshot(url).then(()=>
+        await takeScreenshot(url)
+        redis.del(screenshotKey)
+        console.log('createDeckImages finished')
+        const files = getDeckFiles()
+        ctx.replyWithPhoto({ source: files[1] })
+
+        //upload them for caching
+        const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
+
+        const file1 = await uploadImage(files[0], expiration)
+        const file2 = await uploadImage(files[1], expiration)
+        if (file1 && file2)
         {
-            redis.del(screenshotKey)
-            console.log('createDeckImages finished')
-            const files = getDeckFiles()
-            ctx.replyWithPhoto({ source: files[1] }).then(()=> deleteDeckFiles())
-        })
+            const uploadedFiles = [file1, file2]
+            //check if they are uploaded & are served correctly
+            const file1size = await bot.getFileSize(file1)
+            const file2size = await bot.getFileSize(file2)
+            if ( await Fs.size(files[0]) === file1size &&
+                await Fs.size(files[1]) === file2size)
+            {
+                const cached = {
+                    content: deckInfo,
+                    files: uploadedFiles
+                }
+                await redis.json.set(deckKey, '$', cached)
+                redis.expire(deckKey, expiration)
+                console.log('setting cache key for deck', command)
+                deleteDeckFiles()
+            }
+        }
 
         return
     }

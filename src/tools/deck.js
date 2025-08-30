@@ -162,4 +162,4 @@ function calculateAverages(cards, cardsArray, language) {
         '```'
 }
 
-module.exports = {createDeckImages}
+module.exports = {createDeckImages, analyseDeck}

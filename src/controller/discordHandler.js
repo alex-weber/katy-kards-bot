@@ -183,6 +183,8 @@ async function discordHandler(message, client, redis)
         if (await redis.exists(deckKey))
         {
             const response = await redis.json.get(deckKey, '$')
+            console.log('serving deck from cache', deckKey)
+
             return message.channel.send(response)
         }
 
