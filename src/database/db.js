@@ -3,7 +3,7 @@ const prisma = new PrismaClient()
 const { createMessage, getMessages, getLastDayMessages } = require('./message')
 const { getUser, updateUser } = require('./user')
 const {createSynonym, updateSynonym, deleteSynonym, getAllSynonyms, getSynonym} = require('./synonym')
-const  {createCard, getCardsDB, getCardsByFaction} = require('./card')
+const  {createCard, getCardsDB, getCardsByFaction, getCardStatsMessage} = require('./card')
 const {getRandomCard, getOpenTopDeck, getTopDeckStats, updateTopDeck, createTopDeck} = require('./topdeck')
 
 //disconnect on app shutdown
@@ -32,5 +32,6 @@ module.exports = {
   getCardsByFaction,
   getRandomCard,
   getLastDayMessages,
+  getCardStatsMessage,
   disconnect,
 }

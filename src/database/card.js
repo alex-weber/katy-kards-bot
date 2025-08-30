@@ -1,93 +1,126 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-/**
- *
- * @param card
- * @returns {Promise<*>}
- */
-async function createCard(card)
-{
-    if (card.json.type === 'order' || card.json.type === 'countermeasure')
-    {
-        card.json.attack = null
-        card.json.defense = null
-        card.json.operationCost = null
-    }
-    if (!card.json.hasOwnProperty('attributes')) card.json.attributes = ''
-    let text = ''
-    if (card.json.hasOwnProperty('text') && card.json.text.hasOwnProperty('en-EN'))
-    {
-        //console.log(card.json.text)
-        text = card.json.text['en-EN'].toLowerCase() + '%%' + card.json.text['ru-RU'].toLowerCase()
-    }
-
-    let fullText =
-        card.json.title['en-EN'] + ' ' +
-        card.json.title['ru-RU'] + ' ' +
-        card.json.type.toLowerCase() + ' ' +
-        card.json.attributes.toString().toLowerCase() + ' '
-    if (text.length) fullText += text
-
-    let exile = ''
-    if (card.json.hasOwnProperty('exile')) {
-        exile = card.json.exile
-        fullText += ' exile изгнание' // add exile to the fulltext
-    }
-
-    const data = {
-        cardId:         card.cardId,
-        importId:       card.importId,
-        imageURL:       card.imageUrl,
-        thumbURL:       card.thumbUrl,
-        title:          card.json.title['en-EN'] + '%%' + card.json.title['ru-RU'],
-        text:           text,
-        fullText:       fullText,
-        set:            card.json.set.toLowerCase(),
-        type:           card.json.type.toLowerCase(),
-        attack:         card.json.attack,
-        defense:        card.json.defense,
-        kredits:        card.json.kredits,
-        operationCost:  card.json.operationCost,
-        rarity:         card.json.rarity.toLowerCase(),
-        faction:        card.json.faction.toLowerCase(),
-        attributes:     card.json.attributes.toString().toLowerCase(),
-        exile:          exile.toLowerCase(),
-        reserved:       card.reserved,
-    }
-
-    if (await cardExists(card))
-    {
-
-        return await prisma.card.update({ where: { cardId: card.cardId}, data: data }).
-        catch((e) => { throw e }).finally(async () =>
-        {
-            //await prisma.$disconnect()
-            console.log('card ' + card.cardId + ' updated')
-        })
-    }
-
-    return await prisma.card.create({ data: data }).
-    catch((e) => { throw e }).finally(async () =>
-    {
-        //await prisma.$disconnect()
-        console.log('card ' + card.cardId + ' created')
-    })
+const cardStats = {
+    created: 0,
+    updated: 0,
 }
 
+function getCardStatsMessage() {
+
+    if (!cardStats.created && !cardStats.updated) return 'No changes detected'
+
+    return `Created: ${cardStats.created}\nUpdated: ${cardStats.updated}`
+}
+
+
 /**
  *
  * @param card
  * @returns {Promise<*>}
  */
-async function cardExists(card) {
+async function createCard(card) {
+    normalizeCardJson(card.json)
 
-    return await prisma.card.findUnique({
-        where: {
-            cardId: card.cardId,
-        },
-    }).
-    catch((e) => { throw e })
+    const text = buildText(card.json)
+    const fullText = buildFullText(card.json, text)
+    const exile = card.json.exile ? card.json.exile : ''
+
+    const data = buildCardData(card, text, fullText, exile)
+
+    const existing = await prisma.card.findUnique({ where: { cardId: card.cardId } })
+
+    if (existing) {
+        if (hasChanges(existing, data)) {
+            await prisma.card.update({
+                where: { cardId: card.cardId },
+                data
+            })
+            cardStats.updated++
+        }
+        return
+    }
+
+    await prisma.card.create({ data })
+    cardStats.created++
+}
+
+/* --- helpers --- */
+
+function normalizeCardJson(json) {
+    if (json.type === 'order' || json.type === 'countermeasure') {
+        json.attack = null
+        json.defense = null
+        json.operationCost = null
+    }
+    if (!json.hasOwnProperty('attributes')) {
+        json.attributes = ''
+    }
+}
+
+function buildText(json) {
+    if (json.hasOwnProperty('text') && json.text.hasOwnProperty('en-EN')) {
+        return (
+            json.text['en-EN'].toLowerCase() +
+            '%%' +
+            json.text['ru-RU'].toLowerCase()
+        )
+    }
+    return ''
+}
+
+function buildFullText(json, text) {
+    let fullText =
+        json.title['en-EN'] +
+        ' ' +
+        json.title['ru-RU'] +
+        ' ' +
+        json.type.toLowerCase() +
+        ' ' +
+        json.attributes.toString().toLowerCase() +
+        ' '
+
+    if (text.length) {
+        fullText += text
+    }
+
+    if (json.hasOwnProperty('exile')) {
+        fullText += ' exile изгнание'
+    }
+
+    return fullText
+}
+
+function buildCardData(card, text, fullText, exile) {
+    return {
+        cardId: card.cardId,
+        importId: card.importId,
+        imageURL: card.imageUrl,
+        thumbURL: card.thumbUrl,
+        title: card.json.title['en-EN'] + '%%' + card.json.title['ru-RU'],
+        text,
+        fullText,
+        set: card.json.set.toLowerCase(),
+        type: card.json.type.toLowerCase(),
+        attack: card.json.attack,
+        defense: card.json.defense,
+        kredits: card.json.kredits,
+        operationCost: card.json.operationCost,
+        rarity: card.json.rarity.toLowerCase(),
+        faction: card.json.faction.toLowerCase(),
+        attributes: card.json.attributes.toString().toLowerCase(),
+        exile: exile.toLowerCase(),
+        reserved: card.reserved
+    }
+}
+
+function hasChanges(existing, data) {
+    for (const key of Object.keys(data)) {
+        if (existing[key] !== data[key]) {
+            return true
+        }
+    }
+    return false
 }
 
 /**
@@ -131,4 +164,9 @@ async function getCardsByFaction()
 
 }
 
-module.exports = {getCardsByFaction, createCard, getCardsDB}
+module.exports = {
+    getCardsByFaction,
+    createCard,
+    getCardsDB,
+    getCardStatsMessage,
+}

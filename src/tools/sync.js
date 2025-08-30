@@ -1,4 +1,4 @@
-const {createCard, disconnect} = require('../database/db')
+const {createCard, disconnect, getCardStatsMessage} = require('../database/db')
 const {getCards} = require("./search")
 
 /**
@@ -30,15 +30,16 @@ async function syncDB()
         })
 
         try {
-            const message = cards.length + ' cards total -> updating...'
+            const message = cards.length + ' cards total -> checking for changes...'
             console.log(message)
             if (process.send) process.send(message)
             await Promise.all(cardsPromises)
-            console.log('All '+cards.length+' cards updated successfully')
+            const info = getCardStatsMessage()
+            if (process.send) process.send(info)
+            console.log(info)
         } catch (error) {
             console.error('Error updating cards:', error)
         }
-
 
     } catch (e) {
         console.log(e)
