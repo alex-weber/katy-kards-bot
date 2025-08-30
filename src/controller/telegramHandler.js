@@ -104,7 +104,8 @@ async function telegramHandler(ctx, redis) {
         redis.del(screenshotKey)
         console.log('createDeckImages finished')
         const files = getDeckFiles()
-        ctx.replyWithPhoto({ source: files[1] })
+        await ctx.reply(deckInfo.replaceAll('```', ''))
+        await ctx.replyWithPhoto({ source: files[1] })
 
         //upload them for caching
         const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
