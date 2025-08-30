@@ -1,0 +1,39 @@
+#scrollUp {
+    position: fixed;
+    bottom: 63px;
+    right: 20px;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    text-align: center;
+    line-height: 45px;
+    background: transparent;
+    border: 1px solid #0D6EFD;
+    color: #0D6EFD;
+    cursor: pointer;
+    opacity: 0;                  /* start hidden */
+    pointer-events: none;        /* prevent click when hidden */
+    transition: opacity 0.4s ease, transform 0.3s ease; /* smooth fade + hover scale */
+}
+
+#scrollUp.show {
+    opacity: 1;
+    pointer-events: auto;        /* enable click when visible */
+}
+
+#scrollUp svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+    transition: transform 0.3s ease;
+}
+
+#scrollUp:hover {
+    background: rgba(13,110,253,0.1);
+    transform: scale(1.1);
+}
+
+#scrollUp:hover svg {
+    transform: translateY(-2px);
+}
