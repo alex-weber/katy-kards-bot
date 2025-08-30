@@ -362,6 +362,7 @@ async function handleSynonym(user, message)
     if (text.length && text === 'delete')
     {
         await deleteSynonym(key)
+        console.log(user.name, 'deleted', key)
         return key + ' deleted'
     }
     if (text.length) value.content = text
@@ -390,10 +391,12 @@ async function handleSynonym(user, message)
     if (!syn && value)
     {
         await createSynonym(key, value)
+        console.log(user.name, 'created', key)
         return key + ' created'
     } else
     {
         await updateSynonym(key, value)
+        console.log(user.name, 'updated', key)
         return key + ' updated'
     }
 }
