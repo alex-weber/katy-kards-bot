@@ -409,7 +409,7 @@ async function handleSynonym(user, message)
 function checkSynonymKey(key)
 {
     //allow only a-z, numbers, underscore and minus chars
-    let allowedChars = /^[\sa-zа-я0-9_-]+$/
+    let allowedChars = /^[\sa-z0-9_-]+$/
 
     return allowedChars.test(key)
 }
