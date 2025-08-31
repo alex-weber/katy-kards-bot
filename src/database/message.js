@@ -1,7 +1,8 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-
+const {redis, cachePrefix} = require('../controller/redis')
+const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
 /**
  *
  * @param data
@@ -23,6 +24,10 @@ async function createMessage(data)
  */
 async function getMessages(userId)
 {
+    const cacheKey = cachePrefix + 'page:profile:' + userId
+    const cachedMessages = await redis.json.get(cacheKey, '$')
+    if (cachedMessages) return cachedMessages
+
     const messages = {}
     const now = new Date()
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
@@ -65,6 +70,8 @@ async function getMessages(userId)
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
 
+    await redis.json.set(cacheKey, '$', messages)
+    await redis.expire(cacheKey, expiration)
 
     return messages
 
@@ -76,6 +83,10 @@ async function getMessages(userId)
  */
 async function getLastDayMessages()
 {
+    const cacheKey = cachePrefix + 'page:messages'
+    const cachedMessages = await redis.json.get(cacheKey, '$')
+    if (cachedMessages && cachedMessages.length > 0) return cachedMessages
+
     const now = new Date()
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
@@ -99,10 +110,14 @@ async function getLastDayMessages()
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
 
-    return messages.map(message => ({
+    const mappedMessages = messages.map(message => ({
         ...message,
         createdAt: formatDate(new Date(message.createdAt))
     }))
+    await redis.json.set(cacheKey, '$', mappedMessages)
+    await redis.expire(cacheKey, expiration)
+
+    return mappedMessages
 
 }
 

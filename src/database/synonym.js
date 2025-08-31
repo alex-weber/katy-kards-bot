@@ -1,20 +1,30 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
-
-
+const {redis, cachePrefix} = require('../controller/redis')
+const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
 /**
  * @returns {Promise<*>}
  */
 async function getAllSynonyms()
 {
 
-    return await prisma.synonym.findMany({
+    const cacheKey = cachePrefix + 'page:commands'
+    const cached = await redis.json.get(cacheKey, '$')
+
+    if (cached) return cached
+
+    const synonyms = await prisma.synonym.findMany({
         orderBy: {
             key: 'asc'
         }
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
+
+    await redis.json.set(cacheKey, '$', synonyms)
+    await redis.expire(cacheKey, expiration)
+
+    await prisma.$disconnect()
+
+    return synonyms
 }
 
 /**
@@ -89,4 +99,10 @@ async function deleteSynonym(key)
     finally(async () => { await prisma.$disconnect() })
 }
 
-module.exports = {createSynonym, updateSynonym, deleteSynonym, getAllSynonyms, getSynonym}
+module.exports = {
+    createSynonym,
+    updateSynonym,
+    deleteSynonym,
+    getAllSynonyms,
+    getSynonym,
+}

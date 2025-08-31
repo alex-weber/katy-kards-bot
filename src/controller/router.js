@@ -85,7 +85,8 @@ async function renderCommands(req, res) {
     let synonyms = []
 
     if (!req.session.user.isManager) {
-        title = 'Not permitted'
+        res.send('Not permitted')
+        return
     } else {
         synonyms = await getAllSynonyms()
     }
@@ -102,7 +103,8 @@ async function renderMessages(req, res) {
     let messages = []
 
     if (!req.session.user.isManager) {
-        title = 'Not permitted'
+        res.send('Not permitted')
+        return
     } else {
         messages = await getLastDayMessages()
     }

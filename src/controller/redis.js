@@ -17,4 +17,5 @@ module.exports = {
     redis,
     redisStore,
     secure,
+    cachePrefix,
 }
