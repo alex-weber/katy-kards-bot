@@ -365,9 +365,17 @@ async function discordHandler(message, client, redis)
     if (command.startsWith('alt'))
     {
         const syns = await getAllSynonyms()
-        const files = syns.filter(syn => syn.key.startsWith('alt ')).map(syn => syn.value)
-        if (files.length) {
-
+        const files = syns.filter(syn => syn.key.startsWith('alt ')).map(syn =>
+        {
+            if (syn.value.startsWith('{'))
+            {
+                const filesObject = JSON.parse(syn.value)
+                return filesObject.files[0]
+            }
+            return syn.value
+        })
+        if (files.length)
+        {
             let offset = parseInt(command.replace('alt', ''))
             if (isNaN(offset) || offset > files.length) offset = 0
             let last = offset + limit
@@ -380,8 +388,6 @@ async function discordHandler(message, client, redis)
                 answer.components = getButtonRow(translate(language, 'next'), 'alt' + (offset+limit))
 
             return message.channel.send(answer)
-
-
         }
 
         return message.channel.send(translate(language, 'noresult'))
