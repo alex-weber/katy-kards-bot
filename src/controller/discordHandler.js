@@ -34,6 +34,7 @@ const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
 //load more results button
 const {getButtonRow} = require("../tools/button")
+
 /**
  *
  * @param message
@@ -436,8 +437,14 @@ async function discordHandler(message, client, redis)
         return message.channel.send(translate(language, 'error'))
     }
     const counter = cards.counter
-    if (!counter)
-        return message.channel.send(translate(language, 'noresult'))
+    if (!counter) {
+        let reply = translate(language, 'noresult')
+        if (user.mode) {
+            reply = user.mode + '\n\n' + reply
+        }
+
+        return message.channel.send(reply)
+    }
 
     //if any cards are found - attach them
     let content = translate(language, 'search') + ': ' + counter
