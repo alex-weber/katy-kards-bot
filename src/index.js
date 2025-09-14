@@ -95,7 +95,7 @@ async function onMessageCreate(message)
 
 const {onInteractionCreate} = require('./clients/discordClient')
 // DISCORD EVENT BINDINGS
-client.on('ready', onClientReady)
+client.on('clientReady', onClientReady)
 client.on('messageCreate', onMessageCreate)
 client.on('interactionCreate', onInteractionCreate)
 

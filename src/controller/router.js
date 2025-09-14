@@ -87,9 +87,10 @@ async function renderCommands(req, res) {
     if (!req.session.user.isManager) {
         res.send('Not permitted')
         return
-    } else {
-        synonyms = await getAllSynonyms()
     }
+
+    synonyms = await getAllSynonyms()
+
 
     res.render('synonyms', {
         title,
@@ -99,7 +100,7 @@ async function renderCommands(req, res) {
 }
 
 async function renderMessages(req, res) {
-    const title = 'Last bot commands'
+    const title = 'Bot commands'
     if (!req.session.user.isManager) {
         return res.send('Not permitted')
     }

@@ -81,8 +81,24 @@ async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
     const p = Math.max(1, parseInt(page, 10) || 1)
     const size = Math.max(1, parseInt(pageSize, 10) || 50)
 
-    const toDate = to ? new Date(to) : new Date()
-    const fromDate = from ? new Date(from) : new Date(toDate.getTime() - 24 * 60 * 60 * 1000)
+    let fromDate = from ? new Date(from) : new Date()
+    let toDate = to ? new Date(to) : new Date()
+
+// Ensure fromDate is at UTC midnight
+    fromDate = new Date(
+        Date.UTC(
+            fromDate.getUTCFullYear(),
+            fromDate.getUTCMonth(),
+            fromDate.getUTCDate(),
+            0, 0, 0)
+    )
+    toDate = new Date(
+        Date.UTC(
+            toDate.getUTCFullYear(),
+            toDate.getUTCMonth(),
+            toDate.getUTCDate(),
+            23, 59, 59)
+    )
 
     const fromString = new Date(fromDate).toISOString().split('T')[0]
     const toString = new Date(toDate).toISOString().split('T')[0]
@@ -102,7 +118,7 @@ async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
         prisma.message.count({ where }),
         prisma.message.findMany({
             where,
-            orderBy: { createdAt: 'asc' },
+            orderBy: { createdAt: 'desc' },
             skip: (p - 1) * size,
             take: size,
             include: {

@@ -1,0 +1,11 @@
+//Date picker
+form(method="get" action="")
+    .row.mb-3
+        .col-md-3
+            label.form-label(for="from") From:
+            input#from.form-control(type="date", name="from", value=from)
+        .col-md-3
+            label.form-label(for="to") To:
+            input#to.form-control(type="date", name="to", value=to)
+        .col-md-3.align-self-end
+            button.btn.btn-primary(type="submit") Filter
