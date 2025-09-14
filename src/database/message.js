@@ -150,7 +150,13 @@ async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
 
 async function getMessagesByArgs(args)
 {
-    const messages = await prisma.message.findMany(args)
+    // Ensure we only select 'createdAt' from the DB
+    const messages = await prisma.message.findMany({
+        ...args,
+        select: {
+            createdAt: true
+        }
+    })
 
     // Aggregate message counts by day
     const messageCountsByDay = messages.reduce((acc, message) => {
