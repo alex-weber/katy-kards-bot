@@ -24,9 +24,9 @@ const {
     renderMessages,
     renderServers,
     renderCommands,
-    renderUptime,
     renderLanding,
     renderProfile,
+    renderCards,
     handleApi,
     handleLogout,
     handleLogin
@@ -69,7 +69,7 @@ app.get('/commands', isAuthenticated, renderCommands)
 app.get('/messages', isAuthenticated, renderMessages)
 app.get('/profile', isAuthenticated, renderProfile)
 app.get('/servers', (req, res) => renderServers(req, res, servers))
-app.get('/uptime', renderUptime)
+app.get('/cards', renderCards)
 app.get('/api/:method', handleApi)
 
 let servers = [] //we get them when Discord client is ready

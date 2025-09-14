@@ -4,7 +4,7 @@ const {
     getMessages,
     getLastDayMessages,
 } = require('../database/db')
-const {getUptimeStats} = require("../tools/stats")
+
 const {isManager} = require("../tools/search")
 const axios = require('axios')
 //API
@@ -127,13 +127,10 @@ async function renderProfile(req, res) {
     })
 }
 
-async function renderUptime(req, res) {
-    const APIres = await getUptimeStats()
-    if (!APIres) return res.redirect('/')
+async function renderCards(req, res) {
 
-    res.render('uptime', {
-        title: 'Uptime Stats',
-        stats: APIres.data,
+    res.render('cards', {
+        title: 'Cards',
         user: req.session.user,
     })
 }
@@ -160,9 +157,9 @@ module.exports = {
     renderMessages,
     renderCommands,
     renderServers,
-    renderUptime,
     renderLanding,
     renderProfile,
+    renderCards,
     handleApi,
     handleLogout,
     handleLogin

@@ -38,17 +38,6 @@ block content
                 th(scope='col') Commands
             tbody#topUsers
 
-    h4.text-center.text-primary.mt-5.mb-3
-      | Cards by Factions
-      span#factionsTotalCardsCount
-    // Chart Section for Top Messages
-    div(style="height: 500px; width: 100%; margin-bottom: 100px;")
-      // Loading Spinner for Top Messages Chart
-      div#loadingSpinnerFactions.d-flex.justify-content-center.align-items-center(style="height: 500px; display: flex;")
-        div.spinner-border.text-primary(role="status")
-      // Canvas for Top Messages Chart
-      canvas#factionsChart(style="height: 500px; width: 100%; display: none;")
-
 
   script(src="/static/vendor/chart.js")
   script(src="/static/dashboard.js")

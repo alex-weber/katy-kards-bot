@@ -97,85 +97,6 @@ function hideSpinner(loadingSpinner, chartCanvas)
     chartCanvas.style.display = 'block'
 }
 
-function renderFactionsChart(apiData)
-{
-    const loadingSpinner = document.getElementById('loadingSpinnerFactions')
-    const chartCanvas = document.getElementById('factionsChart')
-    const totalCardsCountElement = document.getElementById('factionsTotalCardsCount')
-
-    const labels = apiData.data.map(item => item.faction.toUpperCase() + '(' + item.count + ')')
-    const data = apiData.data.map(item => item.count)
-    const totalCount = data.reduce((sum, count) => sum + count, 0)
-    totalCardsCountElement.innerText = ' (' + totalCount + ')'
-    // Hide loading spinner and show canvas
-    hideSpinner(loadingSpinner, chartCanvas)
-
-    // Define faction colors
-    const baseColors = {
-        soviet: '#604F3D',
-        usa: '#63694C',
-        japan: '#9D7C41',
-        germany: '#5E6965',
-        britain: '#928F7C',
-        france: '#4C566F',
-        italy: '#626260',
-        poland: '#645E4B',
-        finland: '#B8B8A0'
-    }
-
-// Generate background gradients
-    const backgroundColors = apiData.data.map(faction => {
-        return baseColors[faction.faction]
-    })
-
-// Bar chart configuration
-    const config = {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            const label = context.label || ''
-                            const value = context.raw || 0
-                            return `${label}: ${value}`
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        color: '#4B4D4E',
-                    }
-                },
-                y: {
-                    grid: {
-                        color: '#4B4D4E',
-                        lineWidth: 1,
-                    }
-                }
-            },
-        }
-    }
-
-
-    const ctx = chartCanvas.getContext('2d')
-    new Chart(ctx, config)
-
-}
-
 function renderTopMessages(apiData) {
     const topMessagesDiv = document.getElementById('topMessages')
 
@@ -207,13 +128,11 @@ async function getDashboardData()
     const [
         responseMessages,
         responseTdMessages,
-        responseFactions,
         responseTopMessages,
         responseTopUsers,
     ] = await Promise.all([
         fetch('/api/messages'),
         fetch('/api/td-messages'),
-        fetch('/api/cards-by-faction'),
         fetch('/api/top-messages'),
         fetch('/api/top-users'),
     ])
@@ -221,13 +140,11 @@ async function getDashboardData()
     const [
         dataMessages,
         dataTdMessages,
-        dataFactions,
         dataTopMessages,
         dataTopUsers,
     ] = await Promise.all([
         responseMessages.json(),
         responseTdMessages.json(),
-        responseFactions.json(),
         responseTopMessages.json(),
         responseTopUsers.json(),
     ])
@@ -235,7 +152,6 @@ async function getDashboardData()
     return {
         dataMessages,
         dataTdMessages,
-        dataFactions,
         dataTopMessages,
         dataTopUsers,
     }
@@ -247,6 +163,5 @@ getDashboardData().then(
         renderMessagesChart(data.dataMessages, data.dataTdMessages)
         renderTopMessages(data.dataTopMessages)
         renderTopUsers(data.dataTopUsers)
-        renderFactionsChart(data.dataFactions)
     }
 )

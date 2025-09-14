@@ -1,0 +1,103 @@
+extends layout
+
+block content
+    div.container
+        // Page Title
+        h3.text-center.text-primary.mt-4.mb-5 Cards by Factions
+            span#factionsTotalCardsCount
+        // Chart Section for Top Messages
+        div(style="height: 500px; width: 100%; margin-bottom: 100px;")
+            // Loading Spinner for Top Messages Chart
+            div#loadingSpinnerFactions.d-flex.justify-content-center.align-items-center(style="height: 500px; display: flex;")
+                div.spinner-border.text-primary(role="status")
+            // Canvas for Top Messages Chart
+            canvas#factionsChart(style="height: 500px; width: 100%; display: none;")
+
+        script(src="/static/vendor/chart.js")
+        script.
+            async function render() {
+                let cards = await fetch('/api/cards-by-faction')
+                cards = await cards.json()
+                renderFactionsChart(cards)
+            }
+            function renderFactionsChart(apiData) {
+                const loadingSpinner = document.getElementById('loadingSpinnerFactions')
+                const chartCanvas = document.getElementById('factionsChart')
+                const totalCardsCountElement = document.getElementById('factionsTotalCardsCount')
+
+                const labels = apiData.data.map(item => item.faction.toUpperCase() + '(' + item.count + ')')
+                const data = apiData.data.map(item => item.count)
+                const totalCount = data.reduce((sum, count) => sum + count, 0)
+                totalCardsCountElement.innerText = ' (' + totalCount + ')'
+                // Hide loading spinner and show canvas
+                loadingSpinner.classList.add('d-none')
+                chartCanvas.style.display = 'block'
+
+                // Define faction colors
+                const baseColors = {
+                    soviet: '#604F3D',
+                    usa: '#63694C',
+                    japan: '#9D7C41',
+                    germany: '#5E6965',
+                    britain: '#928F7C',
+                    france: '#4C566F',
+                    italy: '#626260',
+                    poland: '#645E4B',
+                    finland: '#B8B8A0',
+                    neutral: 'white',
+                }
+
+                // Generate background gradients
+                const backgroundColors = apiData.data.map(faction => {
+                    return baseColors[faction.faction]
+                })
+
+                // Bar chart configuration
+                const config = {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: backgroundColors
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const label = context.label || ''
+                                        const value = context.raw || 0
+                                        return `${label}: ${value}`
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: '#4B4D4E',
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: '#4B4D4E',
+                                    lineWidth: 1,
+                                }
+                            }
+                        },
+                    }
+                }
+
+
+                const ctx = chartCanvas.getContext('2d')
+                new Chart(ctx, config)
+
+            }
+
+            render()
