@@ -2,8 +2,22 @@ extends layout
 
 block content
 
-  p.h2.text-primary.text-center= title + ' (' + messages.length + ')'
+  //- Page Header
+  p.h2.text-primary.text-center= title + ' (' + totalPages*messages.length + ')'
 
+  //- Filter Form
+  form(method="get" action="")
+    .row.mb-3
+      .col-md-3
+        label.form-label(for="from") From:
+        input#from.form-control(type="date", name="from", value=from)
+      .col-md-3
+        label.form-label(for="to") To:
+        input#to.form-control(type="date", name="to", value=to)
+      .col-md-3.align-self-end
+        button.btn.btn-primary(type="submit") Filter
+
+  //- Messages Table
   table.table.table-dark.table-striped.table-hover
     thead
       tr
@@ -13,15 +27,62 @@ block content
         th(scope='col') Time
 
     tbody
-      each message, index in messages
+      if messages.length
+        each message, index in messages
+          tr
+            td #{(page - 1) * pageSize + index + 1}
+            td #{message.author.name}
+            td #{message.content}
+            td #{message.createdAt}
+      else
         tr
-          td #{index+1}
-          td #{message.author.name}
-          td #{message.content}
-          td #{message.createdAt}
+          td(colspan="4").text-center No messages found
 
+  //- Pagination Controls
+  if totalPages > 1
+    -
+      const maxPages = 10
+      let start = Math.max(1, page - Math.floor(maxPages / 2))
+      let end = start + maxPages - 1
+      if (end > totalPages) {
+        end = totalPages
+        start = Math.max(1, end - maxPages + 1)
+      }
+      const pages = []
+      for (let i = start; i <= end; i++) pages.push(i)
+
+    nav.mt-4
+      ul.pagination.justify-content-center
+        if page > 1
+          li.page-item
+            a.page-link(
+              href=`?from=${from || ''}&to=${to || ''}&page=${page - 1}`
+            ) Previous
+        else
+          li.page-item.disabled
+            span.page-link Previous
+
+        each i in pages
+          if i === page
+            li.page-item.active
+              span.page-link #{i}
+          else
+            li.page-item
+              a.page-link(
+                href=`?from=${from || ''}&to=${to || ''}&page=${i}`
+              ) #{i}
+
+        if page < totalPages
+          li.page-item
+            a.page-link(
+              href=`?from=${from || ''}&to=${to || ''}&page=${page + 1}`
+            ) Next
+        else
+          li.page-item.disabled
+            span.page-link Next
+
+  //- Extra spacing at bottom to avoid footer overlap
+  .my-5
   p &nbsp;
   p &nbsp;
-
-
 

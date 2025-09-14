@@ -22,7 +22,7 @@ async function createMessage(data)
  * @param userId
  * @returns {Promise<array>}
  */
-async function getMessages(userId)
+async function getUserMessages(userId)
 {
     const cacheKey = cachePrefix + 'page:profile:' + userId
     const cachedMessages = await redis.json.get(cacheKey, '$')
@@ -77,49 +77,60 @@ async function getMessages(userId)
 
 }
 
-/**
- *
- * @returns {Promise<*>}
- */
-async function getLastDayMessages()
-{
-    const cacheKey = cachePrefix + 'page:messages'
+async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
+    const p = Math.max(1, parseInt(page, 10) || 1)
+    const size = Math.max(1, parseInt(pageSize, 10) || 50)
+
+    const toDate = to ? new Date(to) : new Date()
+    const fromDate = from ? new Date(from) : new Date(toDate.getTime() - 24 * 60 * 60 * 1000)
+
+    const fromString = new Date(fromDate).toISOString().split('T')[0]
+    const toString = new Date(toDate).toISOString().split('T')[0]
+    const cacheKey = cachePrefix + 'page:messages:' + fromString + toString + '_' + page + '_' + pageSize
     const cachedMessages = await redis.json.get(cacheKey, '$')
-    if (cachedMessages && cachedMessages.length > 0) return cachedMessages
+    if (cachedMessages) return cachedMessages
 
-    const now = new Date()
-    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const where = {
+        createdAt: {
+            gte: fromDate,
+            lte: toDate
+        }
+    }
 
-    const messages = await prisma.message.findMany({
-        where: {
-            createdAt: {
-                gte: dayAgo,
-            },
-        },
-        orderBy: {
-            createdAt: 'desc'
-        },
-        include: {
-            author: {
-                select: {
-                    name: true,
-                },
-            },
-        },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    // run count and find in parallel
+    const [totalCount, messages] = await Promise.all([
+        prisma.message.count({ where }),
+        prisma.message.findMany({
+            where,
+            orderBy: { createdAt: 'asc' },
+            skip: (p - 1) * size,
+            take: size,
+            include: {
+                author: {
+                    select: { name: true }
+                }
+            }
+        })
+    ])
 
-    const mappedMessages = messages.map(message => ({
-        ...message,
-        createdAt: formatDate(new Date(message.createdAt))
+    const mappedMessages = messages.map(m => ({
+        ...m,
+        createdAt: formatDate(new Date(m.createdAt), true)
     }))
-    await redis.json.set(cacheKey, '$', mappedMessages)
+
+    const result = {
+        messages: mappedMessages,
+        totalCount,
+        page: p,
+        pageSize: size
+    }
+
+    await redis.json.set(cacheKey, '$', result)
     await redis.expire(cacheKey, expiration)
 
-    return mappedMessages
-
+    return result
 }
+
 
 async function getMessagesByArgs(args)
 {
@@ -295,9 +306,9 @@ function formatDate(date, full=false)
 
 module.exports = {
     createMessage,
-    getLastDayMessages,
     getLastMonthMessages,
     getMessages,
+    getUserMessages,
     getTopDeckMessages,
     getTopMessages,
     getTopUsers,
