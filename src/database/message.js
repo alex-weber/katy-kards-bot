@@ -3,6 +3,7 @@ const prisma = new PrismaClient()
 
 const {redis, cachePrefix} = require('../controller/redis')
 const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
+const {languages} = require('../tools/language')
 /**
  *
  * @param data
@@ -230,6 +231,7 @@ async function getTopMessages()
                 { content: { not: { startsWith: 'td' } } },
                 { content: { not: { startsWith: 'command' } } },
                 { content: { not: { startsWith: 'alt' } } },
+                { content: { not: { in: languages } } },
             ]
         },
         orderBy: {
