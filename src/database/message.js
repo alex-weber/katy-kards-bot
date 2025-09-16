@@ -231,7 +231,7 @@ async function getTopMessages()
                 { content: { not: { startsWith: 'td' } } },
                 { content: { not: { startsWith: 'command' } } },
                 { content: { not: { startsWith: 'alt' } } },
-                { content: { not: { in: languages } } },
+                { content: { notIn:  languages } },
             ]
         },
         orderBy: {
