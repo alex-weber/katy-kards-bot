@@ -294,7 +294,7 @@ async function getTopUsers()
             discordId: user?.discordId || 'N/A',
             count: group._count.content
         }
-    })
+    }).filter (user => user.username !== 'Катюха')
 
 }
 
