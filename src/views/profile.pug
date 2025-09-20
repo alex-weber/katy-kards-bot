@@ -7,7 +7,7 @@ block content
     .card.mb-3.border-primary.shadow-sm.p-2.bg-body-tertiary.rounded(style="max-width: 540px;")
         .row.g-0
             .col-md-4
-                img.img-fluid.rounded-start.border.border-2.border-primary-subtle(src='https://cdn.discordapp.com/avatars/452044718591705089/' + user.avatar + '.webp', alt="No avatar")
+                img.img-fluid.rounded-start.border.border-2.border-primary-subtle(src='https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.webp', alt="No avatar")
             .col-md-8
                 .card-body
                     h4.card-title.text-primary #{user.username}
