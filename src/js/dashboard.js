@@ -115,12 +115,17 @@ function renderTopMessages(apiData) {
 
 function renderTopUsers(apiData) {
     const topUsersElement = document.getElementById('topUsers')
-    topUsersElement.innerHTML = apiData.data.map(
-        item =>
-            '<tr><td>' + item.position + '</td><td>' + item.username + '</td><td>' + item.count + '</td></tr>')
+    topUsersElement.innerHTML = apiData.data
+        .map((item, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${item.username}</td>
+        <td>${item.count}</td>
+      </tr>
+    `)
         .join('')
-
 }
+
 
 async function getDashboardData()
 {

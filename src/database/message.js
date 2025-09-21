@@ -285,11 +285,10 @@ async function getTopUsers()
         }
     })
 
-    return groupedMessages.map((group, index) => {
+    return groupedMessages.map((group) => {
         const user = users.find(u => u.id === group.authorId)
         return {
             authorId: group.authorId,
-            position: index + 1,
             username: user?.name || 'Unknown',
             discordId: user?.discordId || 'N/A',
             count: group._count.content
