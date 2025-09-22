@@ -13,7 +13,7 @@ const {
 } = require('../database/db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
-const maxMessageLength = 4000
+const maxMessageLength = parseInt(process.env.MESSAGE_MAX_LENGTH) || 2000
 const {uploadImage} = require("../tools/imageUpload")
 
 /**
@@ -449,7 +449,7 @@ async function listSynonyms(command)
 
     if (listing.length > maxMessageLength)
     {
-        listing = listing.slice(0, maxMessageLength - 4)
+        listing = listing.slice(0, maxMessageLength - 10)
     }
     listing += '```\n' //end code block
 
