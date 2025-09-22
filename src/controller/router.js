@@ -80,27 +80,25 @@ function handleLogout(req, res, next) {
     })
 }
 
+
 async function renderCommands(req, res) {
-    let title = 'Custom Bot Commands'
-    let synonyms = []
 
     if (!req.session.user.isManager) {
         res.send('Not permitted')
         return
     }
 
-    synonyms = await getAllSynonyms()
-
+    const synonyms = await getAllSynonyms()
 
     res.render('synonyms', {
-        title,
+        title: 'Custom Bot Commands',
         synonyms,
         user: req.session.user
     })
 }
 
 async function renderMessages(req, res) {
-    const title = 'Bot commands'
+
     if (!req.session.user.isManager) {
         return res.send('Not permitted')
     }
@@ -131,12 +129,13 @@ async function renderMessages(req, res) {
     res.set('Cache-Control', `public, max-age=${maxAge}`)
 
     res.render('messages', {
-        title,
+        title: 'Bot commands',
         messages,
         user: req.session.user,
         page: pageNumber,
         pageSize,
         totalPages,
+        totalCount,
         from: fromISO,
         to: toISO
     })
