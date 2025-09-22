@@ -421,39 +421,32 @@ function checkSynonymKey(key)
  */
 async function listSynonyms(command)
 {
-    const data = command.split('=')
-    let listing = '```\n' //start code block to avoid Discord to parse hyperlinks
-    if (data.length === 2 && checkSynonymKey(data[1]))
-    {
-        let synObject = await getSynonym(data[1])
-        if (synObject)
-        {
-            return listing + synObject.key + ': ' + synObject.value + '```'
-        } else return 'not found'
-    }
-
+    command = command.replace('commands', '').trim()
     const synonyms = await getAllSynonyms()
+    let commands = ''
 
     for (const [, syn] of Object.entries(synonyms))
     {
+        if (command.length && !syn.key.startsWith(command)) continue
         if (syn.value.startsWith('http') || syn.value.startsWith('text:'))
         {
-            listing += syn.key + '\n'
+
+            commands += syn.key + '\n'
         }
         if (syn.value.startsWith('{')) {
             const m = JSON.parse(syn.value)
-            if (m.content && m.content.startsWith('text:')) listing += syn.key + '\n'
-            if (m.files && !m.content) listing += syn.key + '\n'
+            if (m.content && m.content.startsWith('text:')) commands += syn.key + '\n'
+            if (m.files && !m.content) commands += syn.key + '\n'
         }
     }
 
-    if (listing.length > maxMessageLength)
+    if (commands.length > maxMessageLength)
     {
-        listing = listing.slice(0, maxMessageLength - 10)
+        commands = commands.slice(0, maxMessageLength - 10)
     }
-    listing += '```\n' //end code block
+    if (!commands.length) commands = 'no commands found'
 
-    return listing
+    return '```\n' + commands + '```\n'
 }
 
 /**
