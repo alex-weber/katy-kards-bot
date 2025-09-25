@@ -80,7 +80,9 @@ async function uploadImage(imagePath, expiration = 0)
         //custom image. should never expire
         if (imagePath.startsWith('http'))
         {
-            if (imagePath.includes('.png')) 
+            const imageExtension = imagePath.split('.').pop().split('?').shift().toLowerCase()
+
+            if (imageExtension === 'png')
             {
                 let path = await downloadImageAsFile(imagePath)
                 imagePath = await convertImageToWEBP(path)
@@ -107,10 +109,13 @@ async function uploadImage(imagePath, expiration = 0)
             return false
         }
         console.log('Image uploaded successfully:', response.data.url)
+
         return response.data.url
+
     } catch (error)
     {
         console.error('Error uploading image:', error)
+
         return false
     }
 }
@@ -126,10 +131,14 @@ async function convertImageToWEBP(imagePath) {
         // Define the new path for the WEBP version
         const webpPath = path.join(path.dirname(imagePath), `${path.parse(imagePath).name}.webp`)
 
-        // Convert the image to WEBP
-        await sharp(imagePath)
-            .toFormat('webp')
-            .toFile(webpPath)
+        const fileType = await sharp(imagePath).metadata()
+
+        if (fileType.format === 'png') {
+            // Convert the image to WEBP
+            await sharp(imagePath)
+                .toFormat('webp')
+                .toFile(webpPath)
+        }
 
         return webpPath
     } catch (error) {
