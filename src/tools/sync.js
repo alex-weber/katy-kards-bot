@@ -1,54 +1,69 @@
-const {createCard, disconnect, getCardStatsMessage} = require('../database/db')
-const {getCards} = require("./search")
+const { createCard, disconnect, getCardStatsMessage } = require('../database/db')
+const { getCards } = require("./search")
 
 /**
- *
+ * Process an array of items in batches with limited concurrency
+ * @param {Array} items
+ * @param {number} batchSize
+ * @param {function} handler async function to process each item
+ */
+async function processInBatches(items, batchSize, handler) {
+    for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize)
+        await Promise.all(batch.map(handler))
+    }
+}
+
+/**
  * @returns {Promise<boolean>}
  */
-async function syncDB()
-{
+async function syncDB() {
     const language = 'en'
     console.log('starting DB sync...')
+    console.time('db_sync')
+    const startTime = Date.now()
 
     const variables = {
-        language: language,
+        language,
         q: '',
         showSpawnables: true,
         showReserved: true,
         first: 10000,
     }
+
     try {
         const response = await getCards(variables, 5000)
-        //console.log(response)
         const cards = response.cards
         if (!cards.length) return false
-        const cardsPromises = cards.map(async (cardItem) =>
-        {
+
+        const message = cards.length + ' cards total -> checking for changes...'
+        console.log(message)
+        if (process.send) process.send(message)
+
+        // process cards in batches of 5
+        await processInBatches(cards, 5, async (cardItem) => {
             let card = cardItem.node
-            card.language = language
-            await createCard(card)
+            if (card) {
+                card.language = language
+                await createCard(card)
+            }
         })
 
-        try {
-            const message = cards.length + ' cards total -> checking for changes...'
-            console.log(message)
-            if (process.send) process.send(message)
-            await Promise.all(cardsPromises)
-            const info = getCardStatsMessage()
-            if (process.send) process.send(info)
-            console.log(info)
-        } catch (error) {
-            console.error('Error updating cards:', error)
-        }
+        const info = getCardStatsMessage()
+        const totalTime = (Date.now() - startTime) / 1000
+        if (process.send) process.send(info + ' \nProcess time: ' + totalTime + ' seconds.')
+        console.log(info)
+        console.timeEnd('db_sync')
+
 
     } catch (e) {
-        console.log(e)
+        console.error('Error during sync:', e)
         return false
     }
 
     await disconnect()
-
     return true
 }
-//update all cards
+
+// update all cards
 syncDB().catch(console.error)
