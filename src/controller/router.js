@@ -103,15 +103,31 @@ async function renderMessages(req, res) {
         return res.send('Not permitted')
     }
 
-    let { from, to, page = 1 } = req.query
-    const pageNumber = Math.max(1, parseInt(page, 10) || 1)
-    const pageSize = 50
+    let { from, to, page = 1, username, command } = req.query
 
-    // Default dates: last 24 hours
-    let toDate = to ? new Date(to) : new Date()
-    let fromDate = from ? new Date(from) : new Date(toDate.getTime() - 24 * 60 * 60 * 1000)
+// --- Validation & sanitation ---
+    const pageNumber = Number.isInteger(parseInt(page, 10)) && parseInt(page, 10) > 0
+        ? parseInt(page, 10)
+        : 1
 
-    // Values for <input type="date"> (always YYYY-MM-DD)
+    const pageSize = 50 // fixed, or enforce a max if dynamic
+
+// Validate dates
+    let toDate = new Date()
+    if (to && !isNaN(Date.parse(to))) {
+        toDate = new Date(to)
+    }
+
+    let fromDate = new Date(toDate.getTime() - 24 * 60 * 60 * 1000) // default: last 24h
+    if (from && !isNaN(Date.parse(from))) {
+        fromDate = new Date(from)
+    }
+
+// Normalize string inputs (trim & length limit)
+    username = typeof username === 'string' ? username.trim().slice(0, 20) : ''
+    command = typeof command === 'string' ? command.trim().slice(0, 100) : ''
+
+// --- Values for <input type="date"> (always YYYY-MM-DD) ---
     const fromISO = fromDate.toISOString().split('T')[0]
     const toISO = toDate.toISOString().split('T')[0]
 
@@ -120,7 +136,9 @@ async function renderMessages(req, res) {
             from: fromISO,
             to: toISO,
             page: pageNumber,
-            pageSize
+            pageSize,
+            username,
+            command
         }
     )
     const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
@@ -137,13 +155,11 @@ async function renderMessages(req, res) {
         totalPages,
         totalCount,
         from: fromISO,
-        to: toISO
+        to: toISO,
+        username,
+        command
     })
 }
-
-
-
-
 
 async function renderProfile(req, res) {
     const user = await getUser(req.session.user.id)

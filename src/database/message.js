@@ -78,35 +78,43 @@ async function getUserMessages(userId)
 
 }
 
-async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
+async function getMessages({ from, to, page = 1, pageSize = 50, username, command } = {}) {
     const p = Math.max(1, parseInt(page, 10) || 1)
     const size = Math.max(1, parseInt(pageSize, 10) || 50)
 
     let fromDate = from ? new Date(from) : new Date()
     let toDate = to ? new Date(to) : new Date()
 
-// Ensure fromDate is at UTC midnight
+    // Ensure fromDate is at UTC midnight
     fromDate = new Date(
         Date.UTC(
             fromDate.getUTCFullYear(),
             fromDate.getUTCMonth(),
             fromDate.getUTCDate(),
-            0, 0, 0)
+            0, 0, 0
+        )
     )
+
+    // Ensure toDate is at end of day UTC
     toDate = new Date(
         Date.UTC(
             toDate.getUTCFullYear(),
             toDate.getUTCMonth(),
             toDate.getUTCDate(),
-            23, 59, 59)
+            23, 59, 59
+        )
     )
 
-    const fromString = new Date(fromDate).toISOString().split('T')[0]
-    const toString = new Date(toDate).toISOString().split('T')[0]
-    const cacheKey = cachePrefix + 'page:messages:' + fromString + toString + '_' + page + '_' + pageSize
+    const fromString = fromDate.toISOString().split('T')[0]
+    const toString = toDate.toISOString().split('T')[0]
+    const cacheKey =
+        cachePrefix +
+        `page:messages:${fromString}_${toString}_${p}_${size}_${username}_${command}`
+
     const cachedMessages = await redis.json.get(cacheKey, '$')
     if (cachedMessages) return cachedMessages
 
+    // Base where clause (date range only)
     const where = {
         createdAt: {
             gte: fromDate,
@@ -114,7 +122,25 @@ async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
         }
     }
 
-    // run count and find in parallel
+    // Add user filter if provided
+    if (username) {
+        where.author = {
+            name: {
+                contains: username,
+                mode: 'insensitive'
+            }
+        }
+    }
+
+    // Add message filter if provided
+    if (command) {
+        where.content = {
+            contains: command,
+            mode: 'insensitive'
+        }
+    }
+
+    // Run count and query in parallel
     const [totalCount, messages] = await Promise.all([
         prisma.message.count({ where }),
         prisma.message.findMany({
@@ -139,7 +165,9 @@ async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
         messages: mappedMessages,
         totalCount,
         page: p,
-        pageSize: size
+        pageSize: size,
+        username,
+        command
     }
 
     await redis.json.set(cacheKey, '$', result)
@@ -147,6 +175,7 @@ async function getMessages({ from, to, page = 1, pageSize = 50 } = {}) {
 
     return result
 }
+
 
 
 async function getMessagesByArgs(args)
