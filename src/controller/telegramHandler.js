@@ -4,7 +4,7 @@ const bot = require("./bot")
 const {getUser, updateUser, getSynonym} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {getCards, getFiles} = require("../tools/search")
-const {getMediaGroup} = require("../clients/telegram")
+const {getMediaGroup, Input} = require("../clients/telegram")
 const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)
@@ -13,7 +13,7 @@ const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
 const {takeScreenshot} = require("../tools/puppeteer")
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
-const {uploadImage} = require("../tools/imageUpload")
+const {uploadImage, downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload")
 const Fs = require("@supercharge/fs")
 const {analyseDeck} = require("../tools/deck")
 
@@ -178,8 +178,15 @@ async function telegramHandler(ctx, redis) {
     if (!cards) return
     if (!cards.counter) return ctx.reply(translate(language, 'noresult'))
     let files = getFiles(cards, language, limit)
-    console.log(files)
+
     ctx.reply(translate(language, 'search') + ': ' + cards.counter)
+
+    //convert avif to webp
+    for (const file of files) {
+        const path = await downloadImageAsFile(file.attachment)
+        file.attachment = await convertImageToWEBP(path)
+    }
+
     if (cards.counter > 1)
     {
         try {
@@ -194,16 +201,9 @@ async function telegramHandler(ctx, redis) {
         try {
 
             return ctx.replyWithPhoto(
-                files[0].attachment + '?' + bot.getCurrentTimestamp(),
-                { caption: files[0].description }).
-            then((m) => {
-                /*ctx.telegram.setMessageReaction(
-                    m.chat.id,
-                    m.message_id,
-                    [{'type':'emoji', 'emoji':'👍' }]
-                )*/
-                console.log(m.message_id)
-            })
+                Input.fromLocalFile(files[0].attachment),
+                { caption: files[0].description }
+            )
         }
         catch (e) {
             console.log(e)

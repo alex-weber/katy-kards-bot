@@ -133,7 +133,7 @@ async function convertImageToWEBP(imagePath) {
 
         const fileType = await sharp(imagePath).metadata()
 
-        if (fileType.format === 'png') {
+        if (fileType.format === 'png' || fileType.format === 'heif') {
             // Convert the image to WEBP
             await sharp(imagePath)
                 .toFormat('webp')
@@ -147,6 +147,10 @@ async function convertImageToWEBP(imagePath) {
 
 }
 
-module.exports = {uploadImage}
+module.exports = {
+    uploadImage,
+    downloadImageAsFile,
+    convertImageToWEBP
+}
 
 

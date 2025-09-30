@@ -1,10 +1,11 @@
 
-const {Telegraf} = require('telegraf')
-let {message} = require('telegraf/filters')
+const {Telegraf, Input } = require('telegraf')
+const {message} = require('telegraf/filters')
+const fs = require('fs')
 
 let telegramClient = false
 if (process.env.TELEGRAM_TOKEN !== undefined) telegramClient = new Telegraf(process.env.TELEGRAM_TOKEN)
-let telegramMessage = message
+const telegramMessage = message
 
 function onTelegramError(err) {
     console.error('telegramAPI error occurred:', err)
@@ -27,8 +28,8 @@ function getMediaGroup(files) {
         if (value.attachment !== undefined) mediaGroup.push(
             {
                 type: 'photo',
-                media: value.attachment + '?' + new Date().getTime().toString(), //add timestamp as param to bypass cache
-                caption: value.description,
+                media: { source: fs.createReadStream(value.attachment) },
+                caption: value.description ? value.description : '',
             }
         )
     }
@@ -41,4 +42,5 @@ module.exports = {
     telegramMessage,
     getMediaGroup,
     onTelegramError,
+    Input,
 }
