@@ -43,7 +43,7 @@ function getReservedWords()
         'poland': 'польша',
         'finland': 'финляндия',
         'infantry': 'пехота',
-        'artillery': 'арта',
+        'artillery': 'артиллерия',
         'fighter': 'истребитель',
         'bomber': 'бомбардировщик',
         'tank': 'танк',
@@ -51,7 +51,7 @@ function getReservedWords()
         'countermeasure': 'контрмера',
         'blitz': 'блиц',
         'ambush': 'засада',
-        'smokescreen': 'дым',
+        'smokescreen': 'дымовая',
         'fury': 'ярость',
         'guard': 'охрана',
         'alpine': 'альпийский',
@@ -64,8 +64,9 @@ function getReservedWords()
         'special': 'особая',
         'elite': 'элитная',
         'exile': 'изгнание',
-        'covert': 'скрытность',
-        'shock': 'штурм'
+        'covert': 'скрытный',
+        'shock': 'штурм',
+        'veteran': 'ветеран'
     }
 
 }
