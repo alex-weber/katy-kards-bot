@@ -155,24 +155,19 @@ async function getMessages({ from, to, page = 1, pageSize = 50, username, comman
     return result
 }
 
-async function getMessagesByArgs(args) {
+async function getMessagesByArgs(args)
+{
     // Only select 'createdAt' from DB
     const messages = await prisma.message.findMany({
         ...args,
-        select: {createdAt: true}
+        select: {createdAt: true},
+        orderBy: { createdAt: 'asc' } // earliest first
     })
 
     if (messages.length === 0) return []
 
-    // Determine min/max dates
-    let minDate = new Date(messages[0].createdAt)
-    let maxDate = new Date(messages[0].createdAt)
-    for (const m of messages) {
-        const d = new Date(m.createdAt)
-        if (d < minDate) minDate = d
-        if (d > maxDate) maxDate = d
-    }
-
+    const minDate = new Date(messages[0].createdAt)
+    const maxDate = new Date(messages[messages.length - 1].createdAt)
     const diffDays = (maxDate - minDate) / (1000 * 60 * 60 * 24)
 
     // Select aggregation function
