@@ -229,8 +229,7 @@ async function getMessagesByArgs(args) {
                 .padStart(2, '0')}`
         }
         incrementFn = d => {
-            const n = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))
-            return n
+            return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))
         }
         formatLabel = key => key
     }
