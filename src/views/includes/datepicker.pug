@@ -15,31 +15,5 @@ form#filterForm(method="get" action="")
                 name="to"
                 value=to
             )
-        .col-md-3
-            label.form-label(for="username") User:
-            .input-group
-                input#username.form-control(
-                    type="text"
-                    name="username"
-                    value=username
-                )
-                button.btn.btn-outline-secondary(
-                    type="button"
-                    onclick="document.getElementById('username').value='';\
-                             document.getElementById('filterForm').submit();"
-                ) ✕
-        .col-md-4
-            label.form-label(for="command") Message:
-            .input-group
-                input#command.form-control(
-                    type="text"
-                    name="command"
-                    value=command
-                )
-                button.btn.btn-outline-secondary(
-                    type="button"
-                    onclick="document.getElementById('command').value='';\
-                             document.getElementById('filterForm').submit();"
-                ) ✕
         .col-md-1.align-self-end
             button.btn.btn-primary(type="submit") Filter

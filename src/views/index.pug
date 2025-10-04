@@ -5,6 +5,8 @@ block content
     // Page Title
     h3.text-center.text-primary.mt-4.mb-5 Commands
 
+    include includes/datepicker.pug
+
     // Chart Section for Messages
     div
       // Loading Spinner for Messages Chart
@@ -12,8 +14,6 @@ block content
         div.spinner-border.text-primary(role="status")
       // Canvas for Messages Chart
       canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
-
-
 
     div.row
       div.col-md-6

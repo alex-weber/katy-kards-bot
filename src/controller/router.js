@@ -3,6 +3,7 @@ const {
     getUser,
     getMessages,
     getUserMessages,
+    daysAgoString,
 } = require('../database/db')
 
 const {isManager} = require("../tools/search")
@@ -10,6 +11,9 @@ const axios = require('axios')
 //API
 const API = require('../controller/api')
 
+function getTodayString() {
+    return new Date().toISOString().split('T')[0]
+}
 
 // middleware to test if authenticated
 function isAuthenticated(req, res, next) {
@@ -17,8 +21,25 @@ function isAuthenticated(req, res, next) {
     else next('route')
 }
 
-function renderDashboard(req, res) {
+function renderPage(req, res, { title, user, loginLink }) {
+    let { from, to, username, command } = req.query
+    from = from || daysAgoString(30)
+    to = to || getTodayString()
+
     res.render('index', {
+        title,
+        user,
+        loginLink,
+        from,
+        to,
+        username: username || '',
+        command: command || ''
+    })
+}
+
+// Usage:
+function renderDashboard(req, res) {
+    renderPage(req, res, {
         title: 'Dashboard',
         user: req.session.user,
         loginLink: false
@@ -26,10 +47,10 @@ function renderDashboard(req, res) {
 }
 
 function renderLanding(req, res) {
-    res.render('index', {
+    renderPage(req, res, {
         title: 'Katyusha Kards Bot',
-        loginLink: process.env.DISCORD_AUTH_URL,
         user: null,
+        loginLink: process.env.DISCORD_AUTH_URL
     })
 }
 
@@ -181,10 +202,21 @@ async function renderCards(req, res) {
 }
 
 async function handleApi(req, res) {
-    const method = req.params.method
-    const apiResponse = await API.run(method)
+    const { method } = req.params
+    const { from, to, page, pageSize, username, command } = req.query
+
+    const apiResponse = await API.run(method, {
+        from,
+        to,
+        page,
+        pageSize,
+        username,
+        command
+    })
+
     res.json(apiResponse)
 }
+
 
 async function renderServers(req, res, servers) {
 

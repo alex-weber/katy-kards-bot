@@ -90,13 +90,6 @@ function drawChart(chartSettings)
         },
     })
 }
-
-function hideSpinner(loadingSpinner, chartCanvas)
-{
-    loadingSpinner.classList.add('d-none')
-    chartCanvas.style.display = 'block'
-}
-
 function renderTopMessages(apiData) {
     const topMessagesDiv = document.getElementById('topMessages')
 
@@ -127,19 +120,24 @@ function renderTopUsers(apiData) {
 }
 
 
-async function getDashboardData()
-{
-    //get the data
+async function getDashboardData({ from, to} = {}) {
+
+    const params = new URLSearchParams()
+    if (from) params.append('from', from)
+    if (to) params.append('to', to)
+
+    const qs = params.toString() ? '?' + params.toString() : ''
+
     const [
         responseMessages,
         responseTdMessages,
         responseTopMessages,
         responseTopUsers,
     ] = await Promise.all([
-        fetch('/api/messages'),
-        fetch('/api/td-messages'),
-        fetch('/api/top-messages'),
-        fetch('/api/top-users'),
+        fetch('/api/messages' + qs),
+        fetch('/api/td-messages' + qs),
+        fetch('/api/top-messages' + qs),
+        fetch('/api/top-users' + qs),
     ])
 
     const [
@@ -160,13 +158,29 @@ async function getDashboardData()
         dataTopMessages,
         dataTopUsers,
     }
-
 }
 
-getDashboardData().then(
-    data => {
-        renderMessagesChart(data.dataMessages, data.dataTdMessages)
-        renderTopMessages(data.dataTopMessages)
-        renderTopUsers(data.dataTopUsers)
-    }
-)
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search)
+    return params.get(name)
+}
+
+function daysAgoString(days) {
+
+    const now = new Date()
+    if (isNaN(days)) return now
+    const pastDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+    return pastDate.toISOString().split('T')[0]
+}
+getDashboardData({
+    from: getQueryParam('from') || daysAgoString(30),
+    to: getQueryParam('to') || daysAgoString(0),
+}).then(data => {
+    renderMessagesChart(
+        data.dataMessages,
+        data.dataTdMessages
+    )
+    renderTopMessages(data.dataTopMessages)
+    renderTopUsers(data.dataTopUsers)
+})
+
