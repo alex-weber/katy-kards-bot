@@ -46,7 +46,7 @@ block content
         if page > 1
           li.page-item
             a.page-link(
-              href=`?from=${from || ''}&to=${to || ''}&page=${page - 1}`
+              href=`?from=${from || ''}&to=${to || ''}&username=${username || ''}&command=${command || ''}&page=${page - 1}`
             ) Previous
         else
           li.page-item.disabled
@@ -59,13 +59,13 @@ block content
           else
             li.page-item
               a.page-link(
-                href=`?from=${from || ''}&to=${to || ''}&page=${i}`
+                href=`?from=${from || ''}&to=${to || ''}&username=${username || ''}&command=${command || ''}&page=${i}`
               ) #{i}
 
         if page < totalPages
           li.page-item
             a.page-link(
-              href=`?from=${from || ''}&to=${to || ''}&page=${page + 1}`
+              href=`?from=${from || ''}&to=${to || ''}&username=${username || ''}&command=${command || ''}&page=${page + 1}`
             ) Next
         else
           li.page-item.disabled
