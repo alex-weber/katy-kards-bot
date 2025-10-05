@@ -54,7 +54,7 @@ async function run(method, { from, to } = {}) {
 
         case 'messages':
             if (!cached) {
-                response.data = await getDashboardMessages({ from, to, user, command })
+                response.data = await getDashboardMessages({ from, to})
                 await saveToCache(response.data)
             } else response.data = cached
             response.success = true
