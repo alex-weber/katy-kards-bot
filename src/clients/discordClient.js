@@ -71,6 +71,7 @@ async function onInteractionCreate(interaction)
 
     if (interaction.customId.startsWith('edit-syn-button-'))
     {
+
         if (!isManager(user))
         {
             return await interaction.reply({
@@ -111,6 +112,8 @@ async function onInteractionCreate(interaction)
         modal.addComponents(row)
 
         await interaction.showModal(modal)
+
+        await interaction.message.delete().catch(() => {}) // ignore errors if already deleted
 
     }
 }
