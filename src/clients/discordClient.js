@@ -99,7 +99,7 @@ async function onInteractionCreate(interaction)
 
         const modal = new ModalBuilder()
             .setCustomId(`edit-synonym-${syn.id}`)
-            .setTitle(`Edit Synonym: ${syn.key}`)
+            .setTitle(`Edit Custom Command: ${syn.key}`)
 
         const input = new TextInputBuilder()
             .setCustomId('synText')
