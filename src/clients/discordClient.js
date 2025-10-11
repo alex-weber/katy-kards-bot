@@ -5,6 +5,7 @@ const {translate} = require("../tools/translation/translator")
 const {discordHandler} = require("../controller/discordHandler")
 const {redis} = require("../controller/redis")
 const {getSynonymById, updateSynonym} = require("../database/synonym")
+const {isManager} = require("../tools/search")
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -19,6 +20,7 @@ async function onInteractionCreate(interaction)
     if (!interaction.isButton() && !interaction.isModalSubmit()) return
 
     const message = interaction.message
+    const user = await getUser(interaction.user.id)
 
     if (interaction.customId.startsWith('next_button')) {
 
@@ -27,7 +29,7 @@ async function onInteractionCreate(interaction)
         // remove the button
         await interaction.message.edit({ components: [] })
 
-        const user = await getUser(interaction.user.id)
+
         const content = translate(user.language, 'fetching')
 
         await interaction.reply({
@@ -40,6 +42,13 @@ async function onInteractionCreate(interaction)
 
     if (interaction.customId.startsWith('edit-synonym-'))
     {
+        if (!isManager(user))
+        {
+            return await interaction.reply({
+                content: 'thanks for trying :)',
+                flags: MessageFlags.Ephemeral
+            })
+        }
         const synId = interaction.customId.split('-')[2]
         if (!synId || isNaN(synId)) return
 
@@ -62,6 +71,13 @@ async function onInteractionCreate(interaction)
 
     if (interaction.customId.startsWith('edit-syn-button-'))
     {
+        if (!isManager(user))
+        {
+            return await interaction.reply({
+                content: 'Sure, Herr Einstein! :)',
+                flags: MessageFlags.Ephemeral
+            })
+        }
         const synId = interaction.customId.split('-')[3]
         if (!synId || isNaN(synId)) return
         const syn = await getSynonymById(synId)

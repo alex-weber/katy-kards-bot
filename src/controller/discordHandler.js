@@ -317,7 +317,7 @@ async function discordHandler(message, client, redis)
     }
 
     //handle synonyms
-    if (command.startsWith('^'))
+    if (command.startsWith('^') && isManager(user))
         return message.channel.send(await handleSynonym(user, message))
 
     //check for synonyms
