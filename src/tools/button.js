@@ -8,7 +8,7 @@ const { ButtonBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js')
 function getButtonRow(label='Next', id)
 {
     const button = new ButtonBuilder()
-        .setCustomId('next_button_' + id)
+        .setCustomId(id)
         .setLabel(label)
         .setStyle(ButtonStyle.Primary)
 

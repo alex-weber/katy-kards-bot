@@ -394,7 +394,7 @@ async function discordHandler(message, client, redis)
                 files: files.slice(offset, offset + limit)
             }
             if (offset + limit < files.length && isBotCommandChannel(message))
-                answer.components = getButtonRow(translate(language, 'next'), 'alt' + (offset+limit))
+                answer.components = getButtonRow(translate(language, 'next'), 'next_button_alt' + (offset+limit))
 
             return message.channel.send(answer)
         }
@@ -484,7 +484,7 @@ async function discordHandler(message, client, redis)
         if (counter - offset > limit && isBotCommandChannel(message))
         {
             const id = command.replace(' ', '_')
-            answer.components = getButtonRow(translate(language, 'next'), id)
+            answer.components = getButtonRow(translate(language, 'next'), 'next_button_' + id)
         }
         else await redis.del(CommandCacheKey)
     }

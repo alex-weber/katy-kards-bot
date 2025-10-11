@@ -15,6 +15,7 @@ const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
 const maxMessageLength = parseInt(process.env.MESSAGE_MAX_LENGTH) || 1950
 const {uploadImage} = require("../tools/imageUpload")
+const {getButtonRow} = require("./button")
 
 /**
  *
@@ -384,10 +385,17 @@ async function handleSynonym(user, message)
 
     if (!value.files && !value.content) return 'error: empty message'
 
+    const syn = await getSynonym(key)
     value = JSON.stringify(value)
     console.log(key,'=', value)
 
-    let syn = await getSynonym(key)
+    if (text === 'edit') 
+    {
+        if (!syn) return `${key} not found`
+
+        return {components: getButtonRow('Edit ' + key, 'edit-syn-button-' + syn.id)}
+    }
+    
     if (!syn && value)
     {
         await createSynonym(key, value)

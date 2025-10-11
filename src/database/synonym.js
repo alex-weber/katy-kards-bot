@@ -46,6 +46,23 @@ async function getSynonym(key)
 
 /**
  *
+ * @param id
+ * @returns {Promise<*>}
+ */
+async function getSynonymById(id)
+{
+
+    return await prisma.synonym.findUnique({
+        where: {
+            id: parseInt(id),
+        },
+    }).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ *
  * @param key
  * @param value
  * @returns {Promise<*>}
@@ -105,4 +122,5 @@ module.exports = {
     deleteSynonym,
     getAllSynonyms,
     getSynonym,
+    getSynonymById,
 }
