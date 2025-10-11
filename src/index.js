@@ -11,7 +11,6 @@ const {telegramHandler} = require("./controller/telegramHandler")
 
 //discord client
 const {client} = require('./clients/discordClient.js')
-const {ActivityType} = require('discord.js')
 //stats
 const {getServerList} = require("./tools/stats")
 //for shutdown
@@ -83,8 +82,7 @@ async function onClientReady()
     )
     servers = getServerList(client)
     client.user.setActivity(
-        client.guilds.cache.size + ' servers',
-        { type: ActivityType.Watching }
+        'Watching ' + client.guilds.cache.size + ' servers'
     )
 }
 
