@@ -306,7 +306,15 @@ async function discordHandler(message, client, redis)
 
     //list all synonyms
     if (command.startsWith('commands'))
-        return message.channel.send(await listSynonyms(command))
+    {
+        const commands = await listSynonyms(command)
+        for (const reply of commands)
+        {
+            message.channel.send('```\n' + reply.join('\n') + '\n```')
+        }
+
+        return
+    }
 
     //handle synonyms
     if (command.startsWith('^'))

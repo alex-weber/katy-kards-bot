@@ -13,7 +13,7 @@ const {
 } = require('../database/db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
-const maxMessageLength = parseInt(process.env.MESSAGE_MAX_LENGTH) || 2000
+const maxMessageLength = parseInt(process.env.MESSAGE_MAX_LENGTH) || 1950
 const {uploadImage} = require("../tools/imageUpload")
 
 /**
@@ -417,36 +417,52 @@ function checkSynonymKey(key)
 /**
  *
  * @param command
- * @returns {Promise<string|null>}
+ * @returns {Promise<array|null>}
  */
 async function listSynonyms(command)
 {
     command = command.replace('commands', '').trim()
     const synonyms = await getAllSynonyms()
-    let commands = ''
+    let commands = []
+    let charsCount = 0
+    let result = []
+
+    //reset commands for the next message if we hit the message limit
+    function resetCommands()
+    {
+        result.push(commands)
+        charsCount = 0
+        commands = []
+    }
 
     for (const [, syn] of Object.entries(synonyms))
     {
+        if (charsCount > maxMessageLength) resetCommands()
         if (command.length && !syn.key.startsWith(command)) continue
         if (syn.value.startsWith('http') || syn.value.startsWith('text:'))
         {
-
-            commands += syn.key + '\n'
+            commands.push(syn.key)
+            charsCount += syn.key.length + 2
         }
-        if (syn.value.startsWith('{')) {
+        if (syn.value.startsWith('{'))
+        {
             const m = JSON.parse(syn.value)
-            if (m.content && m.content.startsWith('text:')) commands += syn.key + '\n'
-            if (m.files && !m.content) commands += syn.key + '\n'
+            if (m.content && m.content.startsWith('text:')) {
+                charsCount += syn.key.length + 1
+                commands.push(syn.key)
+            }
+            if (m.files && !m.content) {
+                charsCount += syn.key.length + 1
+                commands.push(syn.key)
+            }
         }
     }
 
-    if (commands.length > maxMessageLength)
-    {
-        commands = commands.slice(0, maxMessageLength - 10)
-    }
     if (!commands.length) commands = 'no commands found'
 
-    return '```\n' + commands + '```\n'
+    result.push(commands)
+
+    return result
 }
 
 /**
