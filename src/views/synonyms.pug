@@ -19,7 +19,8 @@ block content
               - let obj = JSON.parse(value)
               td
                 if obj.content
-                  p= obj.content
+                  - let htmlContent = obj.content.replaceAll('\n', '<br>')
+                  p!= htmlContent
                 if obj.files && obj.files.length
                   ul
                     each file in obj.files
