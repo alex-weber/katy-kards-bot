@@ -98,7 +98,7 @@ function renderTopMessages(apiData) {
         .map((item, index) => `
             <tr>
                 <td>${index + 1}</td>
-                <td>${item.command}</td>
+                <td class="break-all">${item.command}</td>
                 <td>${item.count}</td>
             </tr>
         `)

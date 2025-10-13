@@ -37,3 +37,11 @@
 #scrollUp:hover svg {
     transform: translateY(-2px);
 }
+
+.break-all {
+    word-break: break-all;
+}
+
+.width-15 {
+    width: 15%;
+}

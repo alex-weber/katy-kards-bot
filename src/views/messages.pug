@@ -21,9 +21,9 @@ block content
         each message, index in messages
           tr
             td #{(page - 1) * pageSize + index + 1}
-            td #{message.author.name}
-            td #{message.content}
-            td #{message.createdAt}
+            td.width-15 #{message.author.name}
+            td.break-all #{message.content}
+            td.width-15 #{message.createdAt}
       else
         tr
           td(colspan="4").text-center No messages found
