@@ -308,6 +308,9 @@ async function discordHandler(message, client, redis)
     if (command.startsWith('commands'))
     {
         const commands = await listSynonyms(command)
+
+        if (!commands) return message.channel.send('No commands found')
+
         for (const reply of commands)
         {
             message.channel.send('```\n' + reply.join('\n') + '\n```')
