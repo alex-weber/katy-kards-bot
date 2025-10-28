@@ -466,7 +466,7 @@ async function listSynonyms(command)
         }
     }
 
-    if (!commands.length) commands = 'no commands found'
+    if (!commands.length) return null
 
     result.push(commands)
 
