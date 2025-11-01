@@ -309,17 +309,71 @@ async function discordHandler(message, client, redis)
         return message.channel.send(getServerList(client).map(
             (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
 
-    //list all synonyms
     if (command.startsWith('commands'))
     {
         const commands = await listSynonyms(command)
-
         if (!commands) return message.channel.send('No commands found')
 
-        for (const reply of commands)
-        {
-            message.channel.send('```\n' + reply.join('\n') + '\n```')
+        const isFiltered = command.trim().split(' ').length > 1
+        const overallTotal = commands.reduce((acc, arr) => acc + arr.length, 0)
+        let messageText = isFiltered ? '' : `**TOTAL: ${overallTotal}**\n\n`
+
+        // find longest common prefix
+        const findCommonPrefix = (arr) => {
+            if (!arr.length) return ''
+            let prefix = arr[0]
+            for (let i = 1; i < arr.length; i++) {
+                let j = 0
+                while (j < prefix.length && j < arr[i].length && prefix[j] === arr[i][j]) j++
+                prefix = prefix.slice(0, j)
+                if (!prefix) break
+            }
+            return prefix.trim()
         }
+
+        // append group block safely
+        const appendGroupBlock = async (header, items) => {
+            if (!items.length) return
+
+            const groupBlock = isFiltered
+                ? `**${items.length}**\n\`\`\`\n${items.join('\n')}\n\`\`\`\n`
+                : `**${header.toUpperCase()} (${items.length})**\n\`\`\`\n${items.join('\n')}\n\`\`\`\n`
+
+            if (messageText.length + groupBlock.length > 1900) {
+                await message.channel.send(messageText)
+                messageText = ''
+            }
+
+            messageText += groupBlock
+        }
+
+        for (const group of commands) {
+            if (isFiltered) {
+                // filtered: detect common prefix
+                const prefix = findCommonPrefix(group)
+                await appendGroupBlock(prefix || '', group)
+            } else {
+                // default: group by first letter
+                let lastKey = ''
+                let groupItems = []
+
+                for (const synonym of group) {
+                    const key = synonym[0]
+
+                    if (key !== lastKey && groupItems.length > 0) {
+                        await appendGroupBlock(lastKey, groupItems)
+                        groupItems = []
+                    }
+
+                    groupItems.push(synonym)
+                    lastKey = key
+                }
+
+                await appendGroupBlock(lastKey, groupItems)
+            }
+        }
+
+        if (messageText.trim()) await message.channel.send(messageText)
 
         return
     }
