@@ -168,7 +168,12 @@ async function discordHandler(message, client, redis)
         language = 'ru'
     }
     //switch to English for English only channels
-    if (isEnglishOnlyChannel(message)) language = 'en'
+    let englishOnlyText = null
+    if (isEnglishOnlyChannel(message) && language !== 'en') {
+        language = 'en'
+        englishOnlyText =
+           'This channel is English only.\nUse any other channel for other languages, please.\n\n'
+    }
 
     //save the command in the DB and in cache, no need to wait
     createMessage({authorId: user.id, content: command}).then()
@@ -453,6 +458,8 @@ async function discordHandler(message, client, redis)
         if (user.mode) {
             reply = user.mode + '\n\n' + reply
         }
+
+        if (englishOnlyText) reply = englishOnlyText + reply
 
         return message.channel.send(reply)
     }
