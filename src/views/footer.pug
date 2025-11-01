@@ -1,4 +1,6 @@
-footer.fixed-bottom.border-bottom
-    div.p-3.bg-dark.bg-gradient
-        span @tortunbator
+footer.fixed-bottom.border-top
+    div.p-3.bg-dark.bg-gradient.d-flex.justify-content-center
+        - const currentYear = new Date().getFullYear()
+        span.text-light &copy; #{currentYear} @tortunbator
+
 

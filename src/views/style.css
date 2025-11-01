@@ -45,3 +45,66 @@
 .width-15 {
     width: 15%;
 }
+
+/* Menu text styling */
+.menu-text {
+    font-size: 1.25rem; /* adjust as needed */
+    font-weight: 500;
+    margin: 0; /* remove default h3 margin */
+    text-transform: uppercase; /* make all letters uppercase */
+}
+
+/* Animated underline effect */
+.nav-link {
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link .menu-text::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0%;
+    height: 2px;
+    background-color: #0d6efd; /* bootstrap primary */
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover .menu-text::after {
+    width: 100%;
+}
+
+
+/* Menu hover background effect (subtle gradient + glow) */
+.nav-link.transition:hover {
+    background: linear-gradient(90deg, rgba(13,110,253,0.15), rgba(13,110,253,0.05));
+    box-shadow: 0 4px 15px rgba(13,110,253,0.2);
+    color: #0d6efd;
+}
+
+/* ----- Buttons (Login) ----- */
+.btn.transition:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    /* no transform, so no jump */
+}
+
+/* ----- User Avatar ----- */
+.user-avatar {
+    width: 64px; /* double previous size */
+    height: 64px;
+    object-fit: cover;
+}
+
+/* ----- Dropdown Menu ----- */
+.dropdown-menu {
+    width: 100%; /* match button width */
+    left: 0 !important;
+    right: 0 !important;
+}
+
+/* Dropdown item fancy hover */
+.dropdown-menu .dropdown-item:hover {
+    background: linear-gradient(90deg, #0d6efd 0%, #6c63ff 100%);
+    color: white;
+}
