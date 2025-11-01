@@ -3,12 +3,19 @@ const fs = require('fs')
 const sharp = require('sharp')
 const path = require('path')
 
-async function downloadImageAsFile(url) {
+async function downloadImageAsFile(url, language='en') {
     try {
         // Extract the file name from the URL
-        const fileName = path.basename(url.split('?')[0])
+        let fileName = path.basename(url.split('?')[0])
+        fileName = language + '_' + fileName
         const filePath = path.join(__dirname, '../tmp/downloads', fileName)
 
+        if (fs.existsSync(filePath))
+        {
+            console.log('File already exists, returning:', fileName)
+
+            return filePath
+        }
         // Ensure the downloads directory exists
         if (!fs.existsSync(path.dirname(filePath))) {
             fs.mkdirSync(path.dirname(filePath), { recursive: true })

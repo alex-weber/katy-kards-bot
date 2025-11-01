@@ -183,8 +183,13 @@ async function telegramHandler(ctx, redis) {
 
     //convert avif to webp
     for (const file of files) {
-        const path = await downloadImageAsFile(file.attachment)
-        file.attachment = await convertImageToWEBP(path)
+        try {
+            const path = await downloadImageAsFile(file.attachment, language)
+            file.attachment = await convertImageToWEBP(path)
+        } catch (e) {
+            console.error(e)
+            return ctx.reply(translate(language, 'error'))
+        }
     }
 
     if (cards.counter > 1)
