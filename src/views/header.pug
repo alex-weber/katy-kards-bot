@@ -6,42 +6,58 @@ header
                     ul.nav.col-12.col-lg-auto.my-2.justify-content-center.my-md-0.text-small
                         //- Home
                         li
-                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(href='/')
-                                svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                h4.menu-text Home
+                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                href='/',
+                                class=(currentPath === '/' ? 'active' : '')
+                            )
+                                svg.bi.d-block.mb-1(width='24', height='24')
+                                h3.menu-text.mb-0 Home
                         //- Guilds
                         li
-                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(href='/servers')
-                                svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                span.menu-text Guilds
+                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                href='/servers',
+                                class=(currentPath.startsWith('/servers') ? 'active' : '')
+                            )
+                                svg.bi.d-block.mb-1(width='24', height='24')
+                                h3.menu-text.mb-0 Guilds
                         //- Cards
                         li
-                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(href='/cards')
-                                svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                span.menu-text Cards
+                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                href='/cards',
+                                class=(currentPath.startsWith('/cards') ? 'active' : '')
+                            )
+                                svg.bi.d-block.mb-1(width='24', height='24')
+                                h3.menu-text.mb-0 Cards
                         if user
                             if user.isManager
                                 //- Custom Commands
                                 li
-                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(href='/commands')
-                                        svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                        span.menu-text Custom Commands
+                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                        href='/commands',
+                                        class=(currentPath.startsWith('/commands') ? 'active' : '')
+                                    )
+                                        svg.bi.d-block.mb-1(width='24', height='24')
+                                        h3.menu-text.mb-0 Custom Commands
                                 //- Log
                                 li
-                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(href='/messages')
-                                        svg.bi.d-block.mx-auto.mb-1(width='24', height='24')
-                                        span.menu-text Log
+                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                        href='/messages',
+                                        class=(currentPath.startsWith('/messages') ? 'active' : '')
+                                    )
+                                        svg.bi.d-block.mb-1(width='24', height='24')
+                                        h3.menu-text.mb-0 Log
                     //- Login / User Dropdown
                     div.text-end.ms-auto
                         if loginLink
-                            a.btn.btn-primary.px-4.py-2.shadow.transition(href=`${loginLink}`) Login
+                            a.btn.btn-primary.rounded-pill.px-4.py-2.shadow.transition(href=`${loginLink}`) Login
                         if user
                             div.dropdown
-                                button.btn.btn-outline-primary.px-4.py-3.shadow.dropdown-toggle.transition(
+                                button.btn.btn-outline-primary.rounded-pill.px-4.py-2.shadow.dropdown-toggle.transition(
                                     type="button",
                                     data-bs-toggle="dropdown",
-                                    aria-expanded="false")
-                                    img(src='https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.webp?size=48', alt="No avatar", class='rounded-circle me-2')
+                                    aria-expanded="false"
+                                )
+                                    img(src='https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.webp?size=64', alt="No avatar", class='rounded-circle me-2 user-avatar')
                                     | #{user.username}
                                 ul.dropdown-menu
                                     li

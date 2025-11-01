@@ -55,6 +55,12 @@ app.use(session({
     }
 }))
 
+app.use((req, res, next) => {
+    res.locals.currentPath = req.path || '/'
+    next()
+})
+
+
 //start listening for messages
 app.listen(port, () => console.log(`Katyusha-Bot is listening at :${port}`))
 
