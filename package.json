@@ -28,7 +28,7 @@
     "express-session": "^1.18.2",
     "i18next": "^25.3.2",
     "i18next-fs-backend": "^2.6.0",
-    "node": "^24.4.0",
+    "node": "24.11.0",
     "npm": "^11.4.2",
     "pg": "^8.16.3",
     "prisma": "^6.11.1",
@@ -41,7 +41,7 @@
   },
   "engines": {
     "npm": "^11.4.2",
-    "node": "24.4.0"
+    "node": "24.11.0"
   },
   "devDependencies": {
     "jest": "^30.0.4",
