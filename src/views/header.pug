@@ -1,4 +1,4 @@
-header
+header.header-sticky
     div.position-sticky
         div.px-3.py-2.text-bg-dark.border-bottom
             div.container
@@ -10,7 +10,6 @@ header
                                 href='/',
                                 class=(currentPath === '/' ? 'active' : '')
                             )
-                                svg.bi.d-block.mb-1(width='24', height='24')
                                 h3.menu-text.mb-0 Home
                         //- Guilds
                         li
@@ -18,7 +17,6 @@ header
                                 href='/servers',
                                 class=(currentPath.startsWith('/servers') ? 'active' : '')
                             )
-                                svg.bi.d-block.mb-1(width='24', height='24')
                                 h3.menu-text.mb-0 Guilds
                         //- Cards
                         li
@@ -26,7 +24,6 @@ header
                                 href='/cards',
                                 class=(currentPath.startsWith('/cards') ? 'active' : '')
                             )
-                                svg.bi.d-block.mb-1(width='24', height='24')
                                 h3.menu-text.mb-0 Cards
                         if user
                             if user.isManager
@@ -36,7 +33,7 @@ header
                                         href='/commands',
                                         class=(currentPath.startsWith('/commands') ? 'active' : '')
                                     )
-                                        svg.bi.d-block.mb-1(width='24', height='24')
+
                                         h3.menu-text.mb-0 Custom Commands
                                 //- Log
                                 li
@@ -44,15 +41,14 @@ header
                                         href='/messages',
                                         class=(currentPath.startsWith('/messages') ? 'active' : '')
                                     )
-                                        svg.bi.d-block.mb-1(width='24', height='24')
                                         h3.menu-text.mb-0 Log
                     //- Login / User Dropdown
                     div.text-end.ms-auto
                         if loginLink
-                            a.btn.btn-primary.rounded-pill.px-4.py-2.shadow.transition(href=`${loginLink}`) Login
+                            a.btn.btn-primary.px-4.py-2.shadow.transition(href=`${loginLink}`) Login
                         if user
                             div.dropdown
-                                button.btn.btn-outline-primary.rounded-pill.px-4.py-2.shadow.dropdown-toggle.transition(
+                                button.btn.btn-outline-primary.px-4.py-2.shadow.dropdown-toggle.transition(
                                     type="button",
                                     data-bs-toggle="dropdown",
                                     aria-expanded="false"

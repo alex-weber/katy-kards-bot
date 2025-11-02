@@ -92,8 +92,8 @@
 
 /* ----- User Avatar ----- */
 .user-avatar {
-    width: 64px;  /* double size */
-    height: 64px;
+    width: 48px;
+    height: 48px;
     object-fit: cover;
 }
 
@@ -108,5 +108,61 @@
 .dropdown-menu .dropdown-item:hover {
     background: linear-gradient(90deg, #0d6efd 0%, #6c63ff 100%);
     color: white;
+}
+
+/* Table row text color transition */
+.table-dark.table-hover tbody tr {
+    transition: color 0.3s ease;
+}
+
+/* On hover: text color becomes Bootstrap primary */
+tr td:hover {
+    color: #0d6efd !important; /* Bootstrap primary */
+}
+
+/* Optional: maintain header color */
+.table thead th {
+    color: #0d6efd;
+}
+
+/* Keep sticky header */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 2;
+    text-transform: uppercase;
+}
+
+/* Bold numbers for first and third columns */
+.table tbody tr td:nth-child(1),
+.table tbody tr td:nth-child(3) {
+    font-weight: 500;
+}
+
+/* Smooth scroll for table container */
+div[style*="overflow: auto;"] {
+    scroll-behavior: smooth;
+}
+
+/* Sticky main header */
+.header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 1030; /* above content, below modals if using Bootstrap */
+    background-color: #212529; /* dark header bg */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Optional: smooth transition for background/shadow on scroll */
+.header-sticky.scrolled {
+    background-color: #1c1c1c;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+
+/* Ensure links and buttons inside header remain visible */
+.header-sticky .nav-link,
+.header-sticky .btn {
+    z-index: 1050;
 }
 
