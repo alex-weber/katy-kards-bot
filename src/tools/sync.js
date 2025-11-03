@@ -1,6 +1,7 @@
 const { createCard, disconnect, getCardStatsMessage } = require('../database/db')
 const { getCards } = require("./search")
 
+const batchSize = process.env.SYNC_BATCH_SIZE || 5
 /**
  * Process an array of items in batches with limited concurrency
  * @param {Array} items
@@ -19,7 +20,7 @@ async function processInBatches(items, batchSize, handler) {
  */
 async function syncDB() {
     const language = 'en'
-    console.log('starting DB sync...')
+    console.log('starting DB sync. Batch size is ' + batchSize)
     console.time('db_sync')
     const startTime = Date.now()
 
@@ -40,8 +41,8 @@ async function syncDB() {
         console.log(message)
         if (process.send) process.send(message)
 
-        // process cards in batches of 5
-        await processInBatches(cards, 5, async (cardItem) => {
+        // process cards in batches
+        await processInBatches(cards, batchSize, async (cardItem) => {
             let card = cardItem.node
             if (card) {
                 card.language = language
