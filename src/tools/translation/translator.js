@@ -66,7 +66,8 @@ function getReservedWords()
         'exile': 'изгнание',
         'covert': 'скрытный',
         'shock': 'штурм',
-        'veteran': 'ветеран'
+        'veteran': 'ветеран',
+        'bond': 'узы',
     }
 
 }
