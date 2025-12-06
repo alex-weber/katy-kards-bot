@@ -83,6 +83,7 @@ async function telegramHandler(ctx, redis) {
         //const deckCode = command.replace(prefix, '')
         const deckInfo = await analyseDeck(command, language)
         if (!deckInfo) return ctx.reply(translate(language, 'error'))
+
         //check if screenshot capturing is running, ask user to wait
         const screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
@@ -91,6 +92,7 @@ async function telegramHandler(ctx, redis) {
         }
         await redis.set(screenshotKey, 'running')
         redis.expire(screenshotKey, 120) //delete screenshot lock key after 120 seconds anyway
+
         let deckBuilderLang = ''
         if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
         const deckBuilderURL = 'https://www.kards.com/' +
@@ -100,6 +102,7 @@ async function telegramHandler(ctx, redis) {
             bot.parseCommand(prefix, command) :
             deckBuilderURL+hash
         ctx.reply(translate(language, 'screenshot'))
+
         await takeScreenshot(url)
         redis.del(screenshotKey)
         console.log('createDeckImages finished')

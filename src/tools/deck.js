@@ -121,12 +121,22 @@ function calculateAverages(cards, cardsArray, language) {
     let units = 0
     let orders = 0
     let countermeasures = 0
+    let infantry = 0
+    let artillery = 0
+    let bomber = 0
+    let fighter = 0
+    let tank = 0
 
     // Loop through each card and accumulate the values
     cards.forEach(card => {
         const amount = getCardCount(card.importId, cardsArray)
         if (card.type !== 'order' && card.type !== 'countermeasure')
         {
+            if (card.type === 'infantry') infantry += amount
+            if (card.type === 'artillery') artillery += amount
+            if (card.type === 'bomber') bomber += amount
+            if (card.type === 'fighter') fighter += amount
+            if (card.type === 'tank') tank += amount
             totalAttack += card.attack * amount
             totalDefense += card.defense * amount
             totalOperationCost += card.operationCost * amount
@@ -151,14 +161,26 @@ function calculateAverages(cards, cardsArray, language) {
 
     const averageKredits = (totalKredits / cards.length).toFixed(2)
 
+    let info = ''
+    if (orders) info +=  translate(language, 'orders') + orders + '\n'
+    if (countermeasures) info +=  translate(language, 'countermeasures') + countermeasures + '\n'
+
+    if (units) info += '\n' + translate(language, 'units') + units + '\n'
+    if (infantry) info +=  translate(language, 'infantry') + infantry + '\n'
+    if (tank) info +=  translate(language, 'tanks') + tank + '\n'
+    if (artillery) info +=  translate(language, 'artillery') + artillery + '\n'
+    if (bomber) info +=  translate(language, 'bombers') + bomber + '\n'
+    if (fighter) info +=  translate(language, 'fighters') + fighter + '\n'
+    if (units) {
+        info += '\n' +
+            translate(language, 'averageAttack') + averageAttack + '\n' +
+            translate(language, 'averageDefense') + averageDefense + '\n' +
+            translate(language, 'averageOperationCost') + averageOperationCost + '\n'
+    }
+
     return '```' +
-        translate(language, 'units') + units + '\n' +
-        translate(language, 'orders') + orders + '\n' +
-        translate(language, 'countermeasures') + countermeasures + '\n' +
-        translate(language, 'averageAttack') + averageAttack + '\n' +
-        translate(language, 'averageDefense') + averageDefense + '\n' +
+        info +
         translate(language, 'averageKredits') + averageKredits + '\n' +
-        translate(language, 'averageOperationCost') + averageOperationCost + '\n' +
         '```'
 }
 
