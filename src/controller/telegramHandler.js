@@ -104,6 +104,8 @@ async function telegramHandler(ctx, redis) {
         redis.del(screenshotKey)
         console.log('createDeckImages finished')
         const files = getDeckFiles()
+
+        await ctx.replyWithPhoto({ source: files[0] })
         await ctx.reply(deckInfo.replaceAll('```', ''))
         await ctx.replyWithPhoto({ source: files[1] })
 
