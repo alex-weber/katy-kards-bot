@@ -84,33 +84,57 @@ async function telegramHandler(ctx, redis) {
         const deckInfo = await analyseDeck(command, language)
         if (!deckInfo) return ctx.reply(translate(language, 'error'))
 
-        //check if screenshot capturing is running, ask user to wait
+        // check if screenshot capturing is running, ask user to wait
         const screenshotKey = cacheKeyPrefix + 'screenshot'
-        if (await redis.exists(screenshotKey))
-        {
+
+        if (await redis.exists(screenshotKey)) {
             return ctx.reply(translate(language, 'screenshotRunning'))
         }
+
+// lock screenshot process
         await redis.set(screenshotKey, 'running')
-        redis.expire(screenshotKey, 120) //delete screenshot lock key after 120 seconds anyway
+        redis.expire(screenshotKey, 120) // auto-expire after 120 seconds
 
         let deckBuilderLang = ''
         if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
-        const deckBuilderURL = 'https://www.kards.com/' +
-            deckBuilderLang+ 'decks/deck-builder?hash='
-        const hash = encodeURIComponent(command)
-        const url = bot.isDeckLink(bot.parseCommand(prefix, command)) ?
-            bot.parseCommand(prefix, command) :
-            deckBuilderURL+hash
-        ctx.reply(translate(language, 'screenshot'))
+        const deckBuilderURL = 'https://www.kards.com/' + deckBuilderLang + 'decks/deck-builder?hash='
 
-        await takeScreenshot(url)
-        redis.del(screenshotKey)
-        console.log('createDeckImages finished')
+        const hash = encodeURIComponent(command)
+        const url = bot.isDeckLink(bot.parseCommand(prefix, command))
+            ? bot.parseCommand(prefix, command)
+            : deckBuilderURL + hash
+
+// send message that screenshot is running and store ID
+        const runningMsg = await ctx.reply(translate(language, 'screenshot'))
+        const runningMsgId = runningMsg.message_id
+
+// OPTIONAL: store message ID in redis too if needed elsewhere
+        await redis.set(`${screenshotKey}:msg`, runningMsgId)
+        redis.expire(`${screenshotKey}:msg`, 120)
+
         const files = getDeckFiles()
 
-        await ctx.replyWithPhoto({ source: files[0] })
-        await ctx.reply(deckInfo.replaceAll('```', ''))
-        await ctx.replyWithPhoto({ source: files[1] })
+        try {
+            await takeScreenshot(url)
+            console.log('createDeckImages finished')
+
+            await ctx.replyWithPhoto({ source: files[0] })
+            await ctx.reply(deckInfo.replaceAll('```', ''))
+            await ctx.replyWithPhoto({ source: files[1] })
+
+        } finally {
+            // cleanup redis lock
+            redis.del(screenshotKey)
+            redis.del(`${screenshotKey}:msg`)
+
+            // delete the "screenshot running" message from the chat
+            try {
+                await ctx.deleteMessage(runningMsgId)
+            } catch (err) {
+                console.error('Failed to delete status message:', err)
+            }
+        }
+
 
         //upload them for caching
         const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
