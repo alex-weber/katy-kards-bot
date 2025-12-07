@@ -13,9 +13,9 @@ const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
 const {takeScreenshot} = require("../tools/puppeteer")
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
-const {uploadImage, downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload")
-const Fs = require("@supercharge/fs")
-const {analyseDeck} = require("../tools/deck")
+const {downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload")
+const {analyseDeck, uploadForCache} = require("../tools/deck")
+const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
 
 /**
  *
@@ -24,17 +24,23 @@ const {analyseDeck} = require("../tools/deck")
  * @returns {Promise<*>}
  */
 async function telegramHandler(ctx, redis) {
+
     let prefix = defaultPrefix
     let command = ctx.update.message.text
+
     if (!command.startsWith(prefix) ||
         ctx.update.message.from.is_bot ||
         command.length > maxStrLen) return
+
     let language = getLanguageByInput(command)
     //set attachment limit to 10 if it is a private chat
     let limit = globalLimit
     if (ctx.update.message.chat.type === 'private') limit = 10
+
     console.log(ctx.update.message.from)
+
     command = bot.parseCommand(prefix, command)
+
     //get or create user
     const userID = ctx.update?.message?.from?.id?.toString() || null
     if (!userID) return
@@ -53,18 +59,23 @@ async function telegramHandler(ctx, redis) {
         language = await bot.switchLanguage(user, command)
         return ctx.reply(translate(language, 'langChange') + language.toUpperCase())
     }
+
     //update user
     if (!user.name) user.name = ctx.update.message.from.first_name
     //change user language to RU if cyrillic is detected
     if (language === 'ru') user.language = 'ru'
     else language = user.language
     await updateUser(user)
+
     //online players
     if (ctx.update.message.text === prefix+prefix) return ctx.reply(await getStats(language))
+
     //help
     if (command === 'help') return ctx.reply(translate(language, 'help'))
+
     if (!command.length) return //do nothing if it's just the prefix !
     if (command.length < minStrLen) return ctx.reply(translate(language, 'min'))
+
     //deck image
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
@@ -80,7 +91,7 @@ async function telegramHandler(ctx, redis) {
 
             return
         }
-        //const deckCode = command.replace(prefix, '')
+
         const deckInfo = await analyseDeck(command, language)
         if (!deckInfo) return ctx.reply(translate(language, 'error'))
 
@@ -91,7 +102,7 @@ async function telegramHandler(ctx, redis) {
             return ctx.reply(translate(language, 'screenshotRunning'))
         }
 
-// lock screenshot process
+        // lock screenshot process
         await redis.set(screenshotKey, 'running')
         redis.expire(screenshotKey, 120) // auto-expire after 120 seconds
 
@@ -104,13 +115,9 @@ async function telegramHandler(ctx, redis) {
             ? bot.parseCommand(prefix, command)
             : deckBuilderURL + hash
 
-// send message that screenshot is running and store ID
+        // send message that screenshot is running and store ID
         const runningMsg = await ctx.reply(translate(language, 'screenshot'))
         const runningMsgId = runningMsg.message_id
-
-// OPTIONAL: store message ID in redis too if needed elsewhere
-        await redis.set(`${screenshotKey}:msg`, runningMsgId)
-        redis.expire(`${screenshotKey}:msg`, 120)
 
         const files = getDeckFiles()
 
@@ -125,7 +132,6 @@ async function telegramHandler(ctx, redis) {
         } finally {
             // cleanup redis lock
             redis.del(screenshotKey)
-            redis.del(`${screenshotKey}:msg`)
 
             // delete the "screenshot running" message from the chat
             try {
@@ -135,31 +141,18 @@ async function telegramHandler(ctx, redis) {
             }
         }
 
+        const uploadedFiles = await uploadForCache(files)
 
-        //upload them for caching
-        const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
+        if (!uploadedFiles) return
 
-        const file1 = await uploadImage(files[0], expiration)
-        const file2 = await uploadImage(files[1], expiration)
-        if (file1 && file2)
-        {
-            const uploadedFiles = [file1, file2]
-            //check if they are uploaded & are served correctly
-            const file1size = await bot.getFileSize(file1)
-            const file2size = await bot.getFileSize(file2)
-            if ( await Fs.size(files[0]) === file1size &&
-                await Fs.size(files[1]) === file2size)
-            {
-                const cached = {
-                    content: deckInfo,
-                    files: uploadedFiles
-                }
-                await redis.json.set(deckKey, '$', cached)
-                redis.expire(deckKey, expiration)
-                console.log('setting cache key for deck', command)
-                deleteDeckFiles()
-            }
+        const cached = {
+            content: deckInfo,
+            files: uploadedFiles
         }
+        await redis.json.set(deckKey, '$', cached)
+        redis.expire(deckKey, expiration)
+        console.log('setting cache key for deck', command)
+        deleteDeckFiles()
 
         return
     }

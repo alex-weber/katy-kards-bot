@@ -6,6 +6,8 @@ const {uploadImage} = require("./imageUpload")
 const Fs = require("@supercharge/fs")
 const {getCardsDB} = require("../database/db")
 const {deckBuilderLanguages} = require("../tools/language")
+
+const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
 /**
  *
  * @param prefix
@@ -47,8 +49,22 @@ async function createDeckImages(
     message.channel.send({content: deckInfo, files: files})
     console.log('Screenshot captured and sent successfully')
 
+    const uploadedFiles = await uploadForCache(files)
+
+    const cached = {
+        content: deckInfo,
+        files: uploadedFiles
+    }
+    await redis.json.set(deckKey, '$', cached)
+    redis.expire(deckKey, expiration)
+    console.log('setting cache key for deck', command)
+    deleteDeckFiles()
+
+}
+
+async function uploadForCache(files)
+{
     //upload them for caching
-    const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
 
     const file1 = await uploadImage(files[0], expiration)
     const file2 = await uploadImage(files[1], expiration)
@@ -61,16 +77,11 @@ async function createDeckImages(
         if ( await Fs.size(files[0]) === file1size &&
             await Fs.size(files[1]) === file2size)
         {
-            const cached = {
-                content: deckInfo,
-                files: uploadedFiles
-            }
-            await redis.json.set(deckKey, '$', cached)
-            redis.expire(deckKey, expiration)
-            console.log('setting cache key for deck', command)
-            deleteDeckFiles()
+            return uploadedFiles
         }
     }
+
+    return false
 }
 
 /**
@@ -184,4 +195,4 @@ function calculateAverages(cards, cardsArray, language) {
         '```'
 }
 
-module.exports = {createDeckImages, analyseDeck}
+module.exports = {createDeckImages, analyseDeck, uploadForCache}
