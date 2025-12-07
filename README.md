@@ -8,10 +8,9 @@ This bot provides search results from **kards.com** to Discord and Telegram.
 
 - `DATABASE_URL`: URL for an SQL database connection.
 - `DISCORD_TOKEN`: Token for authenticating the Discord API.
-- `REDISCLOUD_URL`: URL for REDIS database connection.
 - `DISCORD_CLIENT_ID`: Discord Bot ID.
 - `DISCORD_AUTH_URL`: The Auth URL from Discord Dev Portal
-- `IMG_UPLOAD_API_KEY`: ibb.co API key for image hosting
+- `REDISCLOUD_URL`: URL for REDIS database connection.
 - `SESSION_SECRET`: A secret string for web session encoding
 
 ## Optional Environment Variables
