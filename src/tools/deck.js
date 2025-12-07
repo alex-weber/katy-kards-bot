@@ -162,15 +162,15 @@ function calculateAverages(cards, cardsArray, language) {
     const averageKredits = (totalKredits / cards.length).toFixed(2)
 
     let info = ''
-    if (orders) info +=  translate(language, 'orders') + orders + '\n'
-    if (countermeasures) info +=  translate(language, 'countermeasures') + countermeasures + '\n'
+    if (orders) info +=  translate(language, 'info_orders') + orders + '\n'
+    if (countermeasures) info +=  translate(language, 'info_countermeasures') + countermeasures + '\n'
 
-    if (units) info += '\n' + translate(language, 'units') + units + '\n'
-    if (infantry) info +=  translate(language, 'infantry') + infantry + '\n'
-    if (tank) info +=  translate(language, 'tanks') + tank + '\n'
-    if (artillery) info +=  translate(language, 'artillery') + artillery + '\n'
-    if (bomber) info +=  translate(language, 'bombers') + bomber + '\n'
-    if (fighter) info +=  translate(language, 'fighters') + fighter + '\n'
+    if (units) info += '\n' + translate(language, 'info_units') + units + '\n'
+    if (infantry) info +=  translate(language, 'info_infantry') + infantry + '\n'
+    if (tank) info +=  translate(language, 'info_tanks') + tank + '\n'
+    if (artillery) info +=  translate(language, 'info_artillery') + artillery + '\n'
+    if (bomber) info +=  translate(language, 'info_bombers') + bomber + '\n'
+    if (fighter) info +=  translate(language, 'info_fighters') + fighter + '\n'
     if (units) {
         info += '\n' +
             translate(language, 'averageAttack') + averageAttack + '\n' +
