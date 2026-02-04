@@ -64,6 +64,7 @@ function getKnownWord(word)
         case 'russia':
         case 'rus':
         case 'ussr':
+        case 'ссср':
             word = 'soviet'
             break
         case 'uk':
@@ -88,6 +89,9 @@ function getKnownWord(word)
             break
         case 'arty':
             word = 'artillery'
+            break
+        case 'cm':
+            word = 'countermeasure'
             break
     }
 
@@ -182,10 +186,7 @@ function getAttribute(word, attributes)
     const reservedWords = getReservedWords()
     for (const [key, value] of Object.entries(attributes))
     {
-        if (
-            (reservedWords.hasOwnProperty(value) && reservedWords[value].slice(0,3) === word.slice(0,3)) ||
-            (key.startsWith(word) || value.startsWith(word))
-        )
+        if (reservedWords.hasOwnProperty(value) && (key.startsWith(word) || value.startsWith(word)))
         {
             result = value
             break
