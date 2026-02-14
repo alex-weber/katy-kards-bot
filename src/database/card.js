@@ -89,9 +89,10 @@ function buildFullText(json) {
         fullText += json.attributes.toString().toLowerCase() + ' '
     }
 
-    if (Object.prototype.hasOwnProperty.call(json, 'exile')) {
+    if (json.hasOwnProperty('exile')) {
         fullText += 'exile изгнание '
     }
+
 
     return fullText.trim()
 }
