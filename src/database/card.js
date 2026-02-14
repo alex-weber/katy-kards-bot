@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
+const APILanguages = require('../tools/language')
 
 const cardStats = {
     created: 0,
@@ -23,7 +24,7 @@ async function createCard(card) {
     normalizeCardJson(card.json)
 
     const text = buildText(card.json)
-    const fullText = buildFullText(card.json, text)
+    const fullText = buildFullText(card.json)
     const exile = card.json.exile ? card.json.exile : ''
 
     const data = buildCardData(card, text, fullText, exile)
@@ -60,36 +61,41 @@ function normalizeCardJson(json) {
 
 function buildText(json) {
     if (json.hasOwnProperty('text') && json.text.hasOwnProperty('en-EN')) {
-        return (
-            json.text['en-EN'].toLowerCase() +
-            '%%' +
-            json.text['ru-RU'].toLowerCase()
-        )
+        return json.text['en-EN'].toLowerCase()
     }
     return ''
 }
 
-function buildFullText(json, text) {
-    let fullText =
-        json.title['en-EN'] +
-        ' ' +
-        json.title['ru-RU'] +
-        ' ' +
-        json.type.toLowerCase() +
-        ' ' +
-        json.attributes.toString().toLowerCase() +
-        ' '
+function buildFullText(json) {
+    let fullText = ''
 
-    if (text.length) {
-        fullText += text
+    // deduplicate locale codes
+    const locales = [...new Set(Object.values(APILanguages.APILanguages))]
+
+    for (const locale of locales) {
+        if (json.title?.[locale]) {
+            fullText += json.title[locale] + ' '
+        }
+        if (json.text?.[locale]) {
+            fullText += json.text[locale] + ' '
+        }
     }
 
-    if (json.hasOwnProperty('exile')) {
-        fullText += ' exile изгнание'
+    if (json.type) {
+        fullText += json.type.toLowerCase() + ' '
     }
 
-    return fullText
+    if (json.attributes) {
+        fullText += json.attributes.toString().toLowerCase() + ' '
+    }
+
+    if (Object.prototype.hasOwnProperty.call(json, 'exile')) {
+        fullText += 'exile изгнание '
+    }
+
+    return fullText.trim()
 }
+
 
 function buildCardData(card, text, fullText, exile) {
     return {
@@ -97,7 +103,7 @@ function buildCardData(card, text, fullText, exile) {
         importId: card.importId,
         imageURL: card.imageUrl,
         thumbURL: card.thumbUrl,
-        title: card.json.title['en-EN'] + '%%' + card.json.title['ru-RU'],
+        title: card.json.title['en-EN'],
         text,
         fullText,
         set: card.json.set.toLowerCase(),

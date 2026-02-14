@@ -68,18 +68,6 @@ async function topDeck(channelID, user, command = null)
 
 /**
  *
- * @param card
- * @returns String
- */
-function getTitle(card)
-{
-    let titles = card.title.split('%%')
-
-    return titles[0]
-}
-
-/**
- *
  * @param td
  * @returns {Promise<td>}
  */
@@ -91,9 +79,6 @@ async function battle(td)
     td.kredits = kredits
     td.card1 = await getRandomCard(td)
     td.card2 = await getRandomCard(td)
-    //split languages to get the titles only in English
-    td.card1.title = getTitle(td.card1)
-    td.card2.title = getTitle(td.card2)
     let user1 = await getUser(td.player1)
     let user2 = await getUser(td.player2)
     td.card1.owner = user1
