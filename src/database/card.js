@@ -80,6 +80,8 @@ function buildFullText(json) {
             fullText += json.text[locale] + ' '
         }
     }
+    //add abbreviation to full text
+    fullText += getAbbreviation(json.title['en-EN']) + ' '
 
     if (json.type) {
         fullText += json.type.toLowerCase() + ' '
@@ -95,6 +97,27 @@ function buildFullText(json) {
 
 
     return fullText.trim()
+}
+
+/**
+ *
+ * @param title
+ * @returns {string}
+ */
+function getAbbreviation(title) {
+    const words = title.split(' ')
+    if (words.length < 2) return ''
+
+    const disallowed = /^\d+$/ // only digits
+
+    const filtered = words.
+        filter(word => word.length > 2).
+        filter(word => !disallowed.test(word))
+    if (filtered.length < 2) return ''
+
+    return filtered
+        .map(word => word.charAt(0))
+        .join('')
 }
 
 
