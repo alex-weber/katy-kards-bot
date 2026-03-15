@@ -111,7 +111,7 @@ function getAbbreviation(title) {
     const disallowed = /^\d+$/ // only digits
 
     const filtered = words.
-        filter(word => word.length > 2).
+        filter(word => word.length > 1).
         filter(word => !disallowed.test(word))
     if (filtered.length < 2) return ''
 
