@@ -39,7 +39,7 @@ async function drawBattlefield(topDeck)
     //draw the VS sign
     context.drawImage(vs, padding + cardWidth, 170, 160, 160)
     //write players names
-    context.font = '25px "Arial" bold'
+    context.font = 'bold 25px Arial'
     context.fillStyle = '#d3cccc'
     const user1Promise = getUser(topDeck.player1)
     const user2Promise = getUser(topDeck.player2)
