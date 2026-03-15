@@ -106,7 +106,7 @@ function buildFullText(json) {
  */
 function getAbbreviation(title) {
     const words = title.split(' ')
-    if (words.length < 2) return ''
+    if (words.length < 3) return ''
 
     const disallowed = /^\d+$/ // only digits
 
@@ -115,9 +115,13 @@ function getAbbreviation(title) {
         filter(word => !disallowed.test(word))
     if (filtered.length < 2) return ''
 
-    return filtered
+    const abbreviation = filtered
         .map(word => word.charAt(0))
         .join('')
+    //the length of the abbreviation should be at least 3 letters
+    if (abbreviation.length < 3) return ''
+
+    return abbreviation
 }
 
 
