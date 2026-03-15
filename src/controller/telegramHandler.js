@@ -80,12 +80,13 @@ async function telegramHandler(ctx, redis) {
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
         command = bot.getDeckCode(ctx.update.message.text)
-        //check if in cache
+        //check if the deck is already in the cache
         const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
         {
             const response = await redis.json.get(deckKey, '$')
             console.log('serving deck from cache', deckKey)
+            await ctx.replyWithPhoto(response.files[0])
             await ctx.reply(response.content.replaceAll('```', ''))
             await ctx.replyWithPhoto(response.files[1])
 
@@ -95,7 +96,7 @@ async function telegramHandler(ctx, redis) {
         const deckInfo = await analyseDeck(command, language)
         if (!deckInfo) return ctx.reply(translate(language, 'error'))
 
-        // check if screenshot capturing is running, ask user to wait
+        // check if the screenshot capturing job is running, ask user to wait if so
         const screenshotKey = cacheKeyPrefix + 'screenshot'
 
         if (await redis.exists(screenshotKey)) {
