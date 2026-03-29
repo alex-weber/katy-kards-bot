@@ -42,6 +42,7 @@ function getReservedWords()
         'italy': 'италия',
         'poland': 'польша',
         'finland': 'финляндия',
+        'neutral': 'нейтральная',
         'infantry': 'пехота',
         'artillery': 'артиллерия',
         'fighter': 'истребитель',
