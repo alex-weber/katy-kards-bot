@@ -70,7 +70,7 @@ function buildFullText(json) {
     let fullText = ''
 
     // deduplicate locale codes
-    const locales = [...new Set(Object.values(APILanguages.APILanguages))]
+    const locales = ['en-EN', 'ru-RU', 'ja-JP', 'ko-KR', 'zh-Hant', 'zh-Hans']
 
     for (const locale of locales) {
         if (json.title?.[locale]) {
