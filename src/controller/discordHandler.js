@@ -76,14 +76,14 @@ async function discordHandler(message, client, redis)
     const qSearch = bot.isQuotationSearch(message)
     if (qSearch)
     {
-        //rewrite the message content with only needed information
+        //rewrite the message content with only necessary information
         console.log('bot command with quotes inside a message:', message.content)
         message.content = qSearch
     }
     //not a bot command or bot
     else if (!message.content.startsWith(prefix)) return
 
-    //check for write permissions
+    //check for WRITE permissions
     console.time('permissions')
     const permitted = await bot.hasWritePermissions(client, message, redis)
     if (message.guildId && !permitted)
@@ -173,7 +173,8 @@ async function discordHandler(message, client, redis)
     }
 
     //save the command in the DB and in cache, no need to wait
-    createMessage({authorId: user.id, content: command}).then()
+    const fullContent = `${guildName} | ${channelName} -> ${command}`;
+    createMessage({authorId: user.id, content: fullContent}).then()
 
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
@@ -181,7 +182,7 @@ async function discordHandler(message, client, redis)
         //overwrite message.content with the deck code only
         //because command is lowercased, but we need the original
         command = bot.getDeckCode(message.content)
-        //check if in cache
+        //check if in the cache
         const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
         {
@@ -191,14 +192,14 @@ async function discordHandler(message, client, redis)
             return message.channel.send(response)
         }
 
-        //check if screenshot capturing is running, tell user to wait
+        //check if the screenshot capturing is running, tell the user to wait
         const screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
         {
             return message.channel.send(translate(language, 'screenshotRunning'))
         }
         await redis.set(screenshotKey, 'running')
-        redis.expire(screenshotKey, 300) //delete screenshot lock key after 300 seconds anyway
+        redis.expire(screenshotKey, 300) //delete the screenshot lock key after 300 seconds anyway
         createDeckImages(prefix, message, command, language, redis, deckKey).
         then(()=>
         {
@@ -288,7 +289,7 @@ async function discordHandler(message, client, redis)
     if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
     {
         // TD command spam protection.
-        // Next command is allowed only after the time of slowModeInterval is passed
+        // THE Next command is allowed only after the time of slowModeInterval is passed
         const userTDKey = cacheKeyPrefix + 'td:' + user.id
         const unblockTime = await redis.get(userTDKey)
         if (Date.now() < unblockTime) return //not allowed, just do nothing
@@ -315,7 +316,7 @@ async function discordHandler(message, client, redis)
         const overallTotal = commands.reduce((acc, arr) => acc + arr.length, 0)
         let messageText = isFiltered ? '' : `**TOTAL: ${overallTotal}**\n\n`
 
-        // find longest common prefix
+        // find the longest common prefix
         const findCommonPrefix = (arr) => {
             if (!arr.length) return ''
             let prefix = arr[0]
@@ -420,13 +421,13 @@ async function discordHandler(message, client, redis)
             answer.content = answer.content.replace('text:', '')
             return message.channel.send(answer)
         }
-        //else use the value as alternate command for search
+        //else use the value as the alternate command for search
         if (altCommand) command = altCommand
         else command = syn.value
 
     } else if (command in dictionary.synonyms) command = dictionary.synonyms[command]
 
-    //set limit to 10 if it is a bot-commands channel
+    //set the limit to 10 if it is a bot-commands channel
     let limit = globalLimit
     if (isBotCommandChannel(message)) limit = 10
     //get all alt art images
@@ -460,7 +461,7 @@ async function discordHandler(message, client, redis)
 
         return message.channel.send(translate(language, 'noresult'))
     }
-    //check if in cache
+    //check if in the cache
     const cacheKey = cacheKeyPrefix + language+ ':' + command
     const keyExists = await redis.exists(cacheKey)
     if (keyExists && !message.buttonId)
@@ -485,9 +486,9 @@ async function discordHandler(message, client, redis)
         first: limit,
         offset: offset,
     }
-    //check if we need next page instead
+    //check if we need the next page instead
     if (message.buttonId) {
-        //set language of the command, not the user
+        //set the language of the command, not the user
         variables.language = APILanguages[message.language]
         offset = limit
         let result = await redis.json.get(CommandCacheKey, '$')
