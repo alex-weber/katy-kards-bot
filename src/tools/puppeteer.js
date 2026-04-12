@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer-core')
+const browserLessKeys = getBrowserlessKeys()
 
 /**
  *
@@ -52,17 +53,31 @@ async function saveScreenshot(page, selector) {
  */
 async function takeScreenshot(url) {
 
-    if (!process.env.BROWSERLESS_API_KEY) return false
+
+    if (!browserLessKeys.length) return false
+
+    let blKey;
+    if (browserLessKeys.length === 1) {
+        blKey = browserLessKeys[0]
+    } else {
+        //get a random key from the array
+        const index = Math.floor(Math.random() * browserLessKeys.length)
+        blKey = browserLessKeys[index]
+        console.log('using Browserless key ' + index)
+    }
 
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
 
     let wsHost = 'ws://production-ams.browserless.io'
     if (process.env.BROWSERLESS_HOST) wsHost = process.env.BROWSERLESS_HOST
-    // Connecting to Browserless
+
+    // Connect to Browserless
+    console.time('puppeteerConnect')
     const browser = await puppeteer.connect({
-        browserWSEndpoint: `${wsHost}?token=${process.env.BROWSERLESS_API_KEY}`
+        browserWSEndpoint: `${wsHost}?token=${blKey}`
     })
+    console.timeEnd('puppeteerConnect')
     console.log('using Browserless.io Puppeteer service')
 
     const page = await browser.newPage()
@@ -96,6 +111,18 @@ async function takeScreenshot(url) {
         return false
     }
 
+}
+
+function getBrowserlessKeys()
+{
+    const keys = []
+    if (process.env.BROWSERLESS_API_KEY) keys.push(process.env.BROWSERLESS_API_KEY)
+    for (let i = 2; i < 10; i++) {
+        if (!process.env['BROWSERLESS_API_KEY_'+i]) continue
+        keys.push(process.env['BROWSERLESS_API_KEY_'+i])
+    }
+
+    return keys
 }
 
 module.exports = {takeScreenshot}
