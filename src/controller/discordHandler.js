@@ -35,8 +35,6 @@ const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
 //load more results button
 const {getButtonRow} = require("../tools/button")
 
-const {getRandomImage} = require("../tools/randomImage")
-
 /**
  *
  * @param message
@@ -153,7 +151,6 @@ async function discordHandler(message, client, redis)
     {
         user.name = message.author.username
         await updateUser(user)
-        await redis.json.set(userKey, '$.name', user.name)
     }
 
     let language = user.language
@@ -178,29 +175,9 @@ async function discordHandler(message, client, redis)
     //save the command in the DB and in cache, no need to wait
     createMessage({authorId: user.id, content: command}).then()
 
-    // April's Fool cache key
-    const aprilFoolKey = cacheKeyPrefix + 'april:' + user.id
-    let foolCommands = await redis.get(aprilFoolKey)
-    if (!foolCommands) {
-        foolCommands = 1
-        await redis.set(aprilFoolKey, foolCommands)
-    }
     //show Deck as images
     if (bot.isDeckLink(command) || bot.isDeckCode(command))
     {
-        //April Fool
-        if (foolCommands < 3)
-        {
-            message.channel.send({
-                content: 'I really like this deck!',
-                files: [__dirname + '/../assets/catdeck.jpg']
-            })
-            foolCommands++
-            await redis.set(aprilFoolKey, foolCommands)
-
-            return
-        }
-
         //overwrite message.content with the deck code only
         //because command is lowercased, but we need the original
         command = bot.getDeckCode(message.content)
@@ -228,23 +205,6 @@ async function discordHandler(message, client, redis)
             redis.del(screenshotKey)
             console.log('createDeckImages finished')
         })
-
-        return
-    }
-
-    //April Fool
-
-    if (foolCommands < 3)
-    {
-        const randCatImg = await getRandomImage()
-        if (randCatImg) {
-            message.channel.send({
-                content: 'Cats found: 1 ',
-                files: [randCatImg]
-            })
-        } else message.channel.send('No cats found...')
-        foolCommands++
-        await redis.set(aprilFoolKey, foolCommands)
 
         return
     }
