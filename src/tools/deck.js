@@ -38,7 +38,12 @@ async function createDeckImages(
         url = command
     } else {
         url = deckBuilderURL+hash
-        deckInfo = await analyseDeck(deckCode, language)
+        deckInfo = '```' +
+            translate(language, 'deck_code') +
+            deckCode +
+            '\n\n' +
+            await analyseDeck(deckCode, language) +
+            '```'
         if (!deckInfo) return message.channel.send(translate(language, 'error'))
     }
     const sentMessage = await message.channel.send(translate(language, 'screenshot'))
@@ -50,6 +55,13 @@ async function createDeckImages(
     console.log('Screenshot captured and sent successfully')
 
     const uploadedFiles = await uploadForCache(files)
+
+    if (!uploadedFiles) {
+        console.log('Failed to upload deck images to cache')
+        deleteDeckFiles()
+
+        return
+    }
 
     const cached = {
         content: deckInfo,
@@ -189,10 +201,8 @@ function calculateAverages(cards, cardsArray, language) {
             translate(language, 'averageOperationCost') + averageOperationCost + '\n'
     }
 
-    return '```' +
-        info +
-        translate(language, 'averageKredits') + averageKredits + '\n' +
-        '```'
+    return info + translate(language, 'averageKredits') + averageKredits + '\n'
+
 }
 
 module.exports = {createDeckImages, analyseDeck, uploadForCache}
