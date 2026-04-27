@@ -60,7 +60,7 @@ async function takeScreenshot(url) {
     if (browserLessKeys.length === 1) {
         blKey = browserLessKeys[0]
     } else {
-        //get a random key from the array
+        //get a random api key from the list
         const index = Math.floor(Math.random() * browserLessKeys.length)
         blKey = browserLessKeys[index]
         console.log('using Browserless key ' + index)
@@ -69,34 +69,34 @@ async function takeScreenshot(url) {
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
 
-    let wsHost = 'ws://production-ams.browserless.io'
-    if (process.env.BROWSERLESS_HOST) wsHost = process.env.BROWSERLESS_HOST
+    const wsHost = process.env.BROWSERLESS_HOST || 'ws://production-ams.browserless.io'
+    const timeout = parseInt(process.env.BROWSERLESS_TIMEOUT) || 10000
+
+    const now = new Date().getTime()
 
     // Connect to Browserless
-    console.time('puppeteerConnect')
-    const browser = await puppeteer.connect({
-        browserWSEndpoint: `${wsHost}?token=${blKey}`
-    })
-    console.timeEnd('puppeteerConnect')
-    console.log('using Browserless.io Puppeteer service')
-
-    const page = await browser.newPage()
-    await page.setViewport({ width: 3000, height:2000 })
-    console.time('pageLoading')
     try {
+
+        console.time('puppeteerConnect'+now)
+        const browser = await connectBrowser(`${wsHost}?token=${blKey}`, timeout)
+        console.timeEnd('puppeteerConnect'+now)
+
+        console.log('using Browserless.io Puppeteer service')
+
+        const page = await browser.newPage()
+        await page.setViewport({ width: 3000, height:2000 })
+        console.time('pageLoading'+now)
+
         const response = await page.goto(url, options)
         if (!response.status || response.status() > 399)
         {
             await browser.close()
             return false
         }
-    } catch (error) {
-        await browser.close()
-        return false
-    }
 
-    console.timeEnd('pageLoading')
-    try {
+
+        console.timeEnd('pageLoading'+now)
+
         // Wait for the element to appear
         await page.waitForSelector(selector, { timeout: 5000 })
         await saveScreenshot(page, selector)
@@ -106,7 +106,6 @@ async function takeScreenshot(url) {
 
     } catch (error) {
         console.error('Error:', error)
-        await browser.close()
 
         return false
     }
@@ -118,11 +117,23 @@ function getBrowserlessKeys()
     const keys = []
     if (process.env.BROWSERLESS_API_KEY) keys.push(process.env.BROWSERLESS_API_KEY)
     for (let i = 2; i < 10; i++) {
-        if (!process.env['BROWSERLESS_API_KEY_'+i]) continue
+        if (!process.env['BROWSERLESS_API_KEY_'+i]) break
         keys.push(process.env['BROWSERLESS_API_KEY_'+i])
     }
 
     return keys
+}
+
+async function connectBrowser(wsEndpoint, timeout = 5000) {
+    return Promise.race([
+        puppeteer.connect({
+            browserWSEndpoint: wsEndpoint,
+            defaultViewport: null
+        }),
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('WS connect timeout')), timeout)
+        )
+    ])
 }
 
 module.exports = {takeScreenshot}
