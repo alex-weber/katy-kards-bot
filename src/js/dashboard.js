@@ -43,7 +43,7 @@ function renderMessagesChart(data, dataTD) {
                     pointRadius: 5,
                 },
                 {
-                    label: 'TD',
+                    label: 'DECK SCREENSHOTS',
                     data: tdDataPoints,
                     backgroundColor: '#536e07',
                     borderColor: '#b0c032',
@@ -135,7 +135,7 @@ async function getDashboardData({ from, to} = {}) {
         responseTopUsers,
     ] = await Promise.all([
         fetch('/api/messages' + qs),
-        fetch('/api/td-messages' + qs),
+        fetch('/api/screenshot-messages' + qs),
         fetch('/api/top-messages' + qs),
         fetch('/api/top-users' + qs),
     ])

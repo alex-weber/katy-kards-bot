@@ -287,7 +287,7 @@ async function getDashboardMessages({from, to})
 
 }
 
-async function getTopDeckMessages({from, to})
+async function getScreenshotMessages({from, to})
 {
     if (!from) from = daysAgoString(30)
     const { fromDate, toDate } = getDates(from, to)
@@ -299,7 +299,7 @@ async function getTopDeckMessages({from, to})
                 lte: toDate
             },
             content: {
-                startsWith: 'td',
+                contains: '%\\%\\%%',
             }
         },
         orderBy: {
@@ -466,7 +466,7 @@ module.exports = {
     getDashboardMessages,
     getMessages,
     getUserMessages,
-    getTopDeckMessages,
+    getScreenshotMessages,
     getTopMessages,
     getTopUsers,
     daysAgoString,

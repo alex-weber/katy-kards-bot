@@ -1,7 +1,7 @@
 const {getCardsByFaction} = require('../database/card')
 const {
     getDashboardMessages,
-    getTopDeckMessages,
+    getScreenshotMessages,
     getTopMessages,
     getTopUsers,
 } = require("../database/message")
@@ -47,9 +47,9 @@ async function run(method, { from, to } = {}) {
             response.success = true
             break
 
-        case 'td-messages':
+        case 'screenshot-messages':
             if (!cached) {
-                response.data = await getTopDeckMessages({ from, to })
+                response.data = await getScreenshotMessages({ from, to })
                 await saveToCache(response.data)
             } else response.data = cached
             response.success = true
