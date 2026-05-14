@@ -20,7 +20,7 @@
     "@napi-rs/canvas": "0.1.95",
     "@prisma/client": "^6.16.2",
     "@supercharge/fs": "^3.4.2",
-    "axios": "1.15.0",
+    "axios": "1.16.1",
     "compression": "^1.8.1",
     "connect-redis": "^7.1.1",
     "discord.js": "^14.26.2",
