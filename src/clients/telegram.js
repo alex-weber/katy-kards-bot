@@ -1,7 +1,6 @@
 
 const {Telegraf, Input } = require('telegraf')
 const {message} = require('telegraf/filters')
-const fs = require('fs')
 
 let telegramClient = false
 if (process.env.TELEGRAM_TOKEN !== undefined) telegramClient = new Telegraf(process.env.TELEGRAM_TOKEN)
