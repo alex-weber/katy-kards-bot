@@ -25,13 +25,22 @@ function onTelegramError(err) {
 function getMediaGroup(files) {
     let mediaGroup = []
     for (const [, value] of Object.entries(files)) {
-        if (value.attachment !== undefined) mediaGroup.push(
-            {
-                type: 'photo',
-                media: { source: fs.createReadStream(value.attachment) },
-                caption: value.description ? value.description : '',
-            }
-        )
+        if (value.attachment !== undefined) {
+            const stream = fs.createReadStream(value.attachment)
+            // Clean up file descriptor when the stream ends or errors
+            stream.once('close', () => stream.destroy())
+            stream.once('error', (err) => {
+                console.error('Telegram Stream error:', err)
+                stream.destroy()
+            })
+            mediaGroup.push(
+                {
+                    type: 'photo',
+                    media: { source: stream },
+                    caption: value.description ? value.description : '',
+                }
+            )
+        }
     }
 
     return mediaGroup
