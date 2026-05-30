@@ -68,8 +68,8 @@ function getServerList(client) {
                 icon,
                 name: g.name,
                 memberCount: g.memberCount.toString(),
-                createdAt: g.createdAt.toLocaleDateString(),
-                joinedAt: g.joinedAt.toLocaleDateString(),
+                createdAt: g.createdAt.toLocaleDateString('en-GB'),
+                joinedAt: g.joinedAt.toLocaleDateString('en-GB'),
                 joinedTimestamp: g.joinedTimestamp
             }
         })
