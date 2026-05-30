@@ -32,9 +32,10 @@ async function handleTD(user, command, message) {
             message.channel.send(userMention(td.player1))
             console.log(td.log)
             //delete the battle image
-            fs.rm(battleImage, function ()
+            fs.rm(battleImage, function (err)
             {
-                console.log('image deleted')
+                if (err) console.error('Failed to delete image:', err)
+                else console.log('image deleted')
             })
         } catch (e) {
             message.channel.send('could not draw battle image\n' + td.log)
