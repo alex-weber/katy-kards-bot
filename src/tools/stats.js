@@ -61,11 +61,18 @@ async function getStats(language)
  * @returns {array}
  */
 function getServerList(client) {
-    return client.guilds.cache.map((g) => {
-        let icon = 'https://cdn.discordapp.com/icons/'+
-            g.id+'/'+ g.icon+'.webp?size=48'
-        return [icon, g.name, g.id]
-    })
+    return client.guilds.cache
+        .map((g) => {
+            let icon = `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.webp?size=48`
+            return [
+                icon,
+                g.name,
+                g.memberCount.toString(),
+                g.createdAt.toLocaleDateString(),
+                g.joinedAt.toLocaleDateString()
+            ]
+        })
+        .sort((a, b) => a[4].localeCompare(b[4]))
 }
 
 module.exports = { getStats, getServerList}
