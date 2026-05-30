@@ -64,15 +64,17 @@ function getServerList(client) {
     return client.guilds.cache
         .map((g) => {
             let icon = `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.webp?size=48`
-            return [
+            return {
                 icon,
-                g.name,
-                g.memberCount.toString(),
-                g.createdAt.toLocaleDateString(),
-                g.joinedAt.toLocaleDateString()
-            ]
+                name: g.name,
+                memberCount: g.memberCount.toString(),
+                createdAt: g.createdAt.toLocaleDateString(),
+                joinedAt: g.joinedAt.toLocaleDateString(),
+                joinedTimestamp: g.joinedTimestamp
+            }
         })
-        .sort((a, b) => a[4].localeCompare(b[4]))
+        .sort((a, b) => a.joinedTimestamp - b.joinedTimestamp)
+        .map(g => [g.icon, g.name, g.memberCount, g.createdAt, g.joinedAt])
 }
 
 module.exports = { getStats, getServerList}
