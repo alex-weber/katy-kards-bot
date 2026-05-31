@@ -17,6 +17,7 @@ const {downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload"
 const {analyseDeck, uploadForCache} = require("../tools/deck")
 const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
 const fs = require('fs').promises
+const path = require('path')
 
 /**
  *
@@ -42,10 +43,10 @@ async function telegramHandler(ctx, redis) {
 
     command = bot.parseCommand(prefix, command)
 
-    //get or create user
+    //get or create the user
     const userID = ctx.update?.message?.from?.id?.toString() || null
     if (!userID) return
-    //try to get from cache
+    //try to get from the cache
     const user = await getUser(userID)
 
     if (user.status !== 'active') {
@@ -74,7 +75,7 @@ async function telegramHandler(ctx, redis) {
     //help
     if (command === 'help') return ctx.reply(translate(language, 'help'))
 
-    if (!command.length) return //do nothing if it's just the prefix !
+    if (!command.length) return //do nothing if it's just the prefix
     if (command.length < minStrLen) return ctx.reply(translate(language, 'min'))
 
     //deck image
@@ -104,7 +105,7 @@ async function telegramHandler(ctx, redis) {
             return ctx.reply(translate(language, 'screenshotRunning'))
         }
 
-        // lock screenshot process
+        // lock the screenshot process
         await redis.set(screenshotKey, 'running')
         redis.expire(screenshotKey, 120) // auto-expire after 120 seconds
 
@@ -117,7 +118,7 @@ async function telegramHandler(ctx, redis) {
             ? bot.parseCommand(prefix, command)
             : deckBuilderURL + hash
 
-        // send message that screenshot is running and store ID
+        // send the message that screenshot is running and store ID
         const runningMsg = await ctx.reply(translate(language, 'screenshot'))
         const runningMsgId = runningMsg.message_id
 
@@ -174,7 +175,7 @@ async function telegramHandler(ctx, redis) {
                 const fileSize = await bot.getFileSize(syn.value)
                 if (fileSize && fileSize < maxFileSize)
                 {
-                    //we need a different method for gif images
+                    //we need a different method for GIF images
                     if(syn.value.endsWith('.gif'))
                         return ctx.replyWithAnimation(syn.value)
                     //reply with a static image
@@ -206,17 +207,34 @@ async function telegramHandler(ctx, redis) {
     ctx.reply(translate(language, 'search') + ': ' + cards.counter)
 
     const downloadedFiles = []
-    const convertedFiles = []
 
     try {
         //convert avif to webp
         for (const file of files) {
             try {
-                const downloadedPath = await downloadImageAsFile(file.attachment, language)
-                downloadedFiles.push(downloadedPath)
-                const convertedPath = await convertImageToWEBP(downloadedPath)
-                convertedFiles.push(convertedPath)
-                file.attachment = convertedPath
+                // Build the expected webp path based on URL
+                const fileName = path.basename(file.attachment.split('?')[0])
+                const languageFileName = language + '_' + fileName
+                const expectedWebpPath = path.join(__dirname, '../tmp/downloads', `${path.parse(languageFileName).name}.webp`)
+
+                // Check if webp already exists
+                let webpExists = false
+                try {
+                    const stats = await fs.stat(expectedWebpPath)
+                    webpExists = stats.isFile() && stats.size > 0
+                } catch (err) {
+                    // File doesn't exist, will download and convert
+                }
+
+                if (webpExists) {
+                    console.log('Using cached webp file:', expectedWebpPath)
+                    file.attachment = expectedWebpPath
+                } else {
+                    // Download and convert
+                    const downloadedPath = await downloadImageAsFile(file.attachment, language)
+                    downloadedFiles.push(downloadedPath)
+                    file.attachment = await convertImageToWEBP(downloadedPath)
+                }
             } catch (e) {
                 console.error(e)
                 return ctx.reply(translate(language, 'error'))
@@ -247,19 +265,12 @@ async function telegramHandler(ctx, redis) {
             }
         }
     } finally {
-        // Clean up all downloaded and converted files
+        // Clean up only downloaded source files (keep webp files for caching)
         for (const filePath of downloadedFiles) {
             try {
                 await fs.unlink(filePath)
             } catch (err) {
                 console.error('Error cleaning up downloaded file:', err)
-            }
-        }
-        for (const filePath of convertedFiles) {
-            try {
-                await fs.unlink(filePath)
-            } catch (err) {
-                console.error('Error cleaning up converted file:', err)
             }
         }
     }

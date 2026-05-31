@@ -245,32 +245,35 @@ async function getCards(variables, timeout=3000)
  * @param limit
  * @returns {*[]}
  */
-function getFiles(cards, language, limit)
-{
-    let files = []
+function getFiles(cards, language, limit) {
+    const files = []
     language = APILanguages[language]
-    for (const [, card] of Object.entries(cards.cards))
-    {
-        //check if the response is from kards.com or internal
+
+    let count = 0
+
+    for (const key in cards.cards) {
+        if (count >= limit) break
+
+        const card = cards.cards[key]
+
         let imageURL = ''
         let reserved = false
-        if (card.hasOwnProperty('imageURL'))
-        {
+
+        if (card.imageURL) {
             imageURL = card.imageURL
             reserved = card.reserved
-        } else if (card.hasOwnProperty('node'))
-        {
+        } else if (card.node) {
             imageURL = card.node.imageUrl
             reserved = card.node.reserved
         }
-        //replace language in the image link
+
         imageURL = imageURL.replace('en-EN', language)
-        let imageName = null
-        if (reserved) imageName = 'reserved'
-        let attachment = new AttachmentBuilder(host + imageURL)
-        attachment = attachment.setDescription(imageName)
+
+        const attachment = new AttachmentBuilder(host + imageURL)
+            .setDescription(reserved ? 'reserved' : null)
+
         files.push(attachment)
-        if (files.length === limit) break
+        count++
     }
 
     return files

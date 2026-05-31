@@ -501,6 +501,7 @@ async function discordHandler(message, client, redis)
         await redis.json.set(CommandCacheKey, '$.offset', offset+limit)
     }
     const cards = await getCards(variables)
+
     if (!cards)
     {
         return message.channel.send(translate(language, 'error'))
@@ -557,7 +558,7 @@ async function discordHandler(message, client, redis)
     try
     {
         message.channel.send(answer)
-        console.log(counter + ' card(s) found', files)
+        console.log(`${counter} cards found. Limit is ${limit}`, files.map(f => f.attachment))
         //store in cache
         if (counter <= limit)
             await redis.json.set(cacheKey, '$', answer)

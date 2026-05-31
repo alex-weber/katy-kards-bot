@@ -182,6 +182,7 @@ async function uploadImage(imagePath, expiration = 0)
  * @returns {Promise<string>}
  */
 async function convertImageToWEBP(imagePath) {
+
     let sharpInstance = null
 
     try {
