@@ -16,6 +16,7 @@ const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 const {downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload")
 const {analyseDeck, uploadForCache} = require("../tools/deck")
 const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
+const fs = require('fs').promises
 
 /**
  *
@@ -33,7 +34,7 @@ async function telegramHandler(ctx, redis) {
         command.length > maxStrLen) return
 
     let language = getLanguageByInput(command)
-    //set attachment limit to 10 if it is a private chat
+    //set the attachment limit to 10 if it is a private chat
     let limit = globalLimit
     if (ctx.update.message.chat.type === 'private') limit = 10
 
@@ -204,38 +205,62 @@ async function telegramHandler(ctx, redis) {
 
     ctx.reply(translate(language, 'search') + ': ' + cards.counter)
 
-    //convert avif to webp
-    for (const file of files) {
-        try {
-            const path = await downloadImageAsFile(file.attachment, language)
-            file.attachment = await convertImageToWEBP(path)
-        } catch (e) {
-            console.error(e)
-            return ctx.reply(translate(language, 'error'))
-        }
-    }
+    const downloadedFiles = []
+    const convertedFiles = []
 
-    if (cards.counter > 1)
-    {
-        try {
-            return ctx.replyWithMediaGroup(getMediaGroup(files))
-        } catch (e) {
-            console.log(e)
-            return ctx.reply(translate(language, 'error'))
+    try {
+        //convert avif to webp
+        for (const file of files) {
+            try {
+                const downloadedPath = await downloadImageAsFile(file.attachment, language)
+                downloadedFiles.push(downloadedPath)
+                const convertedPath = await convertImageToWEBP(downloadedPath)
+                convertedFiles.push(convertedPath)
+                file.attachment = convertedPath
+            } catch (e) {
+                console.error(e)
+                return ctx.reply(translate(language, 'error'))
+            }
         }
-    }
-    else if (cards.counter === 1)
-    {
-        try {
 
-            return ctx.replyWithPhoto(
-                Input.fromLocalFile(files[0].attachment),
-                { caption: files[0].description }
-            )
+        if (cards.counter > 1)
+        {
+            try {
+                return ctx.replyWithMediaGroup(getMediaGroup(files))
+            } catch (e) {
+                console.log(e)
+                return ctx.reply(translate(language, 'error'))
+            }
         }
-        catch (e) {
-            console.log(e)
-            return ctx.reply(translate(language, 'error'))
+        else if (cards.counter === 1)
+        {
+            try {
+
+                return ctx.replyWithPhoto(
+                    Input.fromLocalFile(files[0].attachment),
+                    { caption: files[0].description }
+                )
+            }
+            catch (e) {
+                console.log(e)
+                return ctx.reply(translate(language, 'error'))
+            }
+        }
+    } finally {
+        // Clean up all downloaded and converted files
+        for (const filePath of downloadedFiles) {
+            try {
+                await fs.unlink(filePath)
+            } catch (err) {
+                console.error('Error cleaning up downloaded file:', err)
+            }
+        }
+        for (const filePath of convertedFiles) {
+            try {
+                await fs.unlink(filePath)
+            } catch (err) {
+                console.error('Error cleaning up converted file:', err)
+            }
         }
     }
 }
