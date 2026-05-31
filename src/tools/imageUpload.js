@@ -188,12 +188,12 @@ async function convertImageToWEBP(imagePath) {
         // Define the new path for the WEBP version
         const webpPath = path.join(path.dirname(imagePath), `${path.parse(imagePath).name}.webp`)
 
-        // Create sharp instance
+        // Create a sharp instance
         sharpInstance = sharp(imagePath)
         const fileType = await sharpInstance.metadata()
 
         if (fileType.format === 'png' || fileType.format === 'heif' || fileType.format === 'avif') {
-            // Clean up first instance and create new one for conversion
+            // Clean up the first instance and create a new one for conversion
             sharpInstance.destroy()
             sharpInstance = null
 
