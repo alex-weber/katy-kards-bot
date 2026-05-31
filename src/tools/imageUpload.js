@@ -35,7 +35,16 @@ async function downloadImageAsFile(url, language=null) {
         // Wait for the file to finish writing
         return new Promise((resolve, reject) => {
             writer.on('finish', () => resolve(filePath))
-            writer.on('error', reject)
+            writer.on('error', (err) => {
+                writer.close()
+                fs.unlink(filePath, () => {}) // Clean up partial file
+                reject(err)
+            })
+            response.data.on('error', (err) => {
+                writer.close()
+                fs.unlink(filePath, () => {}) // Clean up partial file
+                reject(err)
+            })
         })
     } catch (error) {
         console.error(`Error downloading image from ${url}:`, error)
@@ -49,16 +58,20 @@ async function downloadImageAsFile(url, language=null) {
  * @returns {Promise<Buffer|boolean>}
  */
 async function downloadImageAsBuffer(url) {
+    try {
+        const response = await axios.get(url, {
+            responseType: 'arraybuffer',
+            timeout: 5000,
+        })
 
-    const response = await axios.get(url, {
-        responseType: 'arraybuffer',
-        timeout: 5000,
-    })
+        if (!response || response.status !== 200)
+            return false
 
-    if (!response || response.status !== 200)
+        return response.data
+    } catch (error) {
+        console.error(`Error downloading image buffer from ${url}:`, error.message)
         return false
-
-     return response.data
+    }
 }
 
 /**
@@ -69,6 +82,8 @@ async function downloadImageAsBuffer(url) {
  */
 async function uploadImage(imagePath, expiration = 0)
 {
+    let downloadedPath = null
+    let convertedPath = null
 
     if (!process.env.IMG_UPLOAD_API_KEY || !process.env.IMG_UPLOAD_API_ENDPOINT)
     {
@@ -91,9 +106,9 @@ async function uploadImage(imagePath, expiration = 0)
 
             if (imageExtension === 'png')
             {
-                let path = await downloadImageAsFile(imagePath)
-                imagePath = await convertImageToWEBP(path)
-                const imageData = fs.readFileSync(imagePath)
+                downloadedPath = await downloadImageAsFile(imagePath)
+                convertedPath = await convertImageToWEBP(downloadedPath)
+                const imageData = fs.readFileSync(convertedPath)
                 base64Image = Buffer.from(imageData).toString('base64')
             } else {
                 let buffer = await downloadImageAsBuffer(imagePath)
@@ -102,6 +117,7 @@ async function uploadImage(imagePath, expiration = 0)
                     return false
                 }
                 base64Image = buffer.toString('base64')
+                buffer = null // Release buffer reference
             }
             postData.path = 'custom'
         } else { //cache image. should expire
@@ -124,6 +140,18 @@ async function uploadImage(imagePath, expiration = 0)
         console.error('Error uploading image:', error)
 
         return false
+    } finally {
+        // Clean up temporary files
+        if (downloadedPath && fs.existsSync(downloadedPath)) {
+            fs.unlink(downloadedPath, (err) => {
+                if (err) console.error('Error cleaning up downloaded file:', err)
+            })
+        }
+        if (convertedPath && fs.existsSync(convertedPath)) {
+            fs.unlink(convertedPath, (err) => {
+                if (err) console.error('Error cleaning up converted file:', err)
+            })
+        }
     }
 }
 
@@ -138,7 +166,9 @@ async function convertImageToWEBP(imagePath) {
         // Define the new path for the WEBP version
         const webpPath = path.join(path.dirname(imagePath), `${path.parse(imagePath).name}.webp`)
 
-        const fileType = await sharp(imagePath).metadata()
+        // Create sharp instance
+        const sharpInstance = sharp(imagePath)
+        const fileType = await sharpInstance.metadata()
 
         if (fileType.format === 'png' || fileType.format === 'heif') {
             // Convert the image to WEBP
@@ -147,9 +177,13 @@ async function convertImageToWEBP(imagePath) {
                 .toFile(webpPath)
         }
 
+        // Clean up sharp cache for this operation
+        sharpInstance.destroy()
+
         return webpPath
     } catch (error) {
         console.error(`Failed to process image from ${imagePath}:`, error)
+        throw error
     }
 
 }
