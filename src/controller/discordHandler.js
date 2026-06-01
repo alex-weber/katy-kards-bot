@@ -34,6 +34,8 @@ const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
 //load more results button
 const {getButtonRow} = require("../tools/button")
+const {downloadImageAsFile} = require("../tools/imageUpload")
+const {logMemoryUsage} = require("../tools/memoryLoger")
 
 /**
  *
@@ -400,10 +402,24 @@ async function discordHandler(message, client, redis)
 
             if (!altCommand)
             {
-                if (m.files)
-                    answer.files = m.files
+                if (m.files) {
+                    answer.files = []
 
-                return message.channel.send(answer)
+                    for (const file of m.files) {
+                        const path = await downloadImageAsFile(file)
+
+                        answer.files.push({
+                            attachment: path
+                        })
+                    }
+                }
+
+                await message.channel.send(answer)
+                answer = null
+
+                logMemoryUsage()
+
+                return
             }
         }
         //check if there is an image link (old format) and update it to JSON

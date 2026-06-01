@@ -94,11 +94,7 @@ async function onClientReady()
 
 async function onMessageCreate(message)
 {
-    console.log('Discord message received. Memory usage:')
-    logMemoryUsage()
     await discordHandler(message, client, redis)
-    console.log('Discord message processed. Memory usage:')
-    logMemoryUsage()
 }
 
 const {onInteractionCreate} = require('./clients/discordClient')
@@ -130,12 +126,10 @@ async function startTelegramClient() {
 }
 
 function onTelegramText(ctx, redis) {
-    console.log('Telegram message received. Memory usage:')
-    logMemoryUsage()
+
     requestQueue.enqueue(async function handleTelegramRequest() {
         await telegramHandler(ctx, redis)
-        console.log('Telegram message processed. Memory usage:')
-        logMemoryUsage()
+
     })
 
 
@@ -178,17 +172,4 @@ async function exit(event, code)
     await redis.del('screenshot')
     console.log('exiting on', event)
     process.exit(code)
-}
-
-//memory usage log
-function logMemoryUsage()
-{
-    const m = process.memoryUsage()
-
-    console.log({
-        rss: Math.round(m.rss / 1024 / 1024),
-        heapUsed: Math.round(m.heapUsed / 1024 / 1024),
-        external: Math.round(m.external / 1024 / 1024),
-        arrayBuffers: Math.round(m.arrayBuffers / 1024 / 1024)
-    })
 }

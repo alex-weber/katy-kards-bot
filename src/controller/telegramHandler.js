@@ -98,7 +98,7 @@ async function telegramHandler(ctx, redis) {
         const deckInfo = await analyseDeck(command, language)
         if (!deckInfo) return ctx.reply(translate(language, 'error'))
 
-        // check if the screenshot capturing job is running, ask user to wait if so
+        // check if the screenshot capturing is running, ask the user to wait if so
         const screenshotKey = cacheKeyPrefix + 'screenshot'
 
         if (await redis.exists(screenshotKey)) {

@@ -14,7 +14,7 @@ async function downloadImageAsFile(url, language=null) {
         if (language) fileName = language + '_' + fileName
         const filePath = path.join(__dirname, '../tmp/downloads', fileName)
 
-        if (language && fs.existsSync(filePath))
+        if (fs.existsSync(filePath))
         {
             console.log('File already exists, returning:', fileName)
 
