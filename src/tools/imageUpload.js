@@ -2,80 +2,45 @@ const axios = require('axios')
 const fs = require('fs')
 const sharp = require('sharp')
 const path = require('path')
+const { pipeline } = require('stream/promises')
 
 // Configure sharp to use less memory
 sharp.cache({ memory: 50 }) // Limit cache to 50MB
 sharp.concurrency(1) // Process one image at a time to reduce memory spikes
 
-async function downloadImageAsFile(url, language=null) {
+async function downloadImageAsFile(url, language = null) {
+
+    let fileName = path.basename(
+        url.split('?')[0]
+    )
+
+    if (language)
+        fileName = `${language}_${fileName}`
+
+    const filePath = path.join(
+        __dirname,
+        '../tmp/downloads',
+        fileName
+    )
+
     try {
-        // Extract the file name from the URL
-        let fileName = path.basename(url.split('?')[0])
-        if (language) fileName = language + '_' + fileName
-        const filePath = path.join(__dirname, '../tmp/downloads', fileName)
+        await fs.promises.access(filePath)
+        return filePath
+    } catch {}
 
-        if (fs.existsSync(filePath))
-        {
-            console.log('File already exists, returning:', fileName)
+    const response = await axios({
+        url,
+        method: 'GET',
+        responseType: 'stream',
+        timeout: 10000
+    })
 
-            return filePath
-        }
-        // Ensure the downloads directory exists
-        if (!fs.existsSync(path.dirname(filePath))) {
-            fs.mkdirSync(path.dirname(filePath), { recursive: true })
-        }
+    await pipeline(
+        response.data,
+        fs.createWriteStream(filePath)
+    )
 
-        // Download the image
-        const response = await axios({
-            url,
-            method: 'GET',
-            responseType: 'stream'
-        })
-
-        // Save the file locally
-        const writer = fs.createWriteStream(filePath)
-        response.data.pipe(writer)
-
-        // Wait for the file to finish writing
-        return new Promise((resolve, reject) => {
-            writer.on('finish', () => resolve(filePath))
-            writer.on('error', (err) => {
-                writer.close()
-                fs.unlink(filePath, () => {}) // Clean up partial file
-                reject(err)
-            })
-            response.data.on('error', (err) => {
-                writer.close()
-                fs.unlink(filePath, () => {}) // Clean up partial file
-                reject(err)
-            })
-        })
-    } catch (error) {
-        console.error(`Error downloading image from ${url}:`, error)
-        throw error
-    }
-}
-
-/**
- * 
- * @param url
- * @returns {Promise<Buffer|boolean>}
- */
-async function downloadImageAsBuffer(url) {
-    try {
-        const response = await axios.get(url, {
-            responseType: 'arraybuffer',
-            timeout: 5000,
-        })
-
-        if (!response || response.status !== 200)
-            return false
-
-        return response.data
-    } catch (error) {
-        console.error(`Error downloading image buffer from ${url}:`, error.message)
-        return false
-    }
+    return filePath
 }
 
 /**
@@ -87,7 +52,6 @@ async function downloadImageAsBuffer(url) {
 async function uploadImage(imagePath, expiration = 0)
 {
     let downloadedPath = null
-    let convertedPath = null
     let imageBuffer = null
 
     if (!process.env.IMG_UPLOAD_API_KEY || !process.env.IMG_UPLOAD_API_ENDPOINT)
@@ -98,7 +62,7 @@ async function uploadImage(imagePath, expiration = 0)
     try
     {
         const API_URL = process.env.IMG_UPLOAD_API_ENDPOINT
-        let base64Image
+
         const postData = {
             key: process.env.IMG_UPLOAD_API_KEY,
         }
@@ -108,37 +72,22 @@ async function uploadImage(imagePath, expiration = 0)
         if (imagePath.startsWith('http'))
         {
             const imageExtension = imagePath.split('.').pop().split('?').shift().toLowerCase()
+            downloadedPath = await downloadImageAsFile(imagePath)
 
             if (imageExtension === 'png')
             {
-                downloadedPath = await downloadImageAsFile(imagePath)
-                convertedPath = await convertImageToWEBP(downloadedPath)
-                // Use async file reading to avoid blocking
-                imageBuffer = await fs.promises.readFile(convertedPath)
-                base64Image = imageBuffer.toString('base64')
-                imageBuffer = null // Release immediately after conversion
-            } else {
-                imageBuffer = await downloadImageAsBuffer(imagePath)
-                if (!imageBuffer) {
-                    console.error('Error uploading image, bad API response')
-                    return false
-                }
-                base64Image = imageBuffer.toString('base64')
-                imageBuffer = null // Release buffer reference immediately
+                downloadedPath = await convertImageToWEBP(downloadedPath)
             }
-            postData.path = 'custom'
-        } else { //cache image. should expire
-            // Use async file reading
-            imageBuffer = await fs.promises.readFile(imagePath)
-            base64Image = imageBuffer.toString('base64')
+            // Use async file reading to avoid blocking
+            imageBuffer = await fs.promises.readFile(downloadedPath)
+            postData.image = imageBuffer.toString('base64')
             imageBuffer = null // Release immediately after conversion
+            postData.path = 'custom'
         }
 
-        postData.image = base64Image
         const response = await axios.post(API_URL, postData)
 
         // Clear base64 string from memory after upload
-        base64Image = null
         postData.image = null
 
         if (response.status !== 200) {
@@ -149,8 +98,7 @@ async function uploadImage(imagePath, expiration = 0)
 
         return response.data.url
 
-    } catch (error)
-    {
+    } catch (error) {
         console.error('Error uploading image:', error)
 
         return false
@@ -164,13 +112,6 @@ async function uploadImage(imagePath, expiration = 0)
                 await fs.promises.unlink(downloadedPath)
             } catch (err) {
                 if (err.code !== 'ENOENT') console.error('Error cleaning up downloaded file:', err)
-            }
-        }
-        if (convertedPath) {
-            try {
-                await fs.promises.unlink(convertedPath)
-            } catch (err) {
-                if (err.code !== 'ENOENT') console.error('Error cleaning up converted file:', err)
             }
         }
     }
