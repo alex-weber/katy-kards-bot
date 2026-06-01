@@ -74,7 +74,7 @@ async function uploadImage(imagePath, expiration = 0)
             const imageExtension = imagePath.split('.').pop().split('?').shift().toLowerCase()
             downloadedPath = await downloadImageAsFile(imagePath)
 
-            if (imageExtension === 'png')
+            if (imageExtension === 'png' || imageExtension === 'jpg' || imageExtension === 'jpeg')
             {
                 downloadedPath = await convertImageToWEBP(downloadedPath)
             }
@@ -134,7 +134,13 @@ async function convertImageToWEBP(imagePath) {
         sharpInstance = sharp(imagePath)
         const fileType = await sharpInstance.metadata()
 
-        if (fileType.format === 'png' || fileType.format === 'heif' || fileType.format === 'avif') {
+        if (
+            fileType.format === 'png' ||
+            fileType.format === 'heif' ||
+            fileType.format === 'avif' ||
+            fileType.format === 'jpeg'
+        )
+        {
             // Clean up the first instance and create a new one for conversion
             sharpInstance.destroy()
             sharpInstance = null
