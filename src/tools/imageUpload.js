@@ -68,7 +68,7 @@ async function uploadImage(imagePath, expiration = 0)
         }
         if (expiration) postData.expiration = expiration
 
-        //custom image. should never expire
+        //read file from URL
         if (imagePath.startsWith('http'))
         {
             const imageExtension = imagePath.split('.').pop().split('?').shift().toLowerCase()
@@ -83,6 +83,11 @@ async function uploadImage(imagePath, expiration = 0)
             postData.image = imageBuffer.toString('base64')
             imageBuffer = null // Release immediately after conversion
             postData.path = 'custom'
+        } else {
+            //read file from disk
+            imageBuffer = await fs.promises.readFile(imagePath)
+            postData.image = imageBuffer.toString('base64')
+            imageBuffer = null // Release immediately after conversion
         }
 
         const response = await axios.post(API_URL, postData)
