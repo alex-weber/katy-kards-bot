@@ -136,7 +136,7 @@ function onTelegramText(ctx, redis) {
 }
 
 //start Telegram-Bot's session if TOKEN is set
-if (telegramClient) startTelegramClient()
+if (telegramClient) startTelegramClient().then()
 
 //errors
 client.on('error', error => {

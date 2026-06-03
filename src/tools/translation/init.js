@@ -13,7 +13,7 @@ function init() {
                 loadPath: path.resolve(__dirname, 'locales/{{lng}}/{{ns}}.json'),
                 addPath: path.resolve(__dirname, 'locales/{{lng}}/{{ns}}.missing.json'),
             }
-        })
+        }).then()
 
     return translator
 }

@@ -29,16 +29,4 @@ async function getRandomImage()
 
 }
 
-function getRandomEndpoint()
-{
-    //get a random cat|dog image for no result
-    let endpoints = ['meow', 'woof']
-    //define the sample function to get a random array value
-    Array.prototype.sample = function ()
-    {
-        return this[Math.floor(Math.random() * this.length)]
-    }
-    return endpoints.sample()
-}
-
 module.exports = {getRandomImage}

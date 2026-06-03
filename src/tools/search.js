@@ -205,7 +205,7 @@ function getAttribute(word, attributes)
 async function getCards(variables, timeout=3000)
 {
     //log request
-    console.log(variables)
+    //console.log(variables)
     const label = 'getCards_' + Date.now()
     console.time(label)
     //search on kards.com

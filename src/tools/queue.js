@@ -6,7 +6,7 @@ class RequestQueue {
 
     enqueue(task) {
         this.queue.push(task)
-        this.process()
+        this.process().then()
     }
 
     async process() {
