@@ -219,7 +219,7 @@ async function getCards(variables, timeout=3000)
         {timeout: timeout} //wait for the response
     ).catch(error =>
     {
-        console.log('request to kards.com failed ', error.errno, error.data)
+        console.log('request to kards.com failed ')
 
     })
     console.timeEnd(label)
@@ -329,7 +329,6 @@ async function advancedSearch(variables)
         delete variables.text
     }
 
-    console.dir(variables, {depth: null})
     if (Object.keys(variables).length === 0)
     {
         console.log('no variables set')
