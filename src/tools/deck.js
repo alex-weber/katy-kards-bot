@@ -2,20 +2,15 @@ const bot = require("../controller/bot")
 const {translate} = require("./translation/translator")
 const {takeScreenshot} = require("./puppeteer")
 const {getDeckFiles, deleteDeckFiles} = require("./fileManager")
-const {uploadImage} = require("./imageUpload")
-const Fs = require("@supercharge/fs")
 const {getCardsDB} = require("../database/db")
 const {deckBuilderLanguages} = require("../tools/language")
 
-const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
 /**
  *
  * @param prefix
  * @param message
  * @param command
  * @param language
- * @param redis
- * @param deckKey
  * @returns {Promise<*>}
  */
 async function createDeckImages(
