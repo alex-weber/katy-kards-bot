@@ -22,9 +22,7 @@ async function createDeckImages(
     prefix,
     message,
     command,
-    language,
-    redis,
-    deckKey)
+    language)
 {
     let urlLanguage = ''
     if (deckBuilderLanguages.includes(language)) urlLanguage = language + '/'
@@ -51,49 +49,11 @@ async function createDeckImages(
     sentMessage.delete()
     if (!result) return message.channel.send(translate(language, 'error'))
     const files = getDeckFiles()
-    message.channel.send({content: deckInfo, files: files})
+    await message.channel.send({content: deckInfo, files: files})
     console.log('Screenshot captured and sent successfully')
 
-    const uploadedFiles = await uploadForCache(files)
-
-    if (!uploadedFiles) {
-        console.log('Failed to upload deck images to cache')
-        deleteDeckFiles()
-
-        return
-    }
-
-    const cached = {
-        content: deckInfo,
-        files: uploadedFiles
-    }
-    await redis.json.set(deckKey, '$', cached)
-    redis.expire(deckKey, expiration)
-    console.log('setting cache key for deck', command)
     deleteDeckFiles()
 
-}
-
-async function uploadForCache(files)
-{
-    //upload them for caching
-
-    const file1 = await uploadImage(files[0], expiration)
-    const file2 = await uploadImage(files[1], expiration)
-    if (file1 && file2)
-    {
-        const uploadedFiles = [file1, file2]
-        //check if they are uploaded & are served correctly
-        const file1size = await bot.getFileSize(file1)
-        const file2size = await bot.getFileSize(file2)
-        if ( await Fs.size(files[0]) === file1size &&
-            await Fs.size(files[1]) === file2size)
-        {
-            return uploadedFiles
-        }
-    }
-
-    return false
 }
 
 /**
@@ -205,4 +165,4 @@ function calculateAverages(cards, cardsArray, language) {
 
 }
 
-module.exports = {createDeckImages, analyseDeck, uploadForCache}
+module.exports = {createDeckImages, analyseDeck}

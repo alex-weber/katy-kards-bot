@@ -14,8 +14,7 @@ const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
 const {takeScreenshot} = require("../tools/puppeteer")
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 const {downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload")
-const {analyseDeck, uploadForCache} = require("../tools/deck")
-const expiration = parseInt(process.env.DECK_EXPIRATION) || 3600*24*30 //30 days by default
+const {analyseDeck} = require("../tools/deck")
 const fs = require('fs').promises
 const path = require('path')
 
@@ -144,17 +143,6 @@ async function telegramHandler(ctx, redis) {
             }
         }
 
-        const uploadedFiles = await uploadForCache(files)
-
-        if (!uploadedFiles) return
-
-        const cached = {
-            content: deckInfo,
-            files: uploadedFiles
-        }
-        await redis.json.set(deckKey, '$', cached)
-        redis.expire(deckKey, expiration)
-        console.log('setting cache key for deck', command)
         deleteDeckFiles()
 
         return
