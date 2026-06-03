@@ -106,6 +106,8 @@ async function discordHandler(message, client, redis)
     console.log('bot command:', guildName, channelName,
         message.author.username, '->', message.content)
 
+    logMemoryUsage()
+
     //remove all the prefixes from the beginning
     let command = bot.parseCommand(prefix, message.content)
     //return if the message is empty
@@ -416,8 +418,6 @@ async function discordHandler(message, client, redis)
 
                 await message.channel.send(answer)
                 answer = null
-
-                logMemoryUsage()
 
                 return
             }
