@@ -6,3 +6,4 @@ src/tmp/**
 !src/tmp/.gitkeep
 !src/tmp/downloads/.gitkeep
 src/public/
+/qodana.yaml
