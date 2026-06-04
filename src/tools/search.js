@@ -156,7 +156,7 @@ function setAttribute(word, variables)
             return variables
         }
     }
-    //allow only * as placeholder for attack or defense
+    //allow only * as the placeholder for attack or defense
     let stats = word.match('^(\\d{1,2}|\\*)(\\/|-)(\\d{1,2}|\\*)$')
     if (stats)
     {
@@ -276,7 +276,7 @@ function getFiles(cards, language, limit) {
         count++
     }
 
-    return files
+    return files.sort( a => a.description ? 1 : -1) //sort by active cards first, reserved second
 }
 
 /**
