@@ -98,6 +98,8 @@ async function discordHandler(message, client, redis)
     //it's a bot command
     let guildName = ''
     let channelName = 'DM'
+    let sentMessage = null
+
     if (message.guildId)
     {
         guildName = message.guild.name
@@ -117,13 +119,16 @@ async function discordHandler(message, client, redis)
     if (command === 'midnight')
     {
         const midnight = bot.getMidnight().toString()
-        return message.channel.send('<t:'+midnight+':R>')
+        sentMessage = await message.channel.send('<t:'+midnight+':R>')
+        sentMessage.react('🕛')
+
+        return
     }
     //current UTC time
     if (command === 'utc')
     {
         const utc = bot.getUTC()
-        return message.channel.send(utc)
+        message.channel.send(utc)
     }
 
     //set username
@@ -146,6 +151,7 @@ async function discordHandler(message, client, redis)
     //check the status
     if (user.status !== 'active')
     {
+        message.react('🚫')
         console.log('blocked user\n', user)
         if (user.mode) return message.channel.send(user.mode)
 
@@ -200,7 +206,12 @@ async function discordHandler(message, client, redis)
         const screenshotKey = cacheKeyPrefix + 'screenshot'
         if (await redis.exists(screenshotKey))
         {
-            return message.channel.send(translate(language, 'screenshotRunning'))
+
+            sentMessage = await message.channel.send(translate(language, 'screenshotRunning'))
+            sentMessage.react('☕')
+            sentMessage.react('🍩')
+
+            return
         }
         const screenshotTimeout = process.env.SCREENSHOT_TIMEOUT || 30 //seconds
         await redis.set(screenshotKey, 'running')
@@ -244,16 +255,6 @@ async function discordHandler(message, client, redis)
     if (command === 'help') return message.channel.send(
         '```' + translate(language, 'help') + '```'
     )
-
-    //clear cache
-    if (command === 'cclear' && isManager(user))
-    {
-        redis.FLUSHDB('ASYNC', (err, succeeded) =>
-        {
-            console.log(succeeded)
-        })
-        return message.channel.send('cache cleared')
-    }
 
     if (command === 'sync' && isManager(user))
     {
@@ -487,6 +488,7 @@ async function discordHandler(message, client, redis)
         console.log('serving from cache: ', language, command, limit)
         const answer = await redis.json.get(cacheKey, '$')
         console.timeEnd('cache')
+        message.react('✅')
         return message.channel.send({
             content: answer.content,
             files: answer.files.slice(0, limit)
@@ -528,6 +530,7 @@ async function discordHandler(message, client, redis)
         if (user.mode) {
             reply = user.mode + '\n\n' + reply
         }
+        await message.react('❓')
 
         return message.channel.send(reply)
     }
@@ -537,7 +540,10 @@ async function discordHandler(message, client, redis)
     //do not show any cards if there are more than 20 cards
     if (counter > 20 && !isBotCommandChannel(message))
     {
-        return message.channel.send(content + translate(language, 'noshow'))
+        sentMessage = await message.channel.send(content + translate(language, 'noshow'))
+        sentMessage.react('👆')
+
+        return
     }
     let answer = {}
     //warn that there are more cards found
@@ -573,19 +579,18 @@ async function discordHandler(message, client, redis)
     //reply to user
     try
     {
-        const sentMessage = await message.channel.send(answer)
-
-
+        await message.react('✅')
+        let sentMessage = await message.channel.send(answer)
         console.log(`Cards found: ${counter}  Limit: ${limit}`)
         //store in cache
         if (counter <= limit) {
             answer.files = sentMessage.attachments
             await redis.json.set(cacheKey, '$', answer)
-
         }
 
         files = null
         answer = null
+        sentMessage = null
 
     } catch (e)
     {

@@ -4,7 +4,7 @@
   "stats": "Die letzten 24 Stunden",
   "error": "Oops, ein Fehler!",
   "limit": ", zeige ",
-  "noshow": ", ich zeige gar nichts, bitte die Suche verfeinern.",
+  "noshow": ", ich zeige gar nichts, bitte die Suche verfeinern. 5 Ergebnisse sind maximal.",
   "time": "Die aktuelle Zeit",
   "noresult": "Suchsprache: DE, nichts gefunden...",
   "langChange": "Suchsprache: ",
