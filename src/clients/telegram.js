@@ -22,17 +22,18 @@ function onTelegramError(err) {
  * @returns {*[]}
  */
 function getMediaGroup(files) {
-    let mediaGroup = []
-    for (const [, value] of Object.entries(files)) {
-        if (value.attachment !== undefined) {
-            mediaGroup.push(
-                {
-                    type: 'photo',
-                    media: Input.fromLocalFile(value.attachment),
-                    caption: value.description ? value.description : '',
-                }
-            )
-        }
+    const mediaGroup = []
+
+    for (const value of files) {
+        if (!value.attachment) continue
+
+        mediaGroup.push({
+            type: 'photo',
+            media: value.isTelegramFileId
+                ? value.attachment
+                : Input.fromLocalFile(value.attachment),
+            caption: value.description || ''
+        })
     }
 
     return mediaGroup

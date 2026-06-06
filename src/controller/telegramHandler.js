@@ -195,32 +195,50 @@ async function telegramHandler(ctx, redis) {
     ctx.reply(translate(language, 'search') + ': ' + cards.counter)
 
     const downloadedFiles = []
+    const telegramCachePrefix = 'telegram:card:'
 
     try {
-        //convert avif to webp
+        // convert avif to webp
         for (const file of files) {
             try {
+                const cacheKey = cacheKeyPrefix + telegramCachePrefix + file.attachment
+
+                // Check if Telegram file_id is already cached
+                const cachedFileId = await redis.get(cacheKey)
+
+                if (cachedFileId) {
+                    file.attachment = cachedFileId
+                    file.isTelegramFileId = true
+                    continue
+                }
+
                 // Build the expected webp path based on URL
                 const fileName = path.basename(file.attachment.split('?')[0])
                 const languageFileName = language + '_' + fileName
-                const expectedWebpPath = path.join(__dirname, '../tmp/downloads', `${path.parse(languageFileName).name}.webp`)
+                const expectedWebpPath = path.join(
+                    __dirname,
+                    '../tmp/downloads',
+                    `${path.parse(languageFileName).name}.webp`
+                )
 
-                // Check if webp already exists
                 let webpExists = false
+
                 try {
                     const stats = await fs.stat(expectedWebpPath)
                     webpExists = stats.isFile() && stats.size > 0
                 } catch (err) {
-                    // File doesn't exist, will download and convert
+                    // File doesn't exist
                 }
+                //keep the original attachment URL for later use
+                file.originalAttachmentUrl = file.attachment
 
                 if (webpExists) {
-                    console.log('Using cached webp file:', expectedWebpPath)
                     file.attachment = expectedWebpPath
                 } else {
-                    // Download and convert
                     const downloadedPath = await downloadImageAsFile(file.attachment, language)
+
                     downloadedFiles.push(downloadedPath)
+
                     file.attachment = await convertImageToWEBP(downloadedPath)
                 }
             } catch (e) {
@@ -229,31 +247,76 @@ async function telegramHandler(ctx, redis) {
             }
         }
 
-        if (cards.counter > 1)
-        {
+        if (cards.counter > 1) {
             try {
-                return ctx.replyWithMediaGroup(getMediaGroup(files))
+                const sentMessages = await ctx.replyWithMediaGroup(
+                    getMediaGroup(files)
+                )
+
+                // Cache only newly uploaded files
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i]
+
+                    if (file.isTelegramFileId) continue
+
+                    const sentMessage = sentMessages[i]
+
+                    if (!sentMessage?.photo?.length) continue
+
+                    const largestPhoto =
+                        sentMessage.photo[sentMessage.photo.length - 1]
+
+                    const cacheKey =
+                        cacheKeyPrefix + telegramCachePrefix + file.originalAttachmentUrl
+
+                    await redis.set(cacheKey, largestPhoto.file_id)
+                }
+
+                return sentMessages
             } catch (e) {
                 console.log(e)
                 return ctx.reply(translate(language, 'error'))
             }
         }
-        else if (cards.counter === 1)
-        {
-            try {
 
-                return ctx.replyWithPhoto(
-                    Input.fromLocalFile(files[0].attachment),
-                    { caption: files[0].description }
+        if (cards.counter === 1) {
+            try {
+                const file = files[0]
+
+                // Already uploaded before -> send by file_id
+                if (file.isTelegramFileId) {
+                    console.log('Sending image by file_id:', file.attachment)
+                    return ctx.replyWithPhoto(file.attachment, {
+                        caption: file.description
+                    })
+                }
+
+                // Upload new image
+                const sentMessage = await ctx.replyWithPhoto(
+                    Input.fromLocalFile(file.attachment),
+                    {
+                        caption: file.description
+                    }
                 )
-            }
-            catch (e) {
+
+                // Store largest photo file_id
+                if (sentMessage.photo?.length) {
+                    const largestPhoto =
+                        sentMessage.photo[sentMessage.photo.length - 1]
+
+                    const cacheKey =
+                        cacheKeyPrefix + 'telegram:card:' + file.originalAttachmentUrl
+
+                    await redis.set(cacheKey, largestPhoto.file_id)
+                }
+
+                return sentMessage
+            } catch (e) {
                 console.log(e)
                 return ctx.reply(translate(language, 'error'))
             }
         }
     } finally {
-        // Clean up only downloaded source files (keep webp files for caching)
         for (const filePath of downloadedFiles) {
             try {
                 await fs.unlink(filePath)
