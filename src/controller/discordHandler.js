@@ -417,7 +417,8 @@ async function discordHandler(message, client, redis)
                     }
                 }
 
-                await message.channel.send(answer)
+                message.react('✅')
+                message.channel.send(answer)
                 answer = null
 
                 return
@@ -437,6 +438,7 @@ async function discordHandler(message, client, redis)
             answer.content = syn.value
             await updateSynonym(syn.key, JSON.stringify(answer))
             answer.content = answer.content.replace('text:', '')
+            message.react('✅')
             return message.channel.send(answer)
         }
         //else use the value as the alternate command for search
@@ -530,7 +532,7 @@ async function discordHandler(message, client, redis)
         if (user.mode) {
             reply = user.mode + '\n\n' + reply
         }
-        await message.react('❓')
+        message.react('❓')
 
         return message.channel.send(reply)
     }
@@ -579,7 +581,7 @@ async function discordHandler(message, client, redis)
     //reply to user
     try
     {
-        await message.react('✅')
+        message.react('✅')
         let sentMessage = await message.channel.send(answer)
         console.log(`Cards found: ${counter}  Limit: ${limit}`)
         //store in cache
