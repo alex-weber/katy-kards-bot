@@ -40,16 +40,6 @@ async function telegramHandler(ctx, redis) {
 
     command = bot.parseCommand(prefix, command)
 
-    const commandToSave =
-        'Telegram | ' +
-        (ctx.update?.message?.chat?.title || 'private') +
-        ' | ' +
-        ctx.update?.message?.from?.username +
-        ' -> ' +
-        command
-
-    console.log(commandToSave)
-
     //get or create the user
     const userID = ctx.update?.message?.from?.id?.toString() || null
     if (!userID) return
@@ -69,15 +59,17 @@ async function telegramHandler(ctx, redis) {
         return ctx.reply(translate(language, 'langChange') + language.toUpperCase())
     }
 
-    //save the message
-    createMessage({authorId: user.id, content: commandToSave}).then()
-
     //update user
     if (!user.name) user.name = ctx.update.message.from.first_name
     //change user language to RU if cyrillic is detected
     if (language === 'ru') user.language = 'ru'
     else language = user.language
     await updateUser(user)
+
+    let chatName = ctx.update?.message?.chat?.title || 'private'
+    let commandToSave = `Telegram | ${chatName} | -> ${command}`
+    //save the message
+    createMessage({authorId: user.id, content: commandToSave}).then()
 
     //online players
     if (ctx.update.message.text === prefix+prefix) return ctx.reply(await getStats(language))
