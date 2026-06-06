@@ -270,7 +270,7 @@ function getFiles(cards, language, limit) {
         imageURL = imageURL.replace('en-EN', language)
 
         const attachment = new AttachmentBuilder(host + imageURL)
-            .setDescription(reserved ? 'reserved' : null)
+            .setDescription(reserved ? translate(language,'reserved') : null)
 
         files.push(attachment)
         count++
