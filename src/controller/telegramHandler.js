@@ -1,7 +1,7 @@
 const {getLanguageByInput, deckBuilderLanguages} = require("../tools/language")
 const {getStats} = require("../tools/stats")
 const bot = require("./bot")
-const {getUser, updateUser, getSynonym} = require("../database/db")
+const {getUser, updateUser, getSynonym, createMessage} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {getCards, getFiles} = require("../tools/search")
 const {getMediaGroup, Input} = require("../clients/telegram")
@@ -38,9 +38,17 @@ async function telegramHandler(ctx, redis) {
     let limit = globalLimit
     if (ctx.update.message.chat.type === 'private') limit = 10
 
-    console.log(ctx.update.message.from)
-
     command = bot.parseCommand(prefix, command)
+
+    const commandToSave =
+        'Telegram | ' +
+        (ctx.update?.message?.chat?.title || 'private') +
+        ' | ' +
+        ctx.update?.message?.from?.username +
+        ' -> ' +
+        command
+
+    console.log(commandToSave)
 
     //get or create the user
     const userID = ctx.update?.message?.from?.id?.toString() || null
@@ -60,6 +68,9 @@ async function telegramHandler(ctx, redis) {
         language = await bot.switchLanguage(user, command)
         return ctx.reply(translate(language, 'langChange') + language.toUpperCase())
     }
+
+    //save the message
+    createMessage({authorId: user.id, content: commandToSave}).then()
 
     //update user
     if (!user.name) user.name = ctx.update.message.from.first_name
