@@ -219,7 +219,7 @@ async function getCards(variables, timeout=3000)
         {timeout: timeout} //wait for the response
     ).catch(error =>
     {
-        console.log('request to kards.com failed ')
+        console.log('request to kards.com failed ', error?.message)
 
     })
     console.timeEnd(label)
@@ -246,12 +246,12 @@ async function getCards(variables, timeout=3000)
  * @returns {*[]}
  */
 function getFiles(cards, language, limit) {
-    const files = []
+    let files = []
     language = APILanguages[language]
 
     let count = 0
 
-    for (const key in cards.cards) {
+    for (let key in cards.cards) {
         if (count >= limit) break
 
         const card = cards.cards[key]
@@ -269,7 +269,7 @@ function getFiles(cards, language, limit) {
 
         imageURL = imageURL.replace('en-EN', language)
 
-        const attachment = new AttachmentBuilder(host + imageURL)
+        let attachment = new AttachmentBuilder(host + imageURL)
             .setDescription(reserved ? translate(language,'reserved') : null)
 
         files.push(attachment)

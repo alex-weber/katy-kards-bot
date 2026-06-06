@@ -567,14 +567,16 @@ async function discordHandler(message, client, redis)
         else await redis.del(CommandCacheKey)
     }
     //attach found images
-    const files = getFiles(cards, language, limit)
+    let files = getFiles(cards, language, limit)
     answer.content = content
     answer.files = files
     //reply to user
     try
     {
-        message.channel.send(answer)
-        console.log(`${counter} cards found. Limit is ${limit}`, files.map(f => f.attachment))
+        const sentMessage = await message.channel.send(answer)
+
+        answer.files = sentMessage.attachments
+        console.log(`Cards found: ${counter}  Limit: ${limit}`)
         //store in cache
         if (counter <= limit)
             await redis.json.set(cacheKey, '$', answer)
