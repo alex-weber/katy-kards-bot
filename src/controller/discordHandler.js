@@ -575,11 +575,17 @@ async function discordHandler(message, client, redis)
     {
         const sentMessage = await message.channel.send(answer)
 
-        answer.files = sentMessage.attachments
+
         console.log(`Cards found: ${counter}  Limit: ${limit}`)
         //store in cache
-        if (counter <= limit)
+        if (counter <= limit) {
+            answer.files = sentMessage.attachments
             await redis.json.set(cacheKey, '$', answer)
+
+        }
+
+        files = null
+        answer = null
 
     } catch (e)
     {
