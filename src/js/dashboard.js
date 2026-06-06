@@ -1,8 +1,13 @@
 function renderMessagesChart(data, dataTD) {
     try {
 
+        console.log(data, dataTD)
+
         const loadingSpinner = document.getElementById('loadingSpinner')
         const chartCanvas = document.getElementById('messagesChart')
+
+        const messagesCount = data.data.reduce((sum, item) => sum + item.count, 0)
+        const tdCount = dataTD.data.reduce((sum, item) => sum + item.count, 0)
 
         const labels = data.data.map(item => item.label)
         const dataPoints = data.data.map(item => item.count)
@@ -32,7 +37,7 @@ function renderMessagesChart(data, dataTD) {
             labels: allLabels,
             datasets: [
                 {
-                    label: 'TOTAL',
+                    label: 'TOTAL ' + messagesCount,
                     data: commandsDataPoints,
                     backgroundColor: '#435488',
                     borderColor: '#3F6EFD',
@@ -43,7 +48,7 @@ function renderMessagesChart(data, dataTD) {
                     pointRadius: 5,
                 },
                 {
-                    label: 'DECK SCREENSHOTS',
+                    label: 'DECK SCREENSHOTS ' + tdCount,
                     data: tdDataPoints,
                     backgroundColor: '#536e07',
                     borderColor: '#b0c032',
