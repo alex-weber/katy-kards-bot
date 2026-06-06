@@ -180,7 +180,7 @@ async function telegramHandler(ctx, redis) {
             }
         }
         //check if it should reply with a text message
-        if (syn.value.startsWith('text:')) return ctx.reply(syn.value.replace('text:', ''))
+        if (syn.value.startsWith('text:')) return ctx.reply(syn.value.replace('text:', '').replaceAll('```', ''))
         //else use the value as command
         command = syn.value
     }
