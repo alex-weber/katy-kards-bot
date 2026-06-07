@@ -586,7 +586,7 @@ async function discordHandler(message, client, redis)
         console.log(`Cards found: ${counter}  Limit: ${limit}`)
         //store in cache
         if (counter <= limit) {
-            answer.files = sentMessage.attachments
+            answer.files = sentMessage.attachments.map(attachment => attachment.proxyURL)
             await redis.json.set(cacheKey, '$', answer)
         }
 
