@@ -124,15 +124,20 @@ async function telegramHandler(ctx, redis) {
         const runningMsg = await ctx.reply(translate(language, 'screenshot'))
         const runningMsgId = runningMsg.message_id
 
-        const files = getDeckFiles()
+        let filename;
 
         try {
-            await takeScreenshot(url)
+            filename = await takeScreenshot(url)
             console.log('createDeckImages finished')
 
-            await ctx.replyWithPhoto({ source: files[0] })
-            await ctx.reply(deckInfo.replaceAll('```', ''))
-            await ctx.replyWithPhoto({ source: files[1] })
+            if (filename) {
+                const files = getDeckFiles(filename)
+                await ctx.replyWithPhoto({ source: files[0] })
+                await ctx.reply(deckInfo.replaceAll('```', ''))
+                await ctx.replyWithPhoto({ source: files[1] })
+            } else {
+                await ctx.reply(translate(language, 'error'))
+            }
 
         } finally {
             // cleanup redis lock
@@ -144,9 +149,11 @@ async function telegramHandler(ctx, redis) {
             } catch (err) {
                 console.error('Failed to delete status message:', err)
             }
-        }
 
-        deleteDeckFiles()
+            if (filename) {
+                deleteDeckFiles(filename)
+            }
+        }
 
         return
     }

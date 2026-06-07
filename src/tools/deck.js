@@ -40,14 +40,14 @@ async function createDeckImages(
         if (!deckInfo) return message.channel.send(translate(language, 'error'))
     }
     const sentMessage = await message.channel.send(translate(language, 'screenshot'))
-    const result = await takeScreenshot(url)
+    const filename = await takeScreenshot(url)
     sentMessage.delete()
-    if (!result) return message.channel.send(translate(language, 'error'))
-    const files = getDeckFiles()
+    if (!filename) return message.channel.send(translate(language, 'error'))
+    const files = getDeckFiles(filename)
     await message.channel.send({content: deckInfo, files: files})
     console.log('Screenshot captured and sent successfully')
 
-    deleteDeckFiles()
+    deleteDeckFiles(filename)
 
 }
 

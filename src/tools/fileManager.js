@@ -2,26 +2,30 @@ const fs = require("fs")
 
 /**
  *
- * @returns {array}
+ * @param filename
+ * @returns {string[]}
  */
-function getDeckFiles()
+function getDeckFiles(filename)
 {
     return [
-        __dirname+'/../tmp/deckScreenshot.webp',
-        __dirname+'/../tmp/deckScreenshot2.webp'
+        __dirname+'/../tmp/'+filename+'.webp',
+        __dirname+'/../tmp/'+filename+'2.webp'
     ]
 }
 
 /**
  * deletes deck images after they are sent
+ * @param filename
  */
-function deleteDeckFiles()
+function deleteDeckFiles(filename)
 {
-    const files = getDeckFiles()
+    const files = getDeckFiles(filename)
     for (let file of files)
     {
-        fs.rmSync(file)
-        console.log(file + ' deleted')
+        if (fs.existsSync(file)) {
+            fs.rmSync(file)
+            console.log(file + ' deleted')
+        }
     }
 
 }

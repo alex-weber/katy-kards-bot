@@ -1,15 +1,16 @@
 const puppeteer = require('puppeteer-core')
 const browserLessKeys = getBrowserlessKeys()
-
 /**
  *
  * @param page
  * @param selector
+ * @param filename
  * @returns {Promise<void>}
  */
-async function saveScreenshot(page, selector) {
+async function saveScreenshot(page, selector, filename) {
 
-    const outputPath = __dirname+'/../tmp/deckScreenshot'
+    if (!filename) filename = 'deckScreenshot'
+    const outputPath = __dirname+'/../tmp/' + filename
     // Get the bounding box of the element
     const elementHandle = await page.$(selector)
     const boundingBox = await elementHandle.boundingBox()
@@ -49,7 +50,7 @@ async function saveScreenshot(page, selector) {
 /**
  *
  * @param url
- * @returns {Promise<boolean>}
+ * @returns {Promise<string>|false}
  */
 async function takeScreenshot(url) {
 
@@ -73,6 +74,10 @@ async function takeScreenshot(url) {
     const timeout = parseInt(process.env.BROWSERLESS_TIMEOUT) || 10000
 
     const now = new Date().getTime()
+
+    const timestamp = Date.now()
+    const random = Math.random().toString(36).substring(7)
+    const filename = `deck_${timestamp}_${random}`
 
     // Connect to Browserless
     try {
@@ -99,10 +104,10 @@ async function takeScreenshot(url) {
 
         // Wait for the element to appear
         await page.waitForSelector(selector, { timeout: 5000 })
-        await saveScreenshot(page, selector)
+        await saveScreenshot(page, selector, filename)
         await browser.close()
 
-        return true
+        return filename
 
     } catch (error) {
         console.error('Error:', error)
