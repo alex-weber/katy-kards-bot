@@ -582,11 +582,11 @@ async function discordHandler(message, client, redis)
     try
     {
         message.react('✅')
-        let sentMessage = await message.channel.send(answer)
+        await message.channel.send(answer)
         console.log(`Cards found: ${counter}  Limit: ${limit}`)
         //store in cache
         if (counter <= limit) {
-            answer.files = sentMessage.attachments.map(attachment => attachment.proxyURL)
+
             await redis.json.set(cacheKey, '$', answer)
         }
 
