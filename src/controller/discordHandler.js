@@ -29,7 +29,7 @@ const dictionary = require("../tools/dictionary")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 4000 // buffer overflow protection :)
-const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
+const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? 'discord:prod:' : 'discord:dev:'
 //wait for 5 sec. before processing the TD command
 const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
 //load more results button
@@ -62,6 +62,20 @@ async function forwardCachedMessage(client, cachedData, targetChannel, fallbackC
     } catch (e) {
         console.error('Error fetching message from cache:', e)
     }
+}
+
+/**
+ *
+ * @param message
+ * @returns {string}
+ */
+function getGuildPart(message) {
+
+    if (message.guildId) {
+        return 'guild:' + message.guildId.toString() + ':'
+    }
+
+    return 'user:' + message.author.id.toString() + ':'
 }
 
 /**
@@ -220,8 +234,7 @@ async function discordHandler(message, client, redis)
         //because command is lowercased, but we need the original
         command = bot.getDeckCode(message.content)
         //check if in the cache
-        const guildPart = message.guildId ? message.guildId + ':' : ''
-        const deckKey = cacheKeyPrefix + guildPart + 'deck:'+language+':' + command
+        const deckKey = cacheKeyPrefix + getGuildPart(message) + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
         {
             const response = await redis.json.get(deckKey, '$')
@@ -515,8 +528,7 @@ async function discordHandler(message, client, redis)
         return message.channel.send(translate(language, 'noresult'))
     }
     //check if in the cache
-    const guildPart = message.guildId ? message.guildId + ':' : ''
-    const cacheKey = cacheKeyPrefix + guildPart + language+ ':' + command + limit
+    const cacheKey = cacheKeyPrefix + getGuildPart(message) + language+ ':' + command + limit
     const keyExists = await redis.exists(cacheKey)
     if (keyExists && !message.buttonId)
     {
