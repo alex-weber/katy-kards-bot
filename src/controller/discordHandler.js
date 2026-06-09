@@ -39,6 +39,33 @@ const {logMemoryUsage} = require("../tools/memoryLoger")
 
 /**
  *
+ * @param client
+ * @param cachedData
+ * @param targetChannel
+ * @param fallbackChannelId
+ * @returns {Promise<void>}
+ */
+async function forwardCachedMessage(client, cachedData, targetChannel, fallbackChannelId) {
+    if (!cachedData || !cachedData.id) return
+    try {
+        let channel
+        if (cachedData.guildId && cachedData.channelId) {
+            const guild = await client.guilds.fetch(cachedData.guildId)
+            channel = await guild.channels.fetch(cachedData.channelId)
+        } else {
+            channel = await client.channels.fetch(cachedData.channelId || fallbackChannelId)
+        }
+        const messageToForward = await channel.messages.fetch(cachedData.id)
+        if (messageToForward) {
+            await messageToForward.forward(targetChannel)
+        }
+    } catch (e) {
+        console.error('Error fetching message from cache:', e)
+    }
+}
+
+/**
+ *
  * @param message
  * @param client
  * @param redis
@@ -193,13 +220,16 @@ async function discordHandler(message, client, redis)
         //because command is lowercased, but we need the original
         command = bot.getDeckCode(message.content)
         //check if in the cache
-        const deckKey = cacheKeyPrefix + 'deck:'+language+':' + command
+        const guildPart = message.guildId ? message.guildId + ':' : ''
+        const deckKey = cacheKeyPrefix + guildPart + 'deck:'+language+':' + command
         if (await redis.exists(deckKey))
         {
             const response = await redis.json.get(deckKey, '$')
             console.log('serving deck from cache', deckKey)
 
-            return message.channel.send(response)
+            await forwardCachedMessage(client, response, message.channel, message.channelId)
+
+            return message
         }
 
         //check if the screenshot capturing is running, tell the user to wait
@@ -216,14 +246,16 @@ async function discordHandler(message, client, redis)
         const screenshotTimeout = process.env.SCREENSHOT_TIMEOUT || 30 //seconds
         await redis.set(screenshotKey, 'running')
         redis.expire(screenshotKey, screenshotTimeout) //delete the screenshot lock key after 30 seconds anyway
-        createDeckImages(prefix, message, command, language).
-        then(()=>
-        {
-            redis.del(screenshotKey)
-            console.log('createDeckImages finished')
+        sentMessage = await createDeckImages(prefix, message, command, language)
+        await redis.json.set(deckKey, '$', {
+            id:sentMessage.id,
+            channelId: sentMessage.channelId,
+            guildId: sentMessage.guildId
         })
 
-        return
+        sentMessage = null
+
+        return message
     }
 
     //show online stats
@@ -449,7 +481,8 @@ async function discordHandler(message, client, redis)
 
     //set the limit to 10 if it is a bot-commands channel
     let limit = globalLimit
-    if (isBotCommandChannel(message)) limit = 10
+    const paginationLimit = 10
+    if (isBotCommandChannel(message)) limit = paginationLimit
     //get all alt art images
     if (command.startsWith('alt'))
     {
@@ -482,7 +515,8 @@ async function discordHandler(message, client, redis)
         return message.channel.send(translate(language, 'noresult'))
     }
     //check if in the cache
-    const cacheKey = cacheKeyPrefix + language+ ':' + command
+    const guildPart = message.guildId ? message.guildId + ':' : ''
+    const cacheKey = cacheKeyPrefix + guildPart + language+ ':' + command + limit
     const keyExists = await redis.exists(cacheKey)
     if (keyExists && !message.buttonId)
     {
@@ -491,10 +525,10 @@ async function discordHandler(message, client, redis)
         const answer = await redis.json.get(cacheKey, '$')
         console.timeEnd('cache')
         message.react('✅')
-        return message.channel.send({
-            content: answer.content,
-            files: answer.files.slice(0, limit)
-        })
+
+        await forwardCachedMessage(client, answer, message.channel, message.channelId)
+
+        return message
     }
     //first search on KARDS.com, on no result search in the local DB
 
@@ -582,12 +616,15 @@ async function discordHandler(message, client, redis)
     try
     {
         message.react('✅')
-        await message.channel.send(answer)
+        sentMessage = await message.channel.send(answer)
         console.log(`Cards found: ${counter}  Limit: ${limit}`)
-        //store in cache
-        if (counter <= limit) {
-
-            await redis.json.set(cacheKey, '$', answer)
+        //store in cache only if the results are within the limit. This allows pagination.
+        if (counter <= paginationLimit) {
+            await redis.json.set(cacheKey, '$', {
+                id: sentMessage.id,
+                channelId: sentMessage.channelId,
+                guildId: sentMessage.guildId
+            })
         }
 
         files = null
