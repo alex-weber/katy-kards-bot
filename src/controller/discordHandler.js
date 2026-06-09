@@ -75,7 +75,7 @@ function getGuildPart(message) {
         return 'guild:' + message.guildId.toString() + ':'
     }
 
-    return 'user:' + message.author.id.toString() + ':'
+    return 'user_command:' + message.author.id.toString() + ':'
 }
 
 /**
