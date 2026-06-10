@@ -17,7 +17,7 @@ async function formatStats()
         let date = new Date(body[body.length - i][0])
         let players = body[body.length - i][1];
         output +=
-            date.getHours().toString().padStart(2, "0") + ':00 ' +
+            date.getUTCHours().toString().padStart(2, "0") + ':00 ' +
             '░'.repeat(Math.floor(players / divider)) + ' ' +
             players + '\n'
     }
@@ -36,8 +36,8 @@ async function getPlayers(language)
     const response = await axios.get(steamURL)
     const date = new Date()
     let output = translate(language, 'time') +': '+
-        date.getHours().toString().padStart(2, "0") +':'+
-        date.getMinutes().toString().padStart(2, "0") +' GMT\n'
+        date.getUTCHours().toString().padStart(2, "0") +':'+
+        date.getUTCMinutes().toString().padStart(2, "0") +' UTC\n'
     output += translate(language, 'online') + ': '
     const players = response.data.response.player_count
     output += players + '\n\n'
