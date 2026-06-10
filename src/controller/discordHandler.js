@@ -105,7 +105,7 @@ async function discordHandler(message, client, redis)
         } else {
             CommandCacheKey += message.buttonId
             let result = await redis.json.get(CommandCacheKey, '$')
-            if (!result || !result.command) return
+            if (!result || !result.command) return message
             message.content = result.command
             message.language = result.language
         }
@@ -113,7 +113,7 @@ async function discordHandler(message, client, redis)
         message.author.bot = false
 
     }
-    if (message.author.bot || message.content.length > maxStrLen) return
+    if (message.author.bot || message.content.length > maxStrLen) return message
 
     //is there a "bot command" marked with double quotation marks?
     const qSearch = bot.isQuotationSearch(message)
@@ -124,7 +124,7 @@ async function discordHandler(message, client, redis)
         message.content = qSearch
     }
     //not a bot command or bot
-    else if (!message.content.startsWith(prefix)) return
+    else if (!message.content.startsWith(prefix)) return message
 
     //check for WRITE permissions
     console.time('permissions')
@@ -132,7 +132,7 @@ async function discordHandler(message, client, redis)
     if (message.guildId && !permitted)
     {
         console.timeEnd('permissions')
-        return
+        return message
     }
     console.timeEnd('permissions')
 
@@ -154,7 +154,7 @@ async function discordHandler(message, client, redis)
     //remove all the prefixes from the beginning
     let command = bot.parseCommand(prefix, message.content)
     //return if the message is empty
-    if (!command.length) return
+    if (!command.length) return message
 
     //set a relative timer to the next day 00:00 UTC
     if (command === 'midnight')
@@ -163,13 +163,13 @@ async function discordHandler(message, client, redis)
         sentMessage = await message.channel.send('<t:'+midnight+':R>')
         sentMessage.react('🕛')
 
-        return
+        return message
     }
     //current UTC time
     if (command === 'utc')
     {
         const utc = bot.getUTC()
-        message.channel.send(utc)
+        return message.channel.send(utc)
     }
 
     //set username
@@ -196,7 +196,7 @@ async function discordHandler(message, client, redis)
         console.log('blocked user\n', user)
         if (user.mode) return message.channel.send(user.mode)
 
-        return
+        return message
     }
     if (!user.name)
     {
@@ -254,7 +254,7 @@ async function discordHandler(message, client, redis)
             sentMessage.react('☕')
             sentMessage.react('🍩')
 
-            return
+            return message
         }
         const screenshotTimeout = process.env.SCREENSHOT_TIMEOUT || 30 //seconds
         await redis.set(screenshotKey, 'running')
@@ -325,7 +325,7 @@ async function discordHandler(message, client, redis)
             return message.channel.send('DB sync error. Check log for details.')
         })
 
-        return
+        return message
     }
 
     //get top 9 TD ranking
@@ -343,7 +343,7 @@ async function discordHandler(message, client, redis)
         // THE Next command is allowed only after the time of slowModeInterval is passed
         const userTDKey = cacheKeyPrefix + 'td:' + user.id
         const unblockTime = await redis.get(userTDKey)
-        if (Date.now() < unblockTime) return //not allowed, just do nothing
+        if (Date.now() < unblockTime) return message//not allowed, just do nothing
 
         await redis.del(userKey)
         redis.set(userTDKey, Date.now() + slowModeInterval)
@@ -424,7 +424,7 @@ async function discordHandler(message, client, redis)
 
         if (messageText.trim()) await message.channel.send(messageText)
 
-        return
+        return message
     }
 
     //handle synonyms
@@ -466,7 +466,7 @@ async function discordHandler(message, client, redis)
                 message.channel.send(answer)
                 answer = null
 
-                return
+                return message
             }
         }
         //check if there is an image link (old format) and update it to JSON
@@ -591,7 +591,7 @@ async function discordHandler(message, client, redis)
         sentMessage = await message.channel.send(content + translate(language, 'noshow'))
         sentMessage.react('👆')
 
-        return
+        return message
     }
     let answer = {}
     //warn that there are more cards found
