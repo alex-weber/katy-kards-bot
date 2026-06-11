@@ -3,7 +3,7 @@ const {updateUser} = require("../database/db")
 const {languages} = require("../tools/language")
 const axios = require("axios")
 
-const deckCodeRegEx = /%%\d{2}\|(\w*;){1,3}\w*/
+const deckCodeRegEx =/%%(\d{2,3}|\d{1}a)\|(\w*;){1,3}\w*/
 
 /**
  *
@@ -68,12 +68,14 @@ async function hasWritePermissions(client, message, redis)
     {
         console.log('no write permissions. Caching it')
         await redis.set(key, 'no')
+        await redis.expire(key, process.env.REDIS_EXP_PERMISSION || 60 * 60) // 1 hour
 
         return false
     }
 
     console.log('has write permissions. Caching it')
     await redis.set(key, 'yes')
+    await redis.expire(key, process.env.REDIS_EXP_PERMISSION || 60 * 60) // 1 hour
 
     return true
 }
