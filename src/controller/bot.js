@@ -59,8 +59,7 @@ async function hasWritePermissions(client, message, redis)
         return permission === 'yes'
     }
 
-    const clientMember = await message.guild.members.fetch(client.user.id)
-    let permissions = message.channel.permissionsFor(clientMember)
+    const permissions = message.channel.permissionsFor(client.user.id)
 
     if (!permissions ||
         !permissions.has(PermissionsBitField.Flags.SendMessages) ||
