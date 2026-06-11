@@ -69,6 +69,8 @@ function getReservedWords()
         'shock': 'штурм',
         'veteran': 'ветеран',
         'bond': 'узы',
+        'anzac': 'анзак',
+        'forecast': 'прогноз',
     }
 
 }
