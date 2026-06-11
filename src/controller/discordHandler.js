@@ -28,7 +28,7 @@ const {
 const dictionary = require("../tools/dictionary")
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
-const maxStrLen = 4000 // buffer overflow protection :)
+const maxStrLen = parseInt(process.env.MAX_STR_LEN) || 4000 // buffer overflow protection :)
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? 'discord:prod:' : 'discord:dev:'
 //wait for 5 sec. before processing the TD command
 const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
@@ -183,6 +183,7 @@ async function discordHandler(message, client, redis)
         console.log('no user in cache, caching')
         user = await getUser(userId)
         await redis.json.set(userKey, '$', user)
+        await redis.expire(userKey, process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7) // 7 days
     } else
     {
         console.log('getting user from cache')
@@ -215,6 +216,7 @@ async function discordHandler(message, client, redis)
         await updateUser(user)
         //change user language to ru
         await redis.json.set(userKey, '$.language', 'ru')
+        await redis.expire(userKey, process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7) // refresh expiration
         console.timeEnd('updateUser'+userId)
         language = 'ru'
     }
@@ -256,7 +258,7 @@ async function discordHandler(message, client, redis)
 
             return message
         }
-        const screenshotTimeout = process.env.SCREENSHOT_TIMEOUT || 30 //seconds
+        const screenshotTimeout = parseInt(process.env.SCREENSHOT_TIMEOUT) || 30 //seconds
         await redis.set(screenshotKey, 'running')
         redis.expire(screenshotKey, screenshotTimeout) //delete the screenshot lock key after 30 seconds anyway
         sentMessage = await createDeckImages(prefix, message, command, language)
@@ -265,6 +267,7 @@ async function discordHandler(message, client, redis)
             channelId: sentMessage.channelId,
             guildId: sentMessage.guildId
         })
+        await redis.expire(deckKey, process.env.REDIS_EXP_DECK || 60 * 60 * 24 * 30) // 30 days
 
         sentMessage = null
 
@@ -293,6 +296,7 @@ async function discordHandler(message, client, redis)
         language = await bot.switchLanguage(user, command)
         user.language = language
         await redis.json.set(userKey, '$.language', language)
+        await redis.expire(userKey, process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7) // refresh expiration
         return message.channel.send(translate(language, 'langChange') + language.toUpperCase())
     }
 
@@ -440,6 +444,12 @@ async function discordHandler(message, client, redis)
         if (syn.value.startsWith('{')) { //json formatted
 
             const m = JSON.parse(syn.value)
+            const cacheKey = cacheKeyPrefix + getGuildPart(message) + 'syn:' + command
+            if (await redis.exists(cacheKey) && !m.content) {
+                const cached = await redis.json.get(cacheKey, '$')
+                await forwardCachedMessage(client, cached, message.channel, message.channelId)
+                return message
+            }
 
             if (m.content) {
                 if (m.content.startsWith('text:'))
@@ -463,8 +473,17 @@ async function discordHandler(message, client, redis)
                 }
 
                 message.react('✅')
-                message.channel.send(answer)
+                sentMessage = await message.channel.send(answer)
+
+                await redis.json.set(cacheKey, '$', {
+                    id: sentMessage.id,
+                    channelId: sentMessage.channelId,
+                    guildId: sentMessage.guildId
+                })
+                await redis.expire(cacheKey, process.env.REDIS_EXP_SYNONYM || 60 * 60 * 24) // 1 day
+
                 answer = null
+                sentMessage = null
 
                 return message
             }
@@ -499,6 +518,17 @@ async function discordHandler(message, client, redis)
     //get all alt art images
     if (command.startsWith('alt'))
     {
+        const cacheKey = cacheKeyPrefix + getGuildPart(message) + 'alt:' + language + ':' + command
+        if (await redis.exists(cacheKey))
+        {
+            const response = await redis.json.get(cacheKey, '$')
+            console.log('serving alt from cache', cacheKey)
+
+            await forwardCachedMessage(client, response, message.channel, message.channelId)
+
+            return message
+        }
+
         const syns = await getAllSynonyms()
         const files = syns.filter(syn => syn.key.startsWith('alt ')).map(syn =>
         {
@@ -522,7 +552,17 @@ async function discordHandler(message, client, redis)
             if (offset + limit < files.length && isBotCommandChannel(message))
                 answer.components = getButtonRow(translate(language, 'next'), 'next_button_alt' + (offset+limit))
 
-            return message.channel.send(answer)
+            message.react('✅')
+            sentMessage = await message.channel.send(answer)
+
+            await redis.json.set(cacheKey, '$', {
+                id: sentMessage.id,
+                channelId: sentMessage.channelId,
+                guildId: sentMessage.guildId
+            })
+            await redis.expire(cacheKey, process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90) // 90 days
+
+            return message
         }
 
         return message.channel.send(translate(language, 'noresult'))
@@ -565,6 +605,7 @@ async function discordHandler(message, client, redis)
         variables.offset = offset
         //add limit to offset for the next fetch
         await redis.json.set(CommandCacheKey, '$.offset', offset+limit)
+        await redis.expire(CommandCacheKey, process.env.REDIS_EXP_PAGINATION || 60 * 10) // refresh expiration
     }
     const cards = await getCards(variables)
 
@@ -605,6 +646,7 @@ async function discordHandler(message, client, redis)
                 language: language,
             }
             await redis.json.set(CommandCacheKey, '$', cachedCommand)
+            await redis.expire(CommandCacheKey, process.env.REDIS_EXP_PAGINATION || 60 * 10) // 10 minutes for pagination
         }
 
         let toCounter = offset + limit
@@ -637,6 +679,7 @@ async function discordHandler(message, client, redis)
                 channelId: sentMessage.channelId,
                 guildId: sentMessage.guildId
             })
+            await redis.expire(cacheKey, process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90) // 90 days
         }
 
         files = null

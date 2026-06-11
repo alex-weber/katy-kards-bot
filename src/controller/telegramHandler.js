@@ -280,6 +280,7 @@ async function telegramHandler(ctx, redis) {
                         cacheKeyPrefix + telegramCachePrefix + file.originalAttachmentUrl
 
                     await redis.set(cacheKey, largestPhoto.file_id)
+                    await redis.expire(cacheKey, process.env.REDIS_EXP_TELEGRAM || 60 * 60 * 24 * 90) // 90 days
                 }
 
                 return sentMessages
@@ -318,6 +319,7 @@ async function telegramHandler(ctx, redis) {
                         cacheKeyPrefix + 'telegram:card:' + file.originalAttachmentUrl
 
                     await redis.set(cacheKey, largestPhoto.file_id)
+                    await redis.expire(cacheKey, process.env.REDIS_EXP_TELEGRAM || 60 * 60 * 24 * 90) // 90 days
                 }
 
                 return sentMessage
