@@ -11,6 +11,7 @@ module.exports = {
         'poland',
         'finland',
         'neutral',
+        'anzac',
     ],
     type: [
         'infantry',
@@ -43,7 +44,8 @@ module.exports = {
         'salvage',
         'covert',
         'shock',
-        'bond'
+        'bond',
+        'forecast',
     ],
     synonyms: {
 
