@@ -80,7 +80,7 @@ function buildFullText(json) {
         }
     }
     //add abbreviation to full text
-    fullText += getAbbreviation(json.title['en-EN']) + ' '
+    fullText += getAbbreviation(json.title?.['en-EN']) + ' '
 
     if (json.type) {
         fullText += json.type.toLowerCase() + ' '
@@ -104,6 +104,9 @@ function buildFullText(json) {
  * @returns {string}
  */
 function getAbbreviation(title) {
+
+    if (!title) return ''
+
     const words = title.split(' ')
     if (words.length < 2) return ''
 
@@ -130,7 +133,7 @@ function buildCardData(card, text, fullText, exile) {
         importId: card.importId,
         imageURL: card.imageUrl,
         thumbURL: card.thumbUrl,
-        title: card.json.title['en-EN'],
+        title: card.json?.title?.['en-EN'] || '',
         text,
         fullText,
         set: card.json.set.toLowerCase(),
