@@ -171,10 +171,6 @@ function getDeckCode(command)
 
     console.log(match[0])
 
-    if ((match[0].indexOf('a|'))) {
-        match[0] = match[0].replace('a|', '9|')   //hotfix due to website bug
-    }
-
     return match[0]
 }
 
