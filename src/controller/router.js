@@ -31,7 +31,7 @@ function requireManager(req, res, next) {
 }
 
 // Resolve the requested date range. Only logged-in users may change the
-// dates; anonymous callers are always clamped to the default window so they
+// dates; anonymous callers are always clamped to the default window, so they
 // cannot trigger expensive wide-range queries via the API.
 function resolveRange(req) {
     const isLoggedIn = !!req.session.user
@@ -137,14 +137,14 @@ async function renderCommands(req, res) {
 
 async function renderMessages(req, res) {
 
-    let { from, to, page = 1, username, command } = req.query
+    let { from, to, page = '1', username, command } = req.query
 
 // --- Validation & sanitation ---
     const pageNumber = Number.isInteger(parseInt(page, 10)) && parseInt(page, 10) > 0
         ? parseInt(page, 10)
         : 1
 
-    const pageSize = 50 // fixed, or enforce a max if dynamic
+    const pageSize = 50 // fixed or enforce a max if dynamic
 
 // Validate dates
     let toDate = new Date()
