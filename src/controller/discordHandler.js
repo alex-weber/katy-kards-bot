@@ -20,6 +20,7 @@ const {
     handleSync,
     handleRanking,
     handleMyRank,
+    handleProfile,
     handleServers,
 } = require("./commands/infoCommands")
 const {handleDeck, handleAlt} = require("./commands/deckCommands")
@@ -167,6 +168,7 @@ async function discordHandler(message, client, redis)
     if (handleSync(ctx)) return message
     if (await handleRanking(ctx)) return message
     if (await handleMyRank(ctx)) return message
+    if (await handleProfile(ctx)) return message
     if (await handleTopDeck(ctx)) return message
 
     //check minimums

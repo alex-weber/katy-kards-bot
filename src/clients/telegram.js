@@ -1,5 +1,5 @@
 
-const {Telegraf, Input } = require('telegraf')
+const {Telegraf, Input, Markup } = require('telegraf')
 const {message} = require('telegraf/filters')
 
 let telegramClient = false
@@ -45,4 +45,5 @@ module.exports = {
     getMediaGroup,
     onTelegramError,
     Input,
+    Markup,
 }

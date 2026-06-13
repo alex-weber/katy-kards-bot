@@ -16,6 +16,7 @@ model User {
   messages  Message[]
   role      String?
   mode      String?
+  reactions Boolean?  @default(true)
   tdGames   Int?
   tdWins    Int?
   tdLoses   Int?

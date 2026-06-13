@@ -2,15 +2,18 @@ const { ButtonBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js')
 
 /**
  *
+ * @param label
+ * @param id
+ * @param style optional ButtonStyle (defaults to Primary)
  * @returns {ActionRowBuilder[]}
  */
 
-function getButtonRow(label='Next', id)
+function getButtonRow(label='Next', id, style=ButtonStyle.Primary)
 {
     const button = new ButtonBuilder()
         .setCustomId(id)
         .setLabel(label)
-        .setStyle(ButtonStyle.Primary)
+        .setStyle(style)
 
     const row = new ActionRowBuilder().addComponents(button)
 
@@ -18,4 +21,4 @@ function getButtonRow(label='Next', id)
 
 }
 
-module.exports = {getButtonRow}
+module.exports = {getButtonRow, ButtonStyle}
