@@ -3,6 +3,8 @@ const prisma = new PrismaClient()
 
 const {redis, cachePrefix} = require('../controller/redis')
 const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
+//profile stats cache lifetime (seconds)
+const profileExpiration = parseInt(process.env.REDIS_EXP_PROFILE) || 60 * 5
 const {languages} = require('../tools/language')
 /**
  *
@@ -76,6 +78,43 @@ async function getUserMessages(userId)
 
     return messages
 
+}
+
+/**
+ * Lightweight per-user command counts for the profile overview, cached in
+ * Redis. Only the three counts are queried and stored (no message rows), so
+ * both the DB work and the cached payload stay small.
+ *
+ * @param userId User table primary key
+ * @returns {Promise<{total: number, lastMonth: number, lastDay: number}>}
+ */
+async function getProfileStats(userId)
+{
+    const cacheKey = cachePrefix + 'profile:stats:' + userId
+    const cached = await redis.json.get(cacheKey, '$')
+    if (cached) return cached
+
+    const now = Date.now()
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000)
+    const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000)
+
+    const [total, lastMonth, lastDay] = await Promise.all([
+        prisma.message.count({where: {authorId: userId}}),
+        prisma.message.count({
+            where: {authorId: userId, createdAt: {gte: monthAgo}},
+        }),
+        prisma.message.count({
+            where: {authorId: userId, createdAt: {gte: dayAgo}},
+        }),
+    ]).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+
+    const stats = {total, lastMonth, lastDay}
+    await redis.json.set(cacheKey, '$', stats)
+    await redis.expire(cacheKey, profileExpiration)
+
+    return stats
 }
 
 async function getMessages({ from, to, page = 1, pageSize = 50, username, command } = {})
@@ -466,6 +505,7 @@ module.exports = {
     getDashboardMessages,
     getMessages,
     getUserMessages,
+    getProfileStats,
     getScreenshotMessages,
     getTopMessages,
     getTopUsers,

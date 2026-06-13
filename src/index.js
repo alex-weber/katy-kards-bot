@@ -7,7 +7,7 @@ const compression = require('compression')
 
 //messenger handlers
 const {discordHandler} = require('./controller/discordHandler')
-const {telegramHandler} = require("./controller/telegramHandler")
+const {telegramHandler, telegramCallbackHandler} = require("./controller/telegramHandler")
 
 //discord client
 const {client} = require('./clients/discordClient.js')
@@ -119,6 +119,7 @@ const {
 
 async function startTelegramClient() {
     telegramClient.on(telegramMessage('text'), ctx => onTelegramText(ctx, redis))
+    telegramClient.on('callback_query', ctx => onTelegramCallback(ctx))
     telegramClient.catch(onTelegramError)
 
     console.log('Telegram client started')
@@ -132,6 +133,14 @@ function onTelegramText(ctx, redis) {
 
     })
 
+
+}
+
+function onTelegramCallback(ctx) {
+
+    requestQueue.enqueue(async function handleTelegramCallback() {
+        await telegramCallbackHandler(ctx)
+    })
 
 }
 

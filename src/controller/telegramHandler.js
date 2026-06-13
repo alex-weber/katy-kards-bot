@@ -1,10 +1,11 @@
-const {getLanguageByInput, deckBuilderLanguages} = require("../tools/language")
+const {getLanguageByInput, deckBuilderLanguages, languages} = require("../tools/language")
 const {getStats} = require("../tools/stats")
 const bot = require("./bot")
-const {getUser, updateUser, getSynonym, createMessage} = require("../database/db")
+const {getUser, updateUser, getSynonym, createMessage, getProfileStats} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {getCards, getFiles} = require("../tools/search")
-const {getMediaGroup, Input} = require("../clients/telegram")
+const {getMediaGroup, Input, Markup} = require("../clients/telegram")
+const {renderProfileText, reactionsLabel} = require("../tools/profile")
 const globalLimit = parseInt(process.env.LIMIT) || 10 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = 256 // buffer overflow protection :)
@@ -36,10 +37,13 @@ const telegramCachePrefix = 'telegram:card:'
  *
  * @param tgCtx
  * @param emoji
+ * @param user the acting user; skipped when they opted out of reactions
  * @returns {void}
  */
-function react(tgCtx, emoji)
+function react(tgCtx, emoji, user)
 {
+    if (user && user.reactions === false) return
+
     tgCtx.react(emoji).catch(err =>
         console.error('Failed to react:', err.message))
 }
@@ -167,7 +171,7 @@ async function handleHelp(ctx)
  */
 async function handleDeck(ctx)
 {
-    const {tgCtx, redis, language} = ctx
+    const {tgCtx, redis, language, user} = ctx
     if (!bot.isDeckLink(ctx.command) && !bot.isDeckCode(ctx.command))
         return false
 
@@ -178,7 +182,7 @@ async function handleDeck(ctx)
     if (await redis.exists(deckKey)) {
         const response = await redis.json.get(deckKey, '$')
         console.log('serving deck from cache', deckKey)
-        react(tgCtx, reactions.success)
+        react(tgCtx, reactions.success, user)
         await tgCtx.replyWithPhoto(response.files[0])
         await tgCtx.reply(response.content.replaceAll('```', ''))
         await tgCtx.replyWithPhoto(response.files[1])
@@ -196,7 +200,7 @@ async function handleDeck(ctx)
     //tell the user to wait if a screenshot capture is already running
     const screenshotKey = cacheKeyPrefix + 'screenshot'
     if (await redis.exists(screenshotKey)) {
-        react(tgCtx, reactions.wait)
+        react(tgCtx, reactions.wait, user)
         await tgCtx.reply(translate(language, 'screenshotRunning'))
 
         return true
@@ -227,7 +231,7 @@ async function handleDeck(ctx)
 
         if (filename) {
             const files = getDeckFiles(filename)
-            react(tgCtx, reactions.success)
+            react(tgCtx, reactions.success, user)
             await tgCtx.replyWithPhoto({source: files[0]})
             await tgCtx.reply(deckInfo.replaceAll('```', ''))
             await tgCtx.replyWithPhoto({source: files[1]})
@@ -285,7 +289,7 @@ async function replySynonymFiles(tgCtx, files)
  */
 async function replySynonymImage(ctx, url)
 {
-    const {tgCtx, language} = ctx
+    const {tgCtx, language, user} = ctx
     try {
         const fileSize = await bot.getFileSize(url)
         if (!fileSize || fileSize >= maxFileSize) {
@@ -293,7 +297,7 @@ async function replySynonymImage(ctx, url)
 
             return true
         }
-        react(tgCtx, reactions.success)
+        react(tgCtx, reactions.success, user)
         await replySynonymFiles(tgCtx, [url])
     } catch (e) {
         console.log(e)
@@ -311,7 +315,7 @@ async function replySynonymImage(ctx, url)
  */
 async function resolveSynonym(ctx)
 {
-    const {tgCtx, language} = ctx
+    const {tgCtx, language, user} = ctx
     const syn = await getSynonym(ctx.command)
     if (!syn) return false
 
@@ -322,7 +326,7 @@ async function resolveSynonym(ctx)
         //send every image when a custom command returns more than one
         if (m.files && m.files.length) {
             try {
-                react(tgCtx, reactions.success)
+                react(tgCtx, reactions.success, user)
                 await replySynonymFiles(tgCtx, m.files)
             } catch (e) {
                 console.log(e)
@@ -339,7 +343,7 @@ async function resolveSynonym(ctx)
 
     //a plain text reply
     if (value.startsWith('text:')) {
-        react(tgCtx, reactions.success)
+        react(tgCtx, reactions.success, user)
         await tgCtx.reply(value.replace('text:', '').replaceAll('```', ''))
 
         return true
@@ -506,7 +510,7 @@ async function sendCardPhoto(ctx, file)
  */
 async function handleSearch(ctx)
 {
-    const {tgCtx, language, command, limit} = ctx
+    const {tgCtx, language, command, limit, user} = ctx
     const variables = {
         language: language,
         q: command,
@@ -516,7 +520,7 @@ async function handleSearch(ctx)
     const cards = await getCards(variables)
     if (!cards) return true
     if (!cards.counter) {
-        react(tgCtx, reactions.noResult)
+        react(tgCtx, reactions.noResult, user)
         await tgCtx.reply(translate(language, 'noresult'))
 
         return true
@@ -533,7 +537,7 @@ async function handleSearch(ctx)
         //flag when more cards exist than fit within the limit
         react(tgCtx, cards.counter > limit
             ? reactions.moreResults
-            : reactions.success)
+            : reactions.success, user)
 
         if (cards.counter > 1) await sendCardMediaGroup(ctx, files)
         else await sendCardPhoto(ctx, files[0])
@@ -548,6 +552,111 @@ async function handleSearch(ctx)
     }
 
     return true
+}
+
+/**
+ * Reply with a button that reveals the user's stats privately on tap.
+ *
+ * @param ctx
+ * @returns {Promise<boolean>}
+ */
+async function handleProfile(ctx)
+{
+    const {tgCtx, language} = ctx
+    if (ctx.command !== 'profile') return false
+
+    await tgCtx.reply(
+        translate(language, 'profilePrompt'),
+        Markup.inlineKeyboard([[
+            Markup.button.callback(
+                translate(language, 'profileButton'), 'profile_show'),
+        ]]))
+
+    return true
+}
+
+/**
+ * Build the profile overview: stats text, plus — only when settings are
+ * allowed — a search-language picker (Telegram has no select, so a grid of
+ * buttons) and a reactions opt-out toggle. The settings are shown in private
+ * chats only; in groups the controls are hidden (and the message is public),
+ * so just the stats are shown.
+ *
+ * @param user
+ * @param includeSettings whether to attach the settings controls
+ * @returns {Promise<{text: string, keyboard: *}>}
+ */
+async function buildProfileView(user, includeSettings)
+{
+    const stats = await getProfileStats(user.id)
+    const text = renderProfileText(user.language, stats)
+
+    //no settings controls outside private chats -> stats only
+    if (!includeSettings) return {text, keyboard: undefined}
+
+    //language buttons, 4 per row, the current one marked with a check
+    const langButtons = languages.map(lang => Markup.button.callback(
+        (lang === user.language ? '✅ ' : '') + lang.toUpperCase(),
+        'profile_lang:' + lang))
+    const rows = []
+    for (let i = 0; i < langButtons.length; i += 4) {
+        rows.push(langButtons.slice(i, i + 4))
+    }
+    rows.push([Markup.button.callback(
+        reactionsLabel(user.language, user), 'profile_reactions')])
+
+    return {text, keyboard: Markup.inlineKeyboard(rows)}
+}
+
+/**
+ * Handle the profile button / reactions-toggle callbacks. Not available for
+ * blocked users.
+ *
+ * @param tgCtx
+ * @returns {Promise<*>}
+ */
+async function telegramCallbackHandler(tgCtx)
+{
+    const data = tgCtx.callbackQuery?.data
+    if (data !== 'profile_show' && data !== 'profile_reactions' &&
+        !data?.startsWith('profile_lang:')) return
+
+    const userId = tgCtx.callbackQuery?.from?.id?.toString() || null
+    if (!userId) return
+    const user = await getUser(userId)
+
+    //this feature is not available for blocked users
+    if (user.status !== 'active') {
+        return tgCtx.answerCbQuery(
+            translate(user.language, 'blocked'), {show_alert: true})
+    }
+
+    //toggle the reactions opt-out flag and persist it
+    if (data === 'profile_reactions') {
+        user.reactions = user.reactions === false
+        await updateUser(user)
+    }
+
+    //change the search language and persist it
+    if (data.startsWith('profile_lang:')) {
+        const language = data.split(':')[1]
+        if (languages.includes(language)) {
+            user.language = language
+            await updateUser(user)
+        }
+    }
+
+    //settings controls are private-chat only; groups get the stats alone
+    const isPrivate = tgCtx.chat?.type === 'private'
+    const {text, keyboard} = await buildProfileView(user, isPrivate)
+    try {
+        await tgCtx.editMessageText(text, keyboard)
+    } catch (e) {
+        //the message may be unchanged or too old to edit; ignore
+        console.error('Failed to edit profile message:', e.message)
+    }
+
+    return tgCtx.answerCbQuery()
 }
 
 /**
@@ -589,6 +698,7 @@ async function telegramHandler(tgCtx, redis)
 
     if (await handleStats(ctx)) return
     if (await handleHelp(ctx)) return
+    if (await handleProfile(ctx)) return
 
     if (!ctx.command.length) return //do nothing if it's just the prefix
     if (ctx.command.length < minStrLen)
@@ -600,4 +710,4 @@ async function telegramHandler(tgCtx, redis)
     await handleSearch(ctx)
 }
 
-module.exports = {telegramHandler}
+module.exports = {telegramHandler, telegramCallbackHandler}

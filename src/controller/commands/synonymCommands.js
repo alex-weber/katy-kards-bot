@@ -14,6 +14,7 @@ const {downloadImageAsFile} = require("../../tools/imageUpload")
 const {translate} = require("../../tools/translation/translator")
 const {getButtonRow} = require("../../tools/button")
 const dictionary = require("../../tools/dictionary")
+const {react} = require("../../tools/reactions")
 
 //cached synonym answers live for one day by default
 const synonymExp = process.env.REDIS_EXP_SYNONYM || 60 * 60 * 24 // 1 day
@@ -179,7 +180,7 @@ async function buildAnswerFiles(files)
  */
 async function handleJsonSynonym(ctx, m)
 {
-    const {message, client, redis, command} = ctx
+    const {message, client, redis, command, user} = ctx
     const cacheKey =
         cacheKeyPrefix + getGuildPart(message) + 'syn:' + command
     if (await redis.exists(cacheKey) && !m.content) {
@@ -203,7 +204,7 @@ async function handleJsonSynonym(ctx, m)
 
     if (m.files) answer.files = await buildAnswerFiles(m.files)
 
-    message.react('✅')
+    react(message, '✅', user)
     const sent = await message.channel.send(answer)
     await cacheSentMessage(redis, cacheKey, sent, synonymExp)
 
@@ -218,7 +219,7 @@ async function handleJsonSynonym(ctx, m)
  */
 async function resolveSynonym(ctx)
 {
-    const {message, command} = ctx
+    const {message, command, user} = ctx
     const syn = await getSynonym(command)
     if (!syn) {
         if (command in dictionary.synonyms)
@@ -249,7 +250,7 @@ async function resolveSynonym(ctx)
         const answer = {content: syn.value}
         await updateSynonym(syn.key, JSON.stringify(answer))
         answer.content = answer.content.replace('text:', '')
-        message.react('✅')
+        react(message, '✅', user)
         await message.channel.send(answer)
 
         return true

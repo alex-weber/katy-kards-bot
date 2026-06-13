@@ -12,6 +12,7 @@ const {
     getFiles,
 } = require("../../tools/search")
 const {getButtonRow} = require("../../tools/button")
+const {react} = require("../../tools/reactions")
 
 //cache lifetimes (seconds)
 const paginationExp = process.env.REDIS_EXP_PAGINATION || 60 * 10 // 10 min
@@ -28,7 +29,7 @@ const noShowThreshold = 20
  */
 async function serveSearchCache(ctx, cacheKey)
 {
-    const {message, client, redis, language, command, limit} = ctx
+    const {message, client, redis, language, command, limit, user} = ctx
     if (message.buttonId) return false
     if (!(await redis.exists(cacheKey))) return false
 
@@ -36,7 +37,7 @@ async function serveSearchCache(ctx, cacheKey)
     console.log('serving from cache: ', language, command, limit)
     const answer = await redis.json.get(cacheKey, '$')
     console.timeEnd('cache')
-    message.react('✅')
+    react(message, '✅', user)
     await forwardCachedMessage(
         client, answer, message.channel, message.channelId)
 
@@ -140,7 +141,7 @@ async function applyPagination(ctx, answer, counter, offset)
  */
 async function sendCardResults(ctx, cacheKey, cards, offset)
 {
-    const {message, redis, language, command, limit, paginationLimit} = ctx
+    const {message, redis, language, command, limit, paginationLimit, user} = ctx
     const counter = cards.counter
     //if any cards are found - attach them
     let content = ''
@@ -151,7 +152,7 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
     if (counter > noShowThreshold && !isBotCommandChannel(message)) {
         const sent = await message.channel.send(
             content + translate(language, 'noshow'))
-        sent.react('👆')
+        react(sent, '👆', user)
 
         return
     }
@@ -164,7 +165,7 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
     answer.files = getFiles(cards, language, limit)
     //reply to user
     try {
-        message.react('✅')
+        react(message, '✅', user)
         const sent = await message.channel.send(answer)
         console.log(`Cards found: ${counter}  Limit: ${limit}`)
         //cache only within the limit, so pagination still works
@@ -202,7 +203,7 @@ async function handleSearch(ctx)
     if (!cards.counter) {
         let reply = translate(language, 'noresult')
         if (user.mode) reply = user.mode + '\n\n' + reply
-        message.react('❓')
+        react(message, '❓', user)
         await message.channel.send(reply)
 
         return true

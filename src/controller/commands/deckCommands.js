@@ -10,6 +10,7 @@ const {translate} = require("../../tools/translation/translator")
 const {createDeckImages} = require("../../tools/deck")
 const {getButtonRow} = require("../../tools/button")
 const {isBotCommandChannel} = require("../../tools/search")
+const {react} = require("../../tools/reactions")
 
 //cache lifetimes (seconds)
 const deckExp = process.env.REDIS_EXP_DECK || 60 * 60 * 24 * 30 // 30 days
@@ -25,7 +26,7 @@ const screenshotTimeout = parseInt(process.env.SCREENSHOT_TIMEOUT) || 30
  */
 async function handleDeck(ctx)
 {
-    const {message, client, redis, prefix, language} = ctx
+    const {message, client, redis, prefix, language, user} = ctx
     if (!bot.isDeckLink(ctx.command) && !bot.isDeckCode(ctx.command))
         return false
 
@@ -48,8 +49,8 @@ async function handleDeck(ctx)
     if (await redis.exists(screenshotKey)) {
         const sent = await message.channel.send(
             translate(language, 'screenshotRunning'))
-        sent.react('☕')
-        sent.react('🍩')
+        react(sent, '☕', user)
+        react(sent, '🍩', user)
 
         return true
     }
@@ -88,7 +89,7 @@ function collectAltFiles(syns)
  */
 async function handleAlt(ctx)
 {
-    const {message, client, redis, language, limit} = ctx
+    const {message, client, redis, language, limit, user} = ctx
     if (!ctx.command.startsWith('alt')) return false
 
     const cacheKey = cacheKeyPrefix + getGuildPart(message) +
@@ -123,7 +124,7 @@ async function handleAlt(ctx)
         answer.components = getButtonRow(
             translate(language, 'next'), 'next_button_alt' + (offset + limit))
 
-    message.react('✅')
+    react(message, '✅', user)
     const sent = await message.channel.send(answer)
     await cacheSentMessage(redis, cacheKey, sent, searchExp)
 

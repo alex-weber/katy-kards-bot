@@ -1,12 +1,16 @@
 // ================= DISCORD JS ===================
-const { Client, GatewayIntentBits, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = require('discord.js')
-const {getUser} = require("../database/db")
+const { Client, GatewayIntentBits, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder} = require('discord.js')
+const {getUser, updateUser, getProfileStats} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
+const {languages} = require("../tools/language")
 const {discordHandler} = require("../controller/discordHandler")
 const {redis} = require("../controller/redis")
+const {cacheKeyPrefix} = require("../controller/messageCache")
 const {getSynonymById, updateSynonym} = require("../database/synonym")
 const {isManager} = require("../tools/search")
 const {buildCommandList} = require("../controller/commands/synonymCommands")
+const {renderProfileText, reactionsLabel} = require("../tools/profile")
+const {getButtonRow, ButtonStyle} = require("../tools/button")
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -15,12 +19,114 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
     ]})
 
+/**
+ * Update a single field on the cached user record, if it is cached, so that
+ * subsequent commands pick up the change without waiting for cache expiry.
+ *
+ * @param discordUserId
+ * @param path JSONPath of the field (e.g. '$.language')
+ * @param value
+ * @returns {Promise<void>}
+ */
+async function refreshCachedUser(discordUserId, path, value)
+{
+    const userKey = cacheKeyPrefix + 'user:' + discordUserId
+    if (await redis.exists(userKey)) {
+        await redis.json.set(userKey, path, value)
+    }
+}
+
+/**
+ * Build the search-language select, with the user's current choice preselected.
+ *
+ * @param language the user's current search language
+ * @returns {ActionRowBuilder}
+ */
+function getLanguageSelectRow(language)
+{
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId('profile_language')
+        .setPlaceholder(translate(language, 'profileLanguage'))
+        .addOptions(languages.map(lang => ({
+            label: lang.toUpperCase(),
+            value: lang,
+            default: lang === language,
+        })))
+
+    return new ActionRowBuilder().addComponents(menu)
+}
+
+/**
+ * Build the ephemeral profile overview (stats + language select + reactions
+ * toggle) for a user.
+ *
+ * @param user
+ * @returns {Promise<{content: string, components: *}>}
+ */
+async function buildProfileView(user)
+{
+    const stats = await getProfileStats(user.id)
+    const content = renderProfileText(user.language, stats)
+    const components = [
+        getLanguageSelectRow(user.language),
+        ...getButtonRow(
+            reactionsLabel(user.language, user),
+            'profile_reactions',
+            ButtonStyle.Secondary),
+    ]
+
+    return {content, components}
+}
+
 async function onInteractionCreate(interaction)
 {
-    if (!interaction.isButton() && !interaction.isModalSubmit()) return
+    if (!interaction.isButton() && !interaction.isModalSubmit() &&
+        !interaction.isStringSelectMenu()) return
 
     const message = interaction.message
     const user = await getUser(interaction.user.id)
+
+    if (interaction.customId === 'profile_show' ||
+        interaction.customId === 'profile_reactions' ||
+        interaction.customId === 'profile_language') {
+        //this feature is not available for blocked users
+        if (user.status !== 'active') {
+            return await interaction.reply({
+                content: translate(user.language, 'blocked'),
+                flags: MessageFlags.Ephemeral,
+            })
+        }
+
+        //flip the reactions opt-out flag and persist it
+        if (interaction.customId === 'profile_reactions') {
+            user.reactions = user.reactions === false
+            await updateUser(user)
+            await refreshCachedUser(interaction.user.id, '$.reactions', user.reactions)
+            const view = await buildProfileView(user)
+
+            return await interaction.update(view)
+        }
+
+        //change the search language and persist it
+        if (interaction.customId === 'profile_language') {
+            const language = interaction.values[0]
+            if (languages.includes(language)) {
+                user.language = language
+                await updateUser(user)
+                await refreshCachedUser(interaction.user.id, '$.language', language)
+            }
+            const view = await buildProfileView(user)
+
+            return await interaction.update(view)
+        }
+
+        const view = await buildProfileView(user)
+
+        return await interaction.reply({
+            ...view,
+            flags: MessageFlags.Ephemeral,
+        })
+    }
 
     if (interaction.customId.startsWith('next_button')) {
 

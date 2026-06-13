@@ -5,6 +5,8 @@ const {translate} = require("../../tools/translation/translator")
 const {getStats, getServerList} = require("../../tools/stats")
 const {myTDRank} = require("../../games/topDeck")
 const {isManager} = require("../../tools/search")
+const {react} = require("../../tools/reactions")
+const {getButtonRow} = require("../../tools/button")
 
 //refresh window for the cached user record
 const userExp = process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7 // 7 days
@@ -22,7 +24,7 @@ async function handleMidnight(ctx)
     const midnight = bot.getMidnight().toString()
     const sentMessage =
         await ctx.message.channel.send('<t:' + midnight + ':R>')
-    sentMessage.react('🕛')
+    react(sentMessage, '🕛', ctx.user)
 
     return true
 }
@@ -181,6 +183,28 @@ async function handleMyRank(ctx)
 }
 
 /**
+ * Reply with a button that reveals the user's stats privately on click.
+ * The stats and the reactions opt-out toggle are rendered per-click in the
+ * interaction handler, so they always reflect the current state.
+ *
+ * @param ctx
+ * @returns {Promise<boolean>}
+ */
+async function handleProfile(ctx)
+{
+    const {message, language} = ctx
+    if (ctx.command !== 'profile') return false
+
+    await message.channel.send({
+        content: translate(language, 'profilePrompt'),
+        components: getButtonRow(
+            translate(language, 'profileButton'), 'profile_show'),
+    })
+
+    return true
+}
+
+/**
  * Reply with the server list (managers only).
  *
  * @param ctx
@@ -207,5 +231,6 @@ module.exports = {
     handleSync,
     handleRanking,
     handleMyRank,
+    handleProfile,
     handleServers,
 }
