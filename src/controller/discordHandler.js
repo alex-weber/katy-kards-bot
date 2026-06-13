@@ -1,81 +1,106 @@
 const bot = require("./bot")
-const {
-    getUser,
-    updateUser,
-    getTopDeckStats,
-    getSynonym,
-    getAllSynonyms,
-    createMessage, updateSynonym,
-} = require("../database/db")
-const {
-    getLanguageByInput,
-    APILanguages, defaultLanguage,
-} = require("../tools/language")
+const {createMessage} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
-const {createDeckImages} = require("../tools/deck")
-const {myTDRank} = require("../games/topDeck")
-const {handleTD} = require("../games/topDeckController")
-const {getStats, getServerList} = require("../tools/stats")
+const {isBotCommandChannel} = require("../tools/search")
+const {logMemoryUsage} = require("../tools/memoryLoger")
 const {
-    isManager,
-    isBotCommandChannel,
-    isEnglishOnlyChannel,
-    listSynonyms,
-    handleSynonym,
-    getCards,
-    getFiles,
-} = require("../tools/search")
-const dictionary = require("../tools/dictionary")
+    resolveButtonCommand,
+    loadUser,
+    checkUserStatus,
+    ensureUserName,
+    resolveLanguage,
+} = require("./messageContext")
+const {
+    handleMidnight,
+    handleUtc,
+    handleStats,
+    handleDm,
+    handleLanguageSwitch,
+    handleHelp,
+    handleSync,
+    handleRanking,
+    handleMyRank,
+    handleServers,
+} = require("./commands/infoCommands")
+const {handleDeck, handleAlt} = require("./commands/deckCommands")
+const {
+    handleManageSynonym,
+    handleListCommands,
+    resolveSynonym,
+} = require("./commands/synonymCommands")
+const {handleTopDeck} = require("./commands/topDeckCommand")
+const {handleSearch} = require("./commands/searchCommand")
+
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
-const maxStrLen = parseInt(process.env.MAX_STR_LEN) || 4000 // buffer overflow protection :)
-const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? 'discord:prod:' : 'discord:dev:'
-//wait for 5 sec. before processing the TD command
-const slowModeInterval = parseInt(process.env.SLOW_MODE_INTERVAL) || 5000
-//load more results button
-const {getButtonRow} = require("../tools/button")
-const {downloadImageAsFile} = require("../tools/imageUpload")
-const {logMemoryUsage} = require("../tools/memoryLoger")
+//buffer overflow protection :)
+const maxStrLen = parseInt(process.env.MAX_STR_LEN) || 4000
+//load more results button limit
+const paginationLimit = 10
 
 /**
+ * Confirm the bot may write in this channel (always true in DMs).
  *
  * @param client
- * @param cachedData
- * @param targetChannel
- * @param fallbackChannelId
- * @returns {Promise<void>}
+ * @param message
+ * @param redis
+ * @returns {Promise<boolean>}
  */
-async function forwardCachedMessage(client, cachedData, targetChannel, fallbackChannelId) {
-    if (!cachedData || !cachedData.id) return
-    try {
-        let channel
-        if (cachedData.guildId && cachedData.channelId) {
-            const guild = await client.guilds.fetch(cachedData.guildId)
-            channel = await guild.channels.fetch(cachedData.channelId)
-        } else {
-            channel = await client.channels.fetch(cachedData.channelId || fallbackChannelId)
-        }
-        const messageToForward = await channel.messages.fetch(cachedData.id)
-        if (messageToForward) {
-            await messageToForward.forward(targetChannel)
-        }
-    } catch (e) {
-        console.error('Error fetching message from cache:', e)
-    }
+async function checkWritePermissions(client, message, redis)
+{
+    console.time('permissions')
+    const permitted = await bot.hasWritePermissions(client, message, redis)
+    console.timeEnd('permissions')
+
+    return !message.guildId || permitted
 }
 
 /**
+ * Log the incoming command and capture the guild/channel names.
  *
  * @param message
- * @returns {string}
+ * @returns {{guildName: string, channelName: string}}
  */
-function getGuildPart(message) {
-
+function logCommand(message)
+{
+    let guildName = ''
+    let channelName = 'DM'
     if (message.guildId) {
-        return 'guild:' + message.guildId.toString() + ':'
+        guildName = message.guild.name
+        channelName = message.channel.name
+    }
+    console.log('bot command:', guildName, channelName,
+        message.author.username, '->', message.content)
+    logMemoryUsage()
+
+    return {guildName, channelName}
+}
+
+/**
+ * Resolve incoming content into a clean command string, or signal a stop.
+ *
+ * @param message
+ * @param prefix
+ * @returns {{command?: string, qSearch: *, stop?: boolean}}
+ */
+function resolveCommandText(message, prefix)
+{
+    //is there a "bot command" marked with double quotation marks?
+    const qSearch = bot.isQuotationSearch(message)
+    if (qSearch) {
+        //rewrite the message content with only necessary information
+        console.log('bot command with quotes inside a message:',
+            message.content)
+        message.content = qSearch
+    } else if (!message.content.startsWith(prefix)) {
+        //not a bot command or bot
+        return {qSearch, stop: true}
     }
 
-    return 'user_command:' + message.author.id.toString() + ':'
+    //remove all the prefixes from the beginning
+    const command = bot.parseCommand(prefix, message.content)
+
+    return {command, qSearch}
 }
 
 /**
@@ -87,611 +112,81 @@ function getGuildPart(message) {
  */
 async function discordHandler(message, client, redis)
 {
-    //get a custom sever prefix if set
+    //get a custom server prefix if set
     const prefix = bot.getPrefix(message)
 
-    let CommandCacheKey = 'command:'
-    if (!message.buttonId)
-    {
-        CommandCacheKey += 'next_button_' +
-            bot.parseCommand(prefix, message.content).replace(' ', '_')
-    }
-    if (message.buttonId)
-    {
-        const isAltArtButton = message.buttonId.startsWith('next_button_alt')
-        if (isAltArtButton) {
-            message.content = message.buttonId.replace('next_button_', prefix)
-            message.language = defaultLanguage
-        } else {
-            CommandCacheKey += message.buttonId
-            let result = await redis.json.get(CommandCacheKey, '$')
-            if (!result || !result.command) return message
-            message.content = result.command
-            message.language = result.language
-        }
+    const button = await resolveButtonCommand(message, redis, prefix)
+    if (button.stop) return message
 
-        message.author.bot = false
+    if (message.author.bot || message.content.length > maxStrLen)
+        return message
 
-    }
-    if (message.author.bot || message.content.length > maxStrLen) return message
-
-    //is there a "bot command" marked with double quotation marks?
-    const qSearch = bot.isQuotationSearch(message)
-    if (qSearch)
-    {
-        //rewrite the message content with only necessary information
-        console.log('bot command with quotes inside a message:', message.content)
-        message.content = qSearch
-    }
-    //not a bot command or bot
-    else if (!message.content.startsWith(prefix)) return message
+    const text = resolveCommandText(message, prefix)
+    if (text.stop) return message
 
     //check for WRITE permissions
-    console.time('permissions')
-    const permitted = await bot.hasWritePermissions(client, message, redis)
-    if (message.guildId && !permitted)
-    {
-        console.timeEnd('permissions')
-        return message
-    }
-    console.timeEnd('permissions')
+    if (!await checkWritePermissions(client, message, redis)) return message
 
     //it's a bot command
-    let guildName = ''
-    let channelName = 'DM'
-    let sentMessage = null
+    const {guildName, channelName} = logCommand(message)
 
-    if (message.guildId)
-    {
-        guildName = message.guild.name
-        channelName = message.channel.name
-    }
-    console.log('bot command:', guildName, channelName,
-        message.author.username, '->', message.content)
-
-    logMemoryUsage()
-
-    //remove all the prefixes from the beginning
-    let command = bot.parseCommand(prefix, message.content)
     //return if the message is empty
-    if (!command.length) return message
+    if (!text.command.length) return message
 
-    //set a relative timer to the next day 00:00 UTC
-    if (command === 'midnight')
-    {
-        const midnight = bot.getMidnight().toString()
-        sentMessage = await message.channel.send('<t:'+midnight+':R>')
-        sentMessage.react('🕛')
-
-        return message
-    }
-    //current UTC time
-    if (command === 'utc')
-    {
-        const utc = bot.getUTC()
-        return message.channel.send(utc)
+    const ctx = {
+        message, client, redis, prefix,
+        qSearch: text.qSearch,
+        command: text.command,
+        language: undefined,
+        user: undefined,
+        guildName, channelName,
+        cmdCacheKey: button.cmdCacheKey,
+        limit: globalLimit,
+        paginationLimit,
     }
 
-    //set username
-    let user
-    const userId = message.author.id.toString()
-    console.time('getUser_'+userId)
-    const userKey = cacheKeyPrefix + 'user:' + userId
-    const cachedUser = await redis.json.get(userKey, '$')
-    if (!cachedUser || !cachedUser.hasOwnProperty('id'))
-    {
-        console.log('no user in cache, caching')
-        user = await getUser(userId)
-        await redis.json.set(userKey, '$', user)
-        await redis.expire(userKey, process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7) // 7 days
-    } else
-    {
-        console.log('getting user from cache')
-        user = cachedUser
-    }
-    console.timeEnd('getUser_'+userId)
-    //check the status
-    if (user.status !== 'active')
-    {
-        message.react('🚫')
-        console.log('blocked user\n', user)
-        if (user.mode) return message.channel.send(user.mode)
+    //time commands need no user context
+    if (await handleMidnight(ctx)) return message
+    if (await handleUtc(ctx)) return message
 
-        return message
-    }
-    if (!user.name)
-    {
-        user.name = message.author.username
-        await updateUser(user)
-    }
-
-    let language = user.language
-    //use the message language if it's the "next" button
-    if (message.buttonId) language = message.language
-    //set user language to russian if they type in cyrillic
-    if (getLanguageByInput(command) === 'ru' && language !== 'ru')
-    {
-        user.language = 'ru'
-        console.time('updateUser'+userId)
-        await updateUser(user)
-        //change user language to ru
-        await redis.json.set(userKey, '$.language', 'ru')
-        await redis.expire(userKey, process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7) // refresh expiration
-        console.timeEnd('updateUser'+userId)
-        language = 'ru'
-    }
-    //switch to English for English only channels
-    if (isEnglishOnlyChannel(message) && language !== 'en') {
-        language = 'en'
-    }
+    //set up the user
+    ctx.user = await loadUser(message, redis)
+    if (checkUserStatus(ctx.user, message)) return message
+    await ensureUserName(ctx.user, message)
+    ctx.language = await resolveLanguage(ctx)
 
     //save the command in the DB and in cache, no need to wait
-    const fullContent = `${guildName} | ${channelName} -> ${command}`;
-    createMessage({authorId: user.id, content: fullContent}).then()
+    const fullContent = `${guildName} | ${channelName} -> ${ctx.command}`
+    createMessage({authorId: ctx.user.id, content: fullContent}).then()
 
-    //show Deck as images
-    if (bot.isDeckLink(command) || bot.isDeckCode(command))
-    {
-        //overwrite message.content with the deck code only
-        //because command is lowercased, but we need the original
-        command = bot.getDeckCode(message.content)
-        //check if in the cache
-        const deckKey = cacheKeyPrefix + getGuildPart(message) + 'deck:'+language+':' + command
-        if (await redis.exists(deckKey))
-        {
-            const response = await redis.json.get(deckKey, '$')
-            console.log('serving deck from cache', deckKey)
+    if (await handleDeck(ctx)) return message
+    if (await handleStats(ctx)) return message
+    if (await handleDm(ctx)) return message
+    if (await handleLanguageSwitch(ctx)) return message
+    if (await handleHelp(ctx)) return message
+    if (handleSync(ctx)) return message
+    if (await handleRanking(ctx)) return message
+    if (await handleMyRank(ctx)) return message
+    if (await handleTopDeck(ctx)) return message
 
-            await forwardCachedMessage(client, response, message.channel, message.channelId)
-
-            return message
-        }
-
-        //check if the screenshot capturing is running, tell the user to wait
-        const screenshotKey = cacheKeyPrefix + 'screenshot'
-        if (await redis.exists(screenshotKey))
-        {
-
-            sentMessage = await message.channel.send(translate(language, 'screenshotRunning'))
-            sentMessage.react('☕')
-            sentMessage.react('🍩')
-
-            return message
-        }
-        const screenshotTimeout = parseInt(process.env.SCREENSHOT_TIMEOUT) || 30 //seconds
-        await redis.set(screenshotKey, 'running')
-        redis.expire(screenshotKey, screenshotTimeout) //delete the screenshot lock key after 30 seconds anyway
-        sentMessage = await createDeckImages(prefix, message, command, language)
-        await redis.json.set(deckKey, '$', {
-            id:sentMessage.id,
-            channelId: sentMessage.channelId,
-            guildId: sentMessage.guildId
-        })
-        await redis.expire(deckKey, process.env.REDIS_EXP_DECK || 60 * 60 * 24 * 30) // 30 days
-
-        sentMessage = null
-
-        return message
-    }
-
-    //show online stats
-    if (command === 'ingame' || command === 'online')
-    {
-        const stats = await getStats(language)
-        return message.channel.send(stats)
-    }
-    //create DM only if needed to avoid unneeded loop latency
-    if (command === 'dm')
-    {
-        //create the DM channel
-        console.log('creating DM...')
-        await message.author.createDM()
-        return message.channel.send(translate(language, 'dm'))
-    }
-
-    //switch language
-    if (bot.isLanguageSwitch(command) && !qSearch)
-    {
-
-        language = await bot.switchLanguage(user, command)
-        user.language = language
-        await redis.json.set(userKey, '$.language', language)
-        await redis.expire(userKey, process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7) // refresh expiration
-        return message.channel.send(translate(language, 'langChange') + language.toUpperCase())
-    }
-
-    //handle command
-    if (command === 'help') return message.channel.send(
-        '```' + translate(language, 'help') + '```'
-    )
-
-    if (command === 'sync' && isManager(user))
-    {
-        const spawn = require('child_process').spawn
-        const child = spawn('node', ['src/tools/sync.js'],
-            { stdio: ['inherit', 'inherit', 'inherit', 'ipc']})
-        message.channel.send('starting DB sync with kards.com...')
-        const startTime = Date.now()
-        console.time('db_sync')
-        child.on('close', function(code)
-        {
-            console.timeEnd('db_sync')
-            const endTime = Date.now()
-            const duration = ((endTime - startTime)/1000).toFixed(3)
-            if (code === 0)
-                return message.channel.send('DB sync done in ' + duration + 's')
-        })
-        child.on('message', m => message.channel.send(m))
-        child.on('error', function(error)
-        {
-            console.log(error)
-            console.timeEnd('db_sync')
-            return message.channel.send('DB sync error. Check log for details.')
-        })
-
-        return message
-    }
-
-    //get top 9 TD ranking
-    if (command.startsWith('ranking'))
-        return message.channel.send(await getTopDeckStats())
-
-    //user's TD ranking
-    if (command === 'myrank')
-        return message.channel.send(myTDRank(user))
-
-    //top deck game only in special channels
-    if (command.startsWith('td') && message.guildId && isBotCommandChannel(message))
-    {
-        // TD command spam protection.
-        // THE Next command is allowed only after the time of slowModeInterval is passed
-        const userTDKey = cacheKeyPrefix + 'td:' + user.id
-        const unblockTime = await redis.get(userTDKey)
-        if (Date.now() < unblockTime) return message//not allowed, just do nothing
-
-        await redis.del(userKey)
-        redis.set(userTDKey, Date.now() + slowModeInterval)
-        return await handleTD(user, command, message)
-    }
     //check minimums
-    if (command.length < minStrLen && !qSearch)
-        return message.channel.send(translate(language, 'min'))
+    if (ctx.command.length < minStrLen && !ctx.qSearch)
+        return message.channel.send(translate(ctx.language, 'min'))
 
-
-    if (command.startsWith('servers') && isManager(user))
-        return message.channel.send(getServerList(client).map(
-            (item, index) => `${index + 1}. ${item[1]}`).join('\n'))
-
-    if (command.startsWith('commands'))
-    {
-        const commands = await listSynonyms(command)
-        if (!commands) return message.channel.send('No commands found')
-
-        const isFiltered = command.trim().split(' ').length > 1
-        const overallTotal = commands.reduce((acc, arr) => acc + arr.length, 0)
-        let messageText = isFiltered ? '' : `**TOTAL: ${overallTotal}**\n\n`
-
-        // find the longest common prefix
-        const findCommonPrefix = (arr) => {
-            if (!arr.length) return ''
-            let prefix = arr[0]
-            for (let i = 1; i < arr.length; i++) {
-                let j = 0
-                while (j < prefix.length && j < arr[i].length && prefix[j] === arr[i][j]) j++
-                prefix = prefix.slice(0, j)
-                if (!prefix) break
-            }
-            return prefix.trim()
-        }
-
-        // append group block safely
-        const appendGroupBlock = async (header, items) => {
-            if (!items.length) return
-
-            const groupBlock = isFiltered
-                ? `**${items.length}**\n\`\`\`\n${items.join('\n')}\n\`\`\`\n`
-                : `**${header.toUpperCase()} (${items.length})**\n\`\`\`\n${items.join('\n')}\n\`\`\`\n`
-
-            if (messageText.length + groupBlock.length > 1900) {
-                await message.channel.send(messageText)
-                messageText = ''
-            }
-
-            messageText += groupBlock
-        }
-
-        for (const group of commands) {
-            if (isFiltered) {
-                // filtered: detect common prefix
-                const prefix = findCommonPrefix(group)
-                await appendGroupBlock(prefix || '', group)
-            } else {
-                // default: group by first letter
-                let lastKey = ''
-                let groupItems = []
-
-                for (const synonym of group) {
-                    const key = synonym[0]
-
-                    if (key !== lastKey && groupItems.length > 0) {
-                        await appendGroupBlock(lastKey, groupItems)
-                        groupItems = []
-                    }
-
-                    groupItems.push(synonym)
-                    lastKey = key
-                }
-
-                await appendGroupBlock(lastKey, groupItems)
-            }
-        }
-
-        if (messageText.trim()) await message.channel.send(messageText)
-
-        return message
-    }
-
-    //handle synonyms
-    if (command.startsWith('^') && isManager(user))
-        return message.channel.send(await handleSynonym(user, message))
-
-    //check for synonyms
-    const syn = await getSynonym(command)
-    if (syn)
-    {
-        let answer = {}
-        let altCommand = ''
-        if (syn.value.startsWith('{')) { //json formatted
-
-            const m = JSON.parse(syn.value)
-            const cacheKey = cacheKeyPrefix + getGuildPart(message) + 'syn:' + command
-            if (await redis.exists(cacheKey) && !m.content) {
-                const cached = await redis.json.get(cacheKey, '$')
-                await forwardCachedMessage(client, cached, message.channel, message.channelId)
-                return message
-            }
-
-            if (m.content) {
-                if (m.content.startsWith('text:'))
-                    answer.content = m.content.replace('text:', '')
-                else
-                    altCommand = m.content
-            }
-
-            if (!altCommand)
-            {
-                if (m.files) {
-                    answer.files = []
-
-                    for (const file of m.files) {
-                        const path = await downloadImageAsFile(file)
-
-                        answer.files.push({
-                            attachment: path
-                        })
-                    }
-                }
-
-                message.react('✅')
-                sentMessage = await message.channel.send(answer)
-
-                await redis.json.set(cacheKey, '$', {
-                    id: sentMessage.id,
-                    channelId: sentMessage.channelId,
-                    guildId: sentMessage.guildId
-                })
-                await redis.expire(cacheKey, process.env.REDIS_EXP_SYNONYM || 60 * 60 * 24) // 1 day
-
-                answer = null
-                sentMessage = null
-
-                return message
-            }
-        }
-        //check if there is an image link (old format) and update it to JSON
-        if (syn.value.startsWith('http'))
-        {
-            answer.files = [syn.value]
-            await updateSynonym(syn.key, JSON.stringify(answer))
-
-            return message.channel.send(answer)
-        }
-        //check if it should reply with a text message
-        if (syn.value.startsWith('text:'))
-        {
-            answer.content = syn.value
-            await updateSynonym(syn.key, JSON.stringify(answer))
-            answer.content = answer.content.replace('text:', '')
-            message.react('✅')
-            return message.channel.send(answer)
-        }
-        //else use the value as the alternate command for search
-        if (altCommand) command = altCommand
-        else command = syn.value
-
-    } else if (command in dictionary.synonyms) command = dictionary.synonyms[command]
+    if (await handleServers(ctx)) return message
+    if (await handleListCommands(ctx)) return message
+    if (await handleManageSynonym(ctx)) return message
+    //resolveSynonym may rewrite ctx.command and fall through to search
+    if (await resolveSynonym(ctx)) return message
 
     //set the limit to 10 if it is a bot-commands channel
-    let limit = globalLimit
-    const paginationLimit = 10
-    if (isBotCommandChannel(message)) limit = paginationLimit
-    //get all alt art images
-    if (command.startsWith('alt'))
-    {
-        const cacheKey = cacheKeyPrefix + getGuildPart(message) + 'alt:' + language + ':' + command
-        if (await redis.exists(cacheKey))
-        {
-            const response = await redis.json.get(cacheKey, '$')
-            console.log('serving alt from cache', cacheKey)
+    if (isBotCommandChannel(message)) ctx.limit = paginationLimit
 
-            await forwardCachedMessage(client, response, message.channel, message.channelId)
+    if (await handleAlt(ctx)) return message
 
-            return message
-        }
+    await handleSearch(ctx)
 
-        const syns = await getAllSynonyms()
-        const files = syns.filter(syn => syn.key.startsWith('alt ')).map(syn =>
-        {
-            if (syn.value.startsWith('{'))
-            {
-                const filesObject = JSON.parse(syn.value)
-                return filesObject.files[0]
-            }
-            return syn.value
-        })
-        if (files.length)
-        {
-            let offset = parseInt(command.replace('alt', ''))
-            if (isNaN(offset) || offset > files.length) offset = 0
-            let last = offset + limit
-            if (last > files.length) last = files.length
-            const answer = {
-                content:'Alternate art cards found: ' + files.length + ', showing ' + (offset+1) + '-' + last,
-                files: files.slice(offset, offset + limit)
-            }
-            if (offset + limit < files.length && isBotCommandChannel(message))
-                answer.components = getButtonRow(translate(language, 'next'), 'next_button_alt' + (offset+limit))
-
-            message.react('✅')
-            sentMessage = await message.channel.send(answer)
-
-            await redis.json.set(cacheKey, '$', {
-                id: sentMessage.id,
-                channelId: sentMessage.channelId,
-                guildId: sentMessage.guildId
-            })
-            await redis.expire(cacheKey, process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90) // 90 days
-
-            return message
-        }
-
-        return message.channel.send(translate(language, 'noresult'))
-    }
-    //check if in the cache
-    const cacheKey = cacheKeyPrefix + getGuildPart(message) + language+ ':' + command + limit
-    const keyExists = await redis.exists(cacheKey)
-    if (keyExists && !message.buttonId)
-    {
-        console.time('cache')
-        console.log('serving from cache: ', language, command, limit)
-        const answer = await redis.json.get(cacheKey, '$')
-        console.timeEnd('cache')
-        message.react('✅')
-
-        await forwardCachedMessage(client, answer, message.channel, message.channelId)
-
-        return message
-    }
-    //first search on KARDS.com, on no result search in the local DB
-
-    let offset = 0
-    const variables = {
-        language: APILanguages[language],
-        q: command,
-        showSpawnables: true,
-        showReserved: true,
-        first: limit,
-        offset: offset,
-    }
-    //check if we need the next page instead
-    if (message.buttonId) {
-        //set the language of the command, not the user
-        variables.language = APILanguages[message.language]
-        offset = limit
-        let result = await redis.json.get(CommandCacheKey, '$')
-        result = parseInt(result.offset)
-        if (!isNaN(result) && result > 0) offset = result
-
-        variables.offset = offset
-        //add limit to offset for the next fetch
-        await redis.json.set(CommandCacheKey, '$.offset', offset+limit)
-        await redis.expire(CommandCacheKey, process.env.REDIS_EXP_PAGINATION || 60 * 10) // refresh expiration
-    }
-    const cards = await getCards(variables)
-
-    if (!cards)
-    {
-        return message.channel.send(translate(language, 'error'))
-    }
-    const counter = cards.counter
-    if (!counter) {
-        let reply = translate(language, 'noresult')
-        if (user.mode) {
-            reply = user.mode + '\n\n' + reply
-        }
-        message.react('❓')
-
-        return message.channel.send(reply)
-    }
-
-    //if any cards are found - attach them
-    let content = translate(language, 'search') + ': ' + counter
-    //do not show any cards if there are more than 20 cards
-    if (counter > 20 && !isBotCommandChannel(message))
-    {
-        sentMessage = await message.channel.send(content + translate(language, 'noshow'))
-        sentMessage.react('👆')
-
-        return message
-    }
-    let answer = {}
-    //warn that there are more cards found
-    if (counter > limit)
-    {
-        //init pagination object in cache
-        if (!message.buttonId) {
-            const cachedCommand = {
-                command: message.content,
-                offset: offset,
-                language: language,
-            }
-            await redis.json.set(CommandCacheKey, '$', cachedCommand)
-            await redis.expire(CommandCacheKey, process.env.REDIS_EXP_PAGINATION || 60 * 10) // 10 minutes for pagination
-        }
-
-        let toCounter = offset + limit
-        if (toCounter > counter) toCounter = counter
-        content += translate(language, 'limit') +
-            (offset+1).toString() + ' - ' +
-            toCounter.toString()
-        //add the "Next" button (only in bot-command channels)
-        if (counter - offset > limit && isBotCommandChannel(message))
-        {
-            const id = command.replace(' ', '_')
-            answer.components = getButtonRow(translate(language, 'next'), 'next_button_' + id)
-        }
-        else await redis.del(CommandCacheKey)
-    }
-    //attach found images
-    let files = getFiles(cards, language, limit)
-    answer.content = content
-    answer.files = files
-    //reply to user
-    try
-    {
-        message.react('✅')
-        sentMessage = await message.channel.send(answer)
-        console.log(`Cards found: ${counter}  Limit: ${limit}`)
-        //store in cache only if the results are within the limit. This allows pagination.
-        if (counter <= paginationLimit) {
-            await redis.json.set(cacheKey, '$', {
-                id: sentMessage.id,
-                channelId: sentMessage.channelId,
-                guildId: sentMessage.guildId
-            })
-            await redis.expire(cacheKey, process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90) // 90 days
-        }
-
-        files = null
-        answer = null
-        sentMessage = null
-
-    } catch (e)
-    {
-        console.error(e.message)
-        message.channel.send(translate(language, 'error'))
-    }
-
+    return message
 }
 
 module.exports = {discordHandler}
