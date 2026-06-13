@@ -7,28 +7,31 @@ block content
     .card.mb-3.border-primary.shadow-sm.p-2.bg-body-tertiary.rounded(style="max-width: 540px;")
         .row.g-0
             .col-md-4
-                img.img-fluid.rounded-start.border.border-2.border-primary-subtle(src='https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.webp', alt="No avatar")
+                if avatarUrl
+                    img.img-fluid.rounded-start.border.border-2.border-primary-subtle(src=avatarUrl, alt="No avatar")
+                else
+                    .d-flex.align-items-center.justify-content-center.h-100.text-primary.display-3 #{(displayName || '?').charAt(0).toUpperCase()}
             .col-md-8
                 .card-body
-                    h4.card-title.text-primary #{user.username}
-                    p.card-text Total messages: #{messages.totalCount}
-                    p.card-text Last 30 days: #{messages.lastMonthMessagesCount}
-                    p.card-text Last 24 hours: #{messages.lastDayMessages.length}
-                    p.card-text
+                    h4.card-title.text-primary #{displayName}
+                    p.card-text Total messages: #{stats.total}
+                    p.card-text Last 30 days: #{stats.lastMonth}
+                    p.card-text Last 24 hours: #{stats.lastDay}
 
 
-    h3.text-primary Last 24 hours commands
-    table.table.table-dark.table-striped.table-hover
-        thead
-            tr
-                th(scope='col') Command
-                th(scope='col') Time
-
-        tbody
-            each message in messages.lastDayMessages
+    if isOwn && history
+        h3.text-primary Last 24 hours commands
+        table.table.table-dark.table-striped.table-hover
+            thead
                 tr
-                    td #{message.content}
-                    td #{message.createdAt}
+                    th(scope='col') Command
+                    th(scope='col') Time
+
+            tbody
+                each message in history
+                    tr
+                        td #{message.content}
+                        td #{message.createdAt}
 
 
     p &nbsp;

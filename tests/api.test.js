@@ -19,11 +19,11 @@ test('search is working', async () => {
     variables.q = 'sov tank 10k'
     data = await getCards(variables)
     let files = getFiles(data, 'en', 10)
-    expect(files[0].attachment).toMatch('is_ii')
+    expect(files[0].attachment).toMatch('iosef_stalin_ii')
     variables.q = 'совет танк 10к'
     data = await getCards(variables)
     files = getFiles(data, 'en', 10)
-    expect(files[0].attachment).toMatch('is_ii')
+    expect(files[0].attachment).toMatch('iosef_stalin_ii')
 })
 
 test('listing synonyms', async () => {
