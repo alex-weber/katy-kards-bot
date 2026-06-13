@@ -176,14 +176,6 @@ function getDeckCode(command)
 
 /**
  *
- * @returns {string}
- */
-function getCurrentTimestamp() {
-    return new Date().getTime().toString()
-}
-
-/**
- *
  * @returns {number}
  */
 function getMidnight()
@@ -219,7 +211,6 @@ module.exports = {
     isDeckLink,
     isDeckCode,
     getDeckCode,
-    getCurrentTimestamp,
     getMidnight,
     getUTC,
 }

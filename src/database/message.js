@@ -195,180 +195,6 @@ async function getMessages({ from, to, page = 1, pageSize = 50, username, comman
     return result
 }
 
-/**
- * Read the raw per-day message counts for a date range. This is the heavy
- * DB read (it scans every matching row's createdAt), so callers cache the
- * historical (≤ yesterday) slice for a full day via getDailyCountsCached.
- *
- * @param extraWhere extra Prisma `where` clause merged with the date range
- * @param fromDate range start (Date)
- * @param toDate range end (Date)
- * @returns {Promise<Object>} map of 'YYYY-MM-DD' -> count
- */
- 
-
-/**
- * Split a [from, to] range into an immutable historical slice (everything up
- * to yesterday) and a flag for whether today is included. Lexical comparison
- * is safe for the 'YYYY-MM-DD' format.
- *
- * @returns {{today: string, histEnd: string, includeToday: boolean}}
- */
- 
-
-/**
- * Return the JSON value cached at `cacheKey`, or compute it with `computeFn`,
- * store it with the given `ttl`, and return it.
- */
- 
-
-/**
- * Daily counts for [from, to] with the "historical + today" caching pattern:
- * the immutable slice up to yesterday is cached for a day, while today's tiny
- * slice is recomputed on the page cycle and merged. The returned daily map is
- * cheap to re-bucket on every request, keeping results exact.
- *
- * @param keyBase cache namespace (e.g. 'messages', 'screenshot')
- * @param extraWhere extra Prisma `where` clause for getDailyCounts
- * @param from range start 'YYYY-MM-DD'
- * @param to range end 'YYYY-MM-DD'
- * @returns {Promise<Object>} merged map of 'YYYY-MM-DD' -> count
- */
-async function getDailyCountsCached(keyBase, extraWhere, from, to)
-{
-    const { today, histEnd, includeToday } = splitRange(from, to)
-    const dailyMap = {}
-
-    // Historical slice [from, histEnd] — immutable, cached for a day.
-    if (from <= histEnd) {
-        const histKey = cachePrefix + `stats:daily:${keyBase}:${from}_${histEnd}`
-        const hist = await getOrCompute(histKey, historicalExpiration, () => {
-            const { fromDate, toDate } = getDates(from, histEnd)
-            return getDailyCounts(extraWhere, fromDate, toDate)
-        })
-        Object.assign(dailyMap, hist)
-    }
-
-    // Today's slice — only when the requested range reaches today. Cached on
-    // the short page cycle and merged into the historical counts.
-    if (includeToday) {
-        const todayKey = cachePrefix + `stats:daily:${keyBase}:today:${today}`
-        const todayMap = await getOrCompute(todayKey, expiration, () => {
-            const { fromDate, toDate } = getDates(today, today)
-            return getDailyCounts(extraWhere, fromDate, toDate)
-        })
-        for (const [day, count] of Object.entries(todayMap)) {
-            dailyMap[day] = (dailyMap[day] || 0) + count
-        }
-    }
-
-    return dailyMap
-}
-
-/**
- * Turn a daily count map into chart buckets. Granularity (daily/weekly/
- * monthly) is chosen from the span of actual data, matching the previous
- * row-scanning behaviour but operating on the compact daily map.
- *
- * @param dailyMap map of 'YYYY-MM-DD' -> count
- * @returns {Array<{label: string, count: number}>}
- */
-function bucketDailyCounts(dailyMap)
-{
-    const dayKeys = Object.keys(dailyMap).sort()
-    if (dayKeys.length === 0) return []
-
-    const minDate = new Date(dayKeys[0])
-    const maxDate = new Date(dayKeys[dayKeys.length - 1])
-    const diffDays = (maxDate - minDate) / (1000 * 60 * 60 * 24)
-
-    // Select aggregation function
-    let groupFn, incrementFn, formatLabel
-    if (diffDays <= 62) {
-        // Daily
-        groupFn = d => d.toISOString().split('T')[0]
-        incrementFn = d => {
-            const n = new Date(d)
-            n.setUTCDate(n.getUTCDate() + 1)
-            return n
-        }
-        formatLabel = key => {
-            const date = new Date(key) // <- convert string back to Date
-            return date.toLocaleDateString('en-GB', {
-                month: '2-digit',
-                day: '2-digit'
-            })
-        }
-
-    } else if (diffDays <= 366) {
-        // Weekly: Monday key
-        groupFn = d => {
-            const date = new Date(d)
-            const day = date.getUTCDay()
-            const diffToMonday = (day + 6) % 7
-            const monday = new Date(date)
-            monday.setUTCDate(date.getUTCDate() - diffToMonday)
-            return monday.toISOString().split('T')[0]
-        }
-        incrementFn = d => {
-            const n = new Date(d)
-            n.setUTCDate(n.getUTCDate() + 7)
-            return n
-        }
-        formatLabel = key => {
-            const monday = new Date(key)
-            const sunday = new Date(monday)
-            sunday.setUTCDate(monday.getUTCDate() + 6)
-            return `${monday.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit'
-            })} - ${sunday.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit'
-            })}`
-        }
-    } else {
-        // Monthly
-        groupFn = d => {
-            const date = new Date(d)
-            return `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1)
-                .toString()
-                .padStart(2, '0')}`
-        }
-        incrementFn = d => {
-            return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))
-        }
-        formatLabel = key => key
-    }
-
-    // Aggregate the daily counts into the chosen period buckets
-    const counts = {}
-    for (const [dayStr, count] of Object.entries(dailyMap)) {
-        const key = groupFn(new Date(dayStr))
-        counts[key] = (counts[key] || 0) + count
-    }
-
-    // Fill missing periods with zero counts
-    const results = []
-    let current = new Date(minDate)
-    if (diffDays > 62 && diffDays <= 366) {
-        // Weekly: adjust to Monday
-        const day = current.getUTCDay()
-        current.setUTCDate(current.getUTCDate() - ((day + 6) % 7))
-    } else if (diffDays > 366) {
-        // Monthly: first of month
-        current.setUTCDate(1)
-    }
-
-    while (current <= maxDate) {
-        const key = groupFn(current)
-        results.push({label: formatLabel(key), count: counts[key] || 0})
-        current = incrementFn(current)
-    }
-
-    return results
-
-}
 
 async function getDashboardMessages({period} = {})
 {
@@ -381,50 +207,6 @@ async function getScreenshotMessages({period} = {})
     return getStatsPeriodCountsCached('screenshot', extraWhere, normalizeStatsPeriod(period))
 }
 
-/**
- * Cache an immutable historical aggregation (≤ yesterday) for a day and a
- * short-lived today's aggregation, then merge the two count maps by key.
- *
- * computeFn(fromDate, toDate) must return an array of { key, count }.
- *
- * NOTE: historical and today's slices are each capped at the top 100 keys, so
- * the merge is approximate at the tail (a key just outside the historical top
- * 100 could be undercounted once today is added). Today's volume is negligible
- * versus multi-year totals, so this is acceptable for the dashboard's "top 100".
- *
- * @returns {Promise<Array<[any, number]>>} merged [key, count] pairs, sorted desc
- */
-async function getAggregateCached(keyBase, computeFn, from, to)
-{
-    const { today, histEnd, includeToday } = splitRange(from, to)
-
-    const merged = new Map()
-    const addEntries = entries => {
-        for (const { key, count } of entries) {
-            merged.set(key, (merged.get(key) || 0) + count)
-        }
-    }
-
-    if (from <= histEnd) {
-        const histKey = cachePrefix + `stats:agg:${keyBase}:${from}_${histEnd}`
-        const hist = await getOrCompute(histKey, historicalExpiration, () => {
-            const { fromDate, toDate } = getDates(from, histEnd)
-            return computeFn(fromDate, toDate)
-        })
-        addEntries(hist)
-    }
-
-    if (includeToday) {
-        const todayKey = cachePrefix + `stats:agg:${keyBase}:today:${today}`
-        const todayAgg = await getOrCompute(todayKey, expiration, () => {
-            const { fromDate, toDate } = getDates(today, today)
-            return computeFn(fromDate, toDate)
-        })
-        addEntries(todayAgg)
-    }
-
-    return [...merged.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100)
-}
 
 function normalizeStatsPeriod(period)
 {
@@ -504,7 +286,7 @@ async function getStatsFirstMessageDate(extraWhere = {})
     return first?.createdAt || new Date()
 }
 
-async function buildStatsBuckets(period, extraWhere = {}, firstDate = null)
+function buildStatsBuckets(period)
 {
     period = normalizeStatsPeriod(period)
     const todayStart = startOfStatsPeriod('daily', new Date())
@@ -623,10 +405,8 @@ async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
 {
     period = normalizeStatsPeriod(period)
     const dailyMap = await getDailyCountSourceCached(keyBase, extraWhere)
-    const firstDay = Object.keys(dailyMap).sort()[0]
-    const firstDate = firstDay ? new Date(firstDay) : new Date()
     const results = []
-    for (const bucket of await buildStatsBuckets(period, extraWhere, firstDate)) {
+    for (const bucket of buildStatsBuckets(period)) {
         results.push({label: bucket.label, count: statsBucketValue(period, bucket, dailyMap)})
     }
     return results
@@ -637,7 +417,7 @@ async function getStatsPeriodAggregateCached(keyBase, computeFn, period)
     period = normalizeStatsPeriod(period)
     const merged = new Map()
 
-    for (const bucket of await buildStatsBuckets(period)) {
+    for (const bucket of buildStatsBuckets(period)) {
         const entries = await getStatsPeriodCached(`agg:${keyBase}`, period, bucket, computeFn)
         for (const { key, count } of entries) {
             merged.set(key, (merged.get(key) || 0) + count)
@@ -769,12 +549,6 @@ function formatDate(date, full=false)
 
 }
 
-function daysAgoString(days) {
-    const now = new Date()
-    const pastDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
-    return pastDate.toISOString().split('T')[0]
-}
-
 function getDates(from, to)
 {
     let fromDate = from ? new Date(from) : new Date()
@@ -812,7 +586,4 @@ module.exports = {
     getScreenshotMessages,
     getTopMessages,
     getTopUsers,
-    daysAgoString,
-    STATS_PERIODS,
-    normalizeStatsPeriod,
 }

@@ -35,7 +35,6 @@ const {
     getMessages,
     getScreenshotMessages,
     getTopUsers,
-    daysAgoString,
 } = require('../src/database/message')
 
 beforeEach(() => {
@@ -127,7 +126,7 @@ describe('getMessages (paginated log)', () => {
 
 describe('getTopUsers', () => {
     test('resolves usernames and filters out the bot account', async () => {
-        const to = daysAgoString(0)
+        const to = new Date().toISOString().split('T')[0]
         // historical + today slices both queried
         mockGroupBy.mockResolvedValue([
             { authorId: 1, _count: { content: 50 } },

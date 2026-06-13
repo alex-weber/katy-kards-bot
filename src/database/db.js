@@ -5,9 +5,6 @@ const {
   getMessages,
   getUserMessages,
   getProfileStats,
-  daysAgoString,
-  STATS_PERIODS,
-  normalizeStatsPeriod,
 } = require('./message')
 const { getUser, getUserById, updateUser } = require('./user')
 const {createSynonym, updateSynonym, deleteSynonym, getAllSynonyms, getSynonym} = require('./synonym')
@@ -44,7 +41,4 @@ module.exports = {
   getProfileStats,
   getCardStatsMessage,
   disconnect,
-  daysAgoString,
-  STATS_PERIODS,
-  normalizeStatsPeriod,
 }

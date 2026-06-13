@@ -8,7 +8,6 @@ jest.mock('../src/database/db', () => ({
     getMessages: jest.fn(),
     getUserMessages: jest.fn(),
     getProfileStats: jest.fn(),
-    daysAgoString: jest.fn(n => `days-ago-${n}`),
 }))
 jest.mock('../src/controller/api', () => ({ run: jest.fn(async () => ({ success: true, data: [] })) }))
 jest.mock('../src/tools/avatar', () => ({ resolveAvatarUrl: jest.fn(async () => 'http://avatar/x.webp') }))
