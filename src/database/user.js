@@ -48,6 +48,23 @@ async function getUser(discordId)
 }
 
 /**
+ * Look up a user by internal primary key. Used by the public profile page,
+ * which links from the dashboard's top-users table (authorId === User.id).
+ *
+ * @param id internal User.id
+ * @returns {Promise<*>}
+ */
+async function getUserById(id)
+{
+    return await prisma.user.findUnique({
+        where: { id: parseInt(id, 10) },
+        select: { id: true, name: true, discordId: true },
+    }).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+}
+
+/**
  *
  * @param User
  * @returns {Promise<*>}
@@ -63,4 +80,4 @@ async function updateUser(User)
     finally(async () => { await prisma.$disconnect() })
 }
 
-module.exports = {createUser, getUser, updateUser}
+module.exports = {createUser, getUser, getUserById, updateUser}

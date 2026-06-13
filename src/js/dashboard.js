@@ -111,13 +111,22 @@ function renderTopMessages(apiData) {
 }
 
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
+
 function renderTopUsers(apiData) {
     const topUsersElement = document.getElementById('topUsers')
     topUsersElement.innerHTML = apiData.data
         .map((item, index) => `
       <tr>
         <td>${index + 1}</td>
-        <td>${item.username}</td>
+        <td><a class="text-primary" href="/profile/${encodeURIComponent(item.authorId)}">${escapeHtml(item.username)}</a></td>
         <td>${item.count}</td>
       </tr>
     `)

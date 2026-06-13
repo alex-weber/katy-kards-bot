@@ -1,12 +1,15 @@
 const {
     getAllSynonyms,
     getUser,
+    getUserById,
     getMessages,
     getUserMessages,
+    getProfileStats,
     daysAgoString,
 } = require('../database/db')
 
 const {isManager} = require("../tools/search")
+const {resolveAvatarUrl} = require("../tools/avatar")
 const axios = require('axios')
 //API
 const API = require('../controller/api')
@@ -21,10 +24,28 @@ function isAuthenticated(req, res, next) {
     else next('route')
 }
 
+// middleware to restrict a route to managers
+function requireManager(req, res, next) {
+    if (req.session.user && req.session.user.isManager) return next()
+    res.status(403).send('Not permitted')
+}
+
+// Resolve the requested date range. Only logged-in users may change the
+// dates; anonymous callers are always clamped to the default window so they
+// cannot trigger expensive wide-range queries via the API.
+function resolveRange(req) {
+    const isLoggedIn = !!req.session.user
+    const { from, to } = req.query
+
+    return {
+        from: (isLoggedIn && from) ? from : daysAgoString(30),
+        to: (isLoggedIn && to) ? to : getTodayString()
+    }
+}
+
 function renderPage(req, res, { title, user, loginLink }) {
-    let { from, to, username, command } = req.query
-    from = from || daysAgoString(30)
-    to = to || getTodayString()
+    const { from, to } = resolveRange(req)
+    const { username, command } = req.query
 
     res.render('index', {
         title,
@@ -32,6 +53,7 @@ function renderPage(req, res, { title, user, loginLink }) {
         loginLink,
         from,
         to,
+        canFilter: !!user,
         username: username || '',
         command: command || ''
     })
@@ -104,11 +126,6 @@ function handleLogout(req, res, next) {
 
 async function renderCommands(req, res) {
 
-    if (!req.session.user.isManager) {
-        res.send('Not permitted')
-        return
-    }
-
     const synonyms = await getAllSynonyms()
 
     res.render('synonyms', {
@@ -119,10 +136,6 @@ async function renderCommands(req, res) {
 }
 
 async function renderMessages(req, res) {
-
-    if (!req.session.user.isManager) {
-        return res.send('Not permitted')
-    }
 
     let { from, to, page = 1, username, command } = req.query
 
@@ -182,14 +195,73 @@ async function renderMessages(req, res) {
     })
 }
 
-async function renderProfile(req, res) {
-    const user = await getUser(req.session.user.id)
-    const messages = await getUserMessages(user.id)
+// Build the Discord CDN avatar URL for a session user (null when unavailable).
+function sessionAvatarUrl(sessionUser) {
+    if (!sessionUser || !sessionUser.avatar) return null
+    return `https://cdn.discordapp.com/avatars/${sessionUser.id}/${sessionUser.avatar}.webp`
+}
 
+// Shared profile renderer. `history` (the private 24h command list) is only
+// passed for the viewer's own profile.
+function renderProfileView(req, res, { displayName, avatarUrl, stats, history, isOwn }) {
     res.render('profile', {
         title: 'Profile',
-        messages,
-        user: req.session.user
+        user: req.session.user,
+        displayName,
+        avatarUrl,
+        stats,
+        history: history || null,
+        isOwn
+    })
+}
+
+// Render the logged-in viewer's own profile (stats + private 24h history) for
+// the given internal user id.
+async function renderOwnProfile(req, res, dbUserId) {
+    const messages = await getUserMessages(dbUserId)
+
+    renderProfileView(req, res, {
+        displayName: req.session.user.username,
+        avatarUrl: sessionAvatarUrl(req.session.user),
+        stats: {
+            total: messages.totalCount,
+            lastMonth: messages.lastMonthMessagesCount,
+            lastDay: messages.lastDayMessages.length
+        },
+        history: messages.lastDayMessages,
+        isOwn: true
+    })
+}
+
+// The logged-in user's own profile.
+async function renderProfile(req, res) {
+    const user = await getUser(req.session.user.id)
+    return renderOwnProfile(req, res, user.id)
+}
+
+// Public profile by internal user id (linked from the dashboard). Only the
+// stat counts are shown for other users; the command history stays private.
+async function renderPublicProfile(req, res, client) {
+    const id = parseInt(req.params.id, 10)
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(404).send('User not found')
+    }
+
+    const target = await getUserById(id)
+    if (!target) return res.status(404).send('User not found')
+
+    // The viewer's own profile (matched by Discord id) gets the full view.
+    if (req.session.user && req.session.user.id === target.discordId) {
+        return renderOwnProfile(req, res, target.id)
+    }
+
+    const stats = await getProfileStats(target.id)
+    renderProfileView(req, res, {
+        displayName: target.name || 'Unknown',
+        avatarUrl: await resolveAvatarUrl(client, target.discordId),
+        stats,
+        history: null,
+        isOwn: false
     })
 }
 
@@ -203,7 +275,10 @@ async function renderCards(req, res) {
 
 async function handleApi(req, res) {
     const { method } = req.params
-    const { from, to, page, pageSize, username, command } = req.query
+    const { page, pageSize, username, command } = req.query
+    // Anonymous callers are clamped to the default window; only logged-in
+    // users may request an arbitrary date range.
+    const { from, to } = resolveRange(req)
 
     const apiResponse = await API.run(method, {
         from,
@@ -229,6 +304,7 @@ async function renderServers(req, res, servers) {
 
 module.exports = {
     isAuthenticated,
+    requireManager,
     renderAuth,
     renderDashboard,
     renderMessages,
@@ -236,6 +312,7 @@ module.exports = {
     renderServers,
     renderLanding,
     renderProfile,
+    renderPublicProfile,
     renderCards,
     handleApi,
     handleLogout,

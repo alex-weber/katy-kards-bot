@@ -18,6 +18,7 @@ const {disconnect} = require('./database/db')
 
 const {
     isAuthenticated,
+    requireManager,
     renderAuth,
     renderDashboard,
     renderMessages,
@@ -25,6 +26,7 @@ const {
     renderCommands,
     renderLanding,
     renderProfile,
+    renderPublicProfile,
     renderCards,
     handleApi,
     handleLogout,
@@ -70,9 +72,10 @@ app.get('/', renderLanding)
 app.get('/auth', renderAuth)
 app.get('/login', handleLogin)
 app.get('/logout', handleLogout)
-app.get('/commands', isAuthenticated, renderCommands)
-app.get('/messages', isAuthenticated, renderMessages)
+app.get('/commands', isAuthenticated, requireManager, renderCommands)
+app.get('/messages', isAuthenticated, requireManager, renderMessages)
 app.get('/profile', isAuthenticated, renderProfile)
+app.get('/profile/:id', (req, res) => renderPublicProfile(req, res, client))
 app.get('/servers', (req, res) => renderServers(req, res, servers))
 app.get('/cards', renderCards)
 app.get('/api/:method', handleApi)

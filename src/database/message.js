@@ -5,6 +5,10 @@ const {redis, cachePrefix} = require('../controller/redis')
 const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
 //profile stats cache lifetime (seconds)
 const profileExpiration = parseInt(process.env.REDIS_EXP_PROFILE) || 60 * 5
+//historical stats (everything up to yesterday) are immutable; cache them
+//for a full day. Correctness is guaranteed by the date baked into the cache
+//key, so this TTL only bounds memory usage.
+const historicalExpiration = parseInt(process.env.CACHE_HISTORICAL_EXPIRE) || 60 * 60 * 24
 const {languages} = require('../tools/language')
 /**
  *
@@ -194,19 +198,125 @@ async function getMessages({ from, to, page = 1, pageSize = 50, username, comman
     return result
 }
 
-async function getMessagesByArgs(args)
+/**
+ * Read the raw per-day message counts for a date range. This is the heavy
+ * DB read (it scans every matching row's createdAt), so callers cache the
+ * historical (≤ yesterday) slice for a full day via getDailyCountsCached.
+ *
+ * @param extraWhere extra Prisma `where` clause merged with the date range
+ * @param fromDate range start (Date)
+ * @param toDate range end (Date)
+ * @returns {Promise<Object>} map of 'YYYY-MM-DD' -> count
+ */
+async function getDailyCounts(extraWhere, fromDate, toDate)
 {
-    // Only select 'createdAt' from DB
     const messages = await prisma.message.findMany({
-        ...args,
-        select: {createdAt: true},
-        orderBy: { createdAt: 'asc' } // earliest first
+        where: {
+            createdAt: { gte: fromDate, lte: toDate },
+            ...extraWhere,
+        },
+        select: { createdAt: true },
     })
 
-    if (messages.length === 0) return []
+    const counts = {}
+    for (const m of messages) {
+        const key = m.createdAt.toISOString().split('T')[0]
+        counts[key] = (counts[key] || 0) + 1
+    }
+    return counts
+}
 
-    const minDate = new Date(messages[0].createdAt)
-    const maxDate = new Date(messages[messages.length - 1].createdAt)
+/**
+ * Split a [from, to] range into an immutable historical slice (everything up
+ * to yesterday) and a flag for whether today is included. Lexical comparison
+ * is safe for the 'YYYY-MM-DD' format.
+ *
+ * @returns {{today: string, histEnd: string, includeToday: boolean}}
+ */
+function splitRange(from, to)
+{
+    const today = daysAgoString(0)
+    const yesterday = daysAgoString(1)
+    return {
+        today,
+        histEnd: to < yesterday ? to : yesterday, // min(to, yesterday)
+        includeToday: to >= today,
+    }
+}
+
+/**
+ * Return the JSON value cached at `cacheKey`, or compute it with `computeFn`,
+ * store it with the given `ttl`, and return it.
+ */
+async function getOrCompute(cacheKey, ttl, computeFn)
+{
+    let cached = await redis.json.get(cacheKey, '$')
+    if (!cached) {
+        cached = await computeFn()
+        await redis.json.set(cacheKey, '$', cached)
+        await redis.expire(cacheKey, ttl)
+    }
+    return cached
+}
+
+/**
+ * Daily counts for [from, to] with the "historical + today" caching pattern:
+ * the immutable slice up to yesterday is cached for a day, while today's tiny
+ * slice is recomputed on the page cycle and merged. The returned daily map is
+ * cheap to re-bucket on every request, keeping results exact.
+ *
+ * @param keyBase cache namespace (e.g. 'messages', 'screenshot')
+ * @param extraWhere extra Prisma `where` clause for getDailyCounts
+ * @param from range start 'YYYY-MM-DD'
+ * @param to range end 'YYYY-MM-DD'
+ * @returns {Promise<Object>} merged map of 'YYYY-MM-DD' -> count
+ */
+async function getDailyCountsCached(keyBase, extraWhere, from, to)
+{
+    const { today, histEnd, includeToday } = splitRange(from, to)
+    const dailyMap = {}
+
+    // Historical slice [from, histEnd] — immutable, cached for a day.
+    if (from <= histEnd) {
+        const histKey = cachePrefix + `stats:daily:${keyBase}:${from}_${histEnd}`
+        const hist = await getOrCompute(histKey, historicalExpiration, () => {
+            const { fromDate, toDate } = getDates(from, histEnd)
+            return getDailyCounts(extraWhere, fromDate, toDate)
+        })
+        Object.assign(dailyMap, hist)
+    }
+
+    // Today's slice — only when the requested range reaches today. Cached on
+    // the short page cycle and merged into the historical counts.
+    if (includeToday) {
+        const todayKey = cachePrefix + `stats:daily:${keyBase}:today:${today}`
+        const todayMap = await getOrCompute(todayKey, expiration, () => {
+            const { fromDate, toDate } = getDates(today, today)
+            return getDailyCounts(extraWhere, fromDate, toDate)
+        })
+        for (const [day, count] of Object.entries(todayMap)) {
+            dailyMap[day] = (dailyMap[day] || 0) + count
+        }
+    }
+
+    return dailyMap
+}
+
+/**
+ * Turn a daily count map into chart buckets. Granularity (daily/weekly/
+ * monthly) is chosen from the span of actual data, matching the previous
+ * row-scanning behaviour but operating on the compact daily map.
+ *
+ * @param dailyMap map of 'YYYY-MM-DD' -> count
+ * @returns {Array<{label: string, count: number}>}
+ */
+function bucketDailyCounts(dailyMap)
+{
+    const dayKeys = Object.keys(dailyMap).sort()
+    if (dayKeys.length === 0) return []
+
+    const minDate = new Date(dayKeys[0])
+    const maxDate = new Date(dayKeys[dayKeys.length - 1])
     const diffDays = (maxDate - minDate) / (1000 * 60 * 60 * 24)
 
     // Select aggregation function
@@ -268,11 +378,11 @@ async function getMessagesByArgs(args)
         formatLabel = key => key
     }
 
-    // Aggregate counts
+    // Aggregate the daily counts into the chosen period buckets
     const counts = {}
-    for (const m of messages) {
-        const key = groupFn(m.createdAt)
-        counts[key] = (counts[key] || 0) + 1
+    for (const [dayStr, count] of Object.entries(dailyMap)) {
+        const key = groupFn(new Date(dayStr))
+        counts[key] = (counts[key] || 0) + count
     }
 
     // Fill missing periods with zero counts
@@ -300,62 +410,70 @@ async function getMessagesByArgs(args)
 async function getDashboardMessages({from, to})
 {
     if (!from) from = daysAgoString(30)
+    if (!to) to = daysAgoString(0)
 
-    const { fromDate, toDate } = getDates(from, to)
-
-    const fromString = fromDate.toISOString().split('T')[0]
-    const toString = toDate.toISOString().split('T')[0]
-    const cacheKey = cachePrefix + `dashboard:messages:${fromString}_${toString}`
-
-    const cachedMessages = await redis.json.get(cacheKey, '$')
-    if (cachedMessages) return cachedMessages
-
-    const args = {
-        where: {
-            createdAt: {
-                gte: fromDate,
-                lte: toDate
-            },
-        },
-        orderBy: {
-            createdAt: 'asc',
-        },
-    }
-
-    return await getMessagesByArgs(args)
-
+    const dailyMap = await getDailyCountsCached('messages', {}, from, to)
+    return bucketDailyCounts(dailyMap)
 }
 
 async function getScreenshotMessages({from, to})
 {
     if (!from) from = daysAgoString(30)
-    const { fromDate, toDate } = getDates(from, to)
+    if (!to) to = daysAgoString(0)
 
-    const args = {
-        where: {
-            createdAt: {
-                gte: fromDate,
-                lte: toDate
-            },
-            content: {
-                contains: '%\\%\\%%',
-            }
-        },
-        orderBy: {
-            createdAt: 'asc',
-        },
-    }
-
-
-    return await getMessagesByArgs(args)
+    const extraWhere = { content: { contains: '%\\%\\%%' } }
+    const dailyMap = await getDailyCountsCached('screenshot', extraWhere, from, to)
+    return bucketDailyCounts(dailyMap)
 }
 
-async function getTopMessages({from, to})
+/**
+ * Cache an immutable historical aggregation (≤ yesterday) for a day and a
+ * short-lived today's aggregation, then merge the two count maps by key.
+ *
+ * computeFn(fromDate, toDate) must return an array of { key, count }.
+ *
+ * NOTE: historical and today's slices are each capped at the top 100 keys, so
+ * the merge is approximate at the tail (a key just outside the historical top
+ * 100 could be undercounted once today is added). Today's volume is negligible
+ * versus all-time totals, so this is acceptable for the dashboard's "top 100".
+ *
+ * @returns {Promise<Array<[any, number]>>} merged [key, count] pairs, sorted desc
+ */
+async function getAggregateCached(keyBase, computeFn, from, to)
 {
-    if (!from) from = daysAgoString(30)
-    const { fromDate, toDate } = getDates(from, to)
+    const { today, histEnd, includeToday } = splitRange(from, to)
 
-    const groupedCards = await prisma.message.groupBy({
+    const merged = new Map()
+    const addEntries = entries => {
+        for (const { key, count } of entries) {
+            merged.set(key, (merged.get(key) || 0) + count)
+        }
+    }
+
+    if (from <= histEnd) {
+        const histKey = cachePrefix + `stats:agg:${keyBase}:${from}_${histEnd}`
+        const hist = await getOrCompute(histKey, historicalExpiration, () => {
+            const { fromDate, toDate } = getDates(from, histEnd)
+            return computeFn(fromDate, toDate)
+        })
+        addEntries(hist)
+    }
+
+    if (includeToday) {
+        const todayKey = cachePrefix + `stats:agg:${keyBase}:today:${today}`
+        const todayAgg = await getOrCompute(todayKey, expiration, () => {
+            const { fromDate, toDate } = getDates(today, today)
+            return computeFn(fromDate, toDate)
+        })
+        addEntries(todayAgg)
+    }
+
+    return [...merged.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100)
+}
+
+async function computeTopMessages(fromDate, toDate)
+{
+    const grouped = await prisma.message.groupBy({
         by: ['content'], // group by content
         _count: {
             content: true
@@ -380,20 +498,26 @@ async function getTopMessages({from, to})
         take: 100,
     })
 
-    return groupedCards.map( (group, index)  => ({
-        position: index + 1,
-        command: group.content,
-        count: group._count.content
-    }))
-
+    return grouped.map(group => ({ key: group.content, count: group._count.content }))
 }
 
-async function getTopUsers({from, to})
+async function getTopMessages({from, to})
 {
     if (!from) from = daysAgoString(30)
-    const { fromDate, toDate } = getDates(from, to)
+    if (!to) to = daysAgoString(0)
 
-    const groupedMessages = await prisma.message.groupBy({
+    const merged = await getAggregateCached('top-messages', computeTopMessages, from, to)
+
+    return merged.map(([command, count], index) => ({
+        position: index + 1,
+        command,
+        count
+    }))
+}
+
+async function computeTopUsers(fromDate, toDate)
+{
+    const grouped = await prisma.message.groupBy({
         by: ['authorId'],
         _count: {
             content: true
@@ -412,7 +536,16 @@ async function getTopUsers({from, to})
         take: 100,
     })
 
-    const userIds = groupedMessages.map(group => group.authorId)
+    return grouped.map(group => ({ key: group.authorId, count: group._count.content }))
+}
+
+async function getTopUsers({from, to})
+{
+    if (!from) from = daysAgoString(30)
+    if (!to) to = daysAgoString(0)
+
+    const merged = await getAggregateCached('top-users', computeTopUsers, from, to)
+    const userIds = merged.map(([authorId]) => authorId)
 
     const users = await prisma.user.findMany({
         where: {
@@ -425,15 +558,15 @@ async function getTopUsers({from, to})
         }
     })
 
-    return groupedMessages.map((group) => {
-        const user = users.find(u => u.id === group.authorId)
+    return merged.map(([authorId, count]) => {
+        const user = users.find(u => u.id === authorId)
         return {
-            authorId: group.authorId,
+            authorId,
             username: user?.name || 'Unknown',
             discordId: user?.discordId || 'N/A',
-            count: group._count.content
+            count
         }
-    }).filter (user => user.username !== 'Катюха')
+    }).filter(user => user.username !== 'Катюха')
 }
 
 /**
