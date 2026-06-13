@@ -11,6 +11,8 @@ const {
     cacheSentMessage,
 } = require("../messageCache")
 const {downloadImageAsFile} = require("../../tools/imageUpload")
+const {translate} = require("../../tools/translation/translator")
+const {getButtonRow} = require("../../tools/button")
 const dictionary = require("../../tools/dictionary")
 
 //cached synonym answers live for one day by default
@@ -54,29 +56,46 @@ function findCommonPrefix(arr)
 }
 
 /**
- * List the available synonyms, grouped and chunked to fit Discord limits.
+ * Reply with a button that reveals the command list privately on click.
+ * The list itself is built per-click so it is always current and only
+ * visible (ephemeral) to the user who pressed the button.
  *
  * @param ctx
  * @returns {Promise<boolean>}
  */
 async function handleListCommands(ctx)
 {
-    const {command, message} = ctx
+    const {command, message, language} = ctx
     if (!command.startsWith('commands')) return false
 
-    const commands = await listSynonyms(command)
-    if (!commands) {
-        await message.channel.send('No commands found')
+    const row = getButtonRow(
+        translate(language, 'commandsButton'), 'show_commands:' + command)
+    await message.channel.send({
+        content: translate(language, 'commandsPrompt'),
+        components: row,
+    })
 
-        return true
-    }
+    return true
+}
+
+/**
+ * Build the synonym list as Discord-sized message chunks.
+ *
+ * @param command
+ * @returns {Promise<string[]|null>} chunks, or null when none exist
+ */
+async function buildCommandList(command)
+{
+    const commands = await listSynonyms(command)
+    if (!commands) return null
 
     const isFiltered = command.trim().split(' ').length > 1
     const overallTotal = commands.reduce((acc, arr) => acc + arr.length, 0)
+    const messages = []
     let messageText = isFiltered ? '' : `**TOTAL: ${overallTotal}**\n\n`
 
     //append a group block, flushing the buffer when it grows too large
-    const appendGroupBlock = async (header, items) => {
+    const appendGroupBlock = (header, items) => {
         if (!items.length) return
 
         const list = '```\n' + items.join('\n') + '\n```\n'
@@ -85,7 +104,7 @@ async function handleListCommands(ctx)
             : `**${header.toUpperCase()} (${items.length})**\n${list}`
 
         if (messageText.length + groupBlock.length > 1900) {
-            await message.channel.send(messageText)
+            messages.push(messageText)
             messageText = ''
         }
 
@@ -96,15 +115,15 @@ async function handleListCommands(ctx)
         if (isFiltered) {
             // filtered: detect common prefix
             const prefix = findCommonPrefix(group)
-            await appendGroupBlock(prefix || '', group)
+            appendGroupBlock(prefix || '', group)
         } else {
-            await appendGroupedByLetter(group, appendGroupBlock)
+            appendGroupedByLetter(group, appendGroupBlock)
         }
     }
 
-    if (messageText.trim()) await message.channel.send(messageText)
+    if (messageText.trim()) messages.push(messageText)
 
-    return true
+    return messages
 }
 
 /**
@@ -112,9 +131,9 @@ async function handleListCommands(ctx)
  *
  * @param group
  * @param appendGroupBlock
- * @returns {Promise<void>}
+ * @returns {void}
  */
-async function appendGroupedByLetter(group, appendGroupBlock)
+function appendGroupedByLetter(group, appendGroupBlock)
 {
     let lastKey = ''
     let groupItems = []
@@ -123,7 +142,7 @@ async function appendGroupedByLetter(group, appendGroupBlock)
         const key = synonym[0]
 
         if (key !== lastKey && groupItems.length > 0) {
-            await appendGroupBlock(lastKey, groupItems)
+            appendGroupBlock(lastKey, groupItems)
             groupItems = []
         }
 
@@ -131,7 +150,7 @@ async function appendGroupedByLetter(group, appendGroupBlock)
         lastKey = key
     }
 
-    await appendGroupBlock(lastKey, groupItems)
+    appendGroupBlock(lastKey, groupItems)
 }
 
 /**
@@ -245,5 +264,6 @@ async function resolveSynonym(ctx)
 module.exports = {
     handleManageSynonym,
     handleListCommands,
+    buildCommandList,
     resolveSynonym,
 }

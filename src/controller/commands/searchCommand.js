@@ -140,10 +140,13 @@ async function applyPagination(ctx, answer, counter, offset)
  */
 async function sendCardResults(ctx, cacheKey, cards, offset)
 {
-    const {message, redis, language, limit, paginationLimit} = ctx
+    const {message, redis, language, command, limit, paginationLimit} = ctx
     const counter = cards.counter
     //if any cards are found - attach them
-    let content = translate(language, 'search') + ': ' + counter
+    let content = ''
+    //show the search request above the counter on paginated results
+    if (message.buttonId) content += '> 🔎 ' + command + '\n'
+    content += translate(language, 'search') + ': ' + counter
     //do not show any cards if there are more than 20 cards
     if (counter > noShowThreshold && !isBotCommandChannel(message)) {
         const sent = await message.channel.send(

@@ -15,6 +15,8 @@
   "min": "Minimum 2 characters, please",
   "fetching": "Fetching results...",
   "next": "Next",
+  "commandsButton": "Show commands",
+  "commandsPrompt": "Click the button to view the custom commands list.",
   "averageAttack": "Average attack: ",
   "averageDefense": "Average defense: ",
   "averageOperationCost": "Average operation cost: ",

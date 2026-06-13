@@ -6,6 +6,7 @@ const {discordHandler} = require("../controller/discordHandler")
 const {redis} = require("../controller/redis")
 const {getSynonymById, updateSynonym} = require("../database/synonym")
 const {isManager} = require("../tools/search")
+const {buildCommandList} = require("../controller/commands/synonymCommands")
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -37,6 +38,33 @@ async function onInteractionCreate(interaction)
         })
 
         return await discordHandler(message, client, redis)
+    }
+
+    if (interaction.customId.startsWith('show_commands:'))
+    {
+        const command =
+            interaction.customId.replace('show_commands:', '')
+        const chunks = await buildCommandList(command)
+        if (!chunks) {
+            return await interaction.reply({
+                content: 'No commands found',
+                flags: MessageFlags.Ephemeral
+            })
+        }
+
+        //first chunk is the reply, the rest are ephemeral follow-ups
+        await interaction.reply({
+            content: chunks[0],
+            flags: MessageFlags.Ephemeral
+        })
+        for (let i = 1; i < chunks.length; i++) {
+            await interaction.followUp({
+                content: chunks[i],
+                flags: MessageFlags.Ephemeral
+            })
+        }
+
+        return
     }
 
     if (interaction.customId.startsWith('edit-synonym-'))
