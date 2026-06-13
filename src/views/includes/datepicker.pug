@@ -1,20 +1,14 @@
-// Date picker + filters (only logged-in users may change the date range)
+// Stats period selector
 if canFilter
     form#filterForm(method="get" action="")
         .row.mb-3
-            .col-md-2
-                label.form-label(for="from") From:
-                input#from.form-control(
-                    type="date"
-                    name="from"
-                    value=from
-                )
-            .col-md-2
-                label.form-label(for="to") To:
-                input#to.form-control(
-                    type="date"
-                    name="to"
-                    value=to
-                )
+            .col-md-3
+                label.form-label(for="period") Period:
+                select#period.form-select(name="period")
+                    each option in periods
+                        option(
+                            value=option.value
+                            selected=option.value === period
+                        ) #{option.label}
             .col-md-1.align-self-end
-                button.btn.btn-primary(type="submit") Filter
+                button.btn.btn-primary(type="submit") Apply

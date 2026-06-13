@@ -5,7 +5,6 @@ const {
     getMessages,
     getUserMessages,
     getProfileStats,
-    daysAgoString,
 } = require('../database/db')
 
 const {isManager} = require("../tools/search")
@@ -13,10 +12,13 @@ const {resolveAvatarUrl} = require("../tools/avatar")
 const axios = require('axios')
 //API
 const API = require('../controller/api')
-
-function getTodayString() {
-    return new Date().toISOString().split('T')[0]
-}
+const STATS_PERIOD_OPTIONS = [
+    {value: 'daily', label: 'Last 30 days'},
+    {value: 'monthly', label: 'Last 12 months'},
+    {value: 'quarterly', label: 'Last 8 quarters'},
+    {value: 'yearly', label: 'Last 5 years'},
+]
+const STATS_PERIODS = STATS_PERIOD_OPTIONS.map(option => option.value)
 
 // middleware to test if authenticated
 function isAuthenticated(req, res, next) {
@@ -30,30 +32,21 @@ function requireManager(req, res, next) {
     res.status(403).send('Not permitted')
 }
 
-// Resolve the requested date range. Only logged-in users may change the
-// dates; anonymous callers are always clamped to the default window, so they
-// cannot trigger expensive wide-range queries via the API.
-function resolveRange(req) {
-    const isLoggedIn = !!req.session.user
-    const { from, to } = req.query
-
-    return {
-        from: (isLoggedIn && from) ? from : daysAgoString(30),
-        to: (isLoggedIn && to) ? to : getTodayString()
-    }
+function resolveStatsPeriod(req) {
+    return STATS_PERIODS.includes(req.query.period) ? req.query.period : 'daily'
 }
 
 function renderPage(req, res, { title, user, loginLink }) {
-    const { from, to } = resolveRange(req)
+    const period = resolveStatsPeriod(req)
     const { username, command } = req.query
 
     res.render('index', {
         title,
         user,
         loginLink,
-        from,
-        to,
-        canFilter: !!user,
+        period,
+        periods: STATS_PERIOD_OPTIONS,
+        canFilter: true,
         username: username || '',
         command: command || ''
     })
@@ -276,13 +269,10 @@ async function renderCards(req, res) {
 async function handleApi(req, res) {
     const { method } = req.params
     const { page, pageSize, username, command } = req.query
-    // Anonymous callers are clamped to the default window; only logged-in
-    // users may request an arbitrary date range.
-    const { from, to } = resolveRange(req)
+    const period = resolveStatsPeriod(req)
 
     const apiResponse = await API.run(method, {
-        from,
-        to,
+        period,
         page,
         pageSize,
         username,

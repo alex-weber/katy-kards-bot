@@ -5,10 +5,7 @@ const {redis, cachePrefix} = require('../controller/redis')
 const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
 //profile stats cache lifetime (seconds)
 const profileExpiration = parseInt(process.env.REDIS_EXP_PROFILE) || 60 * 5
-//historical stats (everything up to yesterday) are immutable; cache them
-//for a full day. Correctness is guaranteed by the date baked into the cache
-//key, so this TTL only bounds memory usage.
-const historicalExpiration = parseInt(process.env.CACHE_HISTORICAL_EXPIRE) || 60 * 60 * 24
+const STATS_PERIODS = ['yearly', 'quarterly', 'monthly', 'daily']
 const {languages} = require('../tools/language')
 /**
  *
@@ -121,7 +118,7 @@ async function getProfileStats(userId)
     return stats
 }
 
-async function getMessages({ from, to, page = 1, pageSize = 50, username, command } = {})
+async function getMessages({ from, to, page = "1", pageSize = "50", username, command } = {})
 {
 
     const p = Math.max(1, parseInt(page, 10) || 1)
@@ -198,277 +195,242 @@ async function getMessages({ from, to, page = 1, pageSize = 50, username, comman
     return result
 }
 
-/**
- * Read the raw per-day message counts for a date range. This is the heavy
- * DB read (it scans every matching row's createdAt), so callers cache the
- * historical (≤ yesterday) slice for a full day via getDailyCountsCached.
- *
- * @param extraWhere extra Prisma `where` clause merged with the date range
- * @param fromDate range start (Date)
- * @param toDate range end (Date)
- * @returns {Promise<Object>} map of 'YYYY-MM-DD' -> count
- */
-async function getDailyCounts(extraWhere, fromDate, toDate)
+
+async function getDashboardMessages({period} = {})
+{
+    return getStatsPeriodCountsCached('messages', {}, normalizeStatsPeriod(period))
+}
+
+async function getScreenshotMessages({period} = {})
+{
+    const extraWhere = { content: { contains: '%\\%\\%%' } }
+    return getStatsPeriodCountsCached('screenshot', extraWhere, normalizeStatsPeriod(period))
+}
+
+
+function normalizeStatsPeriod(period)
+{
+    return STATS_PERIODS.includes(period) ? period : 'daily'
+}
+
+function addUtcDays(date, days)
+{
+    return new Date(Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate() + days
+    ))
+}
+
+function addUtcMonths(date, months)
+{
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1))
+}
+
+function addUtcYears(date, years)
+{
+    return new Date(Date.UTC(date.getUTCFullYear() + years, 0, 1))
+}
+
+function startOfStatsPeriod(period, date)
+{
+    const year = date.getUTCFullYear()
+    const month = date.getUTCMonth()
+    if (period === 'yearly') return new Date(Date.UTC(year, 0, 1))
+    if (period === 'quarterly') return new Date(Date.UTC(year, month - (month % 3), 1))
+    if (period === 'monthly') return new Date(Date.UTC(year, month, 1))
+    return new Date(Date.UTC(year, month, date.getUTCDate()))
+}
+
+function nextStatsPeriod(period, date)
+{
+    if (period === 'yearly') return addUtcYears(date, 1)
+    if (period === 'quarterly') return addUtcMonths(date, 3)
+    if (period === 'monthly') return addUtcMonths(date, 1)
+    return addUtcDays(date, 1)
+}
+
+function statsPeriodKey(period, date)
+{
+    const year = date.getUTCFullYear()
+    const month = date.getUTCMonth()
+    if (period === 'yearly') return `${year}`
+    if (period === 'quarterly') return `${year}-Q${Math.floor(month / 3) + 1}`
+    if (period === 'monthly') return `${year}-${(month + 1).toString().padStart(2, '0')}`
+    return date.toISOString().split('T')[0]
+}
+
+function statsPeriodLabel(period, date)
+{
+    if (period === 'daily') {
+        return date.toLocaleDateString('en-GB', {month: '2-digit', day: '2-digit'})
+    }
+    return statsPeriodKey(period, date)
+}
+
+function statsPeriodLookback(period)
+{
+    if (period === 'yearly') return 5
+    if (period === 'quarterly') return 8
+    if (period === 'monthly') return 12
+    return 30
+}
+
+async function getStatsFirstMessageDate(extraWhere = {})
+{
+    const first = await prisma.message.findFirst({
+        where: extraWhere,
+        orderBy: {createdAt: 'asc'},
+        select: {createdAt: true},
+    })
+    return first?.createdAt || new Date()
+}
+
+function buildStatsBuckets(period)
+{
+    period = normalizeStatsPeriod(period)
+    const todayStart = startOfStatsPeriod('daily', new Date())
+    const bucketPeriod = period
+    const currentStart = startOfStatsPeriod(bucketPeriod, todayStart)
+    const bucketCount = statsPeriodLookback(period)
+    let start
+
+    if (period === 'yearly') start = addUtcYears(currentStart, -(bucketCount - 1))
+    else if (period === 'quarterly') start = addUtcMonths(currentStart, -(bucketCount - 1) * 3)
+    else if (period === 'monthly') start = addUtcMonths(currentStart, -(bucketCount - 1))
+    else start = addUtcDays(currentStart, -(bucketCount - 1))
+
+    const buckets = []
+    for (let current = start; current <= currentStart; current = nextStatsPeriod(bucketPeriod, current)) {
+        const next = nextStatsPeriod(bucketPeriod, current)
+        buckets.push({
+            key: statsPeriodKey(bucketPeriod, current),
+            label: statsPeriodLabel(bucketPeriod, current),
+            fromDate: current,
+            toDate: new Date(next.getTime() - 1),
+            completed: next <= todayStart,
+        })
+    }
+
+    return buckets
+}
+
+async function getStatsPeriodCached(cacheNamespace, period, bucket, computeFn)
+{
+    const cacheKey = cachePrefix + `stats:${cacheNamespace}:${period}:${bucket.key}`
+    let cached = await redis.json.get(cacheKey, '$')
+    if (cached === null || cached === undefined) {
+        cached = await computeFn(bucket.fromDate, bucket.toDate)
+        await redis.json.set(cacheKey, '$', cached)
+        if (!bucket.completed) await redis.expire(cacheKey, expiration)
+    }
+    return cached
+}
+
+function dailyCountKey(date)
+{
+    return date.toISOString().split('T')[0]
+}
+
+function mergeDailyCounts(target, source)
+{
+    for (const [day, count] of Object.entries(source)) {
+        target[day] = (target[day] || 0) + count
+    }
+}
+
+async function getDailyCountMap(extraWhere, fromDate, toDate)
 {
     const messages = await prisma.message.findMany({
         where: {
-            createdAt: { gte: fromDate, lte: toDate },
+            createdAt: {gte: fromDate, lte: toDate},
             ...extraWhere,
         },
-        select: { createdAt: true },
+        select: {createdAt: true},
     })
 
     const counts = {}
-    for (const m of messages) {
-        const key = m.createdAt.toISOString().split('T')[0]
+    for (const message of messages) {
+        const key = dailyCountKey(message.createdAt)
         counts[key] = (counts[key] || 0) + 1
     }
     return counts
 }
 
-/**
- * Split a [from, to] range into an immutable historical slice (everything up
- * to yesterday) and a flag for whether today is included. Lexical comparison
- * is safe for the 'YYYY-MM-DD' format.
- *
- * @returns {{today: string, histEnd: string, includeToday: boolean}}
- */
-function splitRange(from, to)
+async function getDailyCountSourceCached(keyBase, extraWhere)
 {
-    const today = daysAgoString(0)
-    const yesterday = daysAgoString(1)
-    return {
-        today,
-        histEnd: to < yesterday ? to : yesterday, // min(to, yesterday)
-        includeToday: to >= today,
-    }
-}
-
-/**
- * Return the JSON value cached at `cacheKey`, or compute it with `computeFn`,
- * store it with the given `ttl`, and return it.
- */
-async function getOrCompute(cacheKey, ttl, computeFn)
-{
-    let cached = await redis.json.get(cacheKey, '$')
-    if (!cached) {
-        cached = await computeFn()
-        await redis.json.set(cacheKey, '$', cached)
-        await redis.expire(cacheKey, ttl)
-    }
-    return cached
-}
-
-/**
- * Daily counts for [from, to] with the "historical + today" caching pattern:
- * the immutable slice up to yesterday is cached for a day, while today's tiny
- * slice is recomputed on the page cycle and merged. The returned daily map is
- * cheap to re-bucket on every request, keeping results exact.
- *
- * @param keyBase cache namespace (e.g. 'messages', 'screenshot')
- * @param extraWhere extra Prisma `where` clause for getDailyCounts
- * @param from range start 'YYYY-MM-DD'
- * @param to range end 'YYYY-MM-DD'
- * @returns {Promise<Object>} merged map of 'YYYY-MM-DD' -> count
- */
-async function getDailyCountsCached(keyBase, extraWhere, from, to)
-{
-    const { today, histEnd, includeToday } = splitRange(from, to)
+    const todayStart = startOfStatsPeriod('daily', new Date())
+    const today = dailyCountKey(todayStart)
+    const yesterdayEnd = new Date(todayStart.getTime() - 1)
     const dailyMap = {}
 
-    // Historical slice [from, histEnd] — immutable, cached for a day.
-    if (from <= histEnd) {
-        const histKey = cachePrefix + `stats:daily:${keyBase}:${from}_${histEnd}`
-        const hist = await getOrCompute(histKey, historicalExpiration, () => {
-            const { fromDate, toDate } = getDates(from, histEnd)
-            return getDailyCounts(extraWhere, fromDate, toDate)
-        })
-        Object.assign(dailyMap, hist)
-    }
-
-    // Today's slice — only when the requested range reaches today. Cached on
-    // the short page cycle and merged into the historical counts.
-    if (includeToday) {
-        const todayKey = cachePrefix + `stats:daily:${keyBase}:today:${today}`
-        const todayMap = await getOrCompute(todayKey, expiration, () => {
-            const { fromDate, toDate } = getDates(today, today)
-            return getDailyCounts(extraWhere, fromDate, toDate)
-        })
-        for (const [day, count] of Object.entries(todayMap)) {
-            dailyMap[day] = (dailyMap[day] || 0) + count
+    const historicalKey = cachePrefix + `stats:count-source:${keyBase}:historical`
+    let historical = await redis.json.get(historicalKey, '$')
+    if (historical === null || historical === undefined) {
+        historical = {}
+        const firstDate = await getStatsFirstMessageDate(extraWhere)
+        const historicalStart = startOfStatsPeriod('daily', firstDate)
+        if (historicalStart <= yesterdayEnd) {
+            historical = await getDailyCountMap(extraWhere, historicalStart, yesterdayEnd)
         }
+        await redis.json.set(historicalKey, '$', historical)
     }
+    mergeDailyCounts(dailyMap, historical)
+
+    const todayKey = cachePrefix + `stats:count-source:${keyBase}:today:${today}`
+    let todayMap = await redis.json.get(todayKey, '$')
+    if (todayMap === null || todayMap === undefined) {
+        todayMap = await getDailyCountMap(extraWhere, todayStart, new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1))
+        await redis.json.set(todayKey, '$', todayMap)
+        await redis.expire(todayKey, expiration)
+    }
+    mergeDailyCounts(dailyMap, todayMap)
 
     return dailyMap
 }
 
-/**
- * Turn a daily count map into chart buckets. Granularity (daily/weekly/
- * monthly) is chosen from the span of actual data, matching the previous
- * row-scanning behaviour but operating on the compact daily map.
- *
- * @param dailyMap map of 'YYYY-MM-DD' -> count
- * @returns {Array<{label: string, count: number}>}
- */
-function bucketDailyCounts(dailyMap)
+function statsBucketValue(period, bucket, dailyMap)
 {
-    const dayKeys = Object.keys(dailyMap).sort()
-    if (dayKeys.length === 0) return []
+    if (period === 'daily') return dailyMap[dailyCountKey(bucket.fromDate)] || 0
 
-    const minDate = new Date(dayKeys[0])
-    const maxDate = new Date(dayKeys[dayKeys.length - 1])
-    const diffDays = (maxDate - minDate) / (1000 * 60 * 60 * 24)
-
-    // Select aggregation function
-    let groupFn, incrementFn, formatLabel
-    if (diffDays <= 62) {
-        // Daily
-        groupFn = d => d.toISOString().split('T')[0]
-        incrementFn = d => {
-            const n = new Date(d)
-            n.setUTCDate(n.getUTCDate() + 1)
-            return n
-        }
-        formatLabel = key => {
-            const date = new Date(key) // <- convert string back to Date
-            return date.toLocaleDateString('en-GB', {
-                month: '2-digit',
-                day: '2-digit'
-            })
-        }
-
-    } else if (diffDays <= 366) {
-        // Weekly: Monday key
-        groupFn = d => {
-            const date = new Date(d)
-            const day = date.getUTCDay()
-            const diffToMonday = (day + 6) % 7
-            const monday = new Date(date)
-            monday.setUTCDate(date.getUTCDate() - diffToMonday)
-            return monday.toISOString().split('T')[0]
-        }
-        incrementFn = d => {
-            const n = new Date(d)
-            n.setUTCDate(n.getUTCDate() + 7)
-            return n
-        }
-        formatLabel = key => {
-            const monday = new Date(key)
-            const sunday = new Date(monday)
-            sunday.setUTCDate(monday.getUTCDate() + 6)
-            return `${monday.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit'
-            })} - ${sunday.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit'
-            })}`
-        }
-    } else {
-        // Monthly
-        groupFn = d => {
-            const date = new Date(d)
-            return `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1)
-                .toString()
-                .padStart(2, '0')}`
-        }
-        incrementFn = d => {
-            return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))
-        }
-        formatLabel = key => key
+    let count = 0
+    for (const [day, value] of Object.entries(dailyMap)) {
+        const date = new Date(day)
+        if (date >= bucket.fromDate && date <= bucket.toDate) count += value
     }
+    return count
+}
 
-    // Aggregate the daily counts into the chosen period buckets
-    const counts = {}
-    for (const [dayStr, count] of Object.entries(dailyMap)) {
-        const key = groupFn(new Date(dayStr))
-        counts[key] = (counts[key] || 0) + count
-    }
-
-    // Fill missing periods with zero counts
+async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
+{
+    period = normalizeStatsPeriod(period)
+    const dailyMap = await getDailyCountSourceCached(keyBase, extraWhere)
     const results = []
-    let current = new Date(minDate)
-    if (diffDays > 62 && diffDays <= 366) {
-        // Weekly: adjust to Monday
-        const day = current.getUTCDay()
-        current.setUTCDate(current.getUTCDate() - ((day + 6) % 7))
-    } else if (diffDays > 366) {
-        // Monthly: first of month
-        current.setUTCDate(1)
+    for (const bucket of buildStatsBuckets(period)) {
+        results.push({label: bucket.label, count: statsBucketValue(period, bucket, dailyMap)})
     }
-
-    while (current <= maxDate) {
-        const key = groupFn(current)
-        results.push({label: formatLabel(key), count: counts[key] || 0})
-        current = incrementFn(current)
-    }
-
     return results
-
 }
 
-async function getDashboardMessages({from, to})
+async function getStatsPeriodAggregateCached(keyBase, computeFn, period)
 {
-    if (!from) from = daysAgoString(30)
-    if (!to) to = daysAgoString(0)
+    period = normalizeStatsPeriod(period)
+    const buckets = buildStatsBuckets(period)
+    const first = buckets[0]
+    const last = buckets[buckets.length - 1]
+    const entries = await getStatsPeriodCached(
+        `agg-period:${keyBase}`,
+        period,
+        {
+            key: 'range',
+            fromDate: first.fromDate,
+            toDate: last.toDate,
+            completed: last.completed,
+        },
+        computeFn
+    )
 
-    const dailyMap = await getDailyCountsCached('messages', {}, from, to)
-    return bucketDailyCounts(dailyMap)
-}
-
-async function getScreenshotMessages({from, to})
-{
-    if (!from) from = daysAgoString(30)
-    if (!to) to = daysAgoString(0)
-
-    const extraWhere = { content: { contains: '%\\%\\%%' } }
-    const dailyMap = await getDailyCountsCached('screenshot', extraWhere, from, to)
-    return bucketDailyCounts(dailyMap)
-}
-
-/**
- * Cache an immutable historical aggregation (≤ yesterday) for a day and a
- * short-lived today's aggregation, then merge the two count maps by key.
- *
- * computeFn(fromDate, toDate) must return an array of { key, count }.
- *
- * NOTE: historical and today's slices are each capped at the top 100 keys, so
- * the merge is approximate at the tail (a key just outside the historical top
- * 100 could be undercounted once today is added). Today's volume is negligible
- * versus all-time totals, so this is acceptable for the dashboard's "top 100".
- *
- * @returns {Promise<Array<[any, number]>>} merged [key, count] pairs, sorted desc
- */
-async function getAggregateCached(keyBase, computeFn, from, to)
-{
-    const { today, histEnd, includeToday } = splitRange(from, to)
-
-    const merged = new Map()
-    const addEntries = entries => {
-        for (const { key, count } of entries) {
-            merged.set(key, (merged.get(key) || 0) + count)
-        }
-    }
-
-    if (from <= histEnd) {
-        const histKey = cachePrefix + `stats:agg:${keyBase}:${from}_${histEnd}`
-        const hist = await getOrCompute(histKey, historicalExpiration, () => {
-            const { fromDate, toDate } = getDates(from, histEnd)
-            return computeFn(fromDate, toDate)
-        })
-        addEntries(hist)
-    }
-
-    if (includeToday) {
-        const todayKey = cachePrefix + `stats:agg:${keyBase}:today:${today}`
-        const todayAgg = await getOrCompute(todayKey, expiration, () => {
-            const { fromDate, toDate } = getDates(today, today)
-            return computeFn(fromDate, toDate)
-        })
-        addEntries(todayAgg)
-    }
-
-    return [...merged.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100)
+    return entries.map(({key, count}) => [key, count])
 }
 
 async function computeTopMessages(fromDate, toDate)
@@ -501,12 +463,9 @@ async function computeTopMessages(fromDate, toDate)
     return grouped.map(group => ({ key: group.content, count: group._count.content }))
 }
 
-async function getTopMessages({from, to})
+async function getTopMessages({period} = {})
 {
-    if (!from) from = daysAgoString(30)
-    if (!to) to = daysAgoString(0)
-
-    const merged = await getAggregateCached('top-messages', computeTopMessages, from, to)
+    const merged = await getStatsPeriodAggregateCached('top-messages', computeTopMessages, period)
 
     return merged.map(([command, count], index) => ({
         position: index + 1,
@@ -539,12 +498,9 @@ async function computeTopUsers(fromDate, toDate)
     return grouped.map(group => ({ key: group.authorId, count: group._count.content }))
 }
 
-async function getTopUsers({from, to})
+async function getTopUsers({period} = {})
 {
-    if (!from) from = daysAgoString(30)
-    if (!to) to = daysAgoString(0)
-
-    const merged = await getAggregateCached('top-users', computeTopUsers, from, to)
+    const merged = await getStatsPeriodAggregateCached('top-users', computeTopUsers, period)
     const userIds = merged.map(([authorId]) => authorId)
 
     const users = await prisma.user.findMany({
@@ -599,12 +555,6 @@ function formatDate(date, full=false)
 
 }
 
-function daysAgoString(days) {
-    const now = new Date()
-    const pastDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
-    return pastDate.toISOString().split('T')[0]
-}
-
 function getDates(from, to)
 {
     let fromDate = from ? new Date(from) : new Date()
@@ -642,5 +592,4 @@ module.exports = {
     getScreenshotMessages,
     getTopMessages,
     getTopUsers,
-    daysAgoString,
 }
