@@ -4,11 +4,6 @@ const mockCountCalls = []
 const mockFindManyCalls = []
 const mockExpire = jest.fn(async () => {})
 
-function currentYear()
-{
-    return new Date().getUTCFullYear()
-}
-
 jest.mock('../src/controller/redis', () => ({
     cachePrefix: 'test:',
     redis: {
@@ -28,10 +23,17 @@ jest.mock('@prisma/client', () => {
                     mockGroupByCalls.push(args)
                     const isCurrentYear =
                         args.where.createdAt.gte.getUTCFullYear() === new Date().getUTCFullYear()
+                    const isYearlyRange =
+                        args.where.createdAt.lte.getUTCFullYear() === new Date().getUTCFullYear()
 
                     if (args.by[0] === 'content') {
                         return isCurrentYear
                             ? [{content: 'leo', _count: {content: 5}}]
+                            : isYearlyRange
+                                ? [
+                                    {content: 'leo', _count: {content: 405}},
+                                    {content: 'is2', _count: {content: 160}},
+                                  ]
                             : [
                                 {content: 'leo', _count: {content: 100}},
                                 {content: 'is2', _count: {content: 40}},
@@ -40,6 +42,11 @@ jest.mock('@prisma/client', () => {
 
                     return isCurrentYear
                         ? [{authorId: 1, _count: {content: 5}}]
+                        : isYearlyRange
+                            ? [
+                                {authorId: 1, _count: {content: 405}},
+                                {authorId: 2, _count: {content: 160}},
+                              ]
                         : [
                             {authorId: 1, _count: {content: 100}},
                             {authorId: 2, _count: {content: 40}},
@@ -97,7 +104,7 @@ beforeEach(() => {
 })
 
 describe('period stats caching', () => {
-    test('top-messages merges yearly buckets', async () => {
+    test('top-messages queries the selected yearly range once', async () => {
         const result = await getTopMessages({period: 'yearly'})
         const leo = result.find(r => r.command === 'leo')
         const is2 = result.find(r => r.command === 'is2')
@@ -105,31 +112,30 @@ describe('period stats caching', () => {
         expect(leo.count).toBe(405)
         expect(is2.count).toBe(160)
         expect(leo.position).toBe(1)
-        expect(mockGroupByCalls).toHaveLength(5)
+        expect(mockGroupByCalls).toHaveLength(1)
     })
 
-    test('top-users merges yearly buckets and resolves usernames', async () => {
+    test('top-users queries the selected yearly range and resolves usernames', async () => {
         const result = await getTopUsers({period: 'yearly'})
         const alice = result.find(u => u.authorId === 1)
         expect(alice.username).toBe('Alice')
         expect(alice.count).toBe(405)
     })
 
-    test('completed yearly buckets are reused and only current year gets a TTL', async () => {
+    test('period aggregate range is reused and current range gets a TTL', async () => {
         await getTopMessages({period: 'yearly'})
-        expect(mockGroupByCalls).toHaveLength(5)
+        expect(mockGroupByCalls).toHaveLength(1)
         expect(mockExpire).toHaveBeenCalledTimes(1)
 
         await getTopMessages({period: 'yearly'})
-        expect(mockGroupByCalls).toHaveLength(5)
+        expect(mockGroupByCalls).toHaveLength(1)
 
-        const year = currentYear()
         for (const key of [...mockJsonStore.keys()]) {
-            if (key.endsWith(`:yearly:${year}`)) mockJsonStore.delete(key)
+            if (key.endsWith(':yearly:range')) mockJsonStore.delete(key)
         }
 
         await getTopMessages({period: 'yearly'})
-        expect(mockGroupByCalls).toHaveLength(6)
+        expect(mockGroupByCalls).toHaveLength(2)
     })
 
     test('dashboard time-series includes completed and current yearly buckets', async () => {

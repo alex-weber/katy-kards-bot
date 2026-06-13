@@ -118,7 +118,7 @@ async function getProfileStats(userId)
     return stats
 }
 
-async function getMessages({ from, to, page = 1, pageSize = 50, username, command } = {})
+async function getMessages({ from, to, page = "1", pageSize = "50", username, command } = {})
 {
 
     const p = Math.max(1, parseInt(page, 10) || 1)
@@ -293,7 +293,7 @@ function buildStatsBuckets(period)
     const bucketPeriod = period
     const currentStart = startOfStatsPeriod(bucketPeriod, todayStart)
     const bucketCount = statsPeriodLookback(period)
-    let start = currentStart
+    let start
 
     if (period === 'yearly') start = addUtcYears(currentStart, -(bucketCount - 1))
     else if (period === 'quarterly') start = addUtcMonths(currentStart, -(bucketCount - 1) * 3)
@@ -415,16 +415,22 @@ async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
 async function getStatsPeriodAggregateCached(keyBase, computeFn, period)
 {
     period = normalizeStatsPeriod(period)
-    const merged = new Map()
+    const buckets = buildStatsBuckets(period)
+    const first = buckets[0]
+    const last = buckets[buckets.length - 1]
+    const entries = await getStatsPeriodCached(
+        `agg-period:${keyBase}`,
+        period,
+        {
+            key: 'range',
+            fromDate: first.fromDate,
+            toDate: last.toDate,
+            completed: last.completed,
+        },
+        computeFn
+    )
 
-    for (const bucket of buildStatsBuckets(period)) {
-        const entries = await getStatsPeriodCached(`agg:${keyBase}`, period, bucket, computeFn)
-        for (const { key, count } of entries) {
-            merged.set(key, (merged.get(key) || 0) + count)
-        }
-    }
-
-    return [...merged.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100)
+    return entries.map(({key, count}) => [key, count])
 }
 
 async function computeTopMessages(fromDate, toDate)
