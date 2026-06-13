@@ -73,6 +73,12 @@ async function buildProfileView(user)
             reactionsLabel(user.language, user),
             'profile_reactions',
             ButtonStyle.Secondary),
+        //Discord-only: DMs are blocked until the user opens a channel with the
+        //bot. Telegram allows them by default, so no equivalent button there.
+        ...getButtonRow(
+            translate(user.language, 'dmButton'),
+            'profile_dm',
+            ButtonStyle.Primary),
     ]
 
     return {content, components}
@@ -88,11 +94,22 @@ async function onInteractionCreate(interaction)
 
     if (interaction.customId === 'profile_show' ||
         interaction.customId === 'profile_reactions' ||
-        interaction.customId === 'profile_language') {
+        interaction.customId === 'profile_language' ||
+        interaction.customId === 'profile_dm') {
         //this feature is not available for blocked users
         if (user.status !== 'active') {
             return await interaction.reply({
                 content: translate(user.language, 'blocked'),
+                flags: MessageFlags.Ephemeral,
+            })
+        }
+
+        //open a DM channel with the user (active until the bot restarts)
+        if (interaction.customId === 'profile_dm') {
+            await interaction.user.createDM()
+
+            return await interaction.reply({
+                content: translate(user.language, 'dm'),
                 flags: MessageFlags.Ephemeral,
             })
         }
