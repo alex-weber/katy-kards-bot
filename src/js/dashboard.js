@@ -134,11 +134,16 @@ function renderTopUsers(apiData) {
 }
 
 
-async function getDashboardData({ from, to} = {}) {
+const allowedPeriods = ['yearly', 'quarterly', 'monthly', 'daily']
+
+function normalizePeriod(period) {
+    return allowedPeriods.includes(period) ? period : 'daily'
+}
+
+async function getDashboardData({ period } = {}) {
 
     const params = new URLSearchParams()
-    if (from) params.append('from', from)
-    if (to) params.append('to', to)
+    params.append('period', normalizePeriod(period))
 
     const qs = params.toString() ? '?' + params.toString() : ''
 
@@ -179,16 +184,8 @@ function getQueryParam(name) {
     return params.get(name)
 }
 
-function daysAgoString(days) {
-
-    const now = new Date()
-    if (isNaN(days)) return now
-    const pastDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
-    return pastDate.toISOString().split('T')[0]
-}
 getDashboardData({
-    from: getQueryParam('from') || daysAgoString(30),
-    to: getQueryParam('to') || daysAgoString(0),
+    period: getQueryParam('period'),
 }).then(data => {
     renderMessagesChart(
         data.dataMessages,

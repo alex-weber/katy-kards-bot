@@ -65,45 +65,49 @@ describe('auth middleware', () => {
     })
 })
 
-describe('date range gating', () => {
-    test('landing (anonymous) ignores from/to and disables the filter', () => {
+describe('stats period selection', () => {
+    test('landing defaults to daily and exposes the allowed periods', () => {
         const res = makeRes()
-        router.renderLanding({ session: {}, query: { from: '2020-01-01', to: '2020-02-01' } }, res)
+        router.renderLanding({ session: {}, query: {period: 'weekly'} }, res)
         const locals = res.render.mock.calls[0][1]
-        expect(locals.from).toBe('days-ago-30')
-        expect(locals.canFilter).toBe(false)
-    })
-
-    test('dashboard (logged in) honors from/to and enables the filter', () => {
-        const res = makeRes()
-        const req = { session: { user: { id: '1' } }, query: { from: '2020-01-01', to: '2020-02-01' } }
-        router.renderDashboard(req, res)
-        const locals = res.render.mock.calls[0][1]
-        expect(locals.from).toBe('2020-01-01')
-        expect(locals.to).toBe('2020-02-01')
+        expect(locals.period).toBe('daily')
+        expect(locals.periods).toEqual([
+            {value: 'daily', label: 'Last 30 days'},
+            {value: 'monthly', label: 'Last 12 months'},
+            {value: 'quarterly', label: 'Last 8 quarters'},
+            {value: 'yearly', label: 'Last 5 years'},
+        ])
         expect(locals.canFilter).toBe(true)
     })
 
-    test('handleApi clamps the range for anonymous callers', async () => {
+    test('dashboard honors an allowed period', () => {
+        const res = makeRes()
+        const req = { session: { user: { id: '1' } }, query: {period: 'quarterly'} }
+        router.renderDashboard(req, res)
+        const locals = res.render.mock.calls[0][1]
+        expect(locals.period).toBe('quarterly')
+        expect(locals.canFilter).toBe(true)
+    })
+
+    test('handleApi defaults invalid periods', async () => {
         const res = makeRes()
         await router.handleApi(
-            { params: { method: 'top-users' }, session: {}, query: { from: '2000-01-01', to: '2030-01-01' } },
+            { params: { method: 'top-users' }, session: {}, query: {period: 'weekly'} },
             res
         )
         const args = API.run.mock.calls[0][1]
-        expect(args.from).toBe('days-ago-30') // not 2000-01-01
+        expect(args.period).toBe('daily')
         expect(res.json).toHaveBeenCalled()
     })
 
-    test('handleApi honors the range for logged-in callers', async () => {
+    test('handleApi passes allowed periods through', async () => {
         const res = makeRes()
         await router.handleApi(
-            { params: { method: 'top-users' }, session: { user: { id: '1' } }, query: { from: '2024-01-01', to: '2024-02-01' } },
+            { params: { method: 'top-users' }, session: { user: { id: '1' } }, query: {period: 'yearly'} },
             res
         )
         const args = API.run.mock.calls[0][1]
-        expect(args.from).toBe('2024-01-01')
-        expect(args.to).toBe('2024-02-01')
+        expect(args.period).toBe('yearly')
     })
 })
 

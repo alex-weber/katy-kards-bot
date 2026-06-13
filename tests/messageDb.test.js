@@ -4,6 +4,7 @@
 const mockStore = new Map()
 const mockCount = jest.fn()
 const mockFindMany = jest.fn()
+const mockFindFirst = jest.fn()
 const mockGroupBy = jest.fn()
 const mockUserFindMany = jest.fn()
 const mockCreate = jest.fn()
@@ -21,7 +22,7 @@ jest.mock('../src/controller/redis', () => ({
 
 jest.mock('@prisma/client', () => ({
     PrismaClient: jest.fn(() => ({
-        message: { count: mockCount, findMany: mockFindMany, groupBy: mockGroupBy, create: mockCreate },
+        message: { count: mockCount, findMany: mockFindMany, findFirst: mockFindFirst, groupBy: mockGroupBy, create: mockCreate },
         user: { findMany: mockUserFindMany },
         $disconnect: jest.fn(),
     })),
@@ -41,6 +42,7 @@ beforeEach(() => {
     mockStore.clear()
     mockCount.mockReset()
     mockFindMany.mockReset()
+    mockFindFirst.mockReset()
     mockGroupBy.mockReset()
     mockUserFindMany.mockReset()
     mockCreate.mockReset()
@@ -56,10 +58,12 @@ describe('createMessage', () => {
 })
 
 describe('getScreenshotMessages', () => {
-    test('buckets screenshot rows and filters by the screenshot marker', async () => {
-        mockFindMany.mockResolvedValueOnce([{ createdAt: new Date('2024-06-01T10:00:00Z') }])
-        const series = await getScreenshotMessages({ from: '2024-06-01', to: '2024-06-02' })
-        expect(series).toEqual([{ label: '01/06', count: 1 }])
+    test('builds period buckets and filters by the screenshot marker', async () => {
+        mockFindMany.mockResolvedValue([{ createdAt: new Date() }])
+        mockCount.mockResolvedValue(1)
+        const series = await getScreenshotMessages({period: 'daily'})
+        expect(series).toHaveLength(30)
+        expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(1)
         // the screenshot content marker is applied to the query
         const where = mockFindMany.mock.calls[0][0].where
         expect(where.content).toBeDefined()

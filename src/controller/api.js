@@ -9,8 +9,20 @@ const {
 const {redis, cachePrefix} = require('../controller/redis')
 
 const expiration = parseInt(process.env.CACHE_API_EXPIRE) || 60*10
+const STATS_PERIODS = ['yearly', 'quarterly', 'monthly', 'daily']
 
-async function run(method, { from, to } = {}) {
+const statsMethods = new Set([
+    'messages',
+    'screenshot-messages',
+    'top-messages',
+    'top-users',
+])
+
+function normalizeStatsPeriod(period) {
+    return STATS_PERIODS.includes(period) ? period : 'daily'
+}
+
+async function run(method, { period } = {}) {
     const response = {
         result: 200,
         success: false,
@@ -18,8 +30,16 @@ async function run(method, { from, to } = {}) {
         data: []
     }
 
+    if (statsMethods.has(method) && period && !STATS_PERIODS.includes(period)) {
+        response.result = 400
+        response.message = `Invalid period. Allowed periods: ${STATS_PERIODS.join(', ')}`
+        return response
+    }
+
+    const statsPeriod = normalizeStatsPeriod(period)
+
     // Build cache key including all relevant params
-    const paramKey = [from || '', to || ''].join('_')
+    const paramKey = statsMethods.has(method) ? statsPeriod : ''
     const cacheKey = cachePrefix + 'api:' + method + ':' + paramKey
 
     const cached = await redis.json.get(cacheKey, '$')
@@ -40,7 +60,7 @@ async function run(method, { from, to } = {}) {
 
         case 'messages':
             if (!cached) {
-                response.data = await getDashboardMessages({ from, to})
+                response.data = await getDashboardMessages({period: statsPeriod})
                 await saveToCache(response.data)
             } else response.data = cached
 
@@ -49,7 +69,7 @@ async function run(method, { from, to } = {}) {
 
         case 'screenshot-messages':
             if (!cached) {
-                response.data = await getScreenshotMessages({ from, to })
+                response.data = await getScreenshotMessages({period: statsPeriod})
                 await saveToCache(response.data)
             } else response.data = cached
             response.success = true
@@ -57,7 +77,7 @@ async function run(method, { from, to } = {}) {
 
         case 'top-messages':
             if (!cached) {
-                response.data = await getTopMessages({ from, to })
+                response.data = await getTopMessages({period: statsPeriod})
                 await saveToCache(response.data)
             } else response.data = cached
             response.success = true
@@ -65,7 +85,7 @@ async function run(method, { from, to } = {}) {
 
         case 'top-users':
             if (!cached) {
-                response.data = await getTopUsers({ from, to })
+                response.data = await getTopUsers({period: statsPeriod})
                 await saveToCache(response.data)
             } else response.data = cached
             response.success = true

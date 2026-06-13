@@ -1,6 +1,14 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
-const { createMessage, getMessages, getUserMessages, getProfileStats, daysAgoString } = require('./message')
+const {
+  createMessage,
+  getMessages,
+  getUserMessages,
+  getProfileStats,
+  daysAgoString,
+  STATS_PERIODS,
+  normalizeStatsPeriod,
+} = require('./message')
 const { getUser, getUserById, updateUser } = require('./user')
 const {createSynonym, updateSynonym, deleteSynonym, getAllSynonyms, getSynonym} = require('./synonym')
 const  {createCard, getCardsDB, getCardsByFaction, getCardStatsMessage} = require('./card')
@@ -37,4 +45,6 @@ module.exports = {
   getCardStatsMessage,
   disconnect,
   daysAgoString,
+  STATS_PERIODS,
+  normalizeStatsPeriod,
 }
