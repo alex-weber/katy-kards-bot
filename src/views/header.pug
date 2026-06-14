@@ -25,6 +25,13 @@ header.header-sticky
                                 class=(currentPath.startsWith('/cards') ? 'active' : '')
                             )
                                 h3.menu-text.mb-0 Cards
+                        //- Top Deck
+                        li
+                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                href='/topdeck',
+                                class=(currentPath.startsWith('/topdeck') ? 'active' : '')
+                            )
+                                h3.menu-text.mb-0 Top Deck
                         if user
                             if user.isManager
                                 //- Custom Commands
@@ -42,6 +49,13 @@ header.header-sticky
                                         class=(currentPath.startsWith('/messages') ? 'active' : '')
                                     )
                                         h3.menu-text.mb-0 Log
+                                //- Users
+                                li
+                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                        href='/users',
+                                        class=(currentPath.startsWith('/users') ? 'active' : '')
+                                    )
+                                        h3.menu-text.mb-0 Users
                     //- Login / User Dropdown
                     div.text-end.ms-auto
                         if loginLink

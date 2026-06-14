@@ -2,13 +2,18 @@ const {
     getAllSynonyms,
     getUser,
     getUserById,
+    getUsers,
     getMessages,
     getUserMessages,
     getProfileStats,
+    updateUserAdminFields,
+    getTopDeckRanking,
 } = require('../database/db')
 
 const {isManager} = require("../tools/search")
 const {resolveAvatarUrl} = require("../tools/avatar")
+const {redis, cachePrefix: webCachePrefix} = require('../controller/redis')
+const {cacheKeyPrefix} = require('../controller/messageCache')
 const axios = require('axios')
 //API
 const API = require('../controller/api')
@@ -19,6 +24,7 @@ const STATS_PERIOD_OPTIONS = [
     {value: 'yearly', label: 'Last 5 years'},
 ]
 const STATS_PERIODS = STATS_PERIOD_OPTIONS.map(option => option.value)
+const topDeckPageExpiration = parseInt(process.env.CACHE_TOPDECK_PAGE_EXPIRE, 10) || 60 * 5
 
 // middleware to test if authenticated
 function isAuthenticated(req, res, next) {
@@ -188,6 +194,203 @@ async function renderMessages(req, res) {
     })
 }
 
+function sanitizePage(page) {
+    return Number.isInteger(parseInt(page, 10)) && parseInt(page, 10) > 0
+        ? parseInt(page, 10)
+        : 1
+}
+
+function sanitizeText(value, maxLength) {
+    return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+}
+
+function sanitizeUserRole(value) {
+    value = sanitizeText(value, 20).toUpperCase()
+    if (!value) return null
+    return value
+}
+
+function sanitizeUserRoleFilter(value) {
+    value = sanitizeText(value, 20)
+    if (value === '__empty') return value
+    return value.toUpperCase()
+}
+
+function sanitizeUserStatus(value) {
+    value = sanitizeText(value, 20).toLowerCase()
+    return value === 'active' ? 'active' : 'inactive'
+}
+
+function sanitizeUserStatusFilter(value) {
+    value = sanitizeText(value, 20).toLowerCase()
+    return ['active', 'inactive'].includes(value) ? value : ''
+}
+
+async function invalidateUserEntityCache(discordId) {
+    if (!discordId) return
+    await redis.del(cacheKeyPrefix + 'user:' + discordId)
+}
+
+function canEditUserField(actor, target, field) {
+    if (!actor || !actor.isManager || !target) return false
+    const targetIsAdmin = isManager(target)
+    const isOwnAdmin = targetIsAdmin && actor.id === target.discordId
+    if (isOwnAdmin) return field === 'mode'
+    if (targetIsAdmin) return false
+    return ['mode', 'role', 'status'].includes(field)
+}
+
+function redirectBackToUsers(req, res) {
+    const body = req.body || {}
+    const fallback = '/users'
+    const returnTo = typeof body.returnTo === 'string' && body.returnTo.startsWith('/users')
+        ? body.returnTo
+        : fallback
+    const url = new URL('http://local' + returnTo)
+    res.redirect(url.pathname + url.search)
+}
+
+async function renderUsers(req, res) {
+    let { page = '1', username, discordId, role, status, mode } = req.query
+
+    const pageNumber = sanitizePage(page)
+    const pageSize = 50
+    username = sanitizeText(username, 40)
+    discordId = sanitizeText(discordId, 32)
+    role = sanitizeUserRoleFilter(role)
+    status = sanitizeUserStatusFilter(status)
+    mode = sanitizeText(mode, 100)
+
+    const { users, totalCount } = await getUsers({
+        page: pageNumber,
+        pageSize,
+        username,
+        discordId,
+        role,
+        status,
+        mode,
+    })
+    const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
+
+    res.render('users', {
+        title: 'Users',
+        users: users.map(target => ({
+            ...target,
+            isAdmin: isManager(target),
+            canEditMode: canEditUserField(req.session.user, target, 'mode'),
+            canEditRole: canEditUserField(req.session.user, target, 'role'),
+            canEditStatus: canEditUserField(req.session.user, target, 'status'),
+        })),
+        user: req.session.user,
+        page: pageNumber,
+        pageSize,
+        totalPages,
+        totalCount,
+        username,
+        discordId,
+        role,
+        status,
+        mode,
+    })
+}
+
+async function renderTopDeck(req, res) {
+    const cacheKey = webCachePrefix + 'page:topdeck'
+    let pageData = await redis.json.get(cacheKey, '$')
+
+    if (!pageData) {
+        const ranking = await getTopDeckRanking(100) || []
+        const totals = ranking.reduce((sum, player) => ({
+            wins: sum.wins + player.tdWins,
+            loses: sum.loses + player.tdLoses,
+            draws: sum.draws + player.tdDraws,
+            games: sum.games + player.tdGames,
+        }), { wins: 0, loses: 0, draws: 0, games: 0 })
+
+        pageData = {
+            ranking,
+            totals,
+            chartData: {
+                topScores: ranking.slice(0, 10).map(player => ({
+                    name: player.name,
+                    score: player.score,
+                })),
+                outcomes: [
+                    { label: 'Wins', count: totals.wins },
+                    { label: 'Loses', count: totals.loses },
+                    { label: 'Draws', count: totals.draws },
+                ],
+                activity: ranking.slice(0, 20).map(player => ({
+                    name: player.name,
+                    games: player.tdGames,
+                    winRatio: Number(player.winRatio),
+                })),
+            },
+        }
+
+        await redis.json.set(cacheKey, '$', pageData)
+        await redis.expire(cacheKey, topDeckPageExpiration)
+    }
+
+    res.set('Cache-Control', `public, max-age=${topDeckPageExpiration}`)
+    res.render('topdeck', {
+        title: 'Top Deck Ranking',
+        user: req.session ? req.session.user : null,
+        ...pageData,
+    })
+}
+
+async function handleUserUpdate(req, res) {
+    if (!req.session.user || !req.session.user.isManager) {
+        return res.status(403).send('Not permitted')
+    }
+
+    const id = parseInt(req.params.id, 10)
+    if (!Number.isInteger(id) || id <= 0) {
+        return redirectBackToUsers(req, res)
+    }
+
+    const target = await getUserById(id)
+    if (!target) return redirectBackToUsers(req, res)
+
+    const field = sanitizeText(req.body.field, 20)
+    if (!canEditUserField(req.session.user, target, field)) {
+        return redirectBackToUsers(req, res)
+    }
+
+    const data = {}
+    if (field === 'mode') data.mode = sanitizeText(req.body.mode, 500) || null
+    else if (field === 'role') data.role = sanitizeUserRole(req.body.role)
+    else if (field === 'status') data.status = sanitizeUserStatus(req.body.status)
+    else return redirectBackToUsers(req, res)
+
+    await updateUserAdminFields(id, data)
+    await invalidateUserEntityCache(target.discordId)
+    redirectBackToUsers(req, res)
+}
+
+async function handleUserStatusToggle(req, res) {
+    if (!req.session.user || !req.session.user.isManager) {
+        return res.status(403).send('Not permitted')
+    }
+
+    const id = parseInt(req.params.id, 10)
+    if (!Number.isInteger(id) || id <= 0) {
+        return redirectBackToUsers(req, res)
+    }
+
+    const target = await getUserById(id)
+    if (!target) return redirectBackToUsers(req, res)
+    if (!canEditUserField(req.session.user, target, 'status')) {
+        return redirectBackToUsers(req, res)
+    }
+
+    const nextStatus = target.status === 'active' ? 'inactive' : 'active'
+    await updateUserAdminFields(id, { status: nextStatus })
+    await invalidateUserEntityCache(target.discordId)
+    redirectBackToUsers(req, res)
+}
+
 // Build the Discord CDN avatar URL for a session user (null when unavailable).
 function sessionAvatarUrl(sessionUser) {
     if (!sessionUser || !sessionUser.avatar) return null
@@ -298,6 +501,8 @@ module.exports = {
     renderAuth,
     renderDashboard,
     renderMessages,
+    renderUsers,
+    renderTopDeck,
     renderCommands,
     renderServers,
     renderLanding,
@@ -305,6 +510,8 @@ module.exports = {
     renderPublicProfile,
     renderCards,
     handleApi,
+    handleUserUpdate,
+    handleUserStatusToggle,
     handleLogout,
     handleLogin
 }

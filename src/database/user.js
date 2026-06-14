@@ -58,7 +58,113 @@ async function getUserById(id)
 {
     return await prisma.user.findUnique({
         where: { id: parseInt(id, 10) },
-        select: { id: true, name: true, discordId: true },
+        select: {
+            id: true,
+            name: true,
+            discordId: true,
+            language: true,
+            status: true,
+            role: true,
+            mode: true,
+        },
+    }).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+}
+
+async function getUsers({ page = 1, pageSize = 50, username, discordId, role, status, mode } = {})
+{
+    const p = Math.max(1, parseInt(page, 10) || 1)
+    const size = Math.max(1, parseInt(pageSize, 10) || 50)
+    const where = {}
+
+    if (username) {
+        where.name = {
+            contains: username,
+            mode: 'insensitive'
+        }
+    }
+    if (discordId) {
+        where.discordId = {
+            contains: discordId,
+            mode: 'insensitive'
+        }
+    }
+    if (role) {
+        where.role = role === '__empty' ? null : role
+    }
+    if (status === 'active') {
+        where.status = 'active'
+    }
+    if (status === 'inactive') {
+        where.status = {
+            not: 'active'
+        }
+    }
+    if (mode) {
+        where.mode = {
+            contains: mode,
+            mode: 'insensitive'
+        }
+    }
+
+    const allUsers = await prisma.user.findMany({
+        where,
+        select: {
+            id: true,
+            discordId: true,
+            name: true,
+            language: true,
+            status: true,
+            role: true,
+            mode: true,
+            reactions: true,
+        }
+    }).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+
+    const totalCount = allUsers.length
+    const users = sortUsersByRolePriority(allUsers).slice((p - 1) * size, p * size)
+
+    return {
+        users,
+        totalCount,
+        page: p,
+        pageSize: size,
+    }
+}
+
+function rolePriority(role)
+{
+    if (role === 'GOD') return 0
+    if (role === 'VIP') return 1
+    return 2
+}
+
+function sortUsersByRolePriority(users)
+{
+    return users.sort((a, b) => {
+        const roleDiff = rolePriority(a.role) - rolePriority(b.role)
+        if (roleDiff) return roleDiff
+        return b.id - a.id
+    })
+}
+
+async function updateUserAdminFields(id, data)
+{
+    return await prisma.user.update({
+        where: { id: parseInt(id, 10) },
+        data,
+        select: {
+            id: true,
+            discordId: true,
+            name: true,
+            language: true,
+            status: true,
+            role: true,
+            mode: true,
+        }
     }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
@@ -80,4 +186,11 @@ async function updateUser(User)
     finally(async () => { await prisma.$disconnect() })
 }
 
-module.exports = {createUser, getUser, getUserById, updateUser}
+module.exports = {
+    createUser,
+    getUser,
+    getUserById,
+    getUsers,
+    updateUser,
+    updateUserAdminFields,
+}

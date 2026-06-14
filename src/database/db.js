@@ -6,10 +6,23 @@ const {
   getUserMessages,
   getProfileStats,
 } = require('./message')
-const { getUser, getUserById, updateUser } = require('./user')
+const {
+  getUser,
+  getUserById,
+  getUsers,
+  updateUser,
+  updateUserAdminFields,
+} = require('./user')
 const {createSynonym, updateSynonym, deleteSynonym, getAllSynonyms, getSynonym} = require('./synonym')
 const  {createCard, getCardsDB, getCardsByFaction, getCardStatsMessage} = require('./card')
-const {getRandomCard, getOpenTopDeck, getTopDeckStats, updateTopDeck, createTopDeck} = require('./topdeck')
+const {
+  getRandomCard,
+  getOpenTopDeck,
+  getTopDeckStats,
+  getTopDeckRanking,
+  updateTopDeck,
+  createTopDeck,
+} = require('./topdeck')
 
 //disconnect on app shutdown
 async function disconnect()
@@ -21,13 +34,16 @@ async function disconnect()
 module.exports = {
   getUser,
   getUserById,
+  getUsers,
   createMessage,
   getMessages,
   updateUser,
+  updateUserAdminFields,
   createTopDeck,
   updateTopDeck,
   getOpenTopDeck,
   getTopDeckStats,
+  getTopDeckRanking,
   getAllSynonyms,
   getSynonym,
   createSynonym,

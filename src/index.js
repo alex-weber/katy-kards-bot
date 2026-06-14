@@ -22,6 +22,8 @@ const {
     renderAuth,
     renderDashboard,
     renderMessages,
+    renderUsers,
+    renderTopDeck,
     renderServers,
     renderCommands,
     renderLanding,
@@ -29,6 +31,8 @@ const {
     renderPublicProfile,
     renderCards,
     handleApi,
+    handleUserUpdate,
+    handleUserStatusToggle,
     handleLogout,
     handleLogin
 } = require('./controller/router')
@@ -42,6 +46,8 @@ app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
 app.set('views', __dirname + '/views')
 app.use(compression())
+app.use(express.urlencoded({ extended: false }))
+app.use(express.json())
 //cloud hosting
 app.set('trust proxy', true)
 
@@ -74,10 +80,14 @@ app.get('/login', handleLogin)
 app.get('/logout', handleLogout)
 app.get('/commands', isAuthenticated, requireManager, renderCommands)
 app.get('/messages', isAuthenticated, requireManager, renderMessages)
+app.get('/users', isAuthenticated, requireManager, renderUsers)
+app.post('/users/:id', isAuthenticated, requireManager, handleUserUpdate)
+app.post('/users/:id/status', isAuthenticated, requireManager, handleUserStatusToggle)
 app.get('/profile', isAuthenticated, renderProfile)
 app.get('/profile/:id', (req, res) => renderPublicProfile(req, res, client))
 app.get('/servers', (req, res) => renderServers(req, res, servers))
 app.get('/cards', renderCards)
+app.get('/topdeck', renderTopDeck)
 app.get('/api/:method', handleApi)
 
 let servers = [] //we get them when Discord client is ready

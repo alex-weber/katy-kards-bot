@@ -5,11 +5,26 @@ jest.mock('../src/database/db', () => ({
     getAllSynonyms: jest.fn(async () => []),
     getUser: jest.fn(),
     getUserById: jest.fn(),
+    getUsers: jest.fn(),
     getMessages: jest.fn(),
     getUserMessages: jest.fn(),
     getProfileStats: jest.fn(),
+    updateUserAdminFields: jest.fn(),
+    getTopDeckRanking: jest.fn(),
 }))
 jest.mock('../src/controller/api', () => ({ run: jest.fn(async () => ({ success: true, data: [] })) }))
+jest.mock('../src/controller/redis', () => ({
+    redis: {
+        del: jest.fn(async () => 1),
+        expire: jest.fn(async () => 1),
+        json: {
+            get: jest.fn(async () => null),
+            set: jest.fn(async () => 'OK'),
+        },
+    },
+    cachePrefix: 'web:test:',
+}))
+jest.mock('../src/controller/messageCache', () => ({ cacheKeyPrefix: 'discord:test:' }))
 jest.mock('../src/tools/avatar', () => ({ resolveAvatarUrl: jest.fn(async () => 'http://avatar/x.webp') }))
 jest.mock('../src/tools/search', () => ({ isManager: jest.fn(() => false) }))
 jest.mock('axios', () => ({ get: jest.fn() }))
@@ -20,6 +35,7 @@ const axios = require('axios')
 const { isManager } = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
 const router = require('../src/controller/router')
+const { redis } = require('../src/controller/redis')
 
 function makeRes() {
     const res = {}
@@ -31,7 +47,10 @@ function makeRes() {
     return res
 }
 
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => {
+    jest.clearAllMocks()
+    redis.json.get.mockResolvedValue(null)
+})
 
 describe('auth middleware', () => {
     test('isAuthenticated passes through logged-in users', () => {
@@ -208,6 +227,86 @@ describe('manager pages', () => {
         const locals = res.render.mock.calls[0][1]
         expect(locals.totalPages).toBe(Math.ceil(120 / 50))
     })
+
+    test('renderUsers renders paginated users and protects admins', async () => {
+        const res = makeRes()
+        isManager.mockImplementation(user => user.role === 'GOD' || user.role === 'VIP')
+        db.getUsers.mockResolvedValueOnce({
+            users: [
+                { id: 1, discordId: '111', name: 'Admin', role: 'GOD', status: 'active' },
+                { id: 2, discordId: '222', name: 'User', role: null, status: 'active' },
+            ],
+            totalCount: 51,
+            stats: { roles: [], statuses: [] },
+        })
+
+        await router.renderUsers({
+            session: { user: { id: '111', isManager: true } },
+            query: { page: '2', role: '__empty', status: 'bad' },
+        }, res)
+
+        const passedToDb = db.getUsers.mock.calls[0][0]
+        expect(passedToDb.page).toBe(2)
+        expect(passedToDb.role).toBe('__empty')
+        expect(passedToDb.status).toBe('')
+
+        const locals = res.render.mock.calls[0][1]
+        expect(locals.totalPages).toBe(2)
+        expect(locals.users[0].canEditMode).toBe(true)
+        expect(locals.users[0].canEditRole).toBe(false)
+        expect(locals.users[0].canEditStatus).toBe(false)
+        expect(locals.users[1].canEditRole).toBe(true)
+    })
+
+    test('handleUserUpdate blocks editing another admin', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+        isManager.mockImplementation(user => user.role === 'GOD' || user.role === 'VIP')
+        db.getUserById.mockResolvedValueOnce({ id: 2, discordId: '222', role: 'VIP' })
+
+        await router.handleUserUpdate({
+            session: { user: { id: '111', isManager: true } },
+            params: { id: '2' },
+            body: { field: 'role', role: 'USER', returnTo: '/users' },
+        }, res)
+
+        expect(db.updateUserAdminFields).not.toHaveBeenCalled()
+        expect(res.redirect).toHaveBeenCalledWith('/users')
+    })
+
+    test('handleUserUpdate lets an admin edit own mode and invalidates cache', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+        isManager.mockImplementation(user => user.role === 'GOD' || user.role === 'VIP')
+        db.getUserById.mockResolvedValueOnce({ id: 1, discordId: '111', role: 'GOD' })
+
+        await router.handleUserUpdate({
+            session: { user: { id: '111', isManager: true } },
+            params: { id: '1' },
+            body: { field: 'mode', mode: 'maintenance', returnTo: '/users?page=1' },
+        }, res)
+
+        expect(db.updateUserAdminFields).toHaveBeenCalledWith(1, { mode: 'maintenance' })
+        expect(require('../src/controller/redis').redis.del).toHaveBeenCalledWith('discord:test:user:111')
+        expect(res.redirect).toHaveBeenCalledWith('/users?page=1')
+    })
+
+    test('handleUserStatusToggle flips non-admin status and invalidates cache', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+        isManager.mockImplementation(user => user.role === 'GOD' || user.role === 'VIP')
+        db.getUserById.mockResolvedValueOnce({ id: 2, discordId: '222', role: null, status: 'active' })
+
+        await router.handleUserStatusToggle({
+            session: { user: { id: '111', isManager: true } },
+            params: { id: '2' },
+            body: { returnTo: '/users?page=1' },
+        }, res)
+
+        expect(db.updateUserAdminFields).toHaveBeenCalledWith(2, { status: 'inactive' })
+        expect(require('../src/controller/redis').redis.del).toHaveBeenCalledWith('discord:test:user:222')
+        expect(res.redirect).toHaveBeenCalledWith('/users?page=1')
+    })
 })
 
 describe('simple renders', () => {
@@ -229,6 +328,48 @@ describe('simple renders', () => {
         const res = makeRes()
         router.renderAuth({}, res)
         expect(res.render.mock.calls[0][0]).toBe('auth')
+    })
+
+    test('renderTopDeck renders public top deck ranking data', async () => {
+        const res = makeRes()
+        db.getTopDeckRanking.mockResolvedValueOnce([
+            {
+                id: 2,
+                name: 'Player',
+                score: 5,
+                tdWins: 4,
+                tdLoses: 2,
+                tdDraws: 1,
+                tdGames: 7,
+                winRatio: '0.57',
+            },
+        ])
+
+        await router.renderTopDeck({ session: {}, query: {} }, res)
+
+        const [view, locals] = res.render.mock.calls[0]
+        expect(view).toBe('topdeck')
+        expect(locals.ranking).toHaveLength(1)
+        expect(locals.totals).toEqual({ wins: 4, loses: 2, draws: 1, games: 7 })
+        expect(locals.chartData.topScores[0]).toEqual({ name: 'Player', score: 5 })
+        expect(redis.json.set).toHaveBeenCalledWith('web:test:page:topdeck', '$', expect.any(Object))
+        expect(redis.expire).toHaveBeenCalledWith('web:test:page:topdeck', 300)
+        expect(res.set).toHaveBeenCalledWith('Cache-Control', 'public, max-age=300')
+    })
+
+    test('renderTopDeck uses cached page data', async () => {
+        const res = makeRes()
+        redis.json.get.mockResolvedValueOnce({
+            ranking: [],
+            totals: { wins: 0, loses: 0, draws: 0, games: 0 },
+            chartData: { topScores: [], outcomes: [], activity: [] },
+        })
+
+        await router.renderTopDeck({ session: {}, query: {} }, res)
+
+        expect(db.getTopDeckRanking).not.toHaveBeenCalled()
+        expect(redis.json.set).not.toHaveBeenCalled()
+        expect(res.render.mock.calls[0][1].ranking).toEqual([])
     })
 })
 
