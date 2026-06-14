@@ -15,9 +15,7 @@ const {translate} = require("../../tools/translation/translator")
 const {getButtonRow} = require("../../tools/button")
 const dictionary = require("../../tools/dictionary")
 const {react} = require("../../tools/reactions")
-
-//cached synonym answers live for one day by default
-const synonymExp = process.env.REDIS_EXP_SYNONYM || 60 * 60 * 24 // 1 day
+const {synonymCacheExp, invalidateSynonymCache} = require("../synonymCache")
 
 /**
  * Add or edit a synonym (managers only).
@@ -206,7 +204,7 @@ async function handleJsonSynonym(ctx, m)
 
     react(message, '✅', user)
     const sent = await message.channel.send(answer)
-    await cacheSentMessage(redis, cacheKey, sent, synonymExp)
+    await cacheSentMessage(redis, cacheKey, sent, synonymCacheExp)
 
     return {stop: true}
 }
@@ -240,6 +238,7 @@ async function resolveSynonym(ctx)
     if (syn.value.startsWith('http')) {
         const answer = {files: [syn.value]}
         await updateSynonym(syn.key, JSON.stringify(answer))
+        await invalidateSynonymCache(syn.key)
         await message.channel.send(answer)
 
         return true
@@ -249,6 +248,7 @@ async function resolveSynonym(ctx)
     if (syn.value.startsWith('text:')) {
         const answer = {content: syn.value}
         await updateSynonym(syn.key, JSON.stringify(answer))
+        await invalidateSynonymCache(syn.key)
         answer.content = answer.content.replace('text:', '')
         react(message, '✅', user)
         await message.channel.send(answer)

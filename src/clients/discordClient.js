@@ -9,6 +9,7 @@ const {cacheKeyPrefix} = require("../controller/messageCache")
 const {getSynonymById, updateSynonym} = require("../database/synonym")
 const {isManager} = require("../tools/search")
 const {buildCommandList} = require("../controller/commands/synonymCommands")
+const {invalidateSynonymCache} = require("../controller/synonymCache")
 const {renderProfileText, reactionsLabel} = require("../tools/profile")
 const {getButtonRow, ButtonStyle} = require("../tools/button")
 const client = new Client({
@@ -213,6 +214,7 @@ async function onInteractionCreate(interaction)
         }
 
         await updateSynonym(synonym.key, value)
+        if (synonym.value !== value) await invalidateSynonymCache(synonym.key)
 
         await interaction.reply(`${synonym.key} updated`)
         console.log(interaction.user.username, 'edited', synonym.key, '. New value: ' + newValue)

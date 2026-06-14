@@ -16,6 +16,7 @@ const host = 'https://www.kards.com'
 const maxMessageLength = parseInt(process.env.MESSAGE_MAX_LENGTH) || 1950
 const {uploadImage} = require("../tools/imageUpload")
 const {getButtonRow} = require("./button")
+const {invalidateSynonymCache} = require("../controller/synonymCache")
 
 /**
  *
@@ -365,7 +366,9 @@ async function handleSynonym(user, message)
 
     if (text.length && text === 'delete')
     {
+        const syn = await getSynonym(key)
         await deleteSynonym(key)
+        if (syn) await invalidateSynonymCache(key)
         console.log(user.name, 'deleted', key)
         return key + ' deleted'
     }
@@ -402,11 +405,13 @@ async function handleSynonym(user, message)
     if (!syn && value)
     {
         await createSynonym(key, value)
+        await invalidateSynonymCache(key)
         console.log(user.name, 'created', key)
         return key + ' created'
     } else
     {
         await updateSynonym(key, value)
+        if (syn.value !== value) await invalidateSynonymCache(key)
         console.log(user.name, 'updated', key)
         return key + ' updated'
     }
