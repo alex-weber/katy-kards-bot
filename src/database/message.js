@@ -335,8 +335,17 @@ function dailyCountKey(date)
 function mergeDailyCounts(target, source)
 {
     for (const [day, count] of Object.entries(source)) {
+        if (day.startsWith('__')) continue
         target[day] = (target[day] || 0) + count
     }
+}
+
+function latestDailyCountKey(counts)
+{
+    return Object.keys(counts).
+    filter(day => !day.startsWith('__')).
+    sort().
+    pop()
 }
 
 async function getDailyCountMap(extraWhere, fromDate, toDate)
@@ -362,6 +371,7 @@ async function getDailyCountSourceCached(keyBase, extraWhere)
     const todayStart = startOfStatsPeriod('daily', new Date())
     const today = dailyCountKey(todayStart)
     const yesterdayEnd = new Date(todayStart.getTime() - 1)
+    const yesterday = dailyCountKey(yesterdayEnd)
     const dailyMap = {}
 
     const historicalKey = cachePrefix + `stats:count-source:${keyBase}:historical`
@@ -373,6 +383,19 @@ async function getDailyCountSourceCached(keyBase, extraWhere)
         if (historicalStart <= yesterdayEnd) {
             historical = await getDailyCountMap(extraWhere, historicalStart, yesterdayEnd)
         }
+        historical.__through = yesterday
+        await redis.json.set(historicalKey, '$', historical)
+    } else if (historical.__through !== yesterday) {
+        const through = historical.__through || latestDailyCountKey(historical)
+        const firstDate = through
+            ? addUtcDays(new Date(`${through}T00:00:00Z`), 1)
+            : startOfStatsPeriod('daily', await getStatsFirstMessageDate(extraWhere))
+
+        if (firstDate <= yesterdayEnd) {
+            const missingCounts = await getDailyCountMap(extraWhere, firstDate, yesterdayEnd)
+            mergeDailyCounts(historical, missingCounts)
+        }
+        historical.__through = yesterday
         await redis.json.set(historicalKey, '$', historical)
     }
     mergeDailyCounts(dailyMap, historical)

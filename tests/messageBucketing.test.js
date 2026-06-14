@@ -75,4 +75,35 @@ describe('period buckets via getDashboardMessages', () => {
         expect(mockFindMany).toHaveBeenCalledTimes(firstCallCount)
     })
 
+    test('historical source cache is extended when a new day completes', async () => {
+        const todayStart = new Date(Date.UTC(
+            new Date().getUTCFullYear(),
+            new Date().getUTCMonth(),
+            new Date().getUTCDate()
+        ))
+        const yesterdayStart = new Date(todayStart)
+        yesterdayStart.setUTCDate(todayStart.getUTCDate() - 1)
+        const twoDaysAgoStart = new Date(todayStart)
+        twoDaysAgoStart.setUTCDate(todayStart.getUTCDate() - 2)
+        const yesterdayKey = yesterdayStart.toISOString().split('T')[0]
+
+        mockStore.set('test:stats:count-source:messages:historical', {
+            [twoDaysAgoStart.toISOString().split('T')[0]]: 3,
+            __through: twoDaysAgoStart.toISOString().split('T')[0],
+        })
+        mockFindMany
+            .mockResolvedValueOnce(rows(`${yesterdayKey}T12:00:00Z`, `${yesterdayKey}T13:00:00Z`))
+            .mockResolvedValueOnce(rows(todayIso()))
+
+        const series = await getDashboardMessages({period: 'daily'})
+        const yesterdayLabel = yesterdayStart.toLocaleDateString('en-GB', {month: '2-digit', day: '2-digit'})
+        const yesterdayBucket = series.find(bucket => bucket.label === yesterdayLabel)
+
+        expect(yesterdayBucket.count).toBe(2)
+        expect(mockStore.get('test:stats:count-source:messages:historical')).toMatchObject({
+            [yesterdayKey]: 2,
+            __through: yesterdayKey,
+        })
+    })
+
 })
