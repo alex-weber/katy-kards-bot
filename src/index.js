@@ -55,6 +55,7 @@ const webRateLimiter = rateLimit({
 
 //frontend
 app.use('/static', express.static('src/js'))
+app.use('/assets', express.static(__dirname + '/assets'))
 app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
 app.set('views', __dirname + '/views')

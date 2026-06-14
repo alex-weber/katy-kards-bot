@@ -170,11 +170,39 @@
 }
 
 /* ----- Menu Text & Hover ----- */
+.main-nav-groups {
+    min-width: 0;
+}
+
+.nav-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-group-icon {
+    align-items: center;
+    border: 1px solid #343a40;
+    border-radius: 8px;
+    color: #adb5bd;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+}
+
+.nav-group-items {
+    gap: 0.25rem;
+}
+
 .menu-text {
-    font-size: 1.25rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.2;
     margin: 0;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 /* Animated underline */
@@ -215,16 +243,27 @@
 
 /* ----- User Avatar ----- */
 .user-avatar {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
     object-fit: cover;
+}
+
+.user-menu-button {
+    max-width: 16rem;
+}
+
+.user-menu-name {
+    display: inline-block;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
 }
 
 /* ----- Dropdown Menu ----- */
 .dropdown-menu {
-    width: 100%; /* match button width */
-    left: 0 !important;
-    right: 0 !important;
+    min-width: 100%;
 }
 
 /* Dropdown item fancy hover */
@@ -287,4 +326,63 @@ div[style*="overflow: auto;"] {
 .header-sticky .nav-link,
 .header-sticky .btn {
     z-index: 1050;
+}
+
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        padding-top: 0.75rem;
+    }
+
+    .main-nav-groups,
+    .nav-group,
+    .nav-group-items,
+    .nav-auth,
+    .nav-auth .dropdown,
+    .nav-auth .btn {
+        width: 100%;
+    }
+
+    .nav-group {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.75rem 0;
+    }
+
+    .nav-group + .nav-group {
+        border-top: 1px solid #343a40;
+    }
+
+    .nav-group-icon {
+        align-self: flex-start;
+    }
+
+    .nav-group-items {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    .header-sticky .nav-link {
+        justify-content: center;
+        min-height: 2.75rem;
+        text-align: center;
+    }
+
+    .user-menu-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        max-width: none;
+    }
+
+    .dropdown-menu {
+        width: 100%;
+    }
+}
+
+@media (max-width: 420px) {
+    .nav-group-items {
+        grid-template-columns: 1fr;
+    }
 }

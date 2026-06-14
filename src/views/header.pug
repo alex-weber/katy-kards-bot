@@ -1,86 +1,68 @@
-header.header-sticky
-    div.position-sticky
-        div.px-3.py-2.text-bg-dark.border-bottom
-            div.container
-                div.d-flex.flex-wrap.align-items-center.justify-content-center.justify-content-lg-start
-                    ul.nav.col-12.col-lg-auto.my-2.justify-content-center.my-md-0.text-small
-                        //- Home
-                        li
-                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                href='/',
-                                class=(currentPath === '/' ? 'active' : '')
-                            )
-                                h3.menu-text.mb-0 Home
-                        //- Guilds
-                        li
-                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                href='/servers',
-                                class=(currentPath.startsWith('/servers') ? 'active' : '')
-                            )
-                                h3.menu-text.mb-0 Guilds
-                        //- Cards
-                        li
-                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                href='/cards',
-                                class=(currentPath.startsWith('/cards') ? 'active' : '')
-                            )
-                                h3.menu-text.mb-0 Cards
-                        //- Top Deck
-                        li
-                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                href='/topdeck',
-                                class=(currentPath.startsWith('/topdeck') ? 'active' : '')
-                            )
-                                h3.menu-text.mb-0 Top Deck
-                        if user
-                            if user.isManager
-                                //- Custom Commands
-                                li
-                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                        href='/commands',
-                                        class=(currentPath.startsWith('/commands') ? 'active' : '')
-                                    )
+mixin navItem(href, label, active)
+    li.nav-item
+        a.nav-link.text-primary.rounded.px-3.py-2.position-relative.d-flex.align-items-center.transition(
+            href=href,
+            class=(active ? 'active' : '')
+        )
+            span.menu-text= label
 
-                                        h3.menu-text.mb-0 Custom Commands
-                                //- Log
-                                li
-                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                        href='/messages',
-                                        class=(currentPath.startsWith('/messages') ? 'active' : '')
-                                    )
-                                        h3.menu-text.mb-0 Log
-                                //- Users
-                                li
-                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                        href='/users',
-                                        class=(currentPath.startsWith('/users') ? 'active' : '')
-                                    )
-                                        h3.menu-text.mb-0 Users
+mixin navGroupIcon(label, icon)
+    div.nav-group-icon(aria-label=label)
+        svg(xmlns='http://www.w3.org/2000/svg', viewBox='0 0 24 24', width='18', height='18', fill='none', stroke='currentColor', stroke-width='2', stroke-linecap='round', stroke-linejoin='round', aria-hidden='true')
+            path(d='M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.6a1.3 1.3 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z')
+            path(d='M9 12l2 2 4-4')
+        span.visually-hidden= label
+
+header.header-sticky
+    nav.navbar.navbar-expand-lg.text-bg-dark.border-bottom.py-2
+        div.container
+
+            button.navbar-toggler.border-primary(
+                type='button',
+                data-bs-toggle='collapse',
+                data-bs-target='#mainNavigation',
+                aria-controls='mainNavigation',
+                aria-expanded='false',
+                aria-label='Toggle navigation'
+            )
+                span.navbar-toggler-icon
+
+            div#mainNavigation.collapse.navbar-collapse
+                div.main-nav-groups.d-lg-flex.align-items-lg-center.gap-lg-4
+                    div.nav-group
+                        ul.navbar-nav.nav-group-items
+                            +navItem('/', 'Home', currentPath === '/')
+                            +navItem('/servers', 'Guilds', currentPath.startsWith('/servers'))
+                            +navItem('/cards', 'Cards', currentPath.startsWith('/cards'))
+                            +navItem('/topdeck', 'Top Deck', currentPath.startsWith('/topdeck'))
+
+                    if user && user.isManager
+                        div.nav-group
+                            +navGroupIcon('Admin navigation', 'shield')
+                            ul.navbar-nav.nav-group-items
+                                +navItem('/commands', 'Custom Commands', currentPath.startsWith('/commands'))
+                                +navItem('/messages', 'Log', currentPath.startsWith('/messages'))
+                                +navItem('/users', 'Users', currentPath.startsWith('/users'))
                                 if user.role === 'GOD'
-                                    li
-                                        a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
-                                            href='/roles',
-                                            class=(currentPath.startsWith('/roles') ? 'active' : '')
-                                        )
-                                            h3.menu-text.mb-0 Roles
-                    //- Login / User Dropdown
-                    div.text-end.ms-auto
-                        if loginLink
-                            a.btn.btn-primary.px-4.py-2.shadow.transition(href=`${loginLink}`) Login
-                        if user
-                            div.dropdown
-                                button.btn.btn-outline-primary.px-4.py-2.shadow.dropdown-toggle.transition(
-                                    type="button",
-                                    data-bs-toggle="dropdown",
-                                    aria-expanded="false"
-                                )
-                                    img(src='https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.webp?size=64', alt="No avatar", class='rounded-circle me-2 user-avatar')
-                                    | #{user.username}
-                                ul.dropdown-menu
-                                    li
-                                        a.dropdown-item(href="/profile") Profile
-                                    li
-                                        form(method="post" action="/logout")
-                                            if _csrf
-                                                input(type="hidden" name="_csrf" value=_csrf)
-                                            button.dropdown-item(type="submit") Logout
+                                    +navItem('/roles', 'Roles', currentPath.startsWith('/roles'))
+
+                div.nav-auth.ms-lg-auto.mt-3.mt-lg-0
+                    if loginLink
+                        a.btn.btn-primary.px-4.py-2.shadow.transition(href=`${loginLink}`) Login
+                    if user
+                        div.dropdown
+                            button.btn.btn-outline-primary.user-menu-button.px-3.py-2.shadow.dropdown-toggle.transition(
+                                type='button',
+                                data-bs-toggle='dropdown',
+                                aria-expanded='false'
+                            )
+                                img(src='https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.webp?size=64', alt='', class='rounded-circle me-2 user-avatar')
+                                span.user-menu-name= user.username
+                            ul.dropdown-menu.dropdown-menu-end
+                                li
+                                    a.dropdown-item(href='/profile') Profile
+                                li
+                                    form(method='post' action='/logout')
+                                        if _csrf
+                                            input(type='hidden' name='_csrf' value=_csrf)
+                                        button.dropdown-item(type='submit') Logout
