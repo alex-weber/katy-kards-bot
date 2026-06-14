@@ -74,6 +74,7 @@ block content
             th(scope='col') User
             th(scope='col') Discord ID
             th(scope='col') Language
+            th(scope='col') Commands
             th(scope='col') Custom Reply
             th(scope='col') Role
             th.users-status-col(scope='col') Status
@@ -89,6 +90,7 @@ block content
                     span.badge.text-bg-warning.ms-2 Admin
                 td.break-all #{userRow.discordId}
                 td #{userRow.language}
+                td.data-strong #{userRow.commandsCount}
                 td
                   if userRow.canEditMode
                     form(method="post" action=`/users/${userRow.id}`)
@@ -134,7 +136,7 @@ block content
                       ) #{userRow.status || 'inactive'}
           else
             tr
-              td(colspan="7").text-center No users found
+              td(colspan="8").text-center No users found
 
   if totalPages > 1
     -

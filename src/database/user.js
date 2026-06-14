@@ -126,6 +126,11 @@ async function getUsers({ page = 1, pageSize = 50, username, discordId, role, st
             role: true,
             mode: true,
             reactions: true,
+            _count: {
+                select: {
+                    messages: true,
+                },
+            },
         }
     }).
     catch((e) => { throw e }).
@@ -152,6 +157,8 @@ function sortUsersByRolePriority(users)
     return users.sort((a, b) => {
         const roleDiff = rolePriority(a.role) - rolePriority(b.role)
         if (roleDiff) return roleDiff
+        const messageDiff = (b._count?.messages || 0) - (a._count?.messages || 0)
+        if (messageDiff) return messageDiff
         return b.id - a.id
     })
 }

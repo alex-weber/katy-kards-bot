@@ -342,6 +342,7 @@ async function renderUsers(req, res) {
             canEditMode: canEditUserField(req.session.user, target, 'mode'),
             canEditRole: canEditUserField(req.session.user, target, 'role'),
             canEditStatus: canEditUserField(req.session.user, target, 'status'),
+            commandsCount: target._count?.messages || 0,
         })),
         user: req.session.user,
         page: pageNumber,
