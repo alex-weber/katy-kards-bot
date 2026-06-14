@@ -1,6 +1,5 @@
 const {getStats} = require('../src/tools/stats')
 const {getCards, getFiles, listSynonyms} = require('../src/tools/search')
-const {getUser} = require('../src/database/db')
 
 test('player stats loaded', async () => {
     const data = await getStats('en')
