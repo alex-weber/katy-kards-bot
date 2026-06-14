@@ -1,0 +1,165 @@
+extends layout
+
+block content
+  -
+    const queryBase = `username=${encodeURIComponent(username || '')}&discordId=${encodeURIComponent(discordId || '')}&role=${encodeURIComponent(role || '')}&status=${encodeURIComponent(status || '')}&mode=${encodeURIComponent(mode || '')}`
+    const returnTo = currentPath + '?' + queryBase + `&page=${page}`
+
+  p.h2.text-primary.text-center= title + ' (' + totalCount + ')'
+
+  if showRoleInfo
+    .role-info-grid.mb-4
+      each info in roleInfoCards
+        .role-info-card(class=`role-info-card-${info.role.toLowerCase()}`)
+          .role-info-header
+            div
+              h3.role-info-title #{info.label}
+              p.role-info-subtitle #{info.description}
+          .role-info-stats
+            each stat in info.stats
+              .role-info-stat
+                span.role-info-stat-label #{stat.label}
+                strong.role-info-stat-value #{stat.value}
+
+  form#filterForm(method="get" action="/users")
+    .row.mb-3
+      .col-md-3
+        label.form-label(for="username") User:
+        .input-group
+          input#username.form-control(type="text" name="username" value=username)
+          button.btn.btn-outline-secondary(type="button" onclick="document.getElementById('username').value=''; document.getElementById('filterForm').submit();") x
+      .col-md-2
+        label.form-label(for="discordId") Discord ID:
+        .input-group
+          input#discordId.form-control(type="text" name="discordId" value=discordId)
+          button.btn.btn-outline-secondary(type="button" onclick="document.getElementById('discordId').value=''; document.getElementById('filterForm').submit();") x
+      .col-md-2
+        label.form-label(for="role") Role:
+        select#role.form-select(name="role")
+          option(value="" selected=!role) Any
+          each option in roleOptions
+            option(value=option.value selected=role === option.value) #{option.label} (#{option.description})
+      .col-md-2
+        label.form-label(for="status") Status:
+        select#status.form-select(name="status")
+          option(value="" selected=!status) Any
+          option(value="active" selected=status === 'active') Active
+          option(value="inactive" selected=status === 'inactive') Inactive
+      .col-md-2
+        label.form-label(for="mode") Custom Reply:
+        .input-group
+          input#mode.form-control(type="text" name="mode" value=mode)
+          button.btn.btn-outline-secondary(type="button" onclick="document.getElementById('mode').value=''; document.getElementById('filterForm').submit();") x
+      .col-md-1.align-self-end
+        button.btn.btn-primary(type="submit") Filter
+
+  table.table.table-dark.table-striped.table-hover.align-middle
+    thead
+      tr
+        th(scope='col') #
+        th(scope='col') User
+        th(scope='col') Discord ID
+        th(scope='col') Language
+        th(scope='col') Custom Reply
+        th(scope='col') Role
+        th.users-status-col(scope='col') Status
+
+    tbody
+      if users.length
+        each userRow, index in users
+          tr
+            td #{(page - 1) * pageSize + index + 1}
+            td
+              a.text-primary(href=`/profile/${userRow.id}`)= userRow.name || 'Unknown'
+              if userRow.isAdmin
+                span.badge.text-bg-warning.ms-2 Admin
+            td.break-all #{userRow.discordId}
+            td #{userRow.language}
+            td
+              if userRow.canEditMode
+                form(method="post" action=`/users/${userRow.id}`)
+                  if _csrf
+                    input(type="hidden" name="_csrf" value=_csrf)
+                  input(type="hidden" name="field" value="mode")
+                  input(type="hidden" name="returnTo" value=returnTo)
+                  .input-group
+                    input.form-control(type="text" name="mode" value=userRow.mode || '' maxlength="500")
+                    button.btn.btn-outline-primary(type="submit") Save
+              else
+                span #{userRow.mode || ''}
+            td
+              if userRow.canEditRole
+                form(method="post" action=`/users/${userRow.id}`)
+                  if _csrf
+                    input(type="hidden" name="_csrf" value=_csrf)
+                  input(type="hidden" name="field" value="role")
+                  input(type="hidden" name="returnTo" value=returnTo)
+                  .input-group
+                    select.form-select(name="role")
+                      each option in userRow.assignableRoles
+                        option(value=option.value selected=userRow.roleValue === option.value) #{option.label} (#{option.description})
+                    button.btn.btn-outline-primary(type="submit") Save
+              else
+                span #{userRow.roleLabel}
+            td.users-status-col
+              form(method="post" action=`/users/${userRow.id}/status`)
+                if _csrf
+                  input(type="hidden" name="_csrf" value=_csrf)
+                input(type="hidden" name="returnTo" value=returnTo)
+                .form-check.form-switch.users-status-switch
+                  input.form-check-input(
+                    type="checkbox"
+                    role="switch"
+                    checked=userRow.status === 'active'
+                    disabled=!userRow.canEditStatus
+                    data-username=userRow.name || 'Unknown'
+                    onchange="confirmUserStatusToggle(this)"
+                  )
+                  label.form-check-label.users-status-label(
+                    title=userRow.status || 'inactive'
+                  ) #{userRow.status || 'inactive'}
+      else
+        tr
+          td(colspan="7").text-center No users found
+
+  if totalPages > 1
+    -
+      const maxPages = 10
+      let start = Math.max(1, page - Math.floor(maxPages / 2))
+      let end = start + maxPages - 1
+      if (end > totalPages) {
+        end = totalPages
+        start = Math.max(1, end - maxPages + 1)
+      }
+      const pages = []
+      for (let i = start; i <= end; i++) pages.push(i)
+
+    nav.mt-4
+      ul.pagination.justify-content-center
+        if page > 1
+          li.page-item
+            a.page-link(href=`?${queryBase}&page=${page - 1}`) Previous
+        else
+          li.page-item.disabled
+            span.page-link Previous
+
+        each i in pages
+          if i === page
+            li.page-item.active
+              span.page-link #{i}
+          else
+            li.page-item
+              a.page-link(href=`?${queryBase}&page=${i}`) #{i}
+
+        if page < totalPages
+          li.page-item
+            a.page-link(href=`?${queryBase}&page=${page + 1}`) Next
+        else
+          li.page-item.disabled
+            span.page-link Next
+
+  .my-5
+  p &nbsp;
+  p &nbsp;
+
+  script(src="/static/users.js")

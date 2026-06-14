@@ -8,6 +8,7 @@ function init() {
         .init({
             lng: 'en',
             fallbackLng: ['en', 'ru', 'de'],
+            initImmediate: false,
             //debug: true,
             backend: {
                 loadPath: path.resolve(__dirname, 'locales/{{lng}}/{{ns}}.json'),
@@ -19,7 +20,6 @@ function init() {
 }
 
 module.exports = {init}
-
 
 
 

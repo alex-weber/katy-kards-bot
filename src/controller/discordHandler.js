@@ -31,6 +31,7 @@ const {
 } = require("./commands/synonymCommands")
 const {handleTopDeck} = require("./commands/topDeckCommand")
 const {handleSearch} = require("./commands/searchCommand")
+const {checkRoleCommandLimit} = require("../tools/roles")
 
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
@@ -156,6 +157,15 @@ async function discordHandler(message, client, redis)
     await ensureUserName(ctx.user, message)
     ctx.language = await resolveLanguage(ctx)
 
+    const roleLimit = await checkRoleCommandLimit(ctx)
+    if (!roleLimit.allowed) {
+        if (!roleLimit.silent && roleLimit.message) {
+            await message.channel.send(roleLimit.message)
+        }
+        return message
+    }
+    if (roleLimit.message) await message.channel.send(roleLimit.message)
+
     //save the command in the DB and in cache, no need to wait
     const fullContent = `${guildName} | ${channelName} -> ${ctx.command}`
     createMessage({authorId: ctx.user.id, content: fullContent}).then()
@@ -183,6 +193,9 @@ async function discordHandler(message, client, redis)
 
     //set the limit to 10 if it is a bot-commands channel
     if (isBotCommandChannel(message)) ctx.limit = paginationLimit
+    if (ctx.roleRule && ctx.roleRule.attachmentLimit > 0) {
+        ctx.limit = Math.min(ctx.limit, ctx.roleRule.attachmentLimit)
+    }
 
     if (await handleAlt(ctx)) return message
 

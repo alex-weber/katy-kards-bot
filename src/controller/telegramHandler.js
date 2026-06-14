@@ -18,6 +18,10 @@ const {downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload"
 const {analyseDeck} = require("../tools/deck")
 const fs = require('fs').promises
 const path = require('path')
+const {
+    checkRoleCommandLimit,
+    checkRoleDeckScreenshotLimit,
+} = require("../tools/roles")
 
 //Telegram only allows a fixed set of reaction emojis, so these are the
 //closest equivalents to the Discord reactions used in discordHandler.
@@ -187,6 +191,12 @@ async function handleDeck(ctx)
         await tgCtx.reply(response.content.replaceAll('```', ''))
         await tgCtx.replyWithPhoto(response.files[1])
 
+        return true
+    }
+
+    const deckLimit = await checkRoleDeckScreenshotLimit(ctx)
+    if (!deckLimit.allowed) {
+        await tgCtx.reply(deckLimit.message)
         return true
     }
 
@@ -691,6 +701,15 @@ async function telegramHandler(tgCtx, redis)
     if (await handleLanguageSwitch(ctx)) return
     //update user and resolve the language to use
     await persistUser(ctx)
+
+    const roleLimit = await checkRoleCommandLimit(ctx)
+    if (!roleLimit.allowed) {
+        if (!roleLimit.silent && roleLimit.message) {
+            await tgCtx.reply(roleLimit.message)
+        }
+        return
+    }
+    if (roleLimit.message) await tgCtx.reply(roleLimit.message)
 
     //save the message
     const commandToSave = `Telegram | ${ctx.chatName} | -> ${ctx.command}`

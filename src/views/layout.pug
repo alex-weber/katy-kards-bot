@@ -3,6 +3,8 @@ html(lang="en" data-bs-theme="dark")
     head
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        if _csrf
+            meta(name="csrf-token" content=_csrf)
         title Katy Kards Bot
         style
             include style.css

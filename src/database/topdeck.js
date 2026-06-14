@@ -91,37 +91,77 @@ async function getRandomCard(td)
  */
 async function getTopDeckStats()
 {
+    const ranking = await getTopDeckRanking(20)
+    if (!ranking) return false
+
+    let answer = 'TD Ranking\n\n'
+    answer += '(Wins x 2 + Draws - Loses x 2)\n\n'
+    ranking.forEach((user, index) => {
+        answer += index + 1 +'. ' +
+            `${user.name} (${user.score}) W:${user.tdWins} L:${user.tdLoses} D:${user.tdDraws} WR:${user.winRatio}\n`
+    })
+
+    return answer
+}
+
+function buildTopDeckRanking(users, limit = 100)
+{
+    const ranking = []
+    for (const [, user] of Object.entries(users))
+    {
+        const tdGames = parseInt(user.tdGames, 10) || 0
+        const tdWins = parseInt(user.tdWins, 10) || 0
+        const tdLoses = parseInt(user.tdLoses, 10) || 0
+        const tdDraws = parseInt(user.tdDraws, 10) || 0
+        ranking.push({
+            id: user.id,
+            discordId: user.discordId,
+            name: user.name || 'Unknown',
+            tdGames,
+            tdWins,
+            tdLoses,
+            tdDraws,
+            score: tdWins * 2 + tdDraws - tdLoses * 2,
+            winRatio: tdGames ? (tdWins / tdGames).toFixed(2) : '0.00',
+        })
+    }
+
+    ranking.sort((a, b) => b.score - a.score || b.tdWins - a.tdWins || b.tdGames - a.tdGames)
+    return ranking.slice(0, limit)
+}
+
+async function getTopDeckRanking(limit = 100)
+{
     const users = await prisma.user.findMany({
         where: {
             tdGames: {
                 gt: 0,
             }
         },
+        select: {
+            id: true,
+            discordId: true,
+            name: true,
+            tdGames: true,
+            tdWins: true,
+            tdLoses: true,
+            tdDraws: true,
+        }
     }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
 
     if (!users) return false
 
-    let answer = 'TD Ranking\n\n'
-    answer += '(Wins x 2 + Draws - Loses x 2)\n\n'
-    let ranking = []
-    for (const [, user] of Object.entries(users))
-    {
-        user.score = user.tdWins*2 + user.tdDraws - user.tdLoses*2
-        user.winRatio = (user.tdWins / user.tdGames).toFixed(2)
-        ranking.push(user)
-    }
-    ranking.sort((a, b) => b.score - a.score)
-    let counter = 1
-    ranking.forEach((user) => {
-        if (counter > 20) return
-        answer += counter +'. ' +
-            `${user.name} (${user.score}) W:${user.tdWins} L:${user.tdLoses} D:${user.tdDraws} WR:${user.winRatio}\n`
-        counter++
-    })
-
-    return answer
+    return buildTopDeckRanking(users, limit)
 }
 
-module.exports = {getRandomCard, getOpenTopDeck, getTopDeckStats, updateTopDeck, createTopDeck}
+module.exports = {
+    getRandomCard,
+    getOpenTopDeck,
+    getTopDeckStats,
+    getTopDeckRanking,
+    buildTopDeckRanking,
+    updateTopDeck,
+    createTopDeck,
+}

@@ -25,6 +25,13 @@ header.header-sticky
                                 class=(currentPath.startsWith('/cards') ? 'active' : '')
                             )
                                 h3.menu-text.mb-0 Cards
+                        //- Top Deck
+                        li
+                            a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                href='/topdeck',
+                                class=(currentPath.startsWith('/topdeck') ? 'active' : '')
+                            )
+                                h3.menu-text.mb-0 Top Deck
                         if user
                             if user.isManager
                                 //- Custom Commands
@@ -42,6 +49,20 @@ header.header-sticky
                                         class=(currentPath.startsWith('/messages') ? 'active' : '')
                                     )
                                         h3.menu-text.mb-0 Log
+                                //- Users
+                                li
+                                    a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                        href='/users',
+                                        class=(currentPath.startsWith('/users') ? 'active' : '')
+                                    )
+                                        h3.menu-text.mb-0 Users
+                                if user.role === 'GOD'
+                                    li
+                                        a.nav-link.text-primary.rounded.px-4.py-3.position-relative.d-flex.align-items-center.transition(
+                                            href='/roles',
+                                            class=(currentPath.startsWith('/roles') ? 'active' : '')
+                                        )
+                                            h3.menu-text.mb-0 Roles
                     //- Login / User Dropdown
                     div.text-end.ms-auto
                         if loginLink
@@ -59,4 +80,7 @@ header.header-sticky
                                     li
                                         a.dropdown-item(href="/profile") Profile
                                     li
-                                        a.dropdown-item(href="/logout") Logout
+                                        form(method="post" action="/logout")
+                                            if _csrf
+                                                input(type="hidden" name="_csrf" value=_csrf)
+                                            button.dropdown-item(type="submit") Logout

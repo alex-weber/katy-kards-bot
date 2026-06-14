@@ -7,7 +7,7 @@ const translator = init()
  * @param msg
  * @returns {string|*}
  */
-function translate(language, msg)
+function translate(language, msg, params = {})
 {
     //translate meta keywords from ru to en
     const reservedWords = getReservedWords()
@@ -19,7 +19,14 @@ function translate(language, msg)
     if (translator.exists(msg, {lng: language}))
     {
         let message = translator.t(msg, {lng: language})
-        return message.replace('{{language}}', language.toUpperCase())
+        const replacements = {
+            language: language.toUpperCase(),
+            ...params,
+        }
+        for (const [key, value] of Object.entries(replacements)) {
+            message = message.replaceAll(`{{${key}}}`, value)
+        }
+        return message
     }
     //no translation
     return msg

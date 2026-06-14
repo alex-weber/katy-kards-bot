@@ -4,6 +4,8 @@ const port = parseInt(process.env.PORT) || 3000
 const session = require('express-session')
 const favicon = require('serve-favicon')
 const compression = require('compression')
+const lusca = require('lusca')
+const rateLimit = require('express-rate-limit')
 
 //messenger handlers
 const {discordHandler} = require('./controller/discordHandler')
@@ -19,9 +21,13 @@ const {disconnect} = require('./database/db')
 const {
     isAuthenticated,
     requireManager,
+    requireGod,
     renderAuth,
     renderDashboard,
     renderMessages,
+    renderUsers,
+    renderRoles,
+    renderTopDeck,
     renderServers,
     renderCommands,
     renderLanding,
@@ -29,12 +35,23 @@ const {
     renderPublicProfile,
     renderCards,
     handleApi,
+    handleUserUpdate,
+    handleRoleRulesUpdate,
+    handleUserStatusToggle,
     handleLogout,
     handleLogin
 } = require('./controller/router')
 
 const {redis, redisStore, secure} = require('./controller/redis')
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
+const webRateLimitWindow = parseInt(process.env.WEB_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000
+const webRateLimitMax = parseInt(process.env.WEB_RATE_LIMIT_MAX, 10) || 300
+const webRateLimiter = rateLimit({
+    windowMs: webRateLimitWindow,
+    max: webRateLimitMax,
+    standardHeaders: true,
+    legacyHeaders: false,
+})
 
 //frontend
 app.use('/static', express.static('src/js'))
@@ -42,8 +59,10 @@ app.use(favicon(__dirname + '/assets/favicon.ico'))
 app.set('view engine', 'pug')
 app.set('views', __dirname + '/views')
 app.use(compression())
+app.use(express.urlencoded({ extended: false }))
+app.use(express.json())
 //cloud hosting
-app.set('trust proxy', true)
+app.set('trust proxy', 1)
 
 //Redis Session
 app.use(session({
@@ -56,6 +75,7 @@ app.use(session({
         maxAge: cookieMaxAge,
     }
 }))
+app.use(lusca.csrf())
 
 app.use((req, res, next) => {
     res.locals.currentPath = req.path || '/'
@@ -67,18 +87,24 @@ app.use((req, res, next) => {
 app.listen(port, () => console.log(`Katyusha-Bot is listening at :${port}`))
 
 // WEB ROUTES
-app.get('/', isAuthenticated, renderDashboard)
-app.get('/', renderLanding)
-app.get('/auth', renderAuth)
-app.get('/login', handleLogin)
-app.get('/logout', handleLogout)
-app.get('/commands', isAuthenticated, requireManager, renderCommands)
-app.get('/messages', isAuthenticated, requireManager, renderMessages)
-app.get('/profile', isAuthenticated, renderProfile)
-app.get('/profile/:id', (req, res) => renderPublicProfile(req, res, client))
-app.get('/servers', (req, res) => renderServers(req, res, servers))
-app.get('/cards', renderCards)
-app.get('/api/:method', handleApi)
+app.get('/', webRateLimiter, isAuthenticated, renderDashboard)
+app.get('/', webRateLimiter, renderLanding)
+app.get('/auth', webRateLimiter, renderAuth)
+app.post('/login', webRateLimiter, handleLogin)
+app.post('/logout', webRateLimiter, handleLogout)
+app.get('/commands', webRateLimiter, isAuthenticated, requireManager, renderCommands)
+app.get('/messages', webRateLimiter, isAuthenticated, requireManager, renderMessages)
+app.get('/users', webRateLimiter, isAuthenticated, requireManager, renderUsers)
+app.post('/users/:id', webRateLimiter, isAuthenticated, requireManager, handleUserUpdate)
+app.post('/users/:id/status', webRateLimiter, isAuthenticated, requireManager, handleUserStatusToggle)
+app.get('/roles', webRateLimiter, isAuthenticated, requireGod, renderRoles)
+app.post('/roles', webRateLimiter, isAuthenticated, requireGod, handleRoleRulesUpdate)
+app.get('/profile', webRateLimiter, isAuthenticated, renderProfile)
+app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, res, client))
+app.get('/servers', webRateLimiter, (req, res) => renderServers(req, res, servers))
+app.get('/cards', webRateLimiter, renderCards)
+app.get('/topdeck', webRateLimiter, renderTopDeck)
+app.get('/api/:method', webRateLimiter, handleApi)
 
 let servers = [] //we get them when Discord client is ready
 

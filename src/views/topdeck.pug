@@ -1,0 +1,70 @@
+extends layout
+
+block content
+  p.h2.text-primary.text-center= title
+  p.text-center.text-secondary.mb-4 (Wins x 2 + Draws - Loses x 2)
+
+  .row.my-4
+    .col-md-4
+      .td-stat-band.text-center
+        .text-secondary Games
+        .h3.text-primary #{totals.games}
+    .col-md-4
+      .td-stat-band.text-center
+        .text-secondary Players
+        .h3.text-primary #{ranking.length}
+    .col-md-4
+      .td-stat-band.text-center
+        .text-secondary Results
+        .h3.text-primary #{totals.wins + totals.loses + totals.draws}
+
+  .row.my-4
+    .col-lg-6.mb-4
+      h4.text-primary.mb-3 Top Scores
+      .td-chart-wrapper
+        canvas#tdScoresChart
+    .col-lg-6.mb-4
+      h4.text-primary.mb-3 Outcomes
+      .td-chart-wrapper
+        canvas#tdOutcomesChart
+    .col-12
+      h4.text-primary.mb-3 Activity / Win Ratio
+      .td-chart-wrapper.td-chart-wrapper-wide
+        canvas#tdActivityChart
+
+  table.table.table-dark.table-striped.table-hover.align-middle
+    thead
+      tr
+        th(scope='col') #
+        th(scope='col') Player
+        th(scope='col') Score
+        th(scope='col') Wins
+        th(scope='col') Loses
+        th(scope='col') Draws
+        th(scope='col') Win Ratio
+        th(scope='col') Games
+    tbody
+      if ranking.length
+        each player, index in ranking
+          tr
+            td #{index + 1}
+            td
+              a.text-primary(href=`/profile/${player.id}`)= player.name
+            td #{player.score}
+            td #{player.tdWins}
+            td #{player.tdLoses}
+            td #{player.tdDraws}
+            td #{player.winRatio}
+            td #{player.tdGames}
+      else
+        tr
+          td(colspan="8").text-center No Top Deck games found
+
+  .my-5
+  p &nbsp;
+  p &nbsp;
+
+  script.
+    const topDeckChartData = !{JSON.stringify(chartData || {})}
+  script(src="/static/vendor/chart.js")
+  script(src="/static/topdeck.js")
