@@ -159,9 +159,12 @@ async function discordHandler(message, client, redis)
 
     const roleLimit = await checkRoleCommandLimit(ctx)
     if (!roleLimit.allowed) {
-        await message.channel.send(roleLimit.message)
+        if (!roleLimit.silent && roleLimit.message) {
+            await message.channel.send(roleLimit.message)
+        }
         return message
     }
+    if (roleLimit.message) await message.channel.send(roleLimit.message)
 
     //save the command in the DB and in cache, no need to wait
     const fullContent = `${guildName} | ${channelName} -> ${ctx.command}`

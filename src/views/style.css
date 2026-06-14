@@ -67,6 +67,77 @@
     white-space: nowrap;
 }
 
+.role-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.role-info-card {
+    border: 1px solid #343a40;
+    border-radius: 8px;
+    background: #1f2327;
+    padding: 1rem;
+    min-height: 13rem;
+}
+
+.role-info-card-special {
+    border-top: 3px solid #20c997;
+}
+
+.role-info-card-standard {
+    border-top: 3px solid #0d6efd;
+}
+
+.role-info-card-prisoner {
+    border-top: 3px solid #ffc107;
+}
+
+.role-info-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.role-info-title {
+    font-size: 1.15rem;
+    line-height: 1.2;
+    margin: 0;
+    color: #f8f9fa;
+}
+
+.role-info-subtitle {
+    margin: 0.25rem 0 0;
+    color: #adb5bd;
+    font-size: 0.9rem;
+}
+
+.role-info-stats {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.role-info-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-top: 1px solid #343a40;
+    padding-top: 0.5rem;
+}
+
+.role-info-stat-label {
+    color: #adb5bd;
+    font-size: 0.85rem;
+}
+
+.role-info-stat-value {
+    color: #f8f9fa;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
 .td-chart-wrapper {
     position: relative;
     height: 300px;

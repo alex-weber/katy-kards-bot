@@ -704,9 +704,12 @@ async function telegramHandler(tgCtx, redis)
 
     const roleLimit = await checkRoleCommandLimit(ctx)
     if (!roleLimit.allowed) {
-        await tgCtx.reply(roleLimit.message)
+        if (!roleLimit.silent && roleLimit.message) {
+            await tgCtx.reply(roleLimit.message)
+        }
         return
     }
+    if (roleLimit.message) await tgCtx.reply(roleLimit.message)
 
     //save the message
     const commandToSave = `Telegram | ${ctx.chatName} | -> ${ctx.command}`

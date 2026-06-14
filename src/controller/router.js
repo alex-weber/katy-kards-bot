@@ -288,6 +288,25 @@ function redirectBackToUsers(req, res) {
     res.redirect(url.pathname + url.search)
 }
 
+function buildRoleInfoCards(rules) {
+    return EDITABLE_RULE_ROLES.map(role => {
+        const option = ROLE_OPTIONS.find(option => option.value === role)
+        const roleRules = rules[role]
+        return {
+            role,
+            label: roleLabel(role),
+            description: option.description,
+            rules: roleRules,
+            stats: [
+                {label: 'Daily commands', value: roleRules.dailyCommandLimit || 'Unlimited'},
+                {label: 'Commands/hour', value: roleRules.hourlyCommandLimit || 'Unlimited'},
+                {label: 'Deck screenshots/day', value: roleRules.dailyDeckScreenshotLimit || 'Unlimited'},
+                {label: 'Attachment limit', value: roleRules.attachmentLimit || 'Unlimited'},
+            ],
+        }
+    })
+}
+
 async function renderUsers(req, res) {
     let { page = '1', username, discordId, role, status, mode } = req.query
 
@@ -309,6 +328,8 @@ async function renderUsers(req, res) {
         mode,
     })
     const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
+    const showRoleInfo = req.session.user && req.session.user.isManager
+    const roleInfoCards = showRoleInfo ? buildRoleInfoCards(await getRoleRules()) : []
 
     res.render('users', {
         title: 'Users',
@@ -333,6 +354,8 @@ async function renderUsers(req, res) {
         status,
         mode,
         roleOptions: ROLE_OPTIONS,
+        showRoleInfo,
+        roleInfoCards,
     })
 }
 
@@ -341,12 +364,7 @@ async function renderRoles(req, res) {
     res.render('roles', {
         title: 'Role Rules',
         user: req.session.user,
-        roles: EDITABLE_RULE_ROLES.map(role => ({
-            role,
-            label: roleLabel(role),
-            description: ROLE_OPTIONS.find(option => option.value === role).description,
-            rules: rules[role],
-        })),
+        roles: buildRoleInfoCards(rules),
     })
 }
 

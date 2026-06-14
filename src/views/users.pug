@@ -7,6 +7,20 @@ block content
 
   p.h2.text-primary.text-center= title + ' (' + totalCount + ')'
 
+  if showRoleInfo
+    .role-info-grid.mb-4
+      each info in roleInfoCards
+        .role-info-card(class=`role-info-card-${info.role.toLowerCase()}`)
+          .role-info-header
+            div
+              h3.role-info-title #{info.label}
+              p.role-info-subtitle #{info.description}
+          .role-info-stats
+            each stat in info.stats
+              .role-info-stat
+                span.role-info-stat-label #{stat.label}
+                strong.role-info-stat-value #{stat.value}
+
   form#filterForm(method="get" action="/users")
     .row.mb-3
       .col-md-3
@@ -32,7 +46,7 @@ block content
           option(value="active" selected=status === 'active') Active
           option(value="inactive" selected=status === 'inactive') Inactive
       .col-md-2
-        label.form-label(for="mode") Mode:
+        label.form-label(for="mode") Custom Reply:
         .input-group
           input#mode.form-control(type="text" name="mode" value=mode)
           button.btn.btn-outline-secondary(type="button" onclick="document.getElementById('mode').value=''; document.getElementById('filterForm').submit();") x
@@ -46,7 +60,7 @@ block content
         th(scope='col') User
         th(scope='col') Discord ID
         th(scope='col') Language
-        th(scope='col') Mode
+        th(scope='col') Custom Reply
         th(scope='col') Role
         th.users-status-col(scope='col') Status
 

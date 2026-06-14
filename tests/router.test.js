@@ -280,6 +280,56 @@ describe('manager pages', () => {
         expect(locals.users[0].canEditStatus).toBe(false)
         expect(locals.users[1].canEditRole).toBe(true)
         expect(locals.users[1].roleLabel).toBe('Standard')
+        expect(locals.showRoleInfo).toBe(true)
+        expect(locals.roleInfoCards.map(card => card.role)).toEqual([
+            'SPECIAL', 'STANDARD', 'PRISONER',
+        ])
+    })
+
+    test('renderUsers shows current role info cards for admins', async () => {
+        const res = makeRes()
+        isManager.mockImplementation(user => user.role === 'GOD' || user.role === 'VIP')
+        db.getUsers.mockResolvedValueOnce({
+            users: [
+                { id: 2, discordId: '222', name: 'User', role: null, status: 'active' },
+            ],
+            totalCount: 1,
+        })
+        redis.json.get.mockResolvedValueOnce({
+            SPECIAL: {
+                dailyCommandLimit: 0,
+                hourlyCommandLimit: 0,
+                dailyDeckScreenshotLimit: 30,
+                attachmentLimit: 10,
+            },
+            STANDARD: {
+                dailyCommandLimit: 100,
+                hourlyCommandLimit: 20,
+                dailyDeckScreenshotLimit: 10,
+                attachmentLimit: 5,
+            },
+            PRISONER: {
+                dailyCommandLimit: 5,
+                hourlyCommandLimit: 5,
+                dailyDeckScreenshotLimit: 1,
+                attachmentLimit: 5,
+            },
+        })
+
+        await router.renderUsers({
+            session: { user: { id: '111', role: 'VIP', isManager: true } },
+            query: {},
+        }, res)
+
+        const locals = res.render.mock.calls[0][1]
+        expect(locals.showRoleInfo).toBe(true)
+        expect(locals.roleInfoCards.map(card => card.role)).toEqual([
+            'SPECIAL', 'STANDARD', 'PRISONER',
+        ])
+        expect(locals.roleInfoCards[1].stats[0]).toEqual({
+            label: 'Daily commands',
+            value: 100,
+        })
     })
 
     test('renderUsers allows GOD to edit another admin role', async () => {
