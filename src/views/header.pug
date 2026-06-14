@@ -73,4 +73,7 @@ header.header-sticky
                                     li
                                         a.dropdown-item(href="/profile") Profile
                                     li
-                                        a.dropdown-item(href="/logout") Logout
+                                        form(method="post" action="/logout")
+                                            if _csrf
+                                                input(type="hidden" name="_csrf" value=_csrf)
+                                            button.dropdown-item(type="submit") Logout

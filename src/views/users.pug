@@ -65,6 +65,8 @@ block content
             td
               if userRow.canEditMode
                 form(method="post" action=`/users/${userRow.id}`)
+                  if _csrf
+                    input(type="hidden" name="_csrf" value=_csrf)
                   input(type="hidden" name="field" value="mode")
                   input(type="hidden" name="returnTo" value=returnTo)
                   .input-group
@@ -75,6 +77,8 @@ block content
             td
               if userRow.canEditRole
                 form(method="post" action=`/users/${userRow.id}`)
+                  if _csrf
+                    input(type="hidden" name="_csrf" value=_csrf)
                   input(type="hidden" name="field" value="role")
                   input(type="hidden" name="returnTo" value=returnTo)
                   .input-group
@@ -84,6 +88,8 @@ block content
                 span #{userRow.role || ''}
             td.users-status-col
               form(method="post" action=`/users/${userRow.id}/status`)
+                if _csrf
+                  input(type="hidden" name="_csrf" value=_csrf)
                 input(type="hidden" name="returnTo" value=returnTo)
                 .form-check.form-switch.users-status-switch
                   input.form-check-input(

@@ -386,7 +386,7 @@ describe('login / logout', () => {
         const res = makeRes()
         res.redirect = jest.fn()
         await router.handleLogin(
-            { query: { tokenType: 'Bearer', accessToken: 'tok' }, session },
+            { body: { tokenType: 'Bearer', accessToken: 'tok' }, session },
             res,
             jest.fn()
         )

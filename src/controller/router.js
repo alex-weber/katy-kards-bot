@@ -83,8 +83,12 @@ function renderAuth(req, res) {
 
 async function handleLogin(req, res, next) {
     try {
-        const tokenType = req.query.tokenType
-        const accessToken = req.query.accessToken
+        const tokenType = req.body.tokenType
+        const accessToken = req.body.accessToken
+
+        if (!tokenType || !accessToken) {
+            return res.status(400).send('Missing login token')
+        }
 
         let user = await axios.get('https://discord.com/api/users/@me', {
             headers: {
