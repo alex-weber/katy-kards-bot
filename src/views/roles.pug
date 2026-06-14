@@ -1,0 +1,61 @@
+extends layout
+
+block content
+  p.h2.text-primary.text-center= title
+
+  form(method="post" action="/roles")
+    if _csrf
+      input(type="hidden" name="_csrf" value=_csrf)
+
+    .table-responsive
+      table.table.table-dark.table-striped.table-hover.align-middle
+        thead
+          tr
+            th(scope="col") Role
+            th(scope="col") Daily commands
+            th(scope="col") Commands per hour
+            th(scope="col") Daily deck screenshots
+            th(scope="col") Attachment limit
+        tbody
+          each item in roles
+            tr
+              td
+                strong #{item.label}
+                div.text-secondary.small #{item.description}
+              td
+                input.form-control(
+                  type="number"
+                  min="0"
+                  max="100000"
+                  name=`${item.role}_dailyCommandLimit`
+                  value=item.rules.dailyCommandLimit
+                )
+              td
+                input.form-control(
+                  type="number"
+                  min="0"
+                  max="100000"
+                  name=`${item.role}_hourlyCommandLimit`
+                  value=item.rules.hourlyCommandLimit
+                )
+              td
+                input.form-control(
+                  type="number"
+                  min="0"
+                  max="100000"
+                  name=`${item.role}_dailyDeckScreenshotLimit`
+                  value=item.rules.dailyDeckScreenshotLimit
+                )
+              td
+                input.form-control(
+                  type="number"
+                  min="0"
+                  max="100000"
+                  name=`${item.role}_attachmentLimit`
+                  value=item.rules.attachmentLimit
+                )
+
+    .d-flex.justify-content-end.mt-3
+      button.btn.btn-primary(type="submit") Save
+
+  p.text-secondary.mt-3 0 means unlimited.

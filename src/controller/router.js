@@ -12,6 +12,20 @@ const {
 
 const {isManager} = require("../tools/search")
 const {resolveAvatarUrl} = require("../tools/avatar")
+const {
+    ROLE,
+    ROLE_OPTIONS,
+    EDITABLE_RULE_ROLES,
+    normalizeRole,
+    roleToDbValue,
+    roleLabel,
+    isGod,
+    canAssignRole,
+    assignableRoleOptions,
+    getRoleRules,
+    saveRoleRules,
+    normalizeRuleSet,
+} = require("../tools/roles")
 const {redis, cachePrefix: webCachePrefix} = require('../controller/redis')
 const {cacheKeyPrefix} = require('../controller/messageCache')
 const axios = require('axios')
@@ -26,15 +40,33 @@ const STATS_PERIOD_OPTIONS = [
 const STATS_PERIODS = STATS_PERIOD_OPTIONS.map(option => option.value)
 const topDeckPageExpiration = parseInt(process.env.CACHE_TOPDECK_PAGE_EXPIRE, 10) || 60 * 5
 
+async function refreshSessionUser(req) {
+    if (!req.session.user || !req.session.user.id) return null
+
+    const dbUser = await getUser(req.session.user.id)
+    req.session.user.role = dbUser.role
+    req.session.user.isManager = isManager(dbUser)
+
+    return req.session.user
+}
+
 // middleware to test if authenticated
-function isAuthenticated(req, res, next) {
-    if (req.session.user) next()
-    else next('route')
+async function isAuthenticated(req, res, next) {
+    if (!req.session.user) return next('route')
+    if (req.session.user.role === undefined) await refreshSessionUser(req)
+    next()
 }
 
 // middleware to restrict a route to managers
-function requireManager(req, res, next) {
+async function requireManager(req, res, next) {
+    if (req.session.user) await refreshSessionUser(req)
     if (req.session.user && req.session.user.isManager) return next()
+    res.status(403).send('Not permitted')
+}
+
+async function requireGod(req, res, next) {
+    if (req.session.user) await refreshSessionUser(req)
+    if (req.session.user && isGod(req.session.user)) return next()
     res.status(403).send('Not permitted')
 }
 
@@ -98,6 +130,7 @@ async function handleLogin(req, res, next) {
 
         user = user.data
         let dbUser = await getUser(user.id)
+        user.role = dbUser.role
         if (isManager(dbUser)) user.isManager = true
 
         req.session.regenerate(async function onRegenerate(err) {
@@ -209,15 +242,15 @@ function sanitizeText(value, maxLength) {
 }
 
 function sanitizeUserRole(value) {
-    value = sanitizeText(value, 20).toUpperCase()
-    if (!value) return null
-    return value
+    const role = sanitizeText(value, 20).toUpperCase()
+    return ROLE_OPTIONS.some(option => option.value === role) ? role : ROLE.STANDARD
 }
 
 function sanitizeUserRoleFilter(value) {
     value = sanitizeText(value, 20)
-    if (value === '__empty') return value
-    return value.toUpperCase()
+    if (value === '__empty') return ROLE.STANDARD
+    value = value.toUpperCase()
+    return ROLE_OPTIONS.some(option => option.value === value) ? value : ''
 }
 
 function sanitizeUserStatus(value) {
@@ -240,8 +273,9 @@ function canEditUserField(actor, target, field) {
     const targetIsAdmin = isManager(target)
     const isOwnAdmin = targetIsAdmin && actor.id === target.discordId
     if (isOwnAdmin) return field === 'mode'
+    if (field === 'role') return assignableRoleOptions(actor, target).length > 0
     if (targetIsAdmin) return false
-    return ['mode', 'role', 'status'].includes(field)
+    return ['mode', 'status'].includes(field)
 }
 
 function redirectBackToUsers(req, res) {
@@ -281,6 +315,9 @@ async function renderUsers(req, res) {
         users: users.map(target => ({
             ...target,
             isAdmin: isManager(target),
+            roleValue: normalizeRole(target.role),
+            roleLabel: roleLabel(target.role),
+            assignableRoles: assignableRoleOptions(req.session.user, target),
             canEditMode: canEditUserField(req.session.user, target, 'mode'),
             canEditRole: canEditUserField(req.session.user, target, 'role'),
             canEditStatus: canEditUserField(req.session.user, target, 'status'),
@@ -295,7 +332,41 @@ async function renderUsers(req, res) {
         role,
         status,
         mode,
+        roleOptions: ROLE_OPTIONS,
     })
+}
+
+async function renderRoles(req, res) {
+    const rules = await getRoleRules()
+    res.render('roles', {
+        title: 'Role Rules',
+        user: req.session.user,
+        roles: EDITABLE_RULE_ROLES.map(role => ({
+            role,
+            label: roleLabel(role),
+            description: ROLE_OPTIONS.find(option => option.value === role).description,
+            rules: rules[role],
+        })),
+    })
+}
+
+async function handleRoleRulesUpdate(req, res) {
+    if (!isGod(req.session.user)) {
+        return res.status(403).send('Not permitted')
+    }
+
+    const bodyRules = {}
+    for (const role of EDITABLE_RULE_ROLES) {
+        bodyRules[role] = {
+            dailyCommandLimit: req.body[`${role}_dailyCommandLimit`],
+            hourlyCommandLimit: req.body[`${role}_hourlyCommandLimit`],
+            dailyDeckScreenshotLimit: req.body[`${role}_dailyDeckScreenshotLimit`],
+            attachmentLimit: req.body[`${role}_attachmentLimit`],
+        }
+    }
+
+    await saveRoleRules(normalizeRuleSet(bodyRules))
+    res.redirect('/roles')
 }
 
 async function renderTopDeck(req, res) {
@@ -364,7 +435,13 @@ async function handleUserUpdate(req, res) {
 
     const data = {}
     if (field === 'mode') data.mode = sanitizeText(req.body.mode, 500) || null
-    else if (field === 'role') data.role = sanitizeUserRole(req.body.role)
+    else if (field === 'role') {
+        const role = sanitizeUserRole(req.body.role)
+        if (!canAssignRole(req.session.user, target, role)) {
+            return redirectBackToUsers(req, res)
+        }
+        data.role = roleToDbValue(role)
+    }
     else if (field === 'status') data.status = sanitizeUserStatus(req.body.status)
     else return redirectBackToUsers(req, res)
 
@@ -502,10 +579,12 @@ async function renderServers(req, res, servers) {
 module.exports = {
     isAuthenticated,
     requireManager,
+    requireGod,
     renderAuth,
     renderDashboard,
     renderMessages,
     renderUsers,
+    renderRoles,
     renderTopDeck,
     renderCommands,
     renderServers,
@@ -515,6 +594,7 @@ module.exports = {
     renderCards,
     handleApi,
     handleUserUpdate,
+    handleRoleRulesUpdate,
     handleUserStatusToggle,
     handleLogout,
     handleLogin

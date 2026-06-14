@@ -11,6 +11,7 @@ const {createDeckImages} = require("../../tools/deck")
 const {getButtonRow} = require("../../tools/button")
 const {isBotCommandChannel} = require("../../tools/search")
 const {react} = require("../../tools/reactions")
+const {checkRoleDeckScreenshotLimit} = require("../../tools/roles")
 
 //cache lifetimes (seconds)
 const deckExp = process.env.REDIS_EXP_DECK || 60 * 60 * 24 * 30 // 30 days
@@ -41,6 +42,12 @@ async function handleDeck(ctx)
         await forwardCachedMessage(
             client, response, message.channel, message.channelId)
 
+        return true
+    }
+
+    const deckLimit = await checkRoleDeckScreenshotLimit(ctx)
+    if (!deckLimit.allowed) {
+        await message.channel.send(deckLimit.message)
         return true
     }
 

@@ -21,10 +21,12 @@ const {disconnect} = require('./database/db')
 const {
     isAuthenticated,
     requireManager,
+    requireGod,
     renderAuth,
     renderDashboard,
     renderMessages,
     renderUsers,
+    renderRoles,
     renderTopDeck,
     renderServers,
     renderCommands,
@@ -34,6 +36,7 @@ const {
     renderCards,
     handleApi,
     handleUserUpdate,
+    handleRoleRulesUpdate,
     handleUserStatusToggle,
     handleLogout,
     handleLogin
@@ -94,6 +97,8 @@ app.get('/messages', webRateLimiter, isAuthenticated, requireManager, renderMess
 app.get('/users', webRateLimiter, isAuthenticated, requireManager, renderUsers)
 app.post('/users/:id', webRateLimiter, isAuthenticated, requireManager, handleUserUpdate)
 app.post('/users/:id/status', webRateLimiter, isAuthenticated, requireManager, handleUserStatusToggle)
+app.get('/roles', webRateLimiter, isAuthenticated, requireGod, renderRoles)
+app.post('/roles', webRateLimiter, isAuthenticated, requireGod, handleRoleRulesUpdate)
 app.get('/profile', webRateLimiter, isAuthenticated, renderProfile)
 app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, res, client))
 app.get('/servers', webRateLimiter, (req, res) => renderServers(req, res, servers))

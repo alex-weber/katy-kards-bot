@@ -23,9 +23,8 @@ block content
         label.form-label(for="role") Role:
         select#role.form-select(name="role")
           option(value="" selected=!role) Any
-          option(value="__empty" selected=role === '__empty') No role
-          option(value="VIP" selected=role === 'VIP') VIP
-          option(value="GOD" selected=role === 'GOD') GOD
+          each option in roleOptions
+            option(value=option.value selected=role === option.value) #{option.label} (#{option.description})
       .col-md-2
         label.form-label(for="status") Status:
         select#status.form-select(name="status")
@@ -82,10 +81,12 @@ block content
                   input(type="hidden" name="field" value="role")
                   input(type="hidden" name="returnTo" value=returnTo)
                   .input-group
-                    input.form-control(type="text" name="role" value=userRow.role || '' maxlength="20")
+                    select.form-select(name="role")
+                      each option in userRow.assignableRoles
+                        option(value=option.value selected=userRow.roleValue === option.value) #{option.label} (#{option.description})
                     button.btn.btn-outline-primary(type="submit") Save
               else
-                span #{userRow.role || ''}
+                span #{userRow.roleLabel}
             td.users-status-col
               form(method="post" action=`/users/${userRow.id}/status`)
                 if _csrf

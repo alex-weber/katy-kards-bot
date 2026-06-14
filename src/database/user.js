@@ -1,5 +1,12 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
+const ROLE_PRIORITY = Object.freeze({
+    GOD: 0,
+    VIP: 1,
+    SPECIAL: 2,
+    STANDARD: 3,
+    PRISONER: 4,
+})
 
 /**
  *
@@ -91,7 +98,7 @@ async function getUsers({ page = 1, pageSize = 50, username, discordId, role, st
         }
     }
     if (role) {
-        where.role = role === '__empty' ? null : role
+        where.role = (role === '__empty' || role === 'STANDARD') ? null : role
     }
     if (status === 'active') {
         where.status = 'active'
@@ -137,9 +144,7 @@ async function getUsers({ page = 1, pageSize = 50, username, discordId, role, st
 
 function rolePriority(role)
 {
-    if (role === 'GOD') return 0
-    if (role === 'VIP') return 1
-    return 2
+    return ROLE_PRIORITY[role || 'STANDARD'] ?? ROLE_PRIORITY.STANDARD
 }
 
 function sortUsersByRolePriority(users)
