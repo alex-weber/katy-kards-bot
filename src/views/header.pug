@@ -31,7 +31,7 @@ header.header-sticky
                 div.main-nav-groups.d-lg-flex.align-items-lg-center.gap-lg-4
                     div.nav-group
                         ul.navbar-nav.nav-group-items
-                            +navItem('/', 'Home', currentPath === '/')
+                            +navItem('/', 'Home', currentPath.endsWith('/'))
                             +navItem('/servers', 'Guilds', currentPath.startsWith('/servers'))
                             +navItem('/cards', 'Cards', currentPath.startsWith('/cards'))
                             +navItem('/topdeck', 'Top Deck', currentPath.startsWith('/topdeck'))
