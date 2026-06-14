@@ -1,64 +1,97 @@
 extends layout
 
 block content
-  p.h2.text-primary.text-center= title
-  p.text-center.text-secondary.mb-4 (Wins x 2 + Draws - Loses x 2)
+  .page-hero
+    h2.page-title= title
+    p.page-subtitle Wins x 2 + Draws - Loses x 2
 
-  .row.my-4
-    .col-md-4
-      .td-stat-band.text-center
-        .text-secondary Games
-        .h3.text-primary #{totals.games}
-    .col-md-4
-      .td-stat-band.text-center
-        .text-secondary Players
-        .h3.text-primary #{ranking.length}
-    .col-md-4
-      .td-stat-band.text-center
-        .text-secondary Results
-        .h3.text-primary #{totals.wins + totals.loses + totals.draws}
+  .stat-grid.my-4
+    .stat-card
+      .stat-label Games
+      .stat-value #{totals.games}
+    .stat-card
+      .stat-label Players
+      .stat-value #{ranking.length}
+    .stat-card
+      .stat-label Results
+      .stat-value #{totals.wins + totals.loses + totals.draws}
 
-  .row.my-4
-    .col-lg-6.mb-4
-      h4.text-primary.mb-3 Top Scores
+  .chart-grid.my-4
+    .content-panel.chart-panel
+      .panel-header
+        .panel-title-group
+          span.panel-icon(aria-hidden="true")
+            svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+              path(d="M8 21h8")
+              path(d="M12 17v4")
+              path(d="M7 4h10")
+              path(d="M17 4v5a5 5 0 0 1-10 0V4")
+              path(d="M5 9a3 3 0 0 1-3-3V4h5")
+              path(d="M19 9a3 3 0 0 0 3-3V4h-5")
+          h3.panel-title Top Scores
       .td-chart-wrapper
         canvas#tdScoresChart
-    .col-lg-6.mb-4
-      h4.text-primary.mb-3 Outcomes
+    .content-panel.chart-panel
+      .panel-header
+        .panel-title-group
+          span.panel-icon(aria-hidden="true")
+            svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+              path(d="M3 3v18h18")
+              path(d="M7 14l3-3 3 2 4-6")
+          h3.panel-title Outcomes
       .td-chart-wrapper
         canvas#tdOutcomesChart
-    .col-12
-      h4.text-primary.mb-3 Activity / Win Ratio
+    .content-panel.chart-panel.chart-panel-wide
+      .panel-header
+        .panel-title-group
+          span.panel-icon(aria-hidden="true")
+            svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+              path(d="M3 12h4l3 8 4-16 3 8h4")
+          h3.panel-title Activity / Win Ratio
       .td-chart-wrapper.td-chart-wrapper-wide
         canvas#tdActivityChart
 
-  table.table.table-dark.table-striped.table-hover.align-middle
-    thead
-      tr
-        th(scope='col') #
-        th(scope='col') Player
-        th(scope='col') Score
-        th(scope='col') Wins
-        th(scope='col') Loses
-        th(scope='col') Draws
-        th(scope='col') Win Ratio
-        th(scope='col') Games
-    tbody
-      if ranking.length
-        each player, index in ranking
+  .content-panel
+    .panel-header
+      .panel-title-group
+        span.panel-icon(aria-hidden="true")
+          svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+            path(d="M8 6h13")
+            path(d="M8 12h13")
+            path(d="M8 18h13")
+            path(d="M3 6h.01")
+            path(d="M3 12h.01")
+            path(d="M3 18h.01")
+        h3.panel-title Player Ranking
+    .data-table-wrap
+      table.data-table.align-middle
+        thead
           tr
-            td #{index + 1}
-            td
-              a.text-primary(href=`/profile/${player.id}`)= player.name
-            td #{player.score}
-            td #{player.tdWins}
-            td #{player.tdLoses}
-            td #{player.tdDraws}
-            td #{player.winRatio}
-            td #{player.tdGames}
-      else
-        tr
-          td(colspan="8").text-center No Top Deck games found
+            th.rank-col(scope='col') #
+            th(scope='col') Player
+            th(scope='col') Score
+            th(scope='col') Wins
+            th(scope='col') Loses
+            th(scope='col') Draws
+            th(scope='col') Win Ratio
+            th(scope='col') Games
+        tbody
+          if ranking.length
+            each player, index in ranking
+              tr
+                td
+                  span.rank-badge(class=(index === 0 ? 'rank-badge-gold' : index === 1 ? 'rank-badge-silver' : index === 2 ? 'rank-badge-bronze' : '')) #{index + 1}
+                td
+                  a.data-link(href=`/profile/${player.id}`)= player.name
+                td.data-strong #{player.score}
+                td #{player.tdWins}
+                td #{player.tdLoses}
+                td #{player.tdDraws}
+                td #{player.winRatio}
+                td #{player.tdGames}
+          else
+            tr
+              td(colspan="8").text-center No Top Deck games found
 
   .my-5
   p &nbsp;

@@ -3,7 +3,7 @@ extends layout
 block content
   div.container
     // Page Title
-    h3.text-center.text-primary.mt-4.mb-5 Commands
+    h3.text-center.text-primary.mt-4.mb-5 Dashboard
 
     include includes/datepicker.pug
 
@@ -15,27 +15,44 @@ block content
       // Canvas for Messages Chart
       canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
 
-    div.row
-      div.col-md-6
-        h4.text-primary.mt-5.mb-3 Top 100 Messages
-        div(style="height: 500px; overflow: auto;")
-          table.table.table-dark.table-striped.table-hover
-            thead(style="position: sticky; top: 0;")
+    div.dashboard-leaderboards
+      section.leaderboard-panel.leaderboard-panel-commands
+        div.leaderboard-header
+          div.leaderboard-title-group
+            span.leaderboard-icon(aria-hidden="true")
+              svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+                path(d="M4 7h16")
+                path(d="M4 12h10")
+                path(d="M4 17h7")
+            h4.leaderboard-title Top 100 Commands
+          span.leaderboard-kicker Live ranking
+        div.leaderboard-table-wrap
+          table.leaderboard-table
+            thead
               tr
-                th(scope='col') #
+                th.leaderboard-rank-col(scope='col') #
                 th(scope='col') Command
-                th(scope='col') Count
+                th.leaderboard-count-col(scope='col') Count
             tbody#topMessages
 
-      div.col-md-6
-        h4.text-primary.mt-5.mb-3 Top 100 Users
-        div(style="height: 500px; overflow: auto;")
-          table.table.table-dark.table-striped.table-hover
-            thead(style="position: sticky; top: 0;")
+      section.leaderboard-panel.leaderboard-panel-users
+        div.leaderboard-header
+          div.leaderboard-title-group
+            span.leaderboard-icon(aria-hidden="true")
+              svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+                path(d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2")
+                circle(cx="9" cy="7" r="4")
+                path(d="M22 21v-2a4 4 0 0 0-3-3.87")
+                path(d="M16 3.13a4 4 0 0 1 0 7.75")
+            h4.leaderboard-title Top 100 Users
+          span.leaderboard-kicker Most active
+        div.leaderboard-table-wrap
+          table.leaderboard-table
+            thead
               tr
-                th(scope='col') #
+                th.leaderboard-rank-col(scope='col') #
                 th(scope='col') User
-                th(scope='col') Commands
+                th.leaderboard-count-col(scope='col') Commands
             tbody#topUsers
   .my-5
   p &nbsp;
@@ -43,6 +60,5 @@ block content
 
   script(src="/static/vendor/chart.js")
   script(src="/static/dashboard.js")
-
 
 

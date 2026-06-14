@@ -1,37 +1,77 @@
 extends layout
 
 block content
+    -
+        function profileHistoryTime(message) {
+            const rawDate = message.timestamp || message.createdAt
+            const date = new Date(rawDate)
+            if (Number.isNaN(date.getTime())) {
+                return String(message.createdAt || '').replace(/\s+[A-Z]{2,5}$/, '')
+            }
+            const today = new Date()
+            const yesterday = new Date()
+            yesterday.setDate(today.getDate() - 1)
+            const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+            const dayLabel = sameDay(date, today)
+                ? 'Today'
+                : sameDay(date, yesterday)
+                    ? 'Yesterday'
+                    : new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)
+            const time = new Intl.DateTimeFormat('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+            }).format(date)
+            return dayLabel + ', ' + time
+        }
 
-    p.h2.text-primary.text-center= title
+    .page-hero
+        h2.page-title= title
+        p.page-subtitle Command activity and account overview.
 
-    .card.mb-3.border-primary.shadow-sm.p-2.bg-body-tertiary.rounded(style="max-width: 540px;")
-        .row.g-0
-            .col-md-4
+    .profile-panel
+        .profile-avatar
+            div
                 if avatarUrl
-                    img.img-fluid.rounded-start.border.border-2.border-primary-subtle(src=avatarUrl, alt="No avatar")
+                    img(src=avatarUrl, alt="No avatar")
                 else
-                    .d-flex.align-items-center.justify-content-center.h-100.text-primary.display-3 #{(displayName || '?').charAt(0).toUpperCase()}
-            .col-md-8
-                .card-body
-                    h4.card-title.text-primary #{displayName}
-                    p.card-text Total messages: #{stats.total}
-                    p.card-text Last 30 days: #{stats.lastMonth}
-                    p.card-text Last 24 hours: #{stats.lastDay}
+                    span #{(displayName || '?').charAt(0).toUpperCase()}
+        .profile-body
+            h3.profile-name #{displayName}
+            .profile-stat-grid
+                .stat-card
+                    .stat-label Total messages
+                    .stat-value #{stats.total}
+                .stat-card
+                    .stat-label Last 30 days
+                    .stat-value #{stats.lastMonth}
+                .stat-card
+                    .stat-label Last 24 hours
+                    .stat-value #{stats.lastDay}
 
 
     if isOwn && history
-        h3.text-primary Last 24 hours commands
-        table.table.table-dark.table-striped.table-hover
-            thead
-                tr
-                    th(scope='col') Command
-                    th(scope='col') Time
-
-            tbody
-                each message in history
-                    tr
-                        td #{message.content}
-                        td #{message.createdAt}
+        .content-panel.mt-4
+            .panel-header
+                .panel-title-group
+                    span.panel-icon(aria-hidden="true")
+                        svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+                            path(d="M4 7h16")
+                            path(d="M4 12h12")
+                            path(d="M4 17h8")
+                    h3.panel-title Last 24 Hours Commands
+            .data-table-wrap.data-table-wrap-compact
+                table.data-table
+                    thead
+                        tr
+                            th(scope='col') Command
+                            th(scope='col') Time
+                    tbody
+                        each message in history
+                            tr
+                                td.break-all #{message.content}
+                                td.data-muted #{profileHistoryTime(message)}
 
 
     p &nbsp;

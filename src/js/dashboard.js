@@ -97,14 +97,23 @@ function drawChart(chartSettings)
 }
 function renderTopMessages(apiData) {
     const topMessagesDiv = document.getElementById('topMessages')
-
-    topMessagesDiv.innerHTML = apiData.data
+    const items = apiData.data
         .filter(item => !item.command.startsWith('%%')) // exclude commands starting with %%
+    const maxCount = Math.max(...items.map(item => item.count), 1)
+
+    topMessagesDiv.innerHTML = items
         .map((item, index) => `
-            <tr>
-                <td>${index + 1}</td>
-                <td class="break-all">${item.command}</td>
-                <td>${item.count}</td>
+            <tr class="leaderboard-row">
+                <td class="leaderboard-rank-cell">
+                    <span class="rank-badge ${getRankClass(index)}">${index + 1}</span>
+                </td>
+                <td class="leaderboard-name-cell">
+                    <span class="leaderboard-primary-text break-all">${escapeHtml(item.command)}</span>
+                    <span class="leaderboard-meter" aria-hidden="true">
+                        <span style="width: ${getBarWidth(item.count, maxCount)}%"></span>
+                    </span>
+                </td>
+                <td class="leaderboard-count-cell">${formatCount(item.count)}</td>
             </tr>
         `)
         .join('')
@@ -120,14 +129,38 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;')
 }
 
+function formatCount(value) {
+    return Number(value || 0).toLocaleString()
+}
+
+function getBarWidth(value, maxValue) {
+    return Math.max(6, Math.round((Number(value || 0) / maxValue) * 100))
+}
+
+function getRankClass(index) {
+    if (index === 0) return 'rank-badge-gold'
+    if (index === 1) return 'rank-badge-silver'
+    if (index === 2) return 'rank-badge-bronze'
+    return ''
+}
+
 function renderTopUsers(apiData) {
     const topUsersElement = document.getElementById('topUsers')
+    const maxCount = Math.max(...apiData.data.map(item => item.count), 1)
+
     topUsersElement.innerHTML = apiData.data
         .map((item, index) => `
-      <tr>
-        <td>${index + 1}</td>
-        <td><a class="text-primary" href="/profile/${encodeURIComponent(item.authorId)}">${escapeHtml(item.username)}</a></td>
-        <td>${item.count}</td>
+      <tr class="leaderboard-row">
+        <td class="leaderboard-rank-cell">
+          <span class="rank-badge ${getRankClass(index)}">${index + 1}</span>
+        </td>
+        <td class="leaderboard-name-cell">
+          <a class="leaderboard-primary-link" href="/profile/${encodeURIComponent(item.authorId)}">${escapeHtml(item.username)}</a>
+          <span class="leaderboard-meter leaderboard-meter-users" aria-hidden="true">
+            <span style="width: ${getBarWidth(item.count, maxCount)}%"></span>
+          </span>
+        </td>
+        <td class="leaderboard-count-cell">${formatCount(item.count)}</td>
       </tr>
     `)
         .join('')
@@ -194,4 +227,3 @@ getDashboardData({
     renderTopMessages(data.dataTopMessages)
     renderTopUsers(data.dataTopUsers)
 })
-

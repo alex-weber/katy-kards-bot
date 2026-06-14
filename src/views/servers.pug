@@ -2,29 +2,41 @@ extends layout
 
 block content
 
-  p.h2.text-primary.text-center= title + '(' + servers.length + ')'
+  .page-hero
+    h2.page-title= title
+    p.page-subtitle #{servers.length} connected guilds
 
-  table.table.table-dark.table-striped.table-hover
-    thead
-      tr
-        th(scope='col') #
-        th(scope='col') Icon
-        th(scope='col') Name
-        th(scope='col') Members
-        th(scope='col') Created
-        th(scope='col') Bot Joined
-    tbody
-      each server, index in servers
-        tr
-          th(scope='row')= index+1
-          each attr in server
-            if attr.startsWith('http')
-              td
-                img(src=attr, alt="No icon")
-            else
-              td= attr
+  .content-panel
+    .panel-header
+      .panel-title-group
+        span.panel-icon(aria-hidden="true")
+          svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+            rect(width="16" height="16" x="4" y="4" rx="2")
+            path(d="M9 9h6")
+            path(d="M9 15h6")
+        h3.panel-title Guild Directory
+    .data-table-wrap
+      table.data-table
+        thead
+          tr
+            th.rank-col(scope='col') #
+            th(scope='col') Icon
+            th(scope='col') Name
+            th(scope='col') Members
+            th(scope='col') Created
+            th(scope='col') Bot Joined
+        tbody
+          each server, index in servers
+            tr
+              th(scope='row')
+                span.rank-badge= index+1
+              each attr in server
+                if attr.startsWith('http')
+                  td
+                    img.server-icon(src=attr, alt="No icon")
+                else
+                  td= attr
   p &nbsp;
   p &nbsp;
-
 
 

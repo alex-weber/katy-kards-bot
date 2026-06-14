@@ -2,30 +2,44 @@ extends layout
 
 block content
 
-  p.h2.text-primary.text-center= title + '(' + synonyms.length + ')'
+  .sticky-page-head
+    .page-hero
+      h2.page-title= title
+      p.page-subtitle #{synonyms.length} custom command mappings
 
-  table.table.table-dark.table-striped.table-hover
-    thead
-      tr
-        th(scope='col') #
-        th(scope='col') Key
-        th(scope='col') Value
-    tbody
-      each synonym, index in synonyms
+  .content-panel.data-panel-page
+    .panel-header
+      .panel-title-group
+        span.panel-icon(aria-hidden="true")
+          svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+            path(d="M4 7h16")
+            path(d="M4 12h12")
+            path(d="M4 17h8")
+        h3.panel-title Custom Commands
+    table.data-table
+      thead
         tr
-          td= index+1
-          each value in synonym
-            if value[0] === '{'
-              - let obj = JSON.parse(value)
-              td
-                if obj.content
-                  - let htmlContent = obj.content.replaceAll('\n', '<br>')
-                  p!= htmlContent
-                if obj.files && obj.files.length
-                  ul
-                    each file in obj.files
-                      li: a(href=file target="_blank")= file
-            else if value !== synonym.id
-              td= value
+          th.rank-col(scope='col') #
+          th(scope='col') Key
+          th(scope='col') Value
+      tbody
+        each synonym, index in synonyms
+          tr
+            td
+              span.rank-badge= index+1
+            each value in synonym
+              if value[0] === '{'
+                - let obj = JSON.parse(value)
+                td
+                  if obj.content
+                    - let htmlContent = obj.content.replaceAll('\n', '<br>')
+                    p.mb-2!= htmlContent
+                  if obj.files && obj.files.length
+                    ul.command-file-list
+                      each file in obj.files
+                        li: a(href=file target="_blank")= file
+              else if value !== synonym.id
+                td
+                  span.data-primary= value
   p &nbsp;
   p &nbsp;
