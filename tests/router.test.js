@@ -113,7 +113,7 @@ describe('stats period selection', () => {
             {value: 'daily', label: 'Last 30 days'},
             {value: 'monthly', label: 'Last 12 months'},
             {value: 'quarterly', label: 'Last 8 quarters'},
-            {value: 'yearly', label: 'Last 5 years'},
+            {value: 'yearly', label: 'All-time'},
         ])
         expect(locals.canFilter).toBe(true)
     })

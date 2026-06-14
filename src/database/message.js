@@ -270,7 +270,6 @@ function statsPeriodLabel(period, date)
 
 function statsPeriodLookback(period)
 {
-    if (period === 'yearly') return 5
     if (period === 'quarterly') return 8
     if (period === 'monthly') return 12
     return 30
@@ -286,19 +285,31 @@ async function getStatsFirstMessageDate(extraWhere = {})
     return first?.createdAt || new Date()
 }
 
-function buildStatsBuckets(period)
+function firstDailyCountDate(dailyMap)
+{
+    const first = Object.keys(dailyMap).
+    filter(day => !day.startsWith('__')).
+    sort().
+    shift()
+    return first ? new Date(`${first}T00:00:00Z`) : new Date()
+}
+
+function buildStatsBuckets(period, firstDate = null)
 {
     period = normalizeStatsPeriod(period)
     const todayStart = startOfStatsPeriod('daily', new Date())
     const bucketPeriod = period
     const currentStart = startOfStatsPeriod(bucketPeriod, todayStart)
-    const bucketCount = statsPeriodLookback(period)
     let start
 
-    if (period === 'yearly') start = addUtcYears(currentStart, -(bucketCount - 1))
-    else if (period === 'quarterly') start = addUtcMonths(currentStart, -(bucketCount - 1) * 3)
-    else if (period === 'monthly') start = addUtcMonths(currentStart, -(bucketCount - 1))
-    else start = addUtcDays(currentStart, -(bucketCount - 1))
+    if (period === 'yearly') {
+        start = startOfStatsPeriod('yearly', firstDate || currentStart)
+    } else {
+        const bucketCount = statsPeriodLookback(period)
+        if (period === 'quarterly') start = addUtcMonths(currentStart, -(bucketCount - 1) * 3)
+        else if (period === 'monthly') start = addUtcMonths(currentStart, -(bucketCount - 1))
+        else start = addUtcDays(currentStart, -(bucketCount - 1))
+    }
 
     const buckets = []
     for (let current = start; current <= currentStart; current = nextStatsPeriod(bucketPeriod, current)) {
@@ -429,7 +440,8 @@ async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
     period = normalizeStatsPeriod(period)
     const dailyMap = await getDailyCountSourceCached(keyBase, extraWhere)
     const results = []
-    for (const bucket of buildStatsBuckets(period)) {
+    const firstDate = period === 'yearly' ? firstDailyCountDate(dailyMap) : null
+    for (const bucket of buildStatsBuckets(period, firstDate)) {
         results.push({label: bucket.label, count: statsBucketValue(period, bucket, dailyMap)})
     }
     return results
@@ -438,7 +450,8 @@ async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
 async function getStatsPeriodAggregateCached(keyBase, computeFn, period)
 {
     period = normalizeStatsPeriod(period)
-    const buckets = buildStatsBuckets(period)
+    const firstDate = period === 'yearly' ? await getStatsFirstMessageDate() : null
+    const buckets = buildStatsBuckets(period, firstDate)
     const first = buckets[0]
     const last = buckets[buckets.length - 1]
     const entries = await getStatsPeriodCached(

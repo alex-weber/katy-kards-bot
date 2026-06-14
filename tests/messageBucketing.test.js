@@ -39,7 +39,7 @@ describe('period buckets via getDashboardMessages', () => {
         ['daily', 30, /^\d{2}\/\d{2}$/],
         ['monthly', 12, /^\d{4}-\d{2}$/],
         ['quarterly', 8, /^\d{4}-Q[1-4]$/],
-        ['yearly', 5, /^\d{4}$/],
+        ['yearly', 1, /^\d{4}$/],
     ])('%s returns fixed period buckets from the Redis source map', async (period, length, labelPattern) => {
         mockFindFirst.mockResolvedValue({createdAt: new Date()})
         mockFindMany.mockResolvedValue(rows(todayIso(), todayIso()))
@@ -48,6 +48,26 @@ describe('period buckets via getDashboardMessages', () => {
         expect(series).toHaveLength(length)
         expect(series[0].label).toMatch(labelPattern)
         expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(2)
+    })
+
+    test('yearly returns all-time yearly buckets from the first message year', async () => {
+        const currentYear = new Date().getUTCFullYear()
+        mockFindFirst.mockResolvedValue({createdAt: new Date(Date.UTC(currentYear - 2, 5, 1))})
+        mockFindMany
+            .mockResolvedValueOnce(rows(
+                `${currentYear - 2}-06-01T12:00:00Z`,
+                `${currentYear - 1}-06-01T12:00:00Z`
+            ))
+            .mockResolvedValueOnce(rows(todayIso()))
+
+        const series = await getDashboardMessages({period: 'yearly'})
+
+        expect(series.map(bucket => bucket.label)).toEqual([
+            String(currentYear - 2),
+            String(currentYear - 1),
+            String(currentYear),
+        ])
+        expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(3)
     })
 
     test('source data is loaded once and then reused from Redis', async () => {

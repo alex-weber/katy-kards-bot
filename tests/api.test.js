@@ -16,14 +16,14 @@ test('search is working', async () => {
     }
     let data = await getCards(variables)
     expect(data.cards[0].node.cardId).toMatch('leopold')
-    variables.q = 'sov tank 10k'
+    variables.q = 'sov order 7k victory'
     data = await getCards(variables)
     let files = getFiles(data, 'en', 10)
-    expect(files[0].attachment).toMatch('iosef_stalin_ii')
-    variables.q = 'совет танк 10к'
+    expect(files[0].attachment).toMatch('victory_banners')
+    variables.q = 'сов приказ 7к знамя'
     data = await getCards(variables)
     files = getFiles(data, 'en', 10)
-    expect(files[0].attachment).toMatch('iosef_stalin_ii')
+    expect(files[0].attachment).toMatch('victory_banners')
 })
 
 test('listing synonyms', async () => {
