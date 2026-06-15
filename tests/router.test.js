@@ -530,7 +530,14 @@ describe('simple renders', () => {
         expect(view).toBe('topdeck')
         expect(locals.ranking).toHaveLength(1)
         expect(locals.totals).toEqual({ wins: 4, loses: 2, draws: 1, games: 7 })
-        expect(locals.chartData.topScores[0]).toEqual({ name: 'Player', score: 5 })
+        expect(locals.chartData.topScores[0]).toEqual({
+            name: 'Player',
+            score: 5,
+            wins: 4,
+            loses: 2,
+            draws: 1,
+        })
+        expect(locals.chartData.outcomes[0]).toEqual({ label: 'Wins', count: 4, percent: 57.1 })
         expect(redis.json.set).toHaveBeenCalledWith('web:test:page:topdeck', '$', expect.any(Object))
         expect(redis.expire).toHaveBeenCalledWith('web:test:page:topdeck', 300)
         expect(res.set).toHaveBeenCalledWith('Cache-Control', 'public, max-age=300')

@@ -400,6 +400,8 @@ async function renderTopDeck(req, res) {
             draws: sum.draws + player.tdDraws,
             games: sum.games + player.tdGames,
         }), { wins: 0, loses: 0, draws: 0, games: 0 })
+        const totalOutcomes = totals.wins + totals.loses + totals.draws
+        const outcomePercent = count => totalOutcomes ? Number(((count / totalOutcomes) * 100).toFixed(1)) : 0
 
         pageData = {
             ranking,
@@ -408,11 +410,14 @@ async function renderTopDeck(req, res) {
                 topScores: ranking.slice(0, 10).map(player => ({
                     name: player.name,
                     score: player.score,
+                    wins: player.tdWins,
+                    loses: player.tdLoses,
+                    draws: player.tdDraws,
                 })),
                 outcomes: [
-                    { label: 'Wins', count: totals.wins },
-                    { label: 'Loses', count: totals.loses },
-                    { label: 'Draws', count: totals.draws },
+                    { label: 'Wins', count: totals.wins, percent: outcomePercent(totals.wins) },
+                    { label: 'Loses', count: totals.loses, percent: outcomePercent(totals.loses) },
+                    { label: 'Draws', count: totals.draws, percent: outcomePercent(totals.draws) },
                 ],
                 activity: ranking.slice(0, 20).map(player => ({
                     name: player.name,

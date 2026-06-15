@@ -16,7 +16,7 @@ block content
       .stat-label Results
       .stat-value #{totals.wins + totals.loses + totals.draws}
 
-  .chart-grid.my-4
+  .chart-grid.topdeck-chart-grid.my-4
     .content-panel.chart-panel
       .panel-header
         .panel-title-group
@@ -64,31 +64,31 @@ block content
             path(d="M3 18h.01")
         h3.panel-title Player Ranking
     .data-table-wrap
-      table.data-table.align-middle
+      table.data-table.align-middle#tdRankingTable
         thead
           tr
-            th.rank-col(scope='col') #
-            th(scope='col') Player
-            th(scope='col') Score
-            th(scope='col') Wins
-            th(scope='col') Loses
-            th(scope='col') Draws
-            th(scope='col') Win Ratio
-            th(scope='col') Games
+            th.rank-col(scope='col' data-sort-type='number') #
+            th(scope='col' data-sort-type='text') Player
+            th(scope='col' data-sort-type='number') Score
+            th(scope='col' data-sort-type='number') Wins
+            th(scope='col' data-sort-type='number') Loses
+            th(scope='col' data-sort-type='number') Draws
+            th(scope='col' data-sort-type='number') Win Ratio
+            th(scope='col' data-sort-type='number') Games
         tbody
           if ranking.length
             each player, index in ranking
               tr
-                td
+                td(data-sort-value=index + 1)
                   span.rank-badge(class=(index === 0 ? 'rank-badge-gold' : index === 1 ? 'rank-badge-silver' : index === 2 ? 'rank-badge-bronze' : '')) #{index + 1}
-                td
+                td(data-sort-value=player.name)
                   a.data-link(href=`/profile/${player.id}`)= player.name
-                td.data-strong #{player.score}
-                td #{player.tdWins}
-                td #{player.tdLoses}
-                td #{player.tdDraws}
-                td #{player.winRatio}
-                td #{player.tdGames}
+                td.data-strong(data-sort-value=player.score) #{player.score}
+                td(data-sort-value=player.tdWins) #{player.tdWins}
+                td(data-sort-value=player.tdLoses) #{player.tdLoses}
+                td(data-sort-value=player.tdDraws) #{player.tdDraws}
+                td(data-sort-value=player.winRatio) #{player.winRatio}
+                td(data-sort-value=player.tdGames) #{player.tdGames}
           else
             tr
               td(colspan="8").text-center No Top Deck games found
