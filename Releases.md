@@ -1,10 +1,48 @@
 # Release Report: Changes Since v4.2.0
 
 Comparison range: `v4.2.0..HEAD`
-Current HEAD: `v4.6.0` (`375301a`)
-Included tags: `v4.3.0`, `v4.4.0`, `v4.4.1`, `v4.4.2`, `v4.5.0`, `v4.6.0`
+Current HEAD: `0854998`
+Included tags: `v4.3.0`, `v4.4.0`, `v4.4.1`, `v4.4.2`, `v4.5.0`, `v4.6.0`, `v4.6.1`, `v4.7.0`
 
 This report is based on the git history after `v4.2.0`. The first section covers current working-tree changes that have not been tagged yet.
+
+## v4.7.1
+
+- Removed dead runtime memory logger code after memory sampling moved into the system monitor (`0854998`).
+- Removed the unused Uptime view and its dedicated CSS (`0854998`).
+- Removed unused direct dependencies `@supercharge/fs`, `dotenv`, and `supertest`, reducing installed package count and audit surface (`0854998`).
+- Restored system duration labels to explicit `h`/`m` formatting such as `2h 10m` (`0854998`).
+
+## v4.7.0
+
+### Features
+
+- Added a manager-only `/system` page for Redis cache health and process memory monitoring (`1ee07b4`).
+- Added Redis cache hit/miss ratio, hit/miss pie chart, Redis server information, Redis memory information, and Redis uptime display (`1ee07b4`, `ea6cc7b`).
+- Added runtime memory charts for RSS, heap used, heap total, and array buffers with threshold reference lines (`1ee07b4`).
+- Added Redis-backed memory sample retention with configurable sample limit and sample interval (`1ee07b4`, `ea6cc7b`).
+- Added configurable memory warning threshold, editable by GOD users only (`1ee07b4`).
+- Added sudden memory jump detection with warning banners for large RSS, heap, external, or array-buffer increases (`1ee07b4`).
+- Added human-readable memory sample time spans such as `26 samples / 2h 10m` (`ea6cc7b`).
+- Added `/system` navigation for managers (`1ee07b4`).
+- Redesigned the Top Deck page with full-width chart widgets, outcome percentages, richer Top Scores data, and a sortable detailed ranking table (`701d058`).
+- Added wins, loses, and draws to Top Scores chart data and tooltips (`701d058`).
+- Added clickable usernames in the Log page that link to public profiles (`9d4f118`).
+- Added `CodeStats.md` with project code statistics (`f944542`).
+
+### Security / Dependencies
+
+- Updated npm dependencies and lockfile to address dependency security alerts (`a09d752`).
+- Updated `qs` from `6.14.2` to `6.15.2` (`3e56778`).
+- Updated `ws` from `8.18.3` to `8.21.0` (`72bfdb2`).
+- Updated `form-data` from `4.0.5` to `4.0.6` (`b5ee1dd`).
+- Relaxed Node and npm engine ranges so compatible patch/minor updates can be applied automatically (`a73fe60`).
+
+### Bug Fixes
+
+- Removed stale `/system` memory sample table because the chart already shows the retained sample history (`1ee07b4`).
+- Made Redis uptime and memory values more readable on the System page (`ea6cc7b`).
+- Removed obsolete live-server web test that depended on `localhost:3000` being available during Jest runs (`ea6cc7b`).
 
 ## v4.6.1
 
