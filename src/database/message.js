@@ -151,7 +151,7 @@ async function getMessages({ from, to, page = "1", pageSize = "50", username, co
         }
     }
 
-    // Add message filter if provided
+    // Add a message filter if provided
     if (command) {
         where.content = {
             contains: command,
@@ -169,7 +169,7 @@ async function getMessages({ from, to, page = "1", pageSize = "50", username, co
             take: size,
             include: {
                 author: {
-                    select: { name: true }
+                    select: { id: true, name: true }
                 }
             }
         })

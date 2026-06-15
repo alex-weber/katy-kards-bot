@@ -31,7 +31,7 @@ block content
               td
                 span.rank-badge #{(page - 1) * pageSize + index + 1}
               td.width-15
-                span.data-primary #{message.author.name}
+                  a.leaderboard-primary-link(href='/profile/' + message.author.id) #{message.author.name}
               td.break-all #{message.content}
               td.width-15.data-muted #{message.createdAt}
         else
