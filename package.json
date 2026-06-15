@@ -19,7 +19,6 @@
   "dependencies": {
     "@napi-rs/canvas": "0.1.95",
     "@prisma/client": "^6.16.2",
-    "@supercharge/fs": "^3.4.2",
     "axios": "1.16.1",
     "compression": "^1.8.1",
     "connect-redis": "^7.1.1",
@@ -44,8 +43,6 @@
     "npm": "^11.16.0"
   },
   "devDependencies": {
-    "jest": "^30.2.0",
-    "supertest": "^7.2.2",
-    "dotenv": "^17.3.1"
+    "jest": "^30.2.0"
   }
 }

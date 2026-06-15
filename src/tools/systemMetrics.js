@@ -23,8 +23,8 @@ function formatDuration(seconds) {
     const parts = []
 
     if (days) parts.push(`${days}d`)
-    if (hours || days) parts.push(`${hours}:`)
-    parts.push(`${minutes}`)
+    if (hours || days) parts.push(`${hours}h`)
+    parts.push(`${minutes}m`)
 
     return parts.join(' ')
 }

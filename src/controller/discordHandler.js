@@ -2,7 +2,6 @@ const bot = require("./bot")
 const {createMessage} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {isBotCommandChannel} = require("../tools/search")
-const {logMemoryUsage} = require("../tools/memoryLoger")
 const {
     resolveButtonCommand,
     loadUser,
@@ -73,7 +72,6 @@ function logCommand(message)
     }
     console.log('bot command:', guildName, channelName,
         message.author.username, '->', message.content)
-    logMemoryUsage()
 
     return {guildName, channelName}
 }
