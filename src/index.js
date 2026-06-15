@@ -27,6 +27,7 @@ const {
     renderMessages,
     renderUsers,
     renderRoles,
+    renderSystem,
     renderTopDeck,
     renderServers,
     renderCommands,
@@ -37,12 +38,14 @@ const {
     handleApi,
     handleUserUpdate,
     handleRoleRulesUpdate,
+    handleSystemSettingsUpdate,
     handleUserStatusToggle,
     handleLogout,
     handleLogin
 } = require('./controller/router')
 
 const {redis, redisStore, secure} = require('./controller/redis')
+const {startMemoryUsageSampler} = require('./tools/systemMetrics')
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 const webRateLimitWindow = parseInt(process.env.WEB_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000
 const webRateLimitMax = parseInt(process.env.WEB_RATE_LIMIT_MAX, 10) || 300
@@ -100,6 +103,8 @@ app.post('/users/:id', webRateLimiter, isAuthenticated, requireManager, handleUs
 app.post('/users/:id/status', webRateLimiter, isAuthenticated, requireManager, handleUserStatusToggle)
 app.get('/roles', webRateLimiter, isAuthenticated, requireGod, renderRoles)
 app.post('/roles', webRateLimiter, isAuthenticated, requireGod, handleRoleRulesUpdate)
+app.get('/system', webRateLimiter, isAuthenticated, requireManager, renderSystem)
+app.post('/system', webRateLimiter, isAuthenticated, requireManager, handleSystemSettingsUpdate)
 app.get('/profile', webRateLimiter, isAuthenticated, renderProfile)
 app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, res, client))
 app.get('/servers', webRateLimiter, (req, res) => renderServers(req, res, servers))
@@ -108,6 +113,7 @@ app.get('/topdeck', webRateLimiter, renderTopDeck)
 app.get('/api/:method', webRateLimiter, handleApi)
 
 let servers = [] //we get them when Discord client is ready
+startMemoryUsageSampler(redis)
 
 //Discord-Bot login event
 async function onClientReady()

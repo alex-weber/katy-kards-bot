@@ -493,6 +493,167 @@
     grid-template-columns: 1fr;
 }
 
+.system-chart-grid {
+    grid-template-columns: 1fr;
+}
+
+.system-panel-body {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.system-page-hero {
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+}
+
+.system-alert {
+    margin-bottom: 0.75rem;
+}
+
+.system-panel {
+    margin-bottom: 1rem;
+}
+
+.system-panel-header {
+    padding: 0.75rem 1rem;
+}
+
+.system-panel-body-compact {
+    gap: 0.75rem;
+    padding: 0.75rem;
+}
+
+.system-metric-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.system-metric-grid-compact {
+    gap: 0.6rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.system-stat-card {
+    padding: 0.65rem;
+}
+
+.system-stat-card .stat-value {
+    font-size: 1.15rem;
+}
+
+.system-stat-card,
+.system-memory-label,
+.system-memory-value {
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.system-memory-summary {
+    align-items: stretch;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+}
+
+.system-two-column,
+.system-memory-layout {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(18rem, 0.8fr) minmax(0, 1.2fr);
+}
+
+.system-two-column-compact {
+    gap: 0.75rem;
+    grid-template-columns: minmax(15rem, 0.55fr) minmax(0, 1.45fr);
+}
+
+.system-memory-layout {
+    align-items: start;
+    grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+}
+
+.system-chart-box {
+    border: 1px solid #343a40;
+    border-radius: 8px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.system-chart-title {
+    border-bottom: 1px solid #343a40;
+    color: #adb5bd;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    text-transform: uppercase;
+}
+
+.system-setting-panel {
+    background: #171a1f;
+    border: 1px solid #343a40;
+    border-radius: 8px;
+    margin-bottom: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.system-setting-panel-compact {
+    padding: 0.65rem;
+}
+
+.system-setting-panel-compact .form-label {
+    color: #adb5bd;
+    font-size: 0.76rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+}
+
+.system-setting-panel .panel-title {
+    font-size: 0.95rem;
+}
+
+.system-setting-panel .panel-body {
+    padding: 0.9rem;
+}
+
+.system-table-wrap {
+    max-height: 28rem;
+}
+
+.system-table-wrap-compact {
+    max-height: 16rem;
+}
+
+.system-data-table {
+    min-width: 0;
+}
+
+.system-data-table thead th,
+.system-data-table tbody td,
+.system-data-table tbody th {
+    font-size: 0.78rem;
+    padding: 0.45rem 0.65rem;
+}
+
+.system-redis-tables {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.system-memory-chart-wrapper {
+    height: 360px;
+    max-height: 360px;
+}
+
+.system-redis-chart-wrapper {
+    height: 240px;
+    max-height: 240px;
+}
+
 .chart-panel .td-chart-wrapper {
     padding: 1rem;
 }
@@ -1050,6 +1211,11 @@ div[style*="overflow: auto;"] {
     .chart-grid,
     .cards-faction-grid,
     .stat-grid,
+    .system-metric-grid,
+    .system-two-column,
+    .system-memory-layout,
+    .system-memory-summary,
+    .system-redis-tables,
     .profile-stat-grid {
         grid-template-columns: 1fr;
     }

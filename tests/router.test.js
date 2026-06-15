@@ -17,7 +17,36 @@ jest.mock('../src/controller/redis', () => ({
     redis: {
         del: jest.fn(async () => 1),
         expire: jest.fn(async () => 1),
+        get: jest.fn(async () => null),
         incr: jest.fn(async () => 1),
+        info: jest.fn(async () => [
+            '# Server',
+            'redis_version:7.2.0',
+            'uptime_in_seconds:6000',
+            '# Clients',
+            'connected_clients:2',
+            'blocked_clients:0',
+            '# Memory',
+            'used_memory:1024',
+            'used_memory_human:1.00K',
+            'used_memory_rss:2048',
+            'used_memory_rss_human:2.00K',
+            'used_memory_peak:4096',
+            'used_memory_peak_human:4.00K',
+            'maxmemory:31457280',
+            'maxmemory_human:0B',
+            'mem_fragmentation_ratio:2.0',
+            '# Stats',
+            'total_commands_processed:10',
+            'instantaneous_ops_per_sec:1',
+            'keyspace_hits:8',
+            'keyspace_misses:2',
+            'expired_keys:3',
+            'evicted_keys:1',
+            '# Replication',
+            'role:master',
+        ].join('\r\n')),
+        set: jest.fn(async () => 'OK'),
         json: {
             get: jest.fn(async () => null),
             set: jest.fn(async () => 'OK'),
@@ -37,6 +66,7 @@ const { isManager } = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
 const router = require('../src/controller/router')
 const { redis } = require('../src/controller/redis')
+const { detectMemoryJump } = require('../src/tools/systemMetrics')
 
 function makeRes() {
     const res = {}
@@ -51,6 +81,7 @@ function makeRes() {
 beforeEach(() => {
     jest.clearAllMocks()
     redis.json.get.mockResolvedValue(null)
+    redis.get.mockResolvedValue(null)
 })
 
 describe('auth middleware', () => {
@@ -556,6 +587,86 @@ describe('simple renders', () => {
         expect(db.getTopDeckRanking).not.toHaveBeenCalled()
         expect(redis.json.set).not.toHaveBeenCalled()
         expect(res.render.mock.calls[0][1].ranking).toEqual([])
+    })
+
+    test('renderSystem renders Redis and memory statistics', async () => {
+        const res = makeRes()
+        redis.get.mockResolvedValueOnce('256')
+
+        await router.renderSystem({ session: { user: { id: '1', isManager: true } } }, res)
+
+        const [view, locals] = res.render.mock.calls[0]
+        expect(view).toBe('system')
+        expect(locals.redisStats.cache).toEqual(expect.objectContaining({
+            hits: 8,
+            misses: 2,
+            hitRatio: 80,
+            missRatio: 20,
+        }))
+        expect(locals.redisStats.general.uptimeHuman).toBe('1h 40m')
+        expect(locals.redisStats.memory.maxMemoryHuman).toBe('30 MB')
+        expect(locals.memory.thresholdMb).toBe(256)
+        expect(locals.memory.sampleLimit).toBe(60)
+        expect(locals.memory.jump).toEqual(expect.objectContaining({
+            detected: expect.any(Boolean),
+            thresholdMb: 64,
+        }))
+        expect(locals.memory.current).toEqual(expect.objectContaining({
+            rss: expect.any(Number),
+            heapUsed: expect.any(Number),
+            heapTotal: expect.any(Number),
+            arrayBuffers: expect.any(Number),
+        }))
+        expect(redis.json.set).toHaveBeenCalledWith('web:test:system:memory:samples', '$', expect.any(Array))
+    })
+
+    test('handleSystemSettingsUpdate saves the memory threshold', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSystemSettingsUpdate(
+            { session: { user: { id: '1', role: 'GOD', isManager: true } }, body: { memoryThresholdMb: '768' } },
+            res
+        )
+
+        expect(redis.set).toHaveBeenCalledWith('web:test:system:memory:thresholdMb', '768')
+        expect(res.redirect).toHaveBeenCalledWith('/system')
+    })
+
+    test('handleSystemSettingsUpdate rejects VIP users', async () => {
+        const res = makeRes()
+
+        await router.handleSystemSettingsUpdate(
+            { session: { user: { id: '1', role: 'VIP', isManager: true } }, body: { memoryThresholdMb: '768' } },
+            res
+        )
+
+        expect(redis.set).not.toHaveBeenCalled()
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(res.send).toHaveBeenCalledWith('Not permitted')
+    })
+})
+
+describe('system metrics', () => {
+    test('detectMemoryJump reports sudden memory increases', () => {
+        const result = detectMemoryJump([
+            { timestamp: 'a', rss: 100, heapUsed: 50, heapTotal: 80, external: 4, arrayBuffers: 1 },
+            { timestamp: 'b', rss: 170, heapUsed: 52, heapTotal: 150, external: 5, arrayBuffers: 1 },
+        ], 64)
+
+        expect(result.detected).toBe(true)
+        expect(result.message).toContain('RSS +70 MB')
+        expect(result.message).toContain('Heap total +70 MB')
+    })
+
+    test('detectMemoryJump ignores small memory changes', () => {
+        const result = detectMemoryJump([
+            { timestamp: 'a', rss: 100, heapUsed: 50 },
+            { timestamp: 'b', rss: 120, heapUsed: 55 },
+        ], 64)
+
+        expect(result.detected).toBe(false)
+        expect(result.changes).toEqual([])
     })
 })
 

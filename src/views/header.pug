@@ -43,6 +43,7 @@ header.header-sticky
                                 +navItem('/commands', 'Custom Commands', currentPath.startsWith('/commands'))
                                 +navItem('/messages', 'Log', currentPath.startsWith('/messages'))
                                 +navItem('/users', 'Users', currentPath.startsWith('/users'))
+                                +navItem('/system', 'System', currentPath.startsWith('/system'))
                                 if user.role === 'GOD'
                                     +navItem('/roles', 'Roles', currentPath.startsWith('/roles'))
 

@@ -1,0 +1,168 @@
+extends layout
+
+block content
+  .page-hero.system-page-hero
+    h2.page-title= title
+    p.page-subtitle Redis cache health and process memory usage.
+
+  if memory.thresholdExceeded
+    .alert.alert-warning.system-alert(role="alert")
+      strong Memory warning:
+      |  RSS is #{memory.current.rss} MB, above the configured #{memory.thresholdMb} MB threshold.
+  if memory.jump.detected
+    .alert.alert-warning.system-alert(role="alert")
+      strong Sudden memory jump:
+      |  #{memory.jump.message} since the previous sample.
+
+  .content-panel.system-panel.system-panel-primary
+    .panel-header.system-panel-header
+      .panel-title-group
+        span.panel-icon(aria-hidden="true")
+          svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+            rect(x="4" y="4" width="16" height="16" rx="2")
+            rect(x="9" y="9" width="6" height="6" rx="1")
+            path(d="M9 2v2")
+            path(d="M15 2v2")
+            path(d="M9 20v2")
+            path(d="M15 20v2")
+            path(d="M2 9h2")
+            path(d="M2 15h2")
+            path(d="M20 9h2")
+            path(d="M20 15h2")
+        h3.panel-title Runtime Memory
+      span.panel-kicker #{memory.samples.length} samples
+
+    .system-panel-body.system-panel-body-compact
+      .system-memory-summary
+        .system-metric-grid.system-metric-grid-compact
+          .stat-card.system-stat-card(data-memory-metric="rss")
+            .stat-label.system-memory-label RSS
+            .stat-value.system-memory-value #{memory.current.rss} MB
+          .stat-card.system-stat-card(data-memory-metric="heapUsed")
+            .stat-label.system-memory-label Heap Used
+            .stat-value.system-memory-value #{memory.current.heapUsed} MB
+          .stat-card.system-stat-card(data-memory-metric="heapTotal")
+            .stat-label.system-memory-label Heap Total
+            .stat-value.system-memory-value #{memory.current.heapTotal} MB
+          .stat-card.system-stat-card(data-memory-metric="arrayBuffers")
+            .stat-label.system-memory-label Array Buffers
+            .stat-value.system-memory-value #{memory.current.arrayBuffers} MB
+
+        if user && user.role === 'GOD'
+          form.system-setting-panel.system-setting-panel-compact(method="post" action="/system")
+            if _csrf
+              input(type="hidden" name="_csrf" value=_csrf)
+            label.form-label(for="memoryThresholdMb") RSS threshold
+            .input-group.input-group-sm
+              input#memoryThresholdMb.form-control(type="number" min="1" max="100000" name="memoryThresholdMb" value=memory.thresholdMb)
+              span.input-group-text MB
+              button.btn.btn-primary(type="submit") Save
+
+      .system-chart-box.system-memory-chart-box
+        .system-chart-title Memory Usage
+        .td-chart-wrapper.system-memory-chart-wrapper
+          canvas#systemMemoryChart
+
+  .content-panel.system-panel
+    .panel-header.system-panel-header
+      .panel-title-group
+        span.panel-icon(aria-hidden="true")
+          svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+            path(d="M12 3C7 3 3 4.8 3 7s4 4 9 4 9-1.8 9-4-4-4-9-4Z")
+            path(d="M3 7v5c0 2.2 4 4 9 4s9-1.8 9-4V7")
+            path(d="M3 12v5c0 2.2 4 4 9 4s9-1.8 9-4v-5")
+        h3.panel-title Redis
+      if !redisStats.available
+        span.panel-kicker #{redisStats.error}
+
+    .system-panel-body.system-panel-body-compact
+      .system-metric-grid.system-metric-grid-compact
+        .stat-card.system-stat-card
+          .stat-label Hit Ratio
+          .stat-value #{redisStats.cache.hitRatio}%
+        .stat-card.system-stat-card
+          .stat-label Hits
+          .stat-value #{redisStats.cache.hits}
+        .stat-card.system-stat-card
+          .stat-label Misses
+          .stat-value #{redisStats.cache.misses}
+        .stat-card.system-stat-card
+          .stat-label Max Memory
+          .stat-value #{redisStats.memory.maxMemoryHuman}
+
+      .system-two-column.system-two-column-compact
+        .system-chart-box
+          .system-chart-title Cache Hit / Miss
+          .td-chart-wrapper.system-redis-chart-wrapper
+            canvas#systemRedisChart
+
+        .system-redis-tables
+          .data-table-wrap.system-table-wrap.system-table-wrap-compact
+            table.data-table.align-middle.system-data-table
+              thead
+                tr
+                  th(scope="col") Cache
+                  th(scope="col") Value
+              tbody
+                tr
+                  td Hit ratio
+                  td.data-strong #{redisStats.cache.hitRatio}%
+                tr
+                  td Miss ratio
+                  td #{redisStats.cache.missRatio}%
+                tr
+                  td Lookups
+                  td #{redisStats.cache.total}
+                tr
+                  td Evicted
+                  td #{redisStats.cache.evictedKeys}
+                tr
+                  td Expired
+                  td #{redisStats.cache.expiredKeys}
+                tr
+                  td Ops/sec
+                  td #{redisStats.cache.instantaneousOpsPerSec}
+
+          .data-table-wrap.system-table-wrap.system-table-wrap-compact
+            table.data-table.align-middle.system-data-table
+              thead
+                tr
+                  th(scope="col") Server
+                  th(scope="col") Value
+              tbody
+                tr
+                  td Version
+                  td #{redisStats.general.redisVersion}
+                tr
+                  td Role
+                  td #{redisStats.general.role}
+                tr
+                  td Uptime
+                  td #{redisStats.general.uptimeHuman}
+                tr
+                  td Clients
+                  td #{redisStats.general.connectedClients}
+                tr
+                  td Used memory
+                  td #{redisStats.memory.usedMemoryHuman}
+                tr
+                  td RSS
+                  td #{redisStats.memory.usedMemoryRssHuman}
+                tr
+                  td Peak
+                  td #{redisStats.memory.usedMemoryPeakHuman}
+                tr
+                  td Max memory
+                  td #{redisStats.memory.maxMemoryHuman}
+                tr
+                  td Fragmentation
+                  td #{redisStats.memory.memFragmentationRatio}
+
+  p &nbsp;
+  p &nbsp;
+  script.
+    window.systemMemoryData = !{JSON.stringify(memory.samples || [])}
+    window.systemMemoryThresholdMb = !{JSON.stringify(memory.thresholdMb || 0)}
+    window.systemRedisData = !{JSON.stringify(redisStats.cache || {})}
+  script(src="/static/vendor/chart.js")
+  script(src="/static/system.js")
