@@ -3,8 +3,8 @@ const {redis, cachePrefix} = require('../controller/redis')
 const memorySamplesKey = `${cachePrefix}system:memory:samples`
 const memoryThresholdKey = `${cachePrefix}system:memory:thresholdMb`
 const defaultMemoryThresholdMb = parseInt(process.env.MEMORY_USAGE_THRESHOLD_MB, 10) || 512
-const memorySampleLimit = parseInt(process.env.MEMORY_USAGE_SAMPLE_LIMIT, 10) || 144
-const memorySampleIntervalMs = parseInt(process.env.MEMORY_USAGE_SAMPLE_INTERVAL_MS, 10) || 5 * 60 * 1000
+const memorySampleLimit = parseInt(process.env.MEMORY_USAGE_SAMPLE_LIMIT, 10) || 60
+const memorySampleIntervalMs = parseInt(process.env.MEMORY_USAGE_SAMPLE_INTERVAL_MS, 10) || 10 * 60 * 1000
 const memoryJumpThresholdMb = parseInt(process.env.MEMORY_USAGE_JUMP_THRESHOLD_MB, 10) || 64
 
 function bytesToMb(bytes) {
@@ -23,10 +23,14 @@ function formatDuration(seconds) {
     const parts = []
 
     if (days) parts.push(`${days}d`)
-    if (hours || days) parts.push(`${hours}h`)
-    parts.push(`${minutes}m`)
+    if (hours || days) parts.push(`${hours}:`)
+    parts.push(`${minutes}`)
 
     return parts.join(' ')
+}
+
+function formatDurationFromMs(milliseconds) {
+    return formatDuration(Math.floor((Number(milliseconds) || 0) / 1000))
 }
 
 function getCurrentMemoryUsage(now = new Date()) {
@@ -85,6 +89,24 @@ function detectMemoryJump(samples, thresholdMb = memoryJumpThresholdMb) {
         message: changes.length
             ? changes.map(change => `${change.label} +${change.delta} MB`).join(', ')
             : '',
+    }
+}
+
+function getSampleTimeSpan(samples) {
+    if (!Array.isArray(samples) || samples.length < 2) return {
+        milliseconds: 0,
+        human: '0m',
+    }
+
+    const first = new Date(samples[0].timestamp).getTime()
+    const last = new Date(samples[samples.length - 1].timestamp).getTime()
+    const milliseconds = Number.isNaN(first) || Number.isNaN(last)
+        ? 0
+        : Math.max(0, last - first)
+
+    return {
+        milliseconds,
+        human: formatDurationFromMs(milliseconds),
     }
 }
 
@@ -225,6 +247,7 @@ async function buildSystemPageData(redisClient = redis) {
             samples: memorySamples,
             sampleLimit: memorySampleLimit,
             sampleIntervalMs: memorySampleIntervalMs,
+            sampleSpan: getSampleTimeSpan(memorySamples),
             jump: detectMemoryJump(memorySamples),
             thresholdMb: memoryThresholdMb,
             thresholdExceeded: currentMemory.rss > memoryThresholdMb,
@@ -246,6 +269,7 @@ module.exports = {
     getMemoryThresholdMb,
     getRedisSystemStats,
     detectMemoryJump,
+    getSampleTimeSpan,
     parseRedisInfo,
     recordMemoryUsage,
     saveMemoryThresholdMb,

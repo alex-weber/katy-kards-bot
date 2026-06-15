@@ -66,7 +66,7 @@ const { isManager } = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
 const router = require('../src/controller/router')
 const { redis } = require('../src/controller/redis')
-const { detectMemoryJump } = require('../src/tools/systemMetrics')
+const { detectMemoryJump, getSampleTimeSpan } = require('../src/tools/systemMetrics')
 
 function makeRes() {
     const res = {}
@@ -606,7 +606,11 @@ describe('simple renders', () => {
         expect(locals.redisStats.general.uptimeHuman).toBe('1h 40m')
         expect(locals.redisStats.memory.maxMemoryHuman).toBe('30 MB')
         expect(locals.memory.thresholdMb).toBe(256)
-        expect(locals.memory.sampleLimit).toBe(60)
+        expect(locals.memory.sampleLimit).toEqual(expect.any(Number))
+        expect(locals.memory.sampleSpan).toEqual(expect.objectContaining({
+            human: expect.any(String),
+            milliseconds: expect.any(Number),
+        }))
         expect(locals.memory.jump).toEqual(expect.objectContaining({
             detected: expect.any(Boolean),
             thresholdMb: 64,
@@ -667,6 +671,18 @@ describe('system metrics', () => {
 
         expect(result.detected).toBe(false)
         expect(result.changes).toEqual([])
+    })
+
+    test('getSampleTimeSpan formats the stored sample window', () => {
+        const result = getSampleTimeSpan([
+            { timestamp: '2026-06-15T10:00:00.000Z' },
+            { timestamp: '2026-06-15T12:10:00.000Z' },
+        ])
+
+        expect(result).toEqual({
+            milliseconds: 130 * 60 * 1000,
+            human: '2h 10m',
+        })
     })
 })
 
