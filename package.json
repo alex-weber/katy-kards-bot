@@ -40,8 +40,8 @@
     "telegraf": "^4.16.3"
   },
   "engines": {
-    "node": "24.16.0",
-    "npm": "11.16.0"
+    "node": "^24.16.0",
+    "npm": "^11.16.0"
   },
   "devDependencies": {
     "jest": "^30.2.0",
