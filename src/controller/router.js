@@ -28,6 +28,10 @@ const {
 } = require("../tools/roles")
 const {redis, cachePrefix: webCachePrefix} = require('../controller/redis')
 const {cacheKeyPrefix} = require('../controller/messageCache')
+const {
+    buildSystemPageData,
+    saveMemoryThresholdMb,
+} = require('../tools/systemMetrics')
 const axios = require('axios')
 //API
 const API = require('../controller/api')
@@ -388,6 +392,25 @@ async function handleRoleRulesUpdate(req, res) {
     res.redirect('/roles')
 }
 
+async function renderSystem(req, res) {
+    const systemData = await buildSystemPageData(redis)
+
+    res.render('system', {
+        title: 'System',
+        user: req.session.user,
+        ...systemData,
+    })
+}
+
+async function handleSystemSettingsUpdate(req, res) {
+    if (!req.session.user || !isGod(req.session.user)) {
+        return res.status(403).send('Not permitted')
+    }
+
+    await saveMemoryThresholdMb(req.body.memoryThresholdMb, redis)
+    res.redirect('/system')
+}
+
 async function renderTopDeck(req, res) {
     const cacheKey = webCachePrefix + 'page:topdeck'
     let pageData = await redis.json.get(cacheKey, '$')
@@ -609,6 +632,7 @@ module.exports = {
     renderMessages,
     renderUsers,
     renderRoles,
+    renderSystem,
     renderTopDeck,
     renderCommands,
     renderServers,
@@ -619,6 +643,7 @@ module.exports = {
     handleApi,
     handleUserUpdate,
     handleRoleRulesUpdate,
+    handleSystemSettingsUpdate,
     handleUserStatusToggle,
     handleLogout,
     handleLogin
