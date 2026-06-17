@@ -96,7 +96,12 @@ function sanitizeLimit(value) {
     return Math.min(number, 100000)
 }
 
+function unwrapJsonPathResult(value) {
+    return Array.isArray(value) && value.length === 1 ? value[0] : value
+}
+
 function normalizeRuleSet(rules = {}) {
+    rules = unwrapJsonPathResult(rules) || {}
     const normalized = {}
 
     for (const role of EDITABLE_RULE_ROLES) {

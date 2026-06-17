@@ -11,7 +11,8 @@ jest.mock('../src/controller/messageCache', () => ({
     cacheKeyPrefix: 'discord:test:',
 }))
 
-const {checkRoleCommandLimit} = require('../src/tools/roles')
+const {checkRoleCommandLimit, getRoleRules} = require('../src/tools/roles')
+const {redis: roleRulesRedis} = require('../src/controller/redis')
 
 function makeRedisMock() {
     const values = new Map()
@@ -64,6 +65,8 @@ function makeStandardCtx(redis) {
 
 describe('role command limits', () => {
     beforeEach(() => {
+        roleRulesRedis.json.get.mockResolvedValue(null)
+        roleRulesRedis.json.set.mockClear()
         jest.spyOn(Date, 'now').mockReturnValue(1781440000000)
     })
 
@@ -85,6 +88,34 @@ describe('role command limits', () => {
         expect(redis.exists).not.toHaveBeenCalled()
         expect(redis.set).not.toHaveBeenCalled()
         expect(redis.ttl).not.toHaveBeenCalled()
+    })
+
+    test('Saved role rules are loaded from RedisJSON path responses', async () => {
+        roleRulesRedis.json.get.mockResolvedValueOnce([{
+            SPECIAL: {
+                dailyCommandLimit: 0,
+                hourlyCommandLimit: 0,
+                dailyDeckScreenshotLimit: 30,
+                attachmentLimit: 10,
+            },
+            STANDARD: {
+                dailyCommandLimit: 0,
+                hourlyCommandLimit: 0,
+                dailyDeckScreenshotLimit: 10,
+                attachmentLimit: 5,
+            },
+            PRISONER: {
+                dailyCommandLimit: 10,
+                hourlyCommandLimit: 10,
+                dailyDeckScreenshotLimit: 1,
+                attachmentLimit: 5,
+            },
+        }])
+
+        const rules = await getRoleRules()
+
+        expect(rules.PRISONER.dailyCommandLimit).toBe(10)
+        expect(rules.PRISONER.hourlyCommandLimit).toBe(10)
     })
 
     test('Prisoner warning cycle repeats after the daily window resets', async () => {
