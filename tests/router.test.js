@@ -66,7 +66,12 @@ const { isManager } = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
 const router = require('../src/controller/router')
 const { redis } = require('../src/controller/redis')
-const { detectMemoryJump, getSampleTimeSpan } = require('../src/tools/systemMetrics')
+const {
+    detectMemoryJump,
+    getNodeMemoryAvailableMb,
+    getRedisMemoryAvailableMb,
+    getSampleTimeSpan,
+} = require('../src/tools/systemMetrics')
 
 function makeRes() {
     const res = {}
@@ -591,7 +596,12 @@ describe('simple renders', () => {
 
     test('renderSystem renders Redis and memory statistics', async () => {
         const res = makeRes()
-        redis.get.mockResolvedValueOnce('256')
+        redis.get.mockImplementation(async key => {
+            if (key === 'web:test:system:memory:thresholdMb') return '256'
+            if (key === 'web:test:system:memory:availableMb') return '640'
+            if (key === 'web:test:system:redis:memory:availableMb') return '35'
+            return null
+        })
 
         await router.renderSystem({ session: { user: { id: '1', isManager: true } } }, res)
 
@@ -605,8 +615,16 @@ describe('simple renders', () => {
         }))
         expect(locals.redisStats.general.uptimeHuman).toBe('1h 40m')
         expect(locals.redisStats.memory.maxMemoryHuman).toBe('30 MB')
+        expect(locals.redisStats.memory.availableMb).toBe(35)
+        expect(locals.redisStats.memory.availableHuman).toBe('35 MB')
         expect(locals.memory.thresholdMb).toBe(256)
+        expect(locals.memory.availableMb).toBe(640)
+        expect(locals.memory.availableHuman).toBe('640 MB')
+        expect(locals.memory.peak24h).toEqual(expect.objectContaining({
+            rss: expect.any(Number),
+        }))
         expect(locals.memory.sampleLimit).toEqual(expect.any(Number))
+        expect(locals.memory.sampleIntervalMinutes).toBe(10)
         expect(locals.memory.sampleSpan).toEqual(expect.objectContaining({
             human: expect.any(String),
             milliseconds: expect.any(Number),
@@ -621,19 +639,32 @@ describe('simple renders', () => {
             heapTotal: expect.any(Number),
             arrayBuffers: expect.any(Number),
         }))
+        expect(redis.set).toHaveBeenCalledWith(
+            'web:test:system:memory:peak24h',
+            expect.stringMatching(/^\d+(\.\d+)?$/))
+        expect(redis.expire).toHaveBeenCalledWith('web:test:system:memory:peak24h', 24 * 60 * 60)
         expect(redis.json.set).toHaveBeenCalledWith('web:test:system:memory:samples', '$', expect.any(Array))
     })
 
-    test('handleSystemSettingsUpdate saves the memory threshold', async () => {
+    test('handleSystemSettingsUpdate saves the system memory settings', async () => {
         const res = makeRes()
         res.redirect = jest.fn()
 
         await router.handleSystemSettingsUpdate(
-            { session: { user: { id: '1', role: 'GOD', isManager: true } }, body: { memoryThresholdMb: '768' } },
+            {
+                session: { user: { id: '1', role: 'GOD', isManager: true } },
+                body: {
+                    memoryThresholdMb: '768',
+                    memoryAvailableMb: '900',
+                    redisMemoryAvailableMb: '45',
+                },
+            },
             res
         )
 
         expect(redis.set).toHaveBeenCalledWith('web:test:system:memory:thresholdMb', '768')
+        expect(redis.set).toHaveBeenCalledWith('web:test:system:memory:availableMb', '900')
+        expect(redis.set).toHaveBeenCalledWith('web:test:system:redis:memory:availableMb', '45')
         expect(res.redirect).toHaveBeenCalledWith('/system')
     })
 
@@ -652,6 +683,11 @@ describe('simple renders', () => {
 })
 
 describe('system metrics', () => {
+    test('available memory settings fall back to env defaults when Redis is empty', async () => {
+        expect(await getNodeMemoryAvailableMb(redis)).toBe(562)
+        expect(await getRedisMemoryAvailableMb(redis)).toBe(30)
+    })
+
     test('detectMemoryJump reports sudden memory increases', () => {
         const result = detectMemoryJump([
             { timestamp: 'a', rss: 100, heapUsed: 50, heapTotal: 80, external: 4, arrayBuffers: 1 },

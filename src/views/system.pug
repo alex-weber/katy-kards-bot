@@ -9,6 +9,10 @@ block content
     .alert.alert-warning.system-alert(role="alert")
       strong Memory warning:
       |  RSS is #{memory.current.rss} MB, above the configured #{memory.thresholdMb} MB threshold.
+  if memory.availableExceeded
+    .alert.alert-danger.system-alert(role="alert")
+      strong Memory limit:
+      |  RSS is #{memory.current.rss} MB, above the configured #{memory.availableMb} MB available memory.
   if memory.jump.detected
     .alert.alert-warning.system-alert(role="alert")
       strong Sudden memory jump:
@@ -47,6 +51,12 @@ block content
           .stat-card.system-stat-card(data-memory-metric="arrayBuffers")
             .stat-label.system-memory-label Array Buffers
             .stat-value.system-memory-value #{memory.current.arrayBuffers} MB
+          .stat-card.system-stat-card
+            .stat-label Peak RSS 24h
+            .stat-value #{memory.peak24h.rss} MB
+          .stat-card.system-stat-card
+            .stat-label Node Memory Available
+            .stat-value #{memory.availableHuman}
 
         if user && user.role === 'GOD'
           form.system-setting-panel.system-setting-panel-compact(method="post" action="/system")
@@ -55,6 +65,14 @@ block content
             label.form-label(for="memoryThresholdMb") RSS threshold
             .input-group.input-group-sm
               input#memoryThresholdMb.form-control(type="number" min="1" max="100000" name="memoryThresholdMb" value=memory.thresholdMb)
+              span.input-group-text MB
+            label.form-label(for="memoryAvailableMb") Node memory available
+            .input-group.input-group-sm
+              input#memoryAvailableMb.form-control(type="number" min="1" max="100000" name="memoryAvailableMb" value=memory.availableMb)
+              span.input-group-text MB
+            label.form-label(for="redisMemoryAvailableMb") Redis memory available
+            .input-group.input-group-sm
+              input#redisMemoryAvailableMb.form-control(type="number" min="1" max="100000" name="redisMemoryAvailableMb" value=redisStats.memory.availableMb)
               span.input-group-text MB
               button.btn.btn-primary(type="submit") Save
 
@@ -89,6 +107,9 @@ block content
         .stat-card.system-stat-card
           .stat-label Max Memory
           .stat-value #{redisStats.memory.maxMemoryHuman}
+        .stat-card.system-stat-card
+          .stat-label Redis Memory Available
+          .stat-value #{redisStats.memory.availableHuman}
 
       .system-two-column.system-two-column-compact
         .system-chart-box
@@ -155,6 +176,9 @@ block content
                   td Max memory
                   td #{redisStats.memory.maxMemoryHuman}
                 tr
+                  td Memory available
+                  td #{redisStats.memory.availableHuman}
+                tr
                   td Fragmentation
                   td #{redisStats.memory.memFragmentationRatio}
 
@@ -163,6 +187,7 @@ block content
   script.
     window.systemMemoryData = !{JSON.stringify(memory.samples || [])}
     window.systemMemoryThresholdMb = !{JSON.stringify(memory.thresholdMb || 0)}
+    window.systemMemoryAvailableMb = !{JSON.stringify(memory.availableMb || 0)}
     window.systemRedisData = !{JSON.stringify(redisStats.cache || {})}
   script(src="/static/vendor/chart.js")
   script(src="/static/system.js")

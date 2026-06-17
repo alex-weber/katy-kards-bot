@@ -31,6 +31,8 @@ const {cacheKeyPrefix} = require('../controller/messageCache')
 const {
     buildSystemPageData,
     saveMemoryThresholdMb,
+    saveNodeMemoryAvailableMb,
+    saveRedisMemoryAvailableMb,
 } = require('../tools/systemMetrics')
 const axios = require('axios')
 //API
@@ -408,6 +410,8 @@ async function handleSystemSettingsUpdate(req, res) {
     }
 
     await saveMemoryThresholdMb(req.body.memoryThresholdMb, redis)
+    await saveNodeMemoryAvailableMb(req.body.memoryAvailableMb, redis)
+    await saveRedisMemoryAvailableMb(req.body.redisMemoryAvailableMb, redis)
     res.redirect('/system')
 }
 

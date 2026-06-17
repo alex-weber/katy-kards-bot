@@ -1,14 +1,25 @@
 const {redis, cachePrefix} = require('../controller/redis')
 
 const memorySamplesKey = `${cachePrefix}system:memory:samples`
+const memoryPeak24hKey = `${cachePrefix}system:memory:peak24h`
 const memoryThresholdKey = `${cachePrefix}system:memory:thresholdMb`
+const nodeMemoryAvailableKey = `${cachePrefix}system:memory:availableMb`
+const redisMemoryAvailableKey = `${cachePrefix}system:redis:memory:availableMb`
 const defaultMemoryThresholdMb = parseInt(process.env.MEMORY_USAGE_THRESHOLD_MB, 10) || 512
+const defaultNodeMemoryAvailableMb = parseInt(process.env.MEMORY_AVAILABLE_MB, 10) || 562
+const defaultRedisMemoryAvailableMb = parseInt(process.env.REDIS_MEMORY_AVAILABLE_MB, 10) || 30
 const memorySampleLimit = parseInt(process.env.MEMORY_USAGE_SAMPLE_LIMIT, 10) || 60
-const memorySampleIntervalMs = parseInt(process.env.MEMORY_USAGE_SAMPLE_INTERVAL_MS, 10) || 10 * 60 * 1000
+const memorySampleIntervalMinutes = parseInt(process.env.MEMORY_USAGE_SAMPLE_INTERVAL_MINUTES, 10) || 10
+const memorySampleIntervalMs = memorySampleIntervalMinutes * 60 * 1000
 const memoryJumpThresholdMb = parseInt(process.env.MEMORY_USAGE_JUMP_THRESHOLD_MB, 10) || 64
+const peakMemoryWindowSeconds = 24 * 60 * 60
 
 function bytesToMb(bytes) {
     return Math.round((bytes / 1024 / 1024) * 10) / 10
+}
+
+function formatMbValue(value) {
+    return `${Number(value) || 0} MB`
 }
 
 function formatMb(bytes) {
@@ -48,6 +59,27 @@ function getCurrentMemoryUsage(now = new Date()) {
 function normalizeSampleList(value) {
     if (Array.isArray(value) && value.length === 1 && Array.isArray(value[0])) return value[0]
     return Array.isArray(value) ? value : []
+}
+
+function normalizePeakMemory(value) {
+    if (!value) return null
+    if (typeof value === 'string') {
+        try {
+            value = JSON.parse(value)
+        } catch (err) {
+            const rss = parseFloat(value)
+            return Number.isFinite(rss) ? {rss, timestamp: null} : null
+        }
+    }
+    if (!value || typeof value !== 'object') return null
+
+    const rss = parseFloat(value.rss)
+    return Number.isFinite(rss)
+        ? {
+            rss,
+            timestamp: value.timestamp || null,
+        }
+        : null
 }
 
 function detectMemoryJump(samples, thresholdMb = memoryJumpThresholdMb) {
@@ -111,6 +143,7 @@ function getSampleTimeSpan(samples) {
 }
 
 async function recordMemoryUsage(redisClient = redis, sample = getCurrentMemoryUsage(), limit = memorySampleLimit) {
+    await recordPeakMemoryUsage(redisClient, sample)
     if (!redisClient?.json?.get || !redisClient?.json?.set) return [sample]
 
     const saved = normalizeSampleList(await redisClient.json.get(memorySamplesKey, '$'))
@@ -119,19 +152,75 @@ async function recordMemoryUsage(redisClient = redis, sample = getCurrentMemoryU
     return samples
 }
 
-async function getMemoryThresholdMb(redisClient = redis) {
-    if (!redisClient?.get) return defaultMemoryThresholdMb
+async function recordPeakMemoryUsage(redisClient = redis, sample = getCurrentMemoryUsage()) {
+    const peak = {
+        rss: Number(sample.rss) || 0,
+        timestamp: sample.timestamp,
+    }
 
-    const saved = await redisClient.get(memoryThresholdKey)
-    const value = parseInt(saved, 10)
-    return Number.isInteger(value) && value > 0 ? value : defaultMemoryThresholdMb
+    if (!redisClient?.get || !redisClient?.set) return peak
+
+    const saved = normalizePeakMemory(await redisClient.get(memoryPeak24hKey))
+    if (saved && saved.rss >= peak.rss) return saved
+
+    await redisClient.set(memoryPeak24hKey, String(peak.rss))
+    if (redisClient?.expire) await redisClient.expire(memoryPeak24hKey, peakMemoryWindowSeconds)
+    return peak
+}
+
+async function getPeakMemoryUsage(redisClient = redis, fallbackSample = getCurrentMemoryUsage()) {
+    if (!redisClient?.get) {
+        return {
+            rss: fallbackSample.rss,
+            timestamp: fallbackSample.timestamp,
+        }
+    }
+
+    return normalizePeakMemory(await redisClient.get(memoryPeak24hKey)) || {
+        rss: fallbackSample.rss,
+        timestamp: fallbackSample.timestamp,
+    }
+}
+
+async function getMemoryThresholdMb(redisClient = redis) {
+    return getPositiveMbSetting(memoryThresholdKey, defaultMemoryThresholdMb, redisClient)
 }
 
 async function saveMemoryThresholdMb(value, redisClient = redis) {
+    return savePositiveMbSetting(memoryThresholdKey, value, defaultMemoryThresholdMb, redisClient)
+}
+
+async function getNodeMemoryAvailableMb(redisClient = redis) {
+    return getPositiveMbSetting(nodeMemoryAvailableKey, defaultNodeMemoryAvailableMb, redisClient)
+}
+
+async function saveNodeMemoryAvailableMb(value, redisClient = redis) {
+    return savePositiveMbSetting(nodeMemoryAvailableKey, value, defaultNodeMemoryAvailableMb, redisClient)
+}
+
+async function getRedisMemoryAvailableMb(redisClient = redis) {
+    return getPositiveMbSetting(redisMemoryAvailableKey, defaultRedisMemoryAvailableMb, redisClient)
+}
+
+async function saveRedisMemoryAvailableMb(value, redisClient = redis) {
+    return savePositiveMbSetting(redisMemoryAvailableKey, value, defaultRedisMemoryAvailableMb, redisClient)
+}
+
+function normalizePositiveMb(value, fallback) {
     const normalized = parseInt(value, 10)
-    const threshold = Number.isInteger(normalized) && normalized > 0 ? normalized : defaultMemoryThresholdMb
-    if (redisClient?.set) await redisClient.set(memoryThresholdKey, String(threshold))
-    return threshold
+    return Number.isInteger(normalized) && normalized > 0 ? normalized : fallback
+}
+
+async function getPositiveMbSetting(key, fallback, redisClient = redis) {
+    if (!redisClient?.get) return fallback
+
+    return normalizePositiveMb(await redisClient.get(key), fallback)
+}
+
+async function savePositiveMbSetting(key, value, fallback, redisClient = redis) {
+    const setting = normalizePositiveMb(value, fallback)
+    if (redisClient?.set) await redisClient.set(key, String(setting))
+    return setting
 }
 
 function coerceInfoValue(value) {
@@ -174,10 +263,12 @@ function buildCacheStats(info) {
     }
 }
 
-function buildRedisMemoryStats(info) {
+function buildRedisMemoryStats(info, availableMb = defaultRedisMemoryAvailableMb) {
     const maxMemory = Number(info.maxmemory) || 0
 
     return {
+        availableMb,
+        availableHuman: formatMbValue(availableMb),
         usedMemory: Number(info.used_memory) || 0,
         usedMemoryHuman: formatMb(info.used_memory),
         usedMemoryRss: Number(info.used_memory_rss) || 0,
@@ -203,12 +294,14 @@ function buildRedisGeneralStats(info) {
 }
 
 async function getRedisSystemStats(redisClient = redis) {
+    const redisMemoryAvailableMb = await getRedisMemoryAvailableMb(redisClient)
+
     if (!redisClient?.info) {
         return {
             available: false,
             error: 'Redis INFO is not available for this client.',
             cache: buildCacheStats({}),
-            memory: buildRedisMemoryStats({}),
+            memory: buildRedisMemoryStats({}, redisMemoryAvailableMb),
             general: buildRedisGeneralStats({}),
         }
     }
@@ -218,7 +311,7 @@ async function getRedisSystemStats(redisClient = redis) {
         return {
             available: true,
             cache: buildCacheStats(info),
-            memory: buildRedisMemoryStats(info),
+            memory: buildRedisMemoryStats(info, redisMemoryAvailableMb),
             general: buildRedisGeneralStats(info),
         }
     } catch (err) {
@@ -226,7 +319,7 @@ async function getRedisSystemStats(redisClient = redis) {
             available: false,
             error: err.message,
             cache: buildCacheStats({}),
-            memory: buildRedisMemoryStats({}),
+            memory: buildRedisMemoryStats({}, redisMemoryAvailableMb),
             general: buildRedisGeneralStats({}),
         }
     }
@@ -234,23 +327,30 @@ async function getRedisSystemStats(redisClient = redis) {
 
 async function buildSystemPageData(redisClient = redis) {
     const currentMemory = getCurrentMemoryUsage()
-    const [memorySamples, memoryThresholdMb, redisStats] = await Promise.all([
+    const memoryThresholdMb = await getMemoryThresholdMb(redisClient)
+    const nodeMemoryAvailableMb = await getNodeMemoryAvailableMb(redisClient)
+    const [memorySamples, redisStats] = await Promise.all([
         recordMemoryUsage(redisClient, currentMemory),
-        getMemoryThresholdMb(redisClient),
         getRedisSystemStats(redisClient),
     ])
+    const peakMemory = await getPeakMemoryUsage(redisClient, currentMemory)
 
     return {
         redisStats,
         memory: {
             current: currentMemory,
+            peak24h: peakMemory,
+            availableMb: nodeMemoryAvailableMb,
+            availableHuman: formatMbValue(nodeMemoryAvailableMb),
             samples: memorySamples,
             sampleLimit: memorySampleLimit,
+            sampleIntervalMinutes: memorySampleIntervalMinutes,
             sampleIntervalMs: memorySampleIntervalMs,
             sampleSpan: getSampleTimeSpan(memorySamples),
             jump: detectMemoryJump(memorySamples),
             thresholdMb: memoryThresholdMb,
             thresholdExceeded: currentMemory.rss > memoryThresholdMb,
+            availableExceeded: currentMemory.rss > nodeMemoryAvailableMb,
         },
     }
 }
@@ -267,11 +367,17 @@ module.exports = {
     buildSystemPageData,
     getCurrentMemoryUsage,
     getMemoryThresholdMb,
+    getNodeMemoryAvailableMb,
+    getPeakMemoryUsage,
+    getRedisMemoryAvailableMb,
     getRedisSystemStats,
     detectMemoryJump,
     getSampleTimeSpan,
     parseRedisInfo,
+    recordPeakMemoryUsage,
     recordMemoryUsage,
     saveMemoryThresholdMb,
+    saveNodeMemoryAvailableMb,
+    saveRedisMemoryAvailableMb,
     startMemoryUsageSampler,
 }

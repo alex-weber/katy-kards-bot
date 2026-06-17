@@ -11,6 +11,8 @@ function formatMemoryTime(timestamp) {
 }
 
 function drawReferenceLine(chart, value, color, label) {
+    value = Number(value) || 0
+    if (!value) return
     const yScale = chart.scales.y
     const area = chart.chartArea
     if (!yScale || !area || value < yScale.min || value > yScale.max) return
@@ -34,7 +36,6 @@ function drawReferenceLine(chart, value, color, label) {
     ctx.restore()
 }
 
-const memoryTotalMb = 512
 const memoryMetricColors = {
     rss: '#20c997',
     heapUsed: '#0d6efd',
@@ -50,9 +51,9 @@ const memoryMetricBackgrounds = {
 const memoryThresholdColor = '#ffc107'
 const memoryTotalColor = '#dc3545'
 
-function memoryDisplayColor(value, thresholdMb, metricColor) {
+function memoryDisplayColor(value, thresholdMb, availableMb, metricColor) {
     const numericValue = Number(value) || 0
-    if (numericValue >= memoryTotalMb) return memoryTotalColor
+    if (availableMb && numericValue >= availableMb) return memoryTotalColor
     if (thresholdMb && numericValue >= thresholdMb) return memoryThresholdColor
     return metricColor
 }
@@ -61,7 +62,7 @@ const memoryReferenceLines = {
     id: 'memoryReferenceLines',
     afterDraw(chart, args, options) {
         drawReferenceLine(chart, options.thresholdMb, memoryThresholdColor, `Threshold ${options.thresholdMb} MB`)
-        drawReferenceLine(chart, memoryTotalMb, memoryTotalColor, `${memoryTotalMb} MB`)
+        drawReferenceLine(chart, options.availableMb, memoryTotalColor, `Available ${options.availableMb} MB`)
     },
 }
 
@@ -104,7 +105,7 @@ function drawRedisChart(cache) {
     })
 }
 
-function drawSystemMemoryChart(samples, thresholdMb) {
+function drawSystemMemoryChart(samples, thresholdMb, availableMb) {
     const ctx = getSystemChart('systemMemoryChart')
     if (!ctx || !samples.length) return
 
@@ -115,7 +116,7 @@ function drawSystemMemoryChart(samples, thresholdMb) {
         Number(sample.heapTotal) || 0,
         Number(sample.arrayBuffers) || 0
     ), 0)
-    const suggestedMax = Math.ceil(Math.max(maxSampleValue, thresholdMb || 0, memoryTotalMb) * 1.12)
+    const suggestedMax = Math.ceil(Math.max(maxSampleValue, thresholdMb || 0, availableMb || 0) * 1.12)
     const latestSample = samples[samples.length - 1] || {}
 
     new Chart(ctx, {
@@ -182,7 +183,11 @@ function drawSystemMemoryChart(samples, thresholdMb) {
                                 const dataset = chart.data.datasets[label.datasetIndex]
                                 const metric = dataset.metric
                                 const metricColor = memoryMetricColors[metric] || dataset.borderColor
-                                const displayColor = memoryDisplayColor(latestSample[metric], thresholdMb, metricColor)
+                                const displayColor = memoryDisplayColor(
+                                    latestSample[metric],
+                                    thresholdMb,
+                                    availableMb,
+                                    metricColor)
                                 label.fontColor = displayColor
                                 label.strokeStyle = displayColor
                                 label.fillStyle = displayColor
@@ -193,6 +198,7 @@ function drawSystemMemoryChart(samples, thresholdMb) {
                 },
                 memoryReferenceLines: {
                     thresholdMb,
+                    availableMb,
                 },
                 tooltip: {
                     callbacks: {
@@ -217,11 +223,11 @@ function drawSystemMemoryChart(samples, thresholdMb) {
     })
 }
 
-function colorMemorySummary(samples, thresholdMb) {
+function colorMemorySummary(samples, thresholdMb, availableMb) {
     const latestSample = samples[samples.length - 1] || {}
     document.querySelectorAll('[data-memory-metric]').forEach(item => {
         const metric = item.dataset.memoryMetric
-        const color = memoryDisplayColor(latestSample[metric], thresholdMb, memoryMetricColors[metric])
+        const color = memoryDisplayColor(latestSample[metric], thresholdMb, availableMb, memoryMetricColors[metric])
         item.style.borderColor = color
         item.querySelectorAll('.system-memory-label, .system-memory-value').forEach(element => {
             element.style.color = color
@@ -232,5 +238,6 @@ function colorMemorySummary(samples, thresholdMb) {
 drawRedisChart(window.systemRedisData || {})
 const systemMemorySamples = window.systemMemoryData || []
 const systemMemoryThresholdMb = Number(window.systemMemoryThresholdMb) || 0
-colorMemorySummary(systemMemorySamples, systemMemoryThresholdMb)
-drawSystemMemoryChart(systemMemorySamples, systemMemoryThresholdMb)
+const systemMemoryAvailableMb = Number(window.systemMemoryAvailableMb) || 0
+colorMemorySummary(systemMemorySamples, systemMemoryThresholdMb, systemMemoryAvailableMb)
+drawSystemMemoryChart(systemMemorySamples, systemMemoryThresholdMb, systemMemoryAvailableMb)
