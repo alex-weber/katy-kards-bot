@@ -113,6 +113,7 @@ function renderTopMessages(apiData) {
                         <span style="width: ${getBarWidth(item.count, maxCount)}%"></span>
                     </span>
                 </td>
+                <td class="leaderboard-rank-cell">${formatPosition(item.allTimePosition)}</td>
                 <td class="leaderboard-count-cell">${formatCount(item.count)}</td>
             </tr>
         `)
@@ -131,6 +132,10 @@ function escapeHtml(value) {
 
 function formatCount(value) {
     return Number(value || 0).toLocaleString()
+}
+
+function formatPosition(value) {
+    return value ? '#' + formatCount(value) : 'n/a'
 }
 
 function getBarWidth(value, maxValue) {
@@ -160,6 +165,7 @@ function renderTopUsers(apiData) {
             <span style="width: ${getBarWidth(item.count, maxCount)}%"></span>
           </span>
         </td>
+        <td class="leaderboard-rank-cell">${formatPosition(item.allTimePosition)}</td>
         <td class="leaderboard-count-cell">${formatCount(item.count)}</td>
       </tr>
     `)

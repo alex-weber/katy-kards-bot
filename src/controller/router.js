@@ -546,16 +546,15 @@ function renderProfileView(req, res, { displayName, avatarUrl, stats, history, i
 // Render the logged-in viewer's own profile (stats + private 24h history) for
 // the given internal user id.
 async function renderOwnProfile(req, res, dbUserId) {
-    const messages = await getUserMessages(dbUserId)
+    const [messages, stats] = await Promise.all([
+        getUserMessages(dbUserId),
+        getProfileStats(dbUserId),
+    ])
 
     renderProfileView(req, res, {
         displayName: req.session.user.username,
         avatarUrl: sessionAvatarUrl(req.session.user),
-        stats: {
-            total: messages.totalCount,
-            lastMonth: messages.lastMonthMessagesCount,
-            lastDay: messages.lastDayMessages.length
-        },
+        stats,
         history: messages.lastDayMessages,
         isOwn: true
     })

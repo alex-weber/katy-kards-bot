@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient, Prisma } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 const {redis, cachePrefix} = require('../controller/redis')
@@ -7,6 +7,12 @@ const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
 const profileExpiration = parseInt(process.env.REDIS_EXP_PROFILE) || 60 * 5
 const STATS_PERIODS = ['yearly', 'quarterly', 'monthly', 'daily']
 const {languages} = require('../tools/language')
+const topMessageContentFilters = [
+    { content: { not: { startsWith: 'td' } } },
+    { content: { not: { startsWith: 'command' } } },
+    { content: { not: { startsWith: 'alt' } } },
+    { content: { notIn:  languages } },
+]
 /**
  *
  * @param data
@@ -16,9 +22,7 @@ async function createMessage(data)
 {
     return await prisma.message.create({
         data: data
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 /**
@@ -46,8 +50,7 @@ async function getUserMessages(userId)
         orderBy: {
             createdAt: 'desc'
         },
-    }).
-    catch((e) => { throw e })
+    })
 
     messages.lastDayMessages =  lastDayMessages.map(message => ({
         ...message,
@@ -59,8 +62,7 @@ async function getUserMessages(userId)
         where: {
             authorId: userId,
         }
-    }).
-    catch((e) => { throw e })
+    })
 
     const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
     messages.lastMonthMessagesCount = await prisma.message.count({
@@ -70,9 +72,7 @@ async function getUserMessages(userId)
                 gte: monthAgo,
             },
         },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 
     await redis.json.set(cacheKey, '$', messages)
     await redis.expire(cacheKey, expiration)
@@ -92,14 +92,24 @@ async function getUserMessages(userId)
 async function getProfileStats(userId)
 {
     const cacheKey = cachePrefix + 'profile:stats:' + userId
-    const cached = await redis.json.get(cacheKey, '$')
-    if (cached) return cached
+    const cached = normalizeRedisJsonObject(await redis.json.get(cacheKey, '$'))
+    if (cached && cached.allTimePosition !== undefined && cached.allTimePosition !== null) return cached
+    if (cached) {
+        const allTimePositions = await getAllTimeUserMessagePositions([userId])
+        const stats = {
+            ...cached,
+            allTimePosition: allTimePositions[String(userId)] || null,
+        }
+        await redis.json.set(cacheKey, '$', stats)
+        await redis.expire(cacheKey, profileExpiration)
+        return stats
+    }
 
     const now = Date.now()
     const dayAgo = new Date(now - 24 * 60 * 60 * 1000)
     const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000)
 
-    const [total, lastMonth, lastDay] = await Promise.all([
+    const [total, lastMonth, lastDay, allTimePositions] = await Promise.all([
         prisma.message.count({where: {authorId: userId}}),
         prisma.message.count({
             where: {authorId: userId, createdAt: {gte: monthAgo}},
@@ -107,11 +117,15 @@ async function getProfileStats(userId)
         prisma.message.count({
             where: {authorId: userId, createdAt: {gte: dayAgo}},
         }),
-    ]).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+        getAllTimeUserMessagePositions([userId]),
+    ])
 
-    const stats = {total, lastMonth, lastDay}
+    const stats = {
+        total,
+        lastMonth,
+        lastDay,
+        allTimePosition: allTimePositions[String(userId)] || null,
+    }
     await redis.json.set(cacheKey, '$', stats)
     await redis.expire(cacheKey, profileExpiration)
 
@@ -273,6 +287,29 @@ function statsPeriodLookback(period)
     if (period === 'quarterly') return 8
     if (period === 'monthly') return 12
     return 30
+}
+
+function buildRankPositions(entries) {
+    const positions = {}
+    let lastCount = null
+    let lastPosition = 0
+
+    entries.forEach((entry, index) => {
+        const count = Number(entry.count) || 0
+        const position = count === lastCount ? lastPosition : index + 1
+        positions[String(entry.key)] = position
+        lastCount = count
+        lastPosition = position
+    })
+
+    return positions
+}
+
+function normalizeRedisJsonObject(value) {
+    if (Array.isArray(value) && value.length === 1 && value[0] && typeof value[0] === 'object' && !Array.isArray(value[0])) {
+        return value[0]
+    }
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : null
 }
 
 async function getStatsFirstMessageDate(extraWhere = {})
@@ -481,12 +518,7 @@ async function computeTopMessages(fromDate, toDate)
                 gte: fromDate,
                 lte: toDate
             },
-            AND: [
-                { content: { not: { startsWith: 'td' } } },
-                { content: { not: { startsWith: 'command' } } },
-                { content: { not: { startsWith: 'alt' } } },
-                { content: { notIn:  languages } },
-            ]
+            AND: topMessageContentFilters
         },
         orderBy: {
             _count: {
@@ -499,12 +531,53 @@ async function computeTopMessages(fromDate, toDate)
     return grouped.map(group => ({ key: group.content, count: group._count.content }))
 }
 
+function mergePositionRows(positions, rows, key) {
+    for (const row of rows) {
+        const value = row[key]
+        if (value !== undefined && value !== null) {
+            positions[String(value)] = Number(row.position)
+        }
+    }
+    return positions
+}
+
+async function getAllTimeMessagePositions(commands = []) {
+    commands = [...new Set(commands.filter(command => command !== undefined && command !== null))]
+    if (!commands.length) return {}
+
+    const cacheKey = cachePrefix + 'stats:all-time:message-positions'
+    let positions = normalizeRedisJsonObject(await redis.json.get(cacheKey, '$'))
+    positions = positions || {}
+    const missing = commands.filter(command => positions[String(command)] === undefined)
+    if (!missing.length) return positions
+
+    const rows = await prisma.$queryRaw`
+        SELECT ranked.content, ranked.position
+        FROM (
+            SELECT content, RANK() OVER (ORDER BY COUNT(*) DESC) AS position
+            FROM "Message"
+            WHERE content IS NOT NULL
+              AND content NOT LIKE '-> td%'
+              AND content NOT IN (${Prisma.join(languages)})
+            GROUP BY content
+        ) ranked
+        WHERE ranked.content IN (${Prisma.join(missing)})
+    `
+
+    mergePositionRows(positions, rows, 'content')
+    await redis.json.set(cacheKey, '$', positions)
+    await redis.expire(cacheKey, expiration)
+    return positions
+}
+
 async function getTopMessages({period} = {})
 {
     const merged = await getStatsPeriodAggregateCached('top-messages', computeTopMessages, period)
+    const allTimePositions = await getAllTimeMessagePositions(merged.map(([command]) => command))
 
     return merged.map(([command, count], index) => ({
         position: index + 1,
+        allTimePosition: allTimePositions[String(command)] || null,
         command,
         count
     }))
@@ -534,10 +607,37 @@ async function computeTopUsers(fromDate, toDate)
     return grouped.map(group => ({ key: group.authorId, count: group._count.content }))
 }
 
+async function getAllTimeUserMessagePositions(authorIds = []) {
+    authorIds = [...new Set(authorIds.map(id => parseInt(id, 10)).filter(id => Number.isInteger(id) && id > 0))]
+    if (!authorIds.length) return {}
+
+    const cacheKey = cachePrefix + 'stats:all-time:user-message-positions'
+    let positions = normalizeRedisJsonObject(await redis.json.get(cacheKey, '$'))
+    positions = positions || {}
+    const missing = authorIds.filter(authorId => positions[String(authorId)] === undefined)
+    if (!missing.length) return positions
+
+    const rows = await prisma.$queryRaw`
+        SELECT ranked."authorId", ranked.position
+        FROM (
+            SELECT "authorId", RANK() OVER (ORDER BY COUNT(*) DESC) AS position
+            FROM "Message"
+            GROUP BY "authorId"
+        ) ranked
+        WHERE ranked."authorId" IN (${Prisma.join(missing)})
+    `
+
+    mergePositionRows(positions, rows, 'authorId')
+    await redis.json.set(cacheKey, '$', positions)
+    await redis.expire(cacheKey, expiration)
+    return positions
+}
+
 async function getTopUsers({period} = {})
 {
     const merged = await getStatsPeriodAggregateCached('top-users', computeTopUsers, period)
     const userIds = merged.map(([authorId]) => authorId)
+    const allTimePositions = await getAllTimeUserMessagePositions(userIds)
 
     const users = await prisma.user.findMany({
         where: {
@@ -556,6 +656,7 @@ async function getTopUsers({period} = {})
             authorId,
             username: user?.name || 'Unknown',
             discordId: user?.discordId || 'N/A',
+            allTimePosition: allTimePositions[String(authorId)] || null,
             count
         }
     }).filter(user => user.username !== 'Катюха')

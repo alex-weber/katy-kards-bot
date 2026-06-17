@@ -8,6 +8,7 @@ const mockFindFirst = jest.fn()
 const mockGroupBy = jest.fn()
 const mockUserFindMany = jest.fn()
 const mockCreate = jest.fn()
+const mockQueryRaw = jest.fn()
 
 jest.mock('../src/controller/redis', () => ({
     cachePrefix: 'test:',
@@ -24,8 +25,12 @@ jest.mock('@prisma/client', () => ({
     PrismaClient: jest.fn(() => ({
         message: { count: mockCount, findMany: mockFindMany, findFirst: mockFindFirst, groupBy: mockGroupBy, create: mockCreate },
         user: { findMany: mockUserFindMany },
+        $queryRaw: mockQueryRaw,
         $disconnect: jest.fn(),
     })),
+    Prisma: {
+        join: values => values,
+    },
 }))
 
 const {
@@ -45,6 +50,7 @@ beforeEach(() => {
     mockGroupBy.mockReset()
     mockUserFindMany.mockReset()
     mockCreate.mockReset()
+    mockQueryRaw.mockReset()
 })
 
 describe('createMessage', () => {
@@ -75,14 +81,39 @@ describe('getProfileStats', () => {
             .mockResolvedValueOnce(100) // total
             .mockResolvedValueOnce(30)  // last month
             .mockResolvedValueOnce(5)   // last day
+        mockQueryRaw.mockResolvedValueOnce([{ authorId: 7, position: 2 }])
         const stats = await getProfileStats(7)
-        expect(stats).toEqual({ total: 100, lastMonth: 30, lastDay: 5 })
+        expect(stats).toEqual({ total: 100, lastMonth: 30, lastDay: 5, allTimePosition: 2 })
 
         // Second call served from cache → no further DB counts
         mockCount.mockClear()
         const again = await getProfileStats(7)
-        expect(again).toEqual({ total: 100, lastMonth: 30, lastDay: 5 })
+        expect(again).toEqual({ total: 100, lastMonth: 30, lastDay: 5, allTimePosition: 2 })
         expect(mockCount).not.toHaveBeenCalled()
+    })
+
+    test('uses cached RedisJSON all-time position maps with root path wrappers', async () => {
+        mockStore.set('test:stats:all-time:user-message-positions', [{ '7': 1 }])
+        mockCount
+            .mockResolvedValueOnce(100)
+            .mockResolvedValueOnce(30)
+            .mockResolvedValueOnce(5)
+
+        const stats = await getProfileStats(7)
+
+        expect(stats.allTimePosition).toBe(1)
+        expect(mockQueryRaw).not.toHaveBeenCalled()
+    })
+
+    test('hydrates stale cached profile stats with the all-time position', async () => {
+        mockStore.set('test:profile:stats:7', { total: 100, lastMonth: 30, lastDay: 5 })
+        mockStore.set('test:stats:all-time:user-message-positions', { '7': 1 })
+
+        const stats = await getProfileStats(7)
+
+        expect(stats).toEqual({ total: 100, lastMonth: 30, lastDay: 5, allTimePosition: 1 })
+        expect(mockCount).not.toHaveBeenCalled()
+        expect(mockStore.get('test:profile:stats:7').allTimePosition).toBe(1)
     })
 })
 
@@ -135,6 +166,10 @@ describe('getTopUsers', () => {
         mockUserFindMany.mockResolvedValue([
             { id: 1, name: 'Alice', discordId: '111' },
             { id: 2, name: 'Катюха', discordId: '222' },
+        ])
+        mockQueryRaw.mockResolvedValueOnce([
+            { authorId: 1, position: 1 },
+            { authorId: 2, position: 2 },
         ])
         const result = await getTopUsers({ from: '2020-01-01', to })
         const names = result.map(u => u.username)

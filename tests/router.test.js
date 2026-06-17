@@ -224,6 +224,12 @@ describe('public profile', () => {
             lastMonthMessagesCount: 8,
             lastDayMessages: [{ content: 'leo', createdAt: 'now' }],
         })
+        db.getProfileStats.mockResolvedValueOnce({
+            total: 20,
+            lastMonth: 8,
+            lastDay: 1,
+            allTimePosition: 1,
+        })
 
         await router.renderPublicProfile(
             { params: { id: '5' }, session: { user: { id: '111', username: 'Me' } } },
@@ -234,6 +240,7 @@ describe('public profile', () => {
         expect(locals.isOwn).toBe(true)
         expect(locals.history).toHaveLength(1)
         expect(locals.stats.total).toBe(20)
+        expect(locals.stats.allTimePosition).toBe(1)
     })
 })
 
@@ -246,12 +253,19 @@ describe('own profile (/profile)', () => {
             lastMonthMessagesCount: 2,
             lastDayMessages: [{ content: 'is2', createdAt: 'now' }],
         })
+        db.getProfileStats.mockResolvedValueOnce({
+            total: 3,
+            lastMonth: 2,
+            lastDay: 1,
+            allTimePosition: 1,
+        })
 
         await router.renderProfile({ session: { user: { id: '111', username: 'Me', avatar: 'abc' } } }, res)
 
         const locals = res.render.mock.calls[0][1]
         expect(locals.isOwn).toBe(true)
         expect(locals.stats.lastDay).toBe(1)
+        expect(locals.stats.allTimePosition).toBe(1)
         expect(locals.avatarUrl).toContain('cdn.discordapp.com/avatars/111/abc.webp')
     })
 })

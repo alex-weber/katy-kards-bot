@@ -41,6 +41,9 @@ block content
             h3.profile-name #{displayName}
             .profile-stat-grid
                 .stat-card
+                    .stat-label All-Time
+                    .stat-value #{stats.allTimePosition ? '#' + stats.allTimePosition : 'n/a'}
+                .stat-card
                     .stat-label Total messages
                     .stat-value #{stats.total}
                 .stat-card

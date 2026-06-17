@@ -2,6 +2,7 @@ const mockJsonStore = new Map()
 const mockGroupByCalls = []
 const mockCountCalls = []
 const mockFindManyCalls = []
+const mockQueryRawCalls = []
 const mockExpire = jest.fn(async () => {})
 
 jest.mock('../src/controller/redis', () => ({
@@ -21,6 +22,20 @@ jest.mock('@prisma/client', () => {
             message: {
                 groupBy: jest.fn(async args => {
                     mockGroupByCalls.push(args)
+                    const isAllTime = !args.where?.createdAt
+                    if (isAllTime && args.by[0] === 'content') {
+                        return [
+                            {content: 'leo', _count: {content: 505}},
+                            {content: 'is2', _count: {content: 200}},
+                        ]
+                    }
+                    if (isAllTime) {
+                        return [
+                            {authorId: 1, _count: {content: 505}},
+                            {authorId: 2, _count: {content: 200}},
+                        ]
+                    }
+
                     const isCurrentYear =
                         args.where.createdAt.gte.getUTCFullYear() === new Date().getUTCFullYear()
                     const isYearlyRange =
@@ -84,8 +99,25 @@ jest.mock('@prisma/client', () => {
                     {id: 2, name: 'Bob', discordId: '222'},
                 ]),
             },
+            $queryRaw: jest.fn(async (...args) => {
+                mockQueryRawCalls.push(args)
+                const query = Array.isArray(args[0]) ? args[0].join('') : String(args[0])
+                if (query.includes('"authorId"')) {
+                    return [
+                        {authorId: 1, position: 1},
+                        {authorId: 2, position: 2},
+                    ]
+                }
+                return [
+                    {content: 'leo', position: 1},
+                    {content: 'is2', position: 2},
+                ]
+            }),
             $disconnect: jest.fn(async () => {}),
         })),
+        Prisma: {
+            join: values => values,
+        },
     }
 })
 
@@ -100,6 +132,7 @@ beforeEach(() => {
     mockGroupByCalls.length = 0
     mockCountCalls.length = 0
     mockFindManyCalls.length = 0
+    mockQueryRawCalls.length = 0
     mockExpire.mockClear()
 })
 
@@ -112,7 +145,10 @@ describe('period stats caching', () => {
         expect(leo.count).toBe(405)
         expect(is2.count).toBe(160)
         expect(leo.position).toBe(1)
+        expect(leo.allTimePosition).toBe(1)
+        expect(is2.allTimePosition).toBe(2)
         expect(mockGroupByCalls).toHaveLength(1)
+        expect(mockQueryRawCalls).toHaveLength(1)
     })
 
     test('top-users queries the selected yearly range and resolves usernames', async () => {
@@ -120,15 +156,17 @@ describe('period stats caching', () => {
         const alice = result.find(u => u.authorId === 1)
         expect(alice.username).toBe('Alice')
         expect(alice.count).toBe(405)
+        expect(alice.allTimePosition).toBe(1)
     })
 
     test('period aggregate range is reused and current range gets a TTL', async () => {
         await getTopMessages({period: 'yearly'})
         expect(mockGroupByCalls).toHaveLength(1)
-        expect(mockExpire).toHaveBeenCalledTimes(1)
+        expect(mockExpire).toHaveBeenCalledTimes(2)
 
         await getTopMessages({period: 'yearly'})
         expect(mockGroupByCalls).toHaveLength(1)
+        expect(mockQueryRawCalls).toHaveLength(1)
 
         for (const key of [...mockJsonStore.keys()]) {
             if (key.endsWith(':yearly:range')) mockJsonStore.delete(key)
@@ -136,6 +174,7 @@ describe('period stats caching', () => {
 
         await getTopMessages({period: 'yearly'})
         expect(mockGroupByCalls).toHaveLength(2)
+        expect(mockQueryRawCalls).toHaveLength(1)
     })
 
     test('dashboard time-series includes completed and current yearly buckets', async () => {
