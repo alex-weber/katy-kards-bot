@@ -84,7 +84,7 @@ async function getUserMessages(userId)
 /**
  * Lightweight per-user command counts for the profile overview, cached in
  * Redis. Only the three counts are queried and stored (no message rows), so
- * both the DB work and the cached payload stay small.
+ * both the DB workload and the cached payload stay small.
  *
  * @param userId User table primary key
  * @returns {Promise<{total: number, lastMonth: number, lastDay: number}>}
