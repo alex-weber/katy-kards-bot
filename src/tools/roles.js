@@ -194,8 +194,11 @@ async function checkRoleCommandLimit(ctx) {
     const dailyWarningKey = dailyKey + ':warning'
     const dailyBlockedWarningKey = dailyKey + ':blocked-warning'
     const hourlyKey = discordCachePrefix + `limits:${userId}:commands:hourly`
+    const hasDailyLimit = rule.dailyCommandLimit > 0
+    const hasHourlyLimit = rule.hourlyCommandLimit > 0
 
-    if (role === ROLE.PRISONER && await ctx.redis.exists(dailyBlockedWarningKey)) {
+    if (role === ROLE.PRISONER && hasDailyLimit &&
+        await ctx.redis.exists(dailyBlockedWarningKey)) {
         return {
             allowed: false,
             reason: 'dailyCommandLimit',
@@ -204,64 +207,68 @@ async function checkRoleCommandLimit(ctx) {
         }
     }
 
-    const dailyCount = await incrementLimitedCounter(
-        ctx.redis,
-        dailyKey,
-        DAILY_LIMIT_WINDOW_SECONDS)
-    const reset = await getResetInfo(
-        ctx.redis,
-        dailyKey,
-        DAILY_LIMIT_WINDOW_SECONDS)
-
     let warningMessage = null
-    if (role === ROLE.PRISONER && rule.dailyCommandLimit > 0 && dailyCount === 1) {
-        const shouldWarn = await setOnce(
+    if (hasDailyLimit) {
+        const dailyCount = await incrementLimitedCounter(
             ctx.redis,
-            dailyWarningKey,
-            reset.secondsUntilReset)
-        if (shouldWarn) {
-            warningMessage = buildPrisonerWarningMessage(
-                language,
-                rule.dailyCommandLimit,
-                reset.timestamp)
-        }
-    }
+            dailyKey,
+            DAILY_LIMIT_WINDOW_SECONDS)
+        const reset = await getResetInfo(
+            ctx.redis,
+            dailyKey,
+            DAILY_LIMIT_WINDOW_SECONDS)
 
-    if (limitExceeded(rule.dailyCommandLimit, dailyCount)) {
-        const shouldWarn = role !== ROLE.PRISONER ||
-            await setOnce(
+        if (role === ROLE.PRISONER && dailyCount === 1) {
+            const shouldWarn = await setOnce(
                 ctx.redis,
-                dailyBlockedWarningKey,
+                dailyWarningKey,
                 reset.secondsUntilReset)
-
-        return {
-            allowed: false,
-            reason: 'dailyCommandLimit',
-            limit: rule.dailyCommandLimit,
-            silent: !shouldWarn,
-            message: shouldWarn
-                ? buildLimitMessage(
+            if (shouldWarn) {
+                warningMessage = buildPrisonerWarningMessage(
                     language,
-                    'dailyCommandLimit',
                     rule.dailyCommandLimit,
                     reset.timestamp)
-                : null,
+            }
+        }
+
+        if (limitExceeded(rule.dailyCommandLimit, dailyCount)) {
+            const shouldWarn = role !== ROLE.PRISONER ||
+                await setOnce(
+                    ctx.redis,
+                    dailyBlockedWarningKey,
+                    reset.secondsUntilReset)
+
+            return {
+                allowed: false,
+                reason: 'dailyCommandLimit',
+                limit: rule.dailyCommandLimit,
+                silent: !shouldWarn,
+                message: shouldWarn
+                    ? buildLimitMessage(
+                        language,
+                        'dailyCommandLimit',
+                        rule.dailyCommandLimit,
+                        reset.timestamp)
+                    : null,
+            }
         }
     }
 
-    const hourlyCount = await incrementLimitedCounter(
-        ctx.redis,
-        hourlyKey,
-        HOURLY_LIMIT_WINDOW_SECONDS)
-    if (limitExceeded(rule.hourlyCommandLimit, hourlyCount)) {
-        return {
-            allowed: false,
-            reason: 'hourlyCommandLimit',
-            limit: rule.hourlyCommandLimit,
-            message: buildLimitMessage(
-                language,
-                'hourlyCommandLimit',
-                rule.hourlyCommandLimit),
+    if (hasHourlyLimit) {
+        const hourlyCount = await incrementLimitedCounter(
+            ctx.redis,
+            hourlyKey,
+            HOURLY_LIMIT_WINDOW_SECONDS)
+        if (limitExceeded(rule.hourlyCommandLimit, hourlyCount)) {
+            return {
+                allowed: false,
+                reason: 'hourlyCommandLimit',
+                limit: rule.hourlyCommandLimit,
+                message: buildLimitMessage(
+                    language,
+                    'hourlyCommandLimit',
+                    rule.hourlyCommandLimit),
+            }
         }
     }
 

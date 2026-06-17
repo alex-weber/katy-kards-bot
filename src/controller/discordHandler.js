@@ -77,7 +77,7 @@ function logCommand(message)
 }
 
 /**
- * Resolve incoming content into a clean command string, or signal a stop.
+ * Resolve incoming content into a clean command string or signal a stop.
  *
  * @param message
  * @param prefix
@@ -158,11 +158,11 @@ async function discordHandler(message, client, redis)
     const roleLimit = await checkRoleCommandLimit(ctx)
     if (!roleLimit.allowed) {
         if (!roleLimit.silent && roleLimit.message) {
-            await message.channel.send(roleLimit.message)
+            message.channel.send(roleLimit.message)
         }
         return message
     }
-    if (roleLimit.message) await message.channel.send(roleLimit.message)
+    if (roleLimit.message) message.channel.send(roleLimit.message)
 
     //save the command in the DB and in cache, no need to wait
     const fullContent = `${guildName} | ${channelName} -> ${ctx.command}`

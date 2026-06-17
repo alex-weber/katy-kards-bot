@@ -49,6 +49,19 @@ function makePrisonerCtx(redis) {
     }
 }
 
+function makeStandardCtx(redis) {
+    return {
+        redis,
+        user: {
+            id: 2,
+            discordId: '222',
+            role: 'STANDARD',
+            language: 'en',
+        },
+        limit: 10,
+    }
+}
+
 describe('role command limits', () => {
     beforeEach(() => {
         jest.spyOn(Date, 'now').mockReturnValue(1781440000000)
@@ -56,6 +69,22 @@ describe('role command limits', () => {
 
     afterEach(() => {
         jest.restoreAllMocks()
+    })
+
+    test('Standard users do not create command limit counters', async () => {
+        const redis = makeRedisMock()
+        const ctx = makeStandardCtx(redis)
+
+        const result = await checkRoleCommandLimit(ctx)
+
+        expect(result.allowed).toBe(true)
+        expect(result.message).toBeNull()
+        expect(ctx.limit).toBe(5)
+        expect(redis.incr).not.toHaveBeenCalled()
+        expect(redis.expire).not.toHaveBeenCalled()
+        expect(redis.exists).not.toHaveBeenCalled()
+        expect(redis.set).not.toHaveBeenCalled()
+        expect(redis.ttl).not.toHaveBeenCalled()
     })
 
     test('Prisoner warning cycle repeats after the daily window resets', async () => {
