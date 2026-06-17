@@ -1,10 +1,27 @@
 # Release Report: Changes Since v4.2.0
 
 Comparison range: `v4.2.0..HEAD`
-Current HEAD: `0854998`
-Included tags: `v4.3.0`, `v4.4.0`, `v4.4.1`, `v4.4.2`, `v4.5.0`, `v4.6.0`, `v4.6.1`, `v4.7.0`
+Current HEAD: `74331e9`
+Included tags: `v4.3.0`, `v4.4.0`, `v4.4.1`, `v4.4.2`, `v4.5.0`, `v4.6.0`, `v4.6.1`, `v4.7.0`, `v4.7.1`, `v4.8.0`
 
 This report is based on the git history after `v4.2.0`. The first section covers current working-tree changes that have not been tagged yet.
+
+## v4.8.1
+
+- Removed unused function `buildRankPositions` (`74331e9`).
+
+## v4.8.0
+
+### Features
+
+- Added all-time position for profile, top 100 users, and top 100 commands (`3d280bf`).
+- Enhanced system monitoring by adding memory-available settings for Node and Redis (`16f3f6b`).
+
+### Bug Fixes
+
+- Fixed roles settings resetting after restart (`94a43fc`).
+- Fixed empty Redis keys for roles without command limits (`1ce209d`).
+- Corrected English in a commentary (`a089bea`).
 
 ## v4.7.1
 
