@@ -289,22 +289,6 @@ function statsPeriodLookback(period)
     return 30
 }
 
-function buildRankPositions(entries) {
-    const positions = {}
-    let lastCount = null
-    let lastPosition = 0
-
-    entries.forEach((entry, index) => {
-        const count = Number(entry.count) || 0
-        const position = count === lastCount ? lastPosition : index + 1
-        positions[String(entry.key)] = position
-        lastCount = count
-        lastPosition = position
-    })
-
-    return positions
-}
-
 function normalizeRedisJsonObject(value) {
     if (Array.isArray(value) && value.length === 1 && value[0] && typeof value[0] === 'object' && !Array.isArray(value[0])) {
         return value[0]
