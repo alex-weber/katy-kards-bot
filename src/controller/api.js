@@ -9,6 +9,9 @@ const {
 const {redis, cachePrefix} = require('../controller/redis')
 
 const expiration = parseInt(process.env.CACHE_API_EXPIRE) || 60*10
+// Bump when the shape of any cached API response changes, so stale payloads
+// from a previous deploy are abandoned instead of served verbatim.
+const CACHE_VERSION = 'v2'
 const STATS_PERIODS = ['yearly', 'quarterly', 'monthly', 'daily']
 
 const statsMethods = new Set([
@@ -40,7 +43,7 @@ async function run(method, { period } = {}) {
 
     // Build cache key including all relevant params
     const paramKey = statsMethods.has(method) ? statsPeriod : ''
-    const cacheKey = cachePrefix + 'api:' + method + ':' + paramKey
+    const cacheKey = cachePrefix + 'api:' + CACHE_VERSION + ':' + method + ':' + paramKey
 
     const cached = await redis.json.get(cacheKey, '$')
 
