@@ -99,13 +99,31 @@ async function handleAlt(ctx)
     const {message, client, redis, language, limit, user} = ctx
     if (!ctx.command.startsWith('alt')) return false
 
+    // alt pages are just card images, so the cache key is language-agnostic.
+    // This keeps the linked list in one branch: the first "alt" is sent in the
+    // user's language, but paged-in pages are forced to the default language by
+    // resolveButtonCommand, which would otherwise split the chain across keys.
     const cacheKey = cacheKeyPrefix + getGuildPart(message) +
-        'alt:' + language + ':' + ctx.command
+        'alt:' + ctx.command
     if (await redis.exists(cacheKey)) {
         const response = await redis.json.get(cacheKey, '$')
         console.log('serving alt from cache', cacheKey)
         await forwardCachedMessage(
             client, response, message.channel, message.channelId)
+
+        // forward() drops the page's "Next" button, so re-attach one by
+        // following the cached "next-message" link (alt -> alt10 -> ...).
+        // It lives on its own message (a forward can't carry components);
+        // the zero-width space keeps it non-empty so the click handler can
+        // strip the button without emptying the message.
+        if (response['next-message'] && isBotCommandChannel(message)) {
+            const offset = parseInt(ctx.command.replace('alt', '')) || 0
+            await message.channel.send({
+                content: '​',
+                components: getButtonRow(translate(language, 'next'),
+                    'next_button_alt' + (offset + limit)),
+            })
+        }
 
         return true
     }
@@ -133,7 +151,17 @@ async function handleAlt(ctx)
 
     react(message, '✅', user)
     const sent = await message.channel.send(answer)
-    await cacheSentMessage(redis, cacheKey, sent, searchExp)
+    // Cache every page with a null "next-message" link. Replays go through
+    // forward(), which drops the page's button, so on a cache hit we re-attach
+    // it by following this chain (alt -> alt10 -> alt20 -> ...).
+    await cacheSentMessage(redis, cacheKey, sent, searchExp, {'next-message': null})
+    // Link the previous page to this freshly-built one.
+    if (offset > 0) {
+        const prevKey = cacheKeyPrefix + getGuildPart(message) +
+            'alt:alt' + (offset - limit || '')
+        if (await redis.exists(prevKey))
+            await redis.json.set(prevKey, '$["next-message"]', sent.id)
+    }
 
     return true
 }

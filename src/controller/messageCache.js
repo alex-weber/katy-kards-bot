@@ -54,14 +54,16 @@ async function forwardCachedMessage(
  * @param key
  * @param sentMessage
  * @param ttl
+ * @param extra optional extra fields to merge into the cached entry
  * @returns {Promise<void>}
  */
-async function cacheSentMessage(redis, key, sentMessage, ttl)
+async function cacheSentMessage(redis, key, sentMessage, ttl, extra = {})
 {
     await redis.json.set(key, '$', {
         id: sentMessage.id,
         channelId: sentMessage.channelId,
         guildId: sentMessage.guildId,
+        ...extra,
     })
     await redis.expire(key, ttl)
 }

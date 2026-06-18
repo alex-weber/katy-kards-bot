@@ -148,6 +148,12 @@ async function onInteractionCreate(interaction)
 
     if (interaction.customId.startsWith('next_button')) {
 
+        // Run the paginated command on behalf of the user who clicked, not the
+        // bot that owns the button message. interaction.message.author is the
+        // bot, so without this getGuildPart()/loadUser() key off the bot in DMs
+        // and split the alt linked-list cache across two namespaces (the first
+        // page under the user, the paged-in ones under the bot).
+        message.author = interaction.user
         message.buttonId = interaction.customId
 
         // remove the button
