@@ -770,7 +770,7 @@ describe('login / logout', () => {
 })
 
 describe('systemMetrics peak memory', () => {
-    const { recordPeakMemoryUsage, getPeakMemoryUsage } = require('../src/tools/systemMetrics')
+    const { recordPeakMemoryUsage, getPeakMemoryUsage, recordMemoryUsage } = require('../src/tools/systemMetrics')
 
     function makeRedis(initialValue = null) {
         let stored = initialValue
@@ -778,6 +778,19 @@ describe('systemMetrics peak memory', () => {
             get: jest.fn(async () => stored),
             set: jest.fn(async (key, value) => { stored = value }),
             expire: jest.fn(async () => 1),
+        }
+    }
+
+    function makeRedisWithSamples(samples) {
+        let peak = null
+        return {
+            get: jest.fn(async () => peak),
+            set: jest.fn(async (key, value) => { peak = value }),
+            expire: jest.fn(async () => 1),
+            json: {
+                get: jest.fn(async () => samples),
+                set: jest.fn(async (key, path, value) => { samples = value }),
+            },
         }
     }
 
@@ -807,5 +820,20 @@ describe('systemMetrics peak memory', () => {
         const peak = await getPeakMemoryUsage(redisClient, { rss: 90, timestamp: '2026-06-19T00:00:00.000Z' })
 
         expect(peak.rss).toBe(480.5)
+    })
+
+    test('raises the peak to the highest persisted sample after a restart', async () => {
+        // Samples retained across a restart still hold a high pre-restart value.
+        const redisClient = makeRedisWithSamples([
+            { rss: 420, timestamp: '2026-06-18T22:00:00.000Z' },
+            { rss: 380, timestamp: '2026-06-18T23:00:00.000Z' },
+        ])
+
+        // The current (post-restart) RSS is low, but the peak must reflect the chart.
+        await recordMemoryUsage(redisClient, { rss: 110, timestamp: '2026-06-19T00:00:00.000Z' })
+
+        const peak = await getPeakMemoryUsage(redisClient, { rss: 110, timestamp: '2026-06-19T00:00:00.000Z' })
+        expect(peak.rss).toBe(420)
+        expect(peak.timestamp).toBe('2026-06-18T22:00:00.000Z')
     })
 })

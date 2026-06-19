@@ -602,16 +602,9 @@ async function renderCards(req, res) {
 
 async function handleApi(req, res) {
     const { method } = req.params
-    const { page, pageSize, username, command } = req.query
     const period = resolveStatsPeriod(req)
 
-    const apiResponse = await API.run(method, {
-        period,
-        page,
-        pageSize,
-        username,
-        command
-    })
+    const apiResponse = await API.run(method, { period })
 
     res.json(apiResponse)
 }

@@ -61,6 +61,13 @@ function normalizeSampleList(value) {
     return Array.isArray(value) ? value : []
 }
 
+function highestRssSample(samples, fallback) {
+    return normalizeSampleList(samples).reduce(
+        (highest, sample) => (Number(sample?.rss) || 0) > (Number(highest?.rss) || 0) ? sample : highest,
+        fallback,
+    )
+}
+
 function normalizePeakMemory(value) {
     if (!value) return null
     if (typeof value === 'string') {
@@ -146,12 +153,17 @@ function getSampleTimeSpan(samples) {
 }
 
 async function recordMemoryUsage(redisClient = redis, sample = getCurrentMemoryUsage(), limit = memorySampleLimit) {
-    await recordPeakMemoryUsage(redisClient, sample)
-    if (!redisClient?.json?.get || !redisClient?.json?.set) return [sample]
+    if (!redisClient?.json?.get || !redisClient?.json?.set) {
+        await recordPeakMemoryUsage(redisClient, sample)
+        return [sample]
+    }
 
     const saved = normalizeSampleList(await redisClient.json.get(memorySamplesKey, '$'))
     const samples = [...saved, sample].slice(-limit)
     await redisClient.json.set(memorySamplesKey, '$', samples)
+    // Reconcile the peak against the persisted samples so Peak RSS can never be
+    // lower than a value still visible in the chart (e.g. after a restart).
+    await recordPeakMemoryUsage(redisClient, highestRssSample(samples, sample))
     return samples
 }
 
@@ -365,15 +377,11 @@ function startMemoryUsageSampler(redisClient = redis) {
 
 module.exports = {
     buildSystemPageData,
-    getCurrentMemoryUsage,
-    getMemoryThresholdMb,
     getNodeMemoryAvailableMb,
     getPeakMemoryUsage,
     getRedisMemoryAvailableMb,
-    getRedisSystemStats,
     detectMemoryJump,
     getSampleTimeSpan,
-    parseRedisInfo,
     recordPeakMemoryUsage,
     recordMemoryUsage,
     saveMemoryThresholdMb,

@@ -321,7 +321,6 @@ module.exports = {
     ROLE,
     ROLE_OPTIONS,
     EDITABLE_RULE_ROLES,
-    DEFAULT_ROLE_RULES,
     normalizeRole,
     roleToDbValue,
     roleLabel,

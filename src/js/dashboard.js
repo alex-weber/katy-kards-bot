@@ -1,8 +1,6 @@
 function renderMessagesChart(data, dataTD) {
     try {
 
-        console.log(data, dataTD)
-
         const loadingSpinner = document.getElementById('loadingSpinner')
         const chartCanvas = document.getElementById('messagesChart')
 

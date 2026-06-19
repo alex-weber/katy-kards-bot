@@ -199,7 +199,6 @@ async function updateUser(User)
 }
 
 module.exports = {
-    createUser,
     getUser,
     getUserById,
     getUsers,
