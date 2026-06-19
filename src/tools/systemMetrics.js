@@ -71,6 +71,9 @@ function normalizePeakMemory(value) {
             return Number.isFinite(rss) ? {rss, timestamp: null} : null
         }
     }
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? {rss: value, timestamp: null} : null
+    }
     if (!value || typeof value !== 'object') return null
 
     const rss = parseFloat(value.rss)
@@ -163,7 +166,7 @@ async function recordPeakMemoryUsage(redisClient = redis, sample = getCurrentMem
     const saved = normalizePeakMemory(await redisClient.get(memoryPeak24hKey))
     if (saved && saved.rss >= peak.rss) return saved
 
-    await redisClient.set(memoryPeak24hKey, String(peak.rss))
+    await redisClient.set(memoryPeak24hKey, JSON.stringify(peak))
     if (redisClient?.expire) await redisClient.expire(memoryPeak24hKey, peakMemoryWindowSeconds)
     return peak
 }

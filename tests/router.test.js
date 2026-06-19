@@ -655,7 +655,7 @@ describe('simple renders', () => {
         }))
         expect(redis.set).toHaveBeenCalledWith(
             'web:test:system:memory:peak24h',
-            expect.stringMatching(/^\d+(\.\d+)?$/))
+            expect.stringMatching(/"rss":\d+(\.\d+)?/))
         expect(redis.expire).toHaveBeenCalledWith('web:test:system:memory:peak24h', 24 * 60 * 60)
         expect(redis.json.set).toHaveBeenCalledWith('web:test:system:memory:samples', '$', expect.any(Array))
     })
@@ -769,5 +769,46 @@ describe('login / logout', () => {
         router.handleLogout({ session }, res, jest.fn())
         expect(session.user).toBeNull()
         expect(res.redirect).toHaveBeenCalledWith('/')
+    })
+})
+
+describe('systemMetrics peak memory', () => {
+    const { recordPeakMemoryUsage, getPeakMemoryUsage } = require('../src/tools/systemMetrics')
+
+    function makeRedis(initialValue = null) {
+        let stored = initialValue
+        return {
+            get: jest.fn(async () => stored),
+            set: jest.fn(async (key, value) => { stored = value }),
+            expire: jest.fn(async () => 1),
+        }
+    }
+
+    test('retains the stored peak when the current RSS is lower', async () => {
+        const redisClient = makeRedis(JSON.stringify({ rss: 500, timestamp: '2026-06-18T00:00:00.000Z' }))
+
+        const result = await recordPeakMemoryUsage(redisClient, { rss: 120, timestamp: '2026-06-19T00:00:00.000Z' })
+
+        expect(result.rss).toBe(500)
+        expect(redisClient.set).not.toHaveBeenCalled()
+    })
+
+    test('updates the stored peak when the current RSS is higher', async () => {
+        const redisClient = makeRedis(JSON.stringify({ rss: 100, timestamp: '2026-06-18T00:00:00.000Z' }))
+
+        const result = await recordPeakMemoryUsage(redisClient, { rss: 750, timestamp: '2026-06-19T00:00:00.000Z' })
+
+        expect(result.rss).toBe(750)
+        expect(redisClient.set).toHaveBeenCalledTimes(1)
+        const stored = JSON.parse(redisClient.set.mock.calls[0][1])
+        expect(stored).toEqual({ rss: 750, timestamp: '2026-06-19T00:00:00.000Z' })
+    })
+
+    test('reads back legacy bare-number peak values', async () => {
+        const redisClient = makeRedis('480.5')
+
+        const peak = await getPeakMemoryUsage(redisClient, { rss: 90, timestamp: '2026-06-19T00:00:00.000Z' })
+
+        expect(peak.rss).toBe(480.5)
     })
 })
