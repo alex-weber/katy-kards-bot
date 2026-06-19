@@ -105,9 +105,6 @@ block content
           .stat-label Misses
           .stat-value #{redisStats.cache.misses}
         .stat-card.system-stat-card
-          .stat-label Max Memory
-          .stat-value #{redisStats.memory.maxMemoryHuman}
-        .stat-card.system-stat-card
           .stat-label Redis Memory Available
           .stat-value #{redisStats.memory.availableHuman}
 
@@ -172,9 +169,6 @@ block content
                 tr
                   td Peak
                   td #{redisStats.memory.usedMemoryPeakHuman}
-                tr
-                  td Max memory
-                  td #{redisStats.memory.maxMemoryHuman}
                 tr
                   td Memory available
                   td #{redisStats.memory.availableHuman}

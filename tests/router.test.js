@@ -33,8 +33,6 @@ jest.mock('../src/controller/redis', () => ({
             'used_memory_rss_human:2.00K',
             'used_memory_peak:4096',
             'used_memory_peak_human:4.00K',
-            'maxmemory:31457280',
-            'maxmemory_human:0B',
             'mem_fragmentation_ratio:2.0',
             '# Stats',
             'total_commands_processed:10',
@@ -628,7 +626,6 @@ describe('simple renders', () => {
             missRatio: 20,
         }))
         expect(locals.redisStats.general.uptimeHuman).toBe('1h 40m')
-        expect(locals.redisStats.memory.maxMemoryHuman).toBe('30 MB')
         expect(locals.redisStats.memory.availableMb).toBe(35)
         expect(locals.redisStats.memory.availableHuman).toBe('35 MB')
         expect(locals.memory.thresholdMb).toBe(256)

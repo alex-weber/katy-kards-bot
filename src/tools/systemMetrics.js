@@ -267,8 +267,6 @@ function buildCacheStats(info) {
 }
 
 function buildRedisMemoryStats(info, availableMb = defaultRedisMemoryAvailableMb) {
-    const maxMemory = Number(info.maxmemory) || 0
-
     return {
         availableMb,
         availableHuman: formatMbValue(availableMb),
@@ -277,7 +275,6 @@ function buildRedisMemoryStats(info, availableMb = defaultRedisMemoryAvailableMb
         usedMemoryRss: Number(info.used_memory_rss) || 0,
         usedMemoryRssHuman: formatMb(info.used_memory_rss),
         usedMemoryPeakHuman: formatMb(info.used_memory_peak),
-        maxMemoryHuman: maxMemory ? formatMb(maxMemory) : '0 MB',
         memFragmentationRatio: Number(info.mem_fragmentation_ratio) || 0,
     }
 }
