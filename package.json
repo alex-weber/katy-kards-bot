@@ -1,6 +1,6 @@
 {
   "name": "katyusha-kards-bot",
-  "version": "4.8.1",
+  "version": "4.8.2",
   "description": "cards search and more",
   "main": "src/index.js",
   "scripts": {
