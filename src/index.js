@@ -79,7 +79,20 @@ app.use(session({
         maxAge: cookieMaxAge,
     }
 }))
-app.use(lusca.csrf())
+// lusca.csrf() writes a CSRF secret into req.session on every request, which
+// makes the session "non-empty" and defeats saveUninitialized:false — causing a
+// new Redis session key for every anonymous visitor (bots, UptimeRobot, etc.).
+// Only engage CSRF when a session already belongs to a logged-in user, or on the
+// login entrypoints where an anonymous user legitimately needs a token.
+const csrf = lusca.csrf()
+app.use((req, res, next) => {
+    const needsCsrf =
+        (req.session && req.session.user) ||
+        req.path === '/auth' ||
+        req.path === '/login'
+    if (needsCsrf) return csrf(req, res, next)
+    next()
+})
 
 app.use((req, res, next) => {
     res.locals.currentPath = req.path || '/'
