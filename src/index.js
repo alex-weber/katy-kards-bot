@@ -23,6 +23,7 @@ const {
     requireManager,
     requireGod,
     renderAuth,
+    startDiscordAuth,
     renderDashboard,
     renderMessages,
     renderUsers,
@@ -85,11 +86,14 @@ app.use(session({
 // Only engage CSRF when a session already belongs to a logged-in user, or on the
 // login entrypoints where an anonymous user legitimately needs a token.
 const csrf = lusca.csrf()
+const csrfPaths = new Set(['/auth', '/login'])
 app.use((req, res, next) => {
-    const needsCsrf =
-        (req.session && req.session.user) ||
-        req.path === '/auth' ||
-        req.path === '/login'
+    // Normalize a trailing slash so e.g. the Discord redirect_uri "/auth/" still
+    // matches "/auth" (Express's non-strict routing matches both for the route).
+    const path = req.path.length > 1 && req.path.endsWith('/')
+        ? req.path.slice(0, -1)
+        : req.path
+    const needsCsrf = (req.session && req.session.user) || csrfPaths.has(path)
     if (needsCsrf) return csrf(req, res, next)
     next()
 })
@@ -107,6 +111,8 @@ app.listen(port, () => console.log(`Katyusha-Bot is listening at :${port}`))
 app.get('/', webRateLimiter, isAuthenticated, renderDashboard)
 app.get('/', webRateLimiter, renderLanding)
 app.get('/auth', webRateLimiter, renderAuth)
+// Seeds the session/CSRF cookie first-party, then redirects to Discord OAuth.
+app.get('/login', webRateLimiter, startDiscordAuth)
 app.post('/login', webRateLimiter, handleLogin)
 app.post('/logout', webRateLimiter, handleLogout)
 app.get('/commands', webRateLimiter, isAuthenticated, requireManager, renderCommands)

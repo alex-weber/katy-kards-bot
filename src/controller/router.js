@@ -109,8 +109,17 @@ function renderLanding(req, res) {
     renderPage(req, res, {
         title: 'Katyusha Kards Bot',
         user: null,
-        loginLink: process.env.DISCORD_AUTH_URL
+        loginLink: '/login'
     })
+}
+
+// Starts the Discord OAuth flow. The csrf middleware in front of this route
+// seeds the session + CSRF cookie first-party (before we leave for Discord), so
+// the cookie reliably survives the cross-site redirect back to /auth and the
+// subsequent POST /login. Without this first-party seed, a cookie set on the
+// post-redirect /auth response is treated as third-party and gets dropped.
+function startDiscordAuth(req, res) {
+    res.redirect(process.env.DISCORD_AUTH_URL)
 }
 
 function renderAuth(req, res) {
@@ -624,6 +633,7 @@ module.exports = {
     requireManager,
     requireGod,
     renderAuth,
+    startDiscordAuth,
     renderDashboard,
     renderMessages,
     renderUsers,
