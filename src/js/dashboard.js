@@ -147,12 +147,38 @@ function getRankClass(index) {
     return ''
 }
 
+function setCounterText(id, value) {
+    const el = document.getElementById(id)
+    if (el) el.textContent = formatCount(value)
+}
+
+// Today + last-30-days figures from a daily-period stats series (30 daily
+// buckets): "today" is the most recent bucket, "last 30 days" is the full sum.
+function dailySeriesCounts(apiData) {
+    const buckets = (apiData && apiData.data) || []
+    const last30d = buckets.reduce((sum, item) => sum + item.count, 0)
+    const today = buckets.length ? buckets[buckets.length - 1].count : 0
+    return { today, last30d }
+}
+
+// Real screenshots captured: live Redis counters (today + all-time total).
 function renderScreenshotCounters(apiData) {
-    const todayEl = document.getElementById('screenshotsToday')
-    const totalEl = document.getElementById('screenshotsTotal')
     const counters = (apiData && apiData.data) || {}
-    if (todayEl) todayEl.textContent = formatCount(counters.daily)
-    if (totalEl) totalEl.textContent = formatCount(counters.total)
+    setCounterText('screenshotsToday', counters.daily)
+    setCounterText('screenshotsTotal', counters.total)
+}
+
+function renderMessageCounters(apiData) {
+    const { today, last30d } = dailySeriesCounts(apiData)
+    setCounterText('messagesDaily', today)
+    setCounterText('messages30d', last30d)
+}
+
+// Logged screenshot commands (%%% messages), distinct from captures above.
+function renderScreenshotCommandCounters(apiData) {
+    const { today, last30d } = dailySeriesCounts(apiData)
+    setCounterText('screenshotCmdDaily', today)
+    setCounterText('screenshotCmd30d', last30d)
 }
 
 function renderTopUsers(apiData) {
@@ -192,18 +218,26 @@ async function getDashboardData({ period } = {}) {
 
     const qs = params.toString() ? '?' + params.toString() : ''
 
+    // The mini-counters always read the daily series (today / last 30 days),
+    // independent of the chart's selected period.
+    const dailyQs = '?period=daily'
+
     const [
         responseMessages,
         responseTdMessages,
         responseTopMessages,
         responseTopUsers,
         responseScreenshotCounters,
+        responseMessagesDaily,
+        responseTdMessagesDaily,
     ] = await Promise.all([
         fetch('/api/messages' + qs),
         fetch('/api/screenshot-messages' + qs),
         fetch('/api/top-messages' + qs),
         fetch('/api/top-users' + qs),
         fetch('/api/screenshot-counters'),
+        fetch('/api/messages' + dailyQs),
+        fetch('/api/screenshot-messages' + dailyQs),
     ])
 
     const [
@@ -212,12 +246,16 @@ async function getDashboardData({ period } = {}) {
         dataTopMessages,
         dataTopUsers,
         dataScreenshotCounters,
+        dataMessagesDaily,
+        dataTdMessagesDaily,
     ] = await Promise.all([
         responseMessages.json(),
         responseTdMessages.json(),
         responseTopMessages.json(),
         responseTopUsers.json(),
         responseScreenshotCounters.json(),
+        responseMessagesDaily.json(),
+        responseTdMessagesDaily.json(),
     ])
 
     return {
@@ -226,6 +264,8 @@ async function getDashboardData({ period } = {}) {
         dataTopMessages,
         dataTopUsers,
         dataScreenshotCounters,
+        dataMessagesDaily,
+        dataTdMessagesDaily,
     }
 }
 
@@ -244,4 +284,6 @@ getDashboardData({
     renderTopMessages(data.dataTopMessages)
     renderTopUsers(data.dataTopUsers)
     renderScreenshotCounters(data.dataScreenshotCounters)
+    renderMessageCounters(data.dataMessagesDaily)
+    renderScreenshotCommandCounters(data.dataTdMessagesDaily)
 })

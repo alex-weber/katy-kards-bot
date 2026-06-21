@@ -688,14 +688,92 @@
     margin-top: 0.25rem;
 }
 
-.screenshot-stats {
+.mini-stats {
     display: grid;
     gap: 1.25rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.screenshot-stat {
+.mini-stat-card {
+    background: linear-gradient(180deg, #20252b 0%, #171a1f 100%);
+    border: 1px solid #343a40;
     border-top: 3px solid #3F6EFD;
+    border-radius: 8px;
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.mini-stat-card-commands {
+    border-top-color: #20c997;
+}
+
+.mini-stat-card-screenshots {
+    border-top-color: #ffc107;
+}
+
+.mini-stat-header {
+    align-items: center;
+    border-bottom: 1px solid #343a40;
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+}
+
+.mini-stat-icon {
+    align-items: center;
+    background: #111418;
+    border: 1px solid #343a40;
+    border-radius: 8px;
+    color: #3F6EFD;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 2.25rem;
+    justify-content: center;
+    width: 2.25rem;
+}
+
+.mini-stat-card-commands .mini-stat-icon {
+    color: #20c997;
+}
+
+.mini-stat-card-screenshots .mini-stat-icon {
+    color: #ffc107;
+}
+
+.mini-stat-title {
+    color: #f8f9fa;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.mini-stat-row {
+    display: flex;
+    gap: 1.75rem;
+    padding: 1rem 1.1rem;
+}
+
+.mini-stat-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.mini-stat-label {
+    color: #6c757d;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.mini-stat-value {
+    color: #f8f9fa;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-top: 0.1rem;
 }
 
 .profile-panel {
@@ -1240,6 +1318,10 @@ div[style*="overflow: auto;"] {
         grid-template-columns: 1fr;
         gap: 1rem;
         margin-top: 2rem;
+    }
+
+    .mini-stats {
+        grid-template-columns: 1fr;
     }
 
     .leaderboard-header {
