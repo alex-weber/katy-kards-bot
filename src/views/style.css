@@ -209,11 +209,38 @@
 .content-panel,
 .filter-panel,
 .profile-panel,
-.stat-card {
+.stat-card,
+.leaderboard-panel,
+.mini-stat-card {
     background: linear-gradient(180deg, #20252b 0%, #171a1f 100%);
     border: 1px solid #343a40;
     border-radius: 8px;
     box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+}
+
+/* Accent: colored top border + matching header icon, shared by every panel. */
+.panel-accent-blue {
+    border-top: 3px solid #3F6EFD;
+}
+
+.panel-accent-teal {
+    border-top: 3px solid #20c997;
+}
+
+.panel-accent-amber {
+    border-top: 3px solid #ffc107;
+}
+
+.panel-accent-blue .panel-icon {
+    color: #3F6EFD;
+}
+
+.panel-accent-teal .panel-icon {
+    color: #20c997;
+}
+
+.panel-accent-amber .panel-icon {
+    color: #ffc107;
 }
 
 .content-panel,
@@ -307,16 +334,21 @@
     max-height: 28rem;
 }
 
-.data-table {
+.data-table,
+.leaderboard-table {
     border-collapse: separate;
     border-spacing: 0;
     color: #f8f9fa;
     margin: 0;
-    min-width: 720px;
     width: 100%;
 }
 
-.data-table thead th {
+.data-table {
+    min-width: 720px;
+}
+
+.data-table thead th,
+.leaderboard-table thead th {
     background: #171a1f;
     border-bottom: 1px solid #343a40;
     color: #adb5bd;
@@ -357,7 +389,8 @@
 }
 
 .data-table tbody td,
-.data-table tbody th {
+.data-table tbody th,
+.leaderboard-table tbody td {
     border-bottom: 1px solid rgba(52, 58, 64, 0.7);
     padding: 0.85rem 1rem;
     vertical-align: middle;
@@ -367,12 +400,14 @@
     transition: background 0.2s ease;
 }
 
-.data-table tbody tr:hover {
+.data-table tbody tr:hover,
+.leaderboard-row:hover {
     background: rgba(255, 255, 255, 0.035);
 }
 
 .data-table tbody td:hover,
-.data-table tbody th:hover {
+.data-table tbody th:hover,
+.leaderboard-table tbody td:hover {
     color: inherit !important;
 }
 
@@ -694,61 +729,6 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.mini-stat-card {
-    background: linear-gradient(180deg, #20252b 0%, #171a1f 100%);
-    border: 1px solid #343a40;
-    border-top: 3px solid #3F6EFD;
-    border-radius: 8px;
-    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
-    min-width: 0;
-    overflow: hidden;
-}
-
-.mini-stat-card-commands {
-    border-top-color: #ffc107;
-}
-
-.mini-stat-card-screenshots {
-    border-top-color: #20c997;
-}
-
-.mini-stat-header {
-    align-items: center;
-    border-bottom: 1px solid #343a40;
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.85rem 1.1rem;
-}
-
-.mini-stat-icon {
-    align-items: center;
-    background: #111418;
-    border: 1px solid #343a40;
-    border-radius: 8px;
-    color: #3F6EFD;
-    display: inline-flex;
-    flex: 0 0 auto;
-    height: 2.25rem;
-    justify-content: center;
-    width: 2.25rem;
-}
-
-.mini-stat-card-commands .mini-stat-icon {
-    color: #20c997;
-}
-
-.mini-stat-card-screenshots .mini-stat-icon {
-    color: #ffc107;
-}
-
-.mini-stat-title {
-    color: #f8f9fa;
-    font-size: 1.05rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin: 0;
-}
-
 .mini-stat-row {
     display: flex;
     gap: 1.75rem;
@@ -847,70 +827,10 @@
     margin-top: 3rem;
 }
 
-.leaderboard-panel {
-    background: linear-gradient(180deg, #20252b 0%, #171a1f 100%);
-    border: 1px solid #343a40;
-    border-radius: 8px;
-    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2);
+.leaderboard-panel,
+.mini-stat-card {
     min-width: 0;
     overflow: hidden;
-}
-
-.leaderboard-panel-commands {
-    border-top: 3px solid #20c997;
-}
-
-.leaderboard-panel-users {
-    border-top: 3px solid #ffc107;
-}
-
-.leaderboard-header {
-    align-items: center;
-    border-bottom: 1px solid #343a40;
-    display: flex;
-    gap: 1rem;
-    justify-content: space-between;
-    padding: 1rem;
-}
-
-.leaderboard-title-group {
-    align-items: center;
-    display: flex;
-    gap: 0.75rem;
-    min-width: 0;
-}
-
-.leaderboard-icon {
-    align-items: center;
-    background: #111418;
-    border: 1px solid #343a40;
-    border-radius: 8px;
-    color: #20c997;
-    display: inline-flex;
-    flex: 0 0 auto;
-    height: 2.25rem;
-    justify-content: center;
-    width: 2.25rem;
-}
-
-.leaderboard-panel-users .leaderboard-icon {
-    color: #ffc107;
-}
-
-.leaderboard-title {
-    color: #f8f9fa;
-    font-size: 1.05rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin: 0;
-}
-
-.leaderboard-kicker {
-    color: #adb5bd;
-    flex: 0 0 auto;
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
 }
 
 .leaderboard-table-wrap {
@@ -919,43 +839,8 @@
     scroll-behavior: smooth;
 }
 
-.leaderboard-table {
-    border-collapse: separate;
-    border-spacing: 0;
-    color: #f8f9fa;
-    margin: 0;
-    width: 100%;
-}
-
-.leaderboard-table thead th {
-    background: #171a1f;
-    border-bottom: 1px solid #343a40;
-    color: #adb5bd;
-    font-size: 0.76rem;
-    font-weight: 700;
-    padding: 0.85rem 1rem;
-    position: sticky;
-    text-transform: uppercase;
-    top: 0;
-    z-index: 2;
-}
-
-.leaderboard-table tbody td {
-    border-bottom: 1px solid rgba(52, 58, 64, 0.7);
-    padding: 0.85rem 1rem;
-    vertical-align: middle;
-}
-
 .leaderboard-row {
     transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.leaderboard-row:hover {
-    background: rgba(255, 255, 255, 0.035);
-}
-
-.leaderboard-table tbody td:hover {
-    color: inherit !important;
 }
 
 .leaderboard-rank-col,
@@ -1281,7 +1166,9 @@ div[style*="overflow: auto;"] {
 
     .data-table thead th,
     .data-table tbody td,
-    .data-table tbody th {
+    .data-table tbody th,
+    .leaderboard-table thead th,
+    .leaderboard-table tbody td {
         padding: 0.75rem 0.65rem;
     }
 
@@ -1324,19 +1211,8 @@ div[style*="overflow: auto;"] {
         grid-template-columns: 1fr;
     }
 
-    .leaderboard-header {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
     .leaderboard-table-wrap {
         height: 440px;
-    }
-
-    .leaderboard-table thead th,
-    .leaderboard-table tbody td {
-        padding: 0.75rem 0.65rem;
     }
 
     .leaderboard-rank-col,
@@ -1355,11 +1231,11 @@ div[style*="overflow: auto;"] {
         grid-template-columns: 1fr;
     }
 
-    .leaderboard-title {
+    .leaderboard-panel .panel-title {
         font-size: 0.98rem;
     }
 
-    .leaderboard-kicker {
+    .leaderboard-panel .panel-kicker {
         font-size: 0.72rem;
     }
 
