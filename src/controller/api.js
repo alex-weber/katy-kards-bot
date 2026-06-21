@@ -7,6 +7,7 @@ const {
 } = require("../database/message")
 
 const {redis, cachePrefix} = require('../controller/redis')
+const {getScreenshotCounters} = require('../tools/screenshotStats')
 
 const expiration = parseInt(process.env.CACHE_API_EXPIRE) || 60*10
 // Bump when the shape of any cached API response changes, so stale payloads
@@ -31,6 +32,14 @@ async function run(method, { period } = {}) {
         success: false,
         message: `${method} ok!`,
         data: []
+    }
+
+    // Live counters: cheap atomic reads, served straight through without the
+    // json cache so the widget always reflects the current totals.
+    if (method === 'screenshot-counters') {
+        response.data = await getScreenshotCounters(redis)
+        response.success = true
+        return response
     }
 
     if (statsMethods.has(method) && period && !STATS_PERIODS.includes(period)) {

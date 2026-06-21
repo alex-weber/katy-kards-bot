@@ -5,6 +5,15 @@ block content
     // Page Title
     h3.text-center.text-primary.mt-4.mb-5 Dashboard
 
+    // Deck screenshot counters
+    div.screenshot-stats.mb-5
+      div.stat-card.screenshot-stat
+        div.stat-label Screenshots today
+        div.stat-value#screenshotsToday —
+      div.stat-card.screenshot-stat
+        div.stat-label Total screenshots
+        div.stat-value#screenshotsTotal —
+
     include includes/datepicker.pug
 
     // Chart Section for Messages

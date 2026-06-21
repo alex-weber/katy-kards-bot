@@ -232,8 +232,6 @@ async function exit(event, code)
 {
     //disconnect from DB
     await disconnect()
-    //unblock deck screenshots service if currently running
-    await redis.del('screenshot')
     console.log('exiting on', event)
     process.exit(code)
 }

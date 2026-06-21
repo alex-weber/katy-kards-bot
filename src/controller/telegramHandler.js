@@ -207,19 +207,6 @@ async function handleDeck(ctx)
         return true
     }
 
-    //tell the user to wait if a screenshot capture is already running
-    const screenshotKey = cacheKeyPrefix + 'screenshot'
-    if (await redis.exists(screenshotKey)) {
-        react(tgCtx, reactions.wait, user)
-        await tgCtx.reply(translate(language, 'screenshotRunning'))
-
-        return true
-    }
-
-    //lock the screenshot process
-    await redis.set(screenshotKey, 'running')
-    redis.expire(screenshotKey, 120) // auto-expire after 120 seconds
-
     let deckBuilderLang = ''
     if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
     const deckBuilderURL =
@@ -249,9 +236,6 @@ async function handleDeck(ctx)
             await tgCtx.reply(translate(language, 'error'))
         }
     } finally {
-        //cleanup redis lock
-        redis.del(screenshotKey)
-
         //delete the "screenshot running" message from the chat
         try {
             await tgCtx.deleteMessage(runningMsgId)

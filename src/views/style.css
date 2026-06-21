@@ -688,6 +688,16 @@
     margin-top: 0.25rem;
 }
 
+.screenshot-stats {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.screenshot-stat {
+    border-top: 3px solid #3F6EFD;
+}
+
 .profile-panel {
     display: grid;
     gap: 1.25rem;

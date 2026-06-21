@@ -1,5 +1,130 @@
+const fs = require('fs')
 const puppeteer = require('puppeteer-core')
+const RequestQueue = require('./queue')
+const {redis} = require('../controller/redis')
+const {incrementScreenshotCounters} = require('./screenshotStats')
+const {getDeckFiles} = require('./fileManager')
+
 const browserLessKeys = getBrowserlessKeys()
+//how many requests a single Browserless key may handle at the same time
+const perKeyConcurrency = parseInt(process.env.SCREENSHOT_CONCURRENCY) || 2
+
+/**
+ * Build the screenshot dispatcher. Every side-effecting collaborator is
+ * injected, so the dedup + copy orchestration can be unit-tested without a
+ * real browser, Redis, or filesystem.
+ *
+ * @param keys              Browserless API keys (capacity = keys * concurrency)
+ * @param concurrency       requests a single key may handle at once
+ * @param capture           (url, key) => Promise<string|false>, the browser job
+ * @param copyFiles         (filename) => string|false, clones a capture's files
+ * @param incrementCounters (redis) => Promise, bumps the screenshot counters
+ * @param redis             redis client handed to incrementCounters
+ * @returns {{takeScreenshot: function(string): Promise<string|false>}}
+ */
+function createScreenshotTaker({
+    keys,
+    concurrency = 2,
+    capture,
+    copyFiles,
+    incrementCounters,
+    redis,
+}) {
+    //in-flight request count per key, so no key is pushed past its limit
+    const keyLoad = new Map(keys.map(key => [key, 0]))
+    //total capacity across all keys; the queue holds the overflow until a slot frees
+    const queue = new RequestQueue(keys.length * concurrency)
+    //captures currently queued or running, keyed by url, so a duplicate request
+    //for the same deck reuses the running job instead of launching another browser
+    const inFlight = new Map()
+
+    /**
+     * Queue a screenshot request. The capture runs as soon as one of the
+     * Browserless keys has a free slot; until then it waits in the queue.
+     *
+     * If the very same deck is already queued or being captured, the running
+     * job is reused instead of starting a second browser. The coalesced caller
+     * gets a private copy of the files so it can send and delete them
+     * independently of the originator.
+     *
+     * @param url
+     * @returns {Promise<string|false>}
+     */
+    function takeScreenshot(url) {
+        if (!keys.length) return Promise.resolve(false)
+
+        const running = inFlight.get(url)
+        if (running) {
+            console.log('reusing in-flight screenshot for', url)
+            return running.then(filename => filename ? copyFiles(filename) : false)
+        }
+
+        const job = enqueueCapture(url)
+        inFlight.set(url, job)
+        //stop coalescing onto this job once it settles (success or failure)
+        job.finally(() => inFlight.delete(url))
+
+        return job
+    }
+
+    /**
+     * Queue the actual capture against the least-loaded Browserless key.
+     *
+     * @param url
+     * @returns {Promise<string|false>}
+     */
+    function enqueueCapture(url) {
+        return new Promise(resolve => {
+            queue.enqueue(async () => {
+                const key = leastLoadedKey()
+                keyLoad.set(key, keyLoad.get(key) + 1)
+                try {
+                    const filename = await capture(url, key)
+                    if (filename) {
+                        //counter bookkeeping must never sink a good screenshot
+                        incrementCounters(redis).catch(error =>
+                            console.error('Failed to update screenshot counters:', error))
+                    }
+                    resolve(filename)
+                } catch (error) {
+                    console.error('Error:', error)
+                    resolve(false)
+                } finally {
+                    keyLoad.set(key, keyLoad.get(key) - 1)
+                }
+            })
+        })
+    }
+
+    /**
+     * Pick the Browserless key currently handling the fewest requests. The
+     * queue caps total in-flight work at keys * concurrency, so the
+     * least-loaded key is always below the per-key limit.
+     *
+     * @returns {string}
+     */
+    function leastLoadedKey() {
+        let chosen = keys[0]
+        for (const key of keys) {
+            if (keyLoad.get(key) < keyLoad.get(chosen)) chosen = key
+        }
+
+        return chosen
+    }
+
+    return {takeScreenshot}
+}
+
+//production wiring: real browser capture, file copy, counters and redis client
+const {takeScreenshot} = createScreenshotTaker({
+    keys: browserLessKeys,
+    concurrency: perKeyConcurrency,
+    capture: captureScreenshot,
+    copyFiles: copyDeckFiles,
+    incrementCounters: incrementScreenshotCounters,
+    redis,
+})
+
 /**
  *
  * @param page
@@ -48,24 +173,37 @@ async function saveScreenshot(page, selector, filename) {
 }
 
 /**
+ * Duplicate a finished capture's files under a fresh name, so a coalesced
+ * request owns its own copy and won't race the originator's cleanup.
+ *
+ * @param filename
+ * @returns {string|false}
+ */
+function copyDeckFiles(filename) {
+    try {
+        const copyName = `deck_${Date.now()}_${Math.random().toString(36).substring(7)}`
+        const sources = getDeckFiles(filename)
+        const targets = getDeckFiles(copyName)
+        for (let i = 0; i < sources.length; i++) {
+            fs.copyFileSync(sources[i], targets[i])
+        }
+
+        return copyName
+    } catch (error) {
+        console.error('Failed to copy deck files for coalesced request:', error)
+
+        return false
+    }
+}
+
+/**
+ * Capture the deck screenshots using a specific Browserless key.
  *
  * @param url
- * @returns {Promise<string>|false}
+ * @param blKey
+ * @returns {Promise<string|false>}
  */
-async function takeScreenshot(url) {
-
-
-    if (!browserLessKeys.length) return false
-
-    let blKey;
-    if (browserLessKeys.length === 1) {
-        blKey = browserLessKeys[0]
-    } else {
-        //get a random api key from the list
-        const index = Math.floor(Math.random() * browserLessKeys.length)
-        blKey = browserLessKeys[index]
-        console.log('using Browserless key ' + index)
-    }
+async function captureScreenshot(url, blKey) {
 
     const options = { waitUntil: 'networkidle2' }
     const selector = '.Sidebar_side__scroll__xZp3s'
@@ -141,4 +279,4 @@ async function connectBrowser(wsEndpoint, timeout = 5000) {
     ])
 }
 
-module.exports = {takeScreenshot}
+module.exports = {takeScreenshot, createScreenshotTaker}

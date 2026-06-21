@@ -16,8 +16,6 @@ const {checkRoleDeckScreenshotLimit} = require("../../tools/roles")
 //cache lifetimes (seconds)
 const deckExp = process.env.REDIS_EXP_DECK || 60 * 60 * 24 * 30 // 30 days
 const searchExp = process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90 //90 days
-//delete the screenshot lock key after this many seconds anyway
-const screenshotTimeout = parseInt(process.env.SCREENSHOT_TIMEOUT) || 30
 
 /**
  * Render a deck link / deck code as card images.
@@ -27,7 +25,7 @@ const screenshotTimeout = parseInt(process.env.SCREENSHOT_TIMEOUT) || 30
  */
 async function handleDeck(ctx)
 {
-    const {message, client, redis, prefix, language, user} = ctx
+    const {message, client, redis, prefix, language} = ctx
     if (!bot.isDeckLink(ctx.command) && !bot.isDeckCode(ctx.command))
         return false
 
@@ -51,19 +49,7 @@ async function handleDeck(ctx)
         return true
     }
 
-    //tell the user to wait if a screenshot capture is already running
-    const screenshotKey = cacheKeyPrefix + 'screenshot'
-    if (await redis.exists(screenshotKey)) {
-        const sent = await message.channel.send(
-            translate(language, 'screenshotRunning'))
-        react(sent, '☕', user)
-        react(sent, '🍩', user)
-
-        return true
-    }
-
-    await redis.set(screenshotKey, 'running')
-    redis.expire(screenshotKey, screenshotTimeout)
+    //not cached: queue the capture (the queue throttles concurrent renders)
     const sent = await createDeckImages(prefix, message, command, language)
     await cacheSentMessage(redis, deckKey, sent, deckExp)
 

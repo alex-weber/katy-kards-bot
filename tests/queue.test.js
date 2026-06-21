@@ -33,4 +33,40 @@ describe('RequestQueue', () => {
         await new Promise(resolve => q.enqueue(async () => resolve()))
         expect(q.processing).toBe(false)
     })
+
+    test('runs up to `concurrency` tasks at the same time', async () => {
+        const q = new RequestQueue(2)
+        let running = 0
+        let peak = 0
+        const gates = []
+        const finished = []
+
+        for (let i = 0; i < 3; i++) {
+            finished.push(new Promise(done => {
+                q.enqueue(async () => {
+                    running++
+                    peak = Math.max(peak, running)
+                    await new Promise(open => gates.push(open))
+                    running--
+                    done()
+                })
+            }))
+        }
+
+        // only 2 of the 3 tasks may be in flight at once
+        while (gates.length < 2) await Promise.resolve()
+        expect(q.active).toBe(2)
+        expect(gates.length).toBe(2)
+
+        // drain: opening a gate frees a slot, which admits the next task,
+        // which registers its own gate — so keep opening until all 3 finish
+        for (let i = 0; i < 3; i++) {
+            while (gates.length) gates.shift()()
+            await Promise.resolve()
+            await Promise.resolve()
+        }
+        await Promise.all(finished)
+
+        expect(peak).toBe(2)
+    })
 })

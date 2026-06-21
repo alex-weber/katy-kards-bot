@@ -147,6 +147,14 @@ function getRankClass(index) {
     return ''
 }
 
+function renderScreenshotCounters(apiData) {
+    const todayEl = document.getElementById('screenshotsToday')
+    const totalEl = document.getElementById('screenshotsTotal')
+    const counters = (apiData && apiData.data) || {}
+    if (todayEl) todayEl.textContent = formatCount(counters.daily)
+    if (totalEl) totalEl.textContent = formatCount(counters.total)
+}
+
 function renderTopUsers(apiData) {
     const topUsersElement = document.getElementById('topUsers')
     const maxCount = Math.max(...apiData.data.map(item => item.count), 1)
@@ -189,11 +197,13 @@ async function getDashboardData({ period } = {}) {
         responseTdMessages,
         responseTopMessages,
         responseTopUsers,
+        responseScreenshotCounters,
     ] = await Promise.all([
         fetch('/api/messages' + qs),
         fetch('/api/screenshot-messages' + qs),
         fetch('/api/top-messages' + qs),
         fetch('/api/top-users' + qs),
+        fetch('/api/screenshot-counters'),
     ])
 
     const [
@@ -201,11 +211,13 @@ async function getDashboardData({ period } = {}) {
         dataTdMessages,
         dataTopMessages,
         dataTopUsers,
+        dataScreenshotCounters,
     ] = await Promise.all([
         responseMessages.json(),
         responseTdMessages.json(),
         responseTopMessages.json(),
         responseTopUsers.json(),
+        responseScreenshotCounters.json(),
     ])
 
     return {
@@ -213,6 +225,7 @@ async function getDashboardData({ period } = {}) {
         dataTdMessages,
         dataTopMessages,
         dataTopUsers,
+        dataScreenshotCounters,
     }
 }
 
@@ -230,4 +243,5 @@ getDashboardData({
     )
     renderTopMessages(data.dataTopMessages)
     renderTopUsers(data.dataTopUsers)
+    renderScreenshotCounters(data.dataScreenshotCounters)
 })
