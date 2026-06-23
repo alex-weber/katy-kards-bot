@@ -197,65 +197,6 @@ function drawActivity(data) {
     })
 }
 
-function cellSortValue(row, columnIndex, type) {
-    const cell = row.cells[columnIndex]
-    if (!cell) return type === 'number' ? 0 : ''
-    const value = cell.dataset.sortValue ?? cell.textContent.trim()
-    if (type === 'number') return Number.parseFloat(value) || 0
-    return value.toLocaleLowerCase()
-}
-
-function initSortableRankingTable() {
-    const table = document.getElementById('tdRankingTable')
-    if (!table || !table.tBodies.length) return
-
-    const tbody = table.tBodies[0]
-    const headers = Array.from(table.tHead?.rows[0]?.cells || [])
-    const defaultDirections = headers.map(header => header.dataset.sortType === 'text' ? 'asc' : 'desc')
-
-    headers.forEach((header, columnIndex) => {
-        header.classList.add('sortable-header')
-        header.tabIndex = 0
-        header.setAttribute('role', 'button')
-        header.setAttribute('aria-sort', 'none')
-
-        const sort = () => {
-            const type = header.dataset.sortType || 'text'
-            const currentDirection = header.dataset.sortDirection
-            const direction = currentDirection
-                ? (currentDirection === 'asc' ? 'desc' : 'asc')
-                : defaultDirections[columnIndex]
-            const rows = Array.from(tbody.rows)
-
-            rows.sort((a, b) => {
-                const aValue = cellSortValue(a, columnIndex, type)
-                const bValue = cellSortValue(b, columnIndex, type)
-                const result = type === 'number'
-                    ? aValue - bValue
-                    : aValue.localeCompare(bValue)
-                return direction === 'asc' ? result : -result
-            })
-
-            rows.forEach(row => tbody.appendChild(row))
-
-            headers.forEach(item => {
-                item.dataset.sortDirection = ''
-                item.setAttribute('aria-sort', 'none')
-            })
-            header.dataset.sortDirection = direction
-            header.setAttribute('aria-sort', direction === 'asc' ? 'ascending' : 'descending')
-        }
-
-        header.addEventListener('click', sort)
-        header.addEventListener('keydown', event => {
-            if (event.key !== 'Enter' && event.key !== ' ') return
-            event.preventDefault()
-            sort()
-        })
-    })
-}
-
 drawTopScores(topDeckChartData.topScores || [])
 drawOutcomes(topDeckChartData.outcomes || [])
 drawActivity(topDeckChartData.activity || [])
-initSortableRankingTable()

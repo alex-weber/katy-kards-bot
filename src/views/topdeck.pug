@@ -64,7 +64,7 @@ block content
             path(d="M3 18h.01")
         h3.panel-title Player Ranking
     .data-table-wrap
-      table.data-table.align-middle#tdRankingTable
+      table.data-table.align-middle#tdRankingTable(data-sortable)
         thead
           tr
             th.rank-col(scope='col' data-sort-type='number') #
@@ -101,3 +101,4 @@ block content
     const topDeckChartData = !{JSON.stringify(chartData || {})}
   script(src="/static/vendor/chart.js")
   script(src="/static/topdeck.js")
+  script(src="/static/sortable-table.js")

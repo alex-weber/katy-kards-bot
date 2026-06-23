@@ -16,26 +16,28 @@ block content
             path(d="M9 9h6")
             path(d="M9 15h6")
         h3.panel-title Guild Directory
-    table.data-table
+    table.data-table(data-sortable)
       thead
         tr
-          th.rank-col(scope='col') #
+          th.rank-col(scope='col' data-sort-type='number') #
           th(scope='col') Icon
-          th(scope='col') Name
-          th(scope='col') Members
-          th(scope='col') Created
-          th(scope='col') Bot Joined
+          th(scope='col' data-sort-type='text') Name
+          th(scope='col' data-sort-type='number') Members
+          th(scope='col' data-sort-type='date') Created
+          th(scope='col' data-sort-type='date') Bot Joined
       tbody
         each server, index in servers
           tr
-            th(scope='row')
+            th.rank-col(scope='row' data-sort-value=index + 1)
               span.rank-badge= index+1
-            each attr in server
-              if attr.startsWith('http')
-                td
-                  img.server-icon(src=attr, alt="No icon")
-              else
-                td= attr
+            td
+              img.server-icon(src=server[0], alt="No icon")
+            td(data-sort-value=server[1])= server[1]
+            td(data-sort-value=server[2])= server[2]
+            td(data-sort-value=server[3])= server[3]
+            td(data-sort-value=server[4])= server[4]
   p &nbsp;
   p &nbsp;
+
+  script(src="/static/sortable-table.js")
 
