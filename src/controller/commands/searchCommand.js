@@ -187,7 +187,7 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
  */
 async function handleSearch(ctx)
 {
-    const {message, redis, language, command, limit, user} = ctx
+    const {message, language, command, limit, user} = ctx
     //check if in the cache
     const cacheKey = cacheKeyPrefix + getGuildPart(message) +
         language + ':' + command + limit

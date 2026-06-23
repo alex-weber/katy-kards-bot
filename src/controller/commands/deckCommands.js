@@ -68,10 +68,11 @@ function collectAltFiles(syns)
     {
         if (syn.value.startsWith('{')) {
             const filesObject = JSON.parse(syn.value)
-            return filesObject.files[0]
+            // some alt synonyms are text-only (content, no files) -> skip them
+            return filesObject.files && filesObject.files[0]
         }
         return syn.value
-    })
+    }).filter(Boolean)
 }
 
 /**
