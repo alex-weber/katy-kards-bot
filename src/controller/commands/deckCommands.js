@@ -37,10 +37,10 @@ async function handleDeck(ctx)
     if (await redis.exists(deckKey)) {
         const response = await redis.json.get(deckKey, '$')
         console.log('serving deck from cache', deckKey)
-        await forwardCachedMessage(
-            client, response, message.channel, message.channelId)
-
-        return true
+        if (await forwardCachedMessage(
+            client, response, message.channel, message.channelId))
+            return true
+        //forward failed (e.g. no Read Message History) -> rebuild below
     }
 
     const deckLimit = await checkRoleDeckScreenshotLimit(ctx)
@@ -94,24 +94,25 @@ async function handleAlt(ctx)
     if (await redis.exists(cacheKey)) {
         const response = await redis.json.get(cacheKey, '$')
         console.log('serving alt from cache', cacheKey)
-        await forwardCachedMessage(
-            client, response, message.channel, message.channelId)
+        if (await forwardCachedMessage(
+            client, response, message.channel, message.channelId)) {
+            // forward() drops the page's "Next" button, so re-attach one by
+            // following the cached "next-message" link (alt -> alt10 -> ...).
+            // It lives on its own message (a forward can't carry components);
+            // the zero-width space keeps it non-empty so the click handler can
+            // strip the button without emptying the message.
+            if (response['next-message'] && isBotCommandChannel(message)) {
+                const offset = parseInt(ctx.command.replace('alt', '')) || 0
+                await message.channel.send({
+                    content: '​',
+                    components: getButtonRow(translate(language, 'next'),
+                        'next_button_alt' + (offset + limit)),
+                })
+            }
 
-        // forward() drops the page's "Next" button, so re-attach one by
-        // following the cached "next-message" link (alt -> alt10 -> ...).
-        // It lives on its own message (a forward can't carry components);
-        // the zero-width space keeps it non-empty so the click handler can
-        // strip the button without emptying the message.
-        if (response['next-message'] && isBotCommandChannel(message)) {
-            const offset = parseInt(ctx.command.replace('alt', '')) || 0
-            await message.channel.send({
-                content: '​',
-                components: getButtonRow(translate(language, 'next'),
-                    'next_button_alt' + (offset + limit)),
-            })
+            return true
         }
-
-        return true
+        //forward failed (e.g. no Read Message History) -> rebuild below
     }
 
     const syns = await getAllSynonyms()

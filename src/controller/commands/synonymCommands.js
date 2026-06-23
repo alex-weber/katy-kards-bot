@@ -183,10 +183,10 @@ async function handleJsonSynonym(ctx, m)
         cacheKeyPrefix + getGuildPart(message) + 'syn:' + command
     if (await redis.exists(cacheKey) && !m.content) {
         const cached = await redis.json.get(cacheKey, '$')
-        await forwardCachedMessage(
-            client, cached, message.channel, message.channelId)
-
-        return {stop: true}
+        if (await forwardCachedMessage(
+            client, cached, message.channel, message.channelId))
+            return {stop: true}
+        //forward failed (e.g. no Read Message History) -> rebuild below
     }
 
     const answer = {}

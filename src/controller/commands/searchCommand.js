@@ -37,9 +37,11 @@ async function serveSearchCache(ctx, cacheKey)
     console.log('serving from cache: ', language, command, limit)
     const answer = await redis.json.get(cacheKey, '$')
     console.timeEnd('cache')
+    //forward failed (e.g. no Read Message History) -> let handleSearch regenerate
+    if (!await forwardCachedMessage(
+        client, answer, message.channel, message.channelId))
+        return false
     react(message, '✅', user)
-    await forwardCachedMessage(
-        client, answer, message.channel, message.channelId)
 
     return true
 }

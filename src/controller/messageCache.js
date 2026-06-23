@@ -1,3 +1,5 @@
+const {PermissionsBitField} = require('discord.js')
+
 //cache key prefix is namespaced by environment
 const cacheKeyPrefix = process.env.NODE_ENV === 'production'
     ? 'discord:prod:'
@@ -18,17 +20,47 @@ function getGuildPart(message)
 }
 
 /**
+ * Whether the bot may post a message that references another message in this
+ * channel. Forwarding references the original message, which Discord only
+ * permits with the Read Message History permission; without it the forward is
+ * rejected with error 160009. Checked live (permissionsFor is a local lookup,
+ * no API call) so a permission change takes effect immediately, and per channel
+ * so each server is handled independently. DM channels have no permission
+ * system (permissionsFor returns null) and are always allowed.
+ *
+ * @param client
+ * @param channel the channel the forward would be posted into
+ * @returns {boolean}
+ */
+function canForwardInto(client, channel)
+{
+    const permissions = channel.permissionsFor(client.user.id)
+    if (!permissions) return true //DM channel
+
+    return permissions.has(PermissionsBitField.Flags.ReadMessageHistory)
+}
+
+/**
+ * Replay a cached message by forwarding it into the target channel. Returns
+ * false (rather than throwing) when the forward cannot happen — most commonly
+ * because the bot lacks Read Message History on this server's channel — so the
+ * caller can fall back to regenerating the answer with a fresh send.
  *
  * @param client
  * @param cachedData
  * @param targetChannel
  * @param fallbackChannelId
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} true when the message was forwarded
  */
 async function forwardCachedMessage(
     client, cachedData, targetChannel, fallbackChannelId)
 {
-    if (!cachedData || !cachedData.id) return
+    if (!cachedData || !cachedData.id) return false
+    if (!canForwardInto(client, targetChannel)) {
+        console.log('no Read Message History permission, skipping forward')
+
+        return false
+    }
     try {
         let channel
         if (cachedData.guildId && cachedData.channelId) {
@@ -39,11 +71,14 @@ async function forwardCachedMessage(
                 cachedData.channelId || fallbackChannelId)
         }
         const messageToForward = await channel.messages.fetch(cachedData.id)
-        if (messageToForward) {
-            await messageToForward.forward(targetChannel)
-        }
+        if (!messageToForward) return false
+        await messageToForward.forward(targetChannel)
+
+        return true
     } catch (e) {
         console.error('Error fetching message from cache:', e)
+
+        return false
     }
 }
 
