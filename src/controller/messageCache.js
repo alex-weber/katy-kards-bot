@@ -5,6 +5,19 @@ const cacheKeyPrefix = process.env.NODE_ENV === 'production'
     ? 'discord:prod:'
     : 'discord:dev:'
 
+//Discord error codes for which a forward is expected to fail and the caller
+//simply regenerates the answer. These are benign (a permission/channel state
+//we recover from), so they are logged quietly rather than as errors.
+//The cache is per-guild, so a cached message may live in a channel the bot can
+//no longer access (deleted/permissions revoked) -> Missing Access on fetch.
+const recoverableForwardErrors = new Set([
+    10003, //Unknown Channel  (cached channel was deleted)
+    10008, //Unknown Message  (cached message was deleted)
+    50001, //Missing Access   (lost access to the source channel)
+    50013, //Missing Permissions
+    160009, //Cannot reference a message without read message history
+])
+
 /**
  *
  * @param message
@@ -76,7 +89,13 @@ async function forwardCachedMessage(
 
         return true
     } catch (e) {
-        console.error('Error fetching message from cache:', e)
+        //expected forward failures: log quietly, the caller will regenerate
+        if (recoverableForwardErrors.has(e.code)) {
+            console.log(
+                'cannot forward cached message, regenerating:', e.code, e.message)
+        } else {
+            console.error('Error fetching message from cache:', e)
+        }
 
         return false
     }
