@@ -1,6 +1,9 @@
 footer.fixed-bottom.border-top
-    div.p-3.bg-dark.bg-gradient.d-flex.justify-content-center
+    div.p-3.bg-dark.bg-gradient.d-flex.justify-content-center.align-items-center.gap-3.flex-wrap
         - const currentYear = new Date().getFullYear()
         span.text-light &copy; #{currentYear} @tortunbator
+        span.text-secondary &middot;
+        a.footer-link(href="/terms") Terms of Service
+        a.footer-link(href="/privacy") Privacy Policy
 
 

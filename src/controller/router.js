@@ -609,6 +609,27 @@ async function renderCards(req, res) {
     })
 }
 
+// Legal pages required for Discord application verification. Public and static —
+// the "Last updated" date bumps on deploy so the pages always reflect their
+// current content.
+const LEGAL_EFFECTIVE_DATE = 'July 5, 2026'
+
+function renderTerms(req, res) {
+    res.render('terms', {
+        title: 'Terms of Service',
+        user: req.session ? req.session.user : null,
+        effectiveDate: LEGAL_EFFECTIVE_DATE,
+    })
+}
+
+function renderPrivacy(req, res) {
+    res.render('privacy', {
+        title: 'Privacy Policy',
+        user: req.session ? req.session.user : null,
+        effectiveDate: LEGAL_EFFECTIVE_DATE,
+    })
+}
+
 async function handleApi(req, res) {
     const { method } = req.params
     const period = resolveStatsPeriod(req)
@@ -646,6 +667,8 @@ module.exports = {
     renderProfile,
     renderPublicProfile,
     renderCards,
+    renderTerms,
+    renderPrivacy,
     handleApi,
     handleUserUpdate,
     handleRoleRulesUpdate,

@@ -543,6 +543,24 @@ describe('simple renders', () => {
         expect(res.render.mock.calls[0][0]).toBe('cards')
     })
 
+    test('renderTerms renders the terms view with an effective date', () => {
+        const res = makeRes()
+        router.renderTerms({ session: { user: { id: '1' } } }, res)
+        const [view, locals] = res.render.mock.calls[0]
+        expect(view).toBe('terms')
+        expect(locals.title).toBe('Terms of Service')
+        expect(locals.effectiveDate).toEqual(expect.any(String))
+    })
+
+    test('renderPrivacy renders the privacy view without a session', () => {
+        const res = makeRes()
+        router.renderPrivacy({}, res)
+        const [view, locals] = res.render.mock.calls[0]
+        expect(view).toBe('privacy')
+        expect(locals.title).toBe('Privacy Policy')
+        expect(locals.user).toBeNull()
+    })
+
     test('renderServers passes the servers list', async () => {
         const res = makeRes()
         await router.renderServers({ session: { user: { id: '1' } } }, res, [{ name: 'guild' }])

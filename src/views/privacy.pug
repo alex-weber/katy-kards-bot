@@ -1,0 +1,54 @@
+extends layout
+
+block content
+    .page-hero
+        h2.page-title= title
+        p.page-subtitle Last updated: #{effectiveDate}
+
+    .content-panel.my-4
+        .legal-body
+            p This Privacy Policy explains how Katyusha ("the Bot") handles information when you use it on Discord. By using the Bot, you agree to the practices described in this policy.
+
+            h3.legal-heading 1. Information We Process
+            p The Bot uses a prefix-based command system. It reads the content of incoming messages only to determine whether a message begins with the configured prefix, to identify the requested command, and to parse any command arguments (such as a card name or search query). Messages that are not commands are ignored and are not processed further.
+            p In the course of fulfilling requests, the Bot may process:
+            ul.legal-list
+                li Command text — the content of messages that begin with the configured prefix, used to identify and execute the requested command.
+                li Discord identifiers — such as user, server, and channel identifiers required for the Bot to respond to a request and operate correctly.
+                li Server metadata — such as guild information and member counts required for Bot operation.
+
+            h3.legal-heading 2. How We Use Information
+            p Information is used solely to operate the Bot and fulfill user requests — primarily to search an external card database and return the corresponding card images and information. The Bot does not collect or archive general conversations. It processes only the command text necessary to fulfill a user's request.
+
+            h3.legal-heading 3. Data Storage and Retention
+            p Any stored data is limited to what is required for the operation of the requested command and the Bot's normal functionality. We do not sell, rent, or trade your information. Data is retained only for as long as it is needed to provide the service and is handled in accordance with this policy.
+
+            h3.legal-heading 4. Direct Messages
+            p The Bot supports Direct Messages. Users must explicitly initiate communication by sending a bot command. The Bot does not send unsolicited direct messages and only responds to user-initiated interactions.
+
+            h3.legal-heading 5. Gateway Intents
+            p The Bot uses the following Discord gateway intents:
+            ul.legal-list
+                li #[strong Guilds] — to receive guild information required for Bot operation, such as server metadata and member counts.
+                li #[strong Guild Messages] — to receive message events from guild channels.
+                li #[strong Direct Messages] — to receive and respond to user messages sent in Direct Messages.
+                li #[strong Message Content] — to detect prefix commands and parse command arguments required to execute user requests.
+            p The Bot does not request the Guild Members or Presence privileged intents.
+
+            h3.legal-heading 6. Third-Party Services
+            p The Bot runs on the Discord platform and queries an external card database to fulfill search requests. Your use of Discord is governed by Discord's #[a.data-link(href="https://discord.com/privacy" target="_blank" rel="noopener noreferrer") Privacy Policy]. We are not responsible for the privacy practices of third-party services.
+
+            h3.legal-heading 7. Children's Privacy
+            p The Bot is not directed at children under the age required to use Discord. You must meet Discord's minimum age requirements to use the Bot.
+
+            h3.legal-heading 8. Security
+            p We take reasonable measures to protect the information processed by the Bot. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.
+
+            h3.legal-heading 9. Changes to This Policy
+            p We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Last updated" date. Your continued use of the Bot after changes are posted constitutes your acceptance of the revised policy.
+
+            h3.legal-heading 10. Contact
+            p If you have any questions about this Privacy Policy, please open an issue on the project's GitHub repository at #[a.data-link(href="https://github.com/alex-weber/katy-kards-bot/issues" target="_blank" rel="noopener noreferrer") github.com/alex-weber/katy-kards-bot], or contact the Bot operator through the project's support channel on Discord.
+
+    p &nbsp;
+    p &nbsp;

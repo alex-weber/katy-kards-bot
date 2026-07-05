@@ -1249,3 +1249,50 @@ div[style*="overflow: auto;"] {
         font-size: 0.9rem;
     }
 }
+
+.footer-link {
+    color: #adb5bd;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    color: #f8f9fa;
+    text-decoration: underline;
+}
+
+/* Legal pages (Terms of Service, Privacy Policy) */
+.legal-body {
+    color: #ced4da;
+    line-height: 1.7;
+    padding: 1.5rem;
+}
+
+.legal-body p {
+    margin-bottom: 1rem;
+}
+
+.legal-heading {
+    color: #f8f9fa;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 1.75rem 0 0.75rem;
+}
+
+.legal-list {
+    margin-bottom: 1rem;
+    padding-left: 1.25rem;
+}
+
+.legal-list li {
+    margin-bottom: 0.4rem;
+}
+
+.legal-body code {
+    background: #111418;
+    border: 1px solid #343a40;
+    border-radius: 4px;
+    color: #20c997;
+    font-size: 0.9em;
+    padding: 0.1rem 0.35rem;
+}

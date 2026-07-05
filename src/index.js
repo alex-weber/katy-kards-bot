@@ -36,6 +36,8 @@ const {
     renderProfile,
     renderPublicProfile,
     renderCards,
+    renderTerms,
+    renderPrivacy,
     handleApi,
     handleUserUpdate,
     handleRoleRulesUpdate,
@@ -129,6 +131,8 @@ app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, r
 app.get('/servers', webRateLimiter, (req, res) => renderServers(req, res, servers))
 app.get('/cards', webRateLimiter, renderCards)
 app.get('/topdeck', webRateLimiter, renderTopDeck)
+app.get('/terms', webRateLimiter, renderTerms)
+app.get('/privacy', webRateLimiter, renderPrivacy)
 app.get('/api/:method', webRateLimiter, handleApi)
 
 let servers = [] //we get them when Discord client is ready
