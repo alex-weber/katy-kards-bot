@@ -679,6 +679,12 @@ async function telegramHandler(tgCtx, redis)
     //get or create the user
     ctx.user = await loadUser(tgCtx)
     if (!ctx.user) return
+    //the Terms of Service accept flow is Discord-only; auto-activate new
+    //(pending) Telegram users so their behavior is unchanged
+    if (ctx.user.status === 'pending') {
+        ctx.user.status = 'active'
+        await updateUser(ctx.user)
+    }
     if (checkUserStatus(ctx)) return
 
     //switch language
@@ -695,8 +701,11 @@ async function telegramHandler(tgCtx, redis)
     }
     if (roleLimit.message) await tgCtx.reply(roleLimit.message)
 
-    //save the message
-    const commandToSave = `Telegram | ${ctx.chatName} | -> ${ctx.command}`
+    //save the message. Deck codes are trimmed to just the code so the whole
+    //message is not stored.
+    const storedCommand = bot.getLoggableCommand(
+        ctx.command, tgCtx.update.message.text)
+    const commandToSave = `Telegram | ${ctx.chatName} | -> ${storedCommand}`
     createMessage({authorId: ctx.user.id, content: commandToSave}).then()
 
     if (await handleStats(ctx)) return

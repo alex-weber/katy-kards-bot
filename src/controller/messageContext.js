@@ -6,6 +6,7 @@ const {
     defaultLanguage,
 } = require("../tools/language")
 const {isEnglishOnlyChannel} = require("../tools/search")
+const {requiresTermsAcceptance} = require("./commands/termsCommands")
 
 //refresh window for the cached user record
 const userExp = process.env.REDIS_EXP_USER || 60 * 60 * 24 * 7 // 7 days
@@ -76,7 +77,9 @@ async function loadUser(message, redis)
 }
 
 /**
- * React and reply for blocked users.
+ * React and reply for blocked users. Users who still need to accept the Terms
+ * of Service ('pending'/'declined') are not hard-blocked here — the terms gate
+ * handles them next so they can read the policy and accept.
  *
  * @param user
  * @param message
@@ -84,15 +87,13 @@ async function loadUser(message, redis)
  */
 function checkUserStatus(user, message)
 {
-    if (user.status !== 'active') {
-        message.react('🚫')
-        console.log('blocked user\n', user)
-        if (user.mode) message.channel.send(user.mode)
+    if (user.status === 'active' || requiresTermsAcceptance(user)) return false
 
-        return true
-    }
+    message.react('🚫')
+    console.log('blocked user\n', user)
+    if (user.mode) message.channel.send(user.mode)
 
-    return false
+    return true
 }
 
 /**

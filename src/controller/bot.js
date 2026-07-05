@@ -175,6 +175,22 @@ function getDeckCode(command)
 }
 
 /**
+ * The command text to log/store in the DB. A deck code may be embedded in a
+ * longer message, so only the code itself is stored (in its original case),
+ * not the whole message.
+ *
+ * @param command the parsed command
+ * @param rawContent the original message content
+ * @returns {string}
+ */
+function getLoggableCommand(command, rawContent)
+{
+    if (isDeckCode(command)) return getDeckCode(rawContent)
+
+    return command
+}
+
+/**
  *
  * @returns {number}
  */
@@ -211,6 +227,7 @@ module.exports = {
     isDeckLink,
     isDeckCode,
     getDeckCode,
+    getLoggableCommand,
     getMidnight,
     getUTC,
 }

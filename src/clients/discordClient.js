@@ -12,6 +12,7 @@ const {buildCommandList} = require("../controller/commands/synonymCommands")
 const {invalidateSynonymCache} = require("../controller/synonymCache")
 const {renderProfileText, reactionsLabel} = require("../tools/profile")
 const {getButtonRow, ButtonStyle} = require("../tools/button")
+const {buildTermsView} = require("../controller/commands/termsCommands")
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -92,6 +93,31 @@ async function onInteractionCreate(interaction)
 
     const message = interaction.message
     const user = await getUser(interaction.user.id)
+
+    //Terms of Service flow. Kept separate from the profile branch (which is
+    //gated to active users) so that pending/declined users can accept.
+    //The "Read Terms" button opens the explanation + Accept/Decline privately
+    //(ephemeral), so nothing is spammed into the channel.
+    if (interaction.customId === 'terms_show') {
+        return await interaction.reply({
+            ...buildTermsView(user.language, user),
+            flags: MessageFlags.Ephemeral,
+        })
+    }
+
+    if (interaction.customId === 'terms_accept' ||
+        interaction.customId === 'terms_decline') {
+        const accepted = interaction.customId === 'terms_accept'
+        user.status = accepted ? 'active' : 'declined'
+        await updateUser(user)
+        await refreshCachedUser(interaction.user.id, '$.status', user.status)
+
+        return await interaction.update({
+            content: translate(user.language,
+                accepted ? 'termsAccepted' : 'termsDeclined'),
+            components: [],
+        })
+    }
 
     if (interaction.customId === 'profile_show' ||
         interaction.customId === 'profile_reactions' ||

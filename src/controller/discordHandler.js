@@ -30,6 +30,10 @@ const {
 } = require("./commands/synonymCommands")
 const {handleTopDeck} = require("./commands/topDeckCommand")
 const {handleSearch} = require("./commands/searchCommand")
+const {
+    handleTerms,
+    handleTermsGate,
+} = require("./commands/termsCommands")
 const {checkRoleCommandLimit} = require("../tools/roles")
 
 const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
@@ -155,6 +159,10 @@ async function discordHandler(message, client, redis)
     await ensureUserName(ctx.user, message)
     ctx.language = await resolveLanguage(ctx)
 
+    //users who have not accepted the terms only get the terms prompt (except
+    //for the privacy/terms commands, which fall through below)
+    if (await handleTermsGate(ctx)) return message
+
     const roleLimit = await checkRoleCommandLimit(ctx)
     if (!roleLimit.allowed) {
         if (!roleLimit.silent && roleLimit.message) {
@@ -164,10 +172,13 @@ async function discordHandler(message, client, redis)
     }
     if (roleLimit.message) message.channel.send(roleLimit.message)
 
-    //save the command in the DB and in cache, no need to wait
-    const fullContent = `${guildName} | ${channelName} -> ${ctx.command}`
+    //save the command in the DB and in cache, no need to wait. Deck codes are
+    //trimmed to just the code so the whole message is not stored.
+    const storedCommand = bot.getLoggableCommand(ctx.command, message.content)
+    const fullContent = `${guildName} | ${channelName} -> ${storedCommand}`
     createMessage({authorId: ctx.user.id, content: fullContent}).then()
 
+    if (await handleTerms(ctx)) return message
     if (await handleDeck(ctx)) return message
     if (await handleStats(ctx)) return message
     if (await handleDm(ctx)) return message

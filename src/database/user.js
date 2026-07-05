@@ -41,7 +41,10 @@ async function getUser(discordId)
         User = await createUser({
             discordId: discordId,
             language: 'en',
-            status: 'active',
+            //new users must accept the Terms of Service before using the bot;
+            //the Discord terms flow flips this to 'active'. Telegram users are
+            //auto-activated in the Telegram handler.
+            status: 'pending',
             tdGames: 0,
             tdWins: 0,
             tdDraws: 0,
