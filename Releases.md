@@ -1,13 +1,61 @@
-# Release Report: Changes Since v4.2.0
+## v4.10.1
 
-Comparison range: `v4.2.0..HEAD`
-Current HEAD: `74331e9`
-Included tags: `v4.3.0`, `v4.4.0`, `v4.4.1`, `v4.4.2`, `v4.5.0`, `v4.6.0`, `v4.6.1`, `v4.7.0`, `v4.7.1`, `v4.8.0`
+- Added Terms of Service and Privacy Policy bot command (`9461b54`).
 
-This report is based on the git history after `v4.2.0`. The first section covers current working-tree changes that have not been tagged yet.
+## v4.10.0
+
+### Features
+
+- Added Terms of Service and Privacy Policy pages (`deb85df`).
+- Extracted sortable-table component for better reusability (`1312da9`).
+
+### Dependencies
+
+- Updated `i18next-fs-backend` from `2.6.4` to `2.6.6` (`03f712d`).
+
+## v4.9.1
+
+### Documentation
+
+- Added memory usage fixes documentation (`fa69269`).
+
+### Bug Fixes
+
+- Added recoverable Forward Errors for cache failures (`2a1a3f8`).
+- Added fallback to re-rendering on forward failure (`d35b2bc`).
+- Fixed alternate art command files handling (`8c61e4e`).
+
+## v4.9.0
+
+### Features
+
+- Refactored screenshot dispatcher to use concurrency instead of sequential processing, reducing user wait time (`10d6c94`).
+- Added messages and screenshots widgets and counters (`c8e078e`).
+- Swapped colors for screenshots and screenshot commands (`7e28615`).
+- Refactored CSS and templates for better organization (`4a680f6`).
+
+## v4.8.3
+
+### Bug Fixes
+
+- Fixed login process for Discord OAuth (`62ad337`).
+- Fixed CSRF secret storage in session, limiting it to logged-in users (`109e9ff`).
+
+## v4.8.2
+
+- Performed a general cleanup (`446670a`).
 
 ## v4.8.1
 
+### Features
+
+- Introduced cache versioning (`211c6c2`).
+
+### Bug Fixes
+
+- Fixed alt art cards pagination (`d20a1ed`).
+- Fixed RSS peak memory display and handling (`8f9406f`).
+- Removed unused metric (`d3dd609`).
 - Removed unused function `buildRankPositions` (`74331e9`).
 
 ## v4.8.0
