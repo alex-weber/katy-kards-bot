@@ -205,13 +205,12 @@ function getAttribute(word, attributes)
  */
 async function getCards(variables, timeout=3000)
 {
-    //log request
-    //console.log(variables)
+    const apiURL = process.env.KARDS_API_URL || 'https://herokuapi.kards.com/graphql'
     const label = 'getCards_' + Date.now()
     console.time(label)
     //search on kards.com
     const response = await axios.post(
-        'https://api.kards.com/graphql',
+        apiURL,
         {
             "operationName": "getCards",
             "variables": variables,
@@ -395,13 +394,13 @@ async function handleSynonym(user, message)
     value = JSON.stringify(value)
     console.log(key,'=', value)
 
-    if (text === 'edit') 
+    if (text === 'edit')
     {
         if (!syn) return `${key} not found`
 
         return {components: getButtonRow('Edit ' + key, 'edit-syn-button-' + syn.id)}
     }
-    
+
     if (!syn && value)
     {
         await createSynonym(key, value)
