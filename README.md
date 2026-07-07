@@ -17,12 +17,23 @@ This bot provides search results from **kards.com** to Discord and Telegram.
 - `TELEGRAM_TOKEN`: Token for authenticating for the Telegram API.
 - `PORT`: Port number for the Node.js server.
 - `LIMIT`: Limit for message attachments (maximum 10).
-- `PATH_TO_CHROME`: Path to the Chrome executable, if you get the "not found" error
+- `WEB_BASE_URL`: Public base URL of the web app.
+
+## Roles
+The bot uses a role-based system to manage user permissions and command limits:
+
+- **GOD**: Superadmin with full access to all settings and configurations.
+- **VIP**: Admin with management privileges.
+- **SPECIAL**: Pro User.
+- **STANDARD**: Default user role.
+- **PRISONER**: User with limited rights (e.g., lower command limits).
+
+GOD users can configure role rules, such as daily/hourly command limits in the web interface.
 
  *Custom Prefix for a Server*
 
-You can set a different prefix, 
-for example for the server with the ID 12345, 
+You can set a different prefix,
+for example for the server with the ID 12345,
 set the env var `PREFIX_12345` = `?`.
 The bot on this server now listens only to messages starting with `?`
 The other servers recognize commands with the default prefix `!`
@@ -32,8 +43,8 @@ The other servers recognize commands with the default prefix `!`
 
 # Set up Environment Variables
 
-Rename `.env.example` to `.env` and set the required ones, remove the unused. 
-Alternatively set them directly in your environment.
+Rename `.env.example` to `.env` and set the required ones, remove the unused.
+Alternatively, set them directly in your environment.
 
 # Generate Prisma Client
 ``npx prisma generate``
@@ -44,10 +55,10 @@ Alternatively set them directly in your environment.
 # Test the Application
 `npm start`
 
-Navigate to `http://localhost:PORT/`. 
+Navigate to `http://localhost:PORT/`.
 You should see the bot's home page.
 
-Add bot to a server.
+Add this bot to a server.
 Send `!help` in a chat and see if the bot answers.
 
 
