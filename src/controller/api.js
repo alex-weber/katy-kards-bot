@@ -4,6 +4,8 @@ const {
     getScreenshotMessages,
     getTopMessages,
     getTopUsers,
+    getTotalMessageCount,
+    getTotalScreenshotCommandCount,
 } = require("../database/message")
 
 const {redis, cachePrefix} = require('../controller/redis')
@@ -100,6 +102,16 @@ async function run(method, { period } = {}) {
                 response.data = await getTopUsers({period: statsPeriod})
                 await saveToCache(response.data)
             } else response.data = cached
+            response.success = true
+            break
+
+        case 'total-message-count':
+            response.data = await getTotalMessageCount()
+            response.success = true
+            break
+
+        case 'total-screenshot-command-count':
+            response.data = await getTotalScreenshotCommandCount()
             response.success = true
             break
 

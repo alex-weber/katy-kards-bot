@@ -215,10 +215,21 @@ async function getDashboardMessages({period} = {})
     return getStatsPeriodCountsCached('messages', {}, normalizeStatsPeriod(period))
 }
 
+async function getTotalMessageCount()
+{
+    return await prisma.message.count()
+}
+
 async function getScreenshotMessages({period} = {})
 {
     const extraWhere = { content: { contains: '%\\%\\%%' } }
     return getStatsPeriodCountsCached('screenshot', extraWhere, normalizeStatsPeriod(period))
+}
+
+async function getTotalScreenshotCommandCount()
+{
+    const extraWhere = { content: { contains: '%\\%\\%%' } }
+    return await prisma.message.count({where: extraWhere})
 }
 
 
@@ -713,4 +724,6 @@ module.exports = {
     getScreenshotMessages,
     getTopMessages,
     getTopUsers,
+    getTotalMessageCount,
+    getTotalScreenshotCommandCount,
 }
