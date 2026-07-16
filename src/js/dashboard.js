@@ -121,7 +121,6 @@ function renderTopMessages(apiData) {
                         <span style="width: ${getBarWidth(item.count, maxCount)}%"></span>
                     </span>
                 </td>
-                <td class="leaderboard-rank-cell">n/a</td>
                 <td class="leaderboard-count-cell">${formatCount(item.count)}</td>
             </tr>
         `)

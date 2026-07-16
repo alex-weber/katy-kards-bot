@@ -103,13 +103,8 @@ async function getUsers({ page = 1, pageSize = 50, username, discordId, role, st
     if (role) {
         where.role = (role === '__empty' || role === 'STANDARD') ? null : role
     }
-    if (status === 'active') {
-        where.status = 'active'
-    }
-    if (status === 'inactive') {
-        where.status = {
-            not: 'active'
-        }
+    if (status) {
+        where.status = status
     }
     if (mode) {
         where.mode = {

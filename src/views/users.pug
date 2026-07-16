@@ -55,6 +55,8 @@ block content
             option(value="" selected=!status) Any
             option(value="active" selected=status === 'active') Active
             option(value="inactive" selected=status === 'inactive') Inactive
+            option(value="pending" selected=status === 'pending') Pending
+            option(value="declined" selected=status === 'declined') Declined
         .col-md-2
           label.form-label(for="mode") Custom Reply:
           .input-group

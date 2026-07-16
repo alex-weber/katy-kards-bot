@@ -270,12 +270,12 @@ function sanitizeUserRoleFilter(value) {
 
 function sanitizeUserStatus(value) {
     value = sanitizeText(value, 20).toLowerCase()
-    return value === 'active' ? 'active' : 'inactive'
+    return ['active', 'inactive', 'pending', 'declined'].includes(value) ? value : 'inactive'
 }
 
 function sanitizeUserStatusFilter(value) {
     value = sanitizeText(value, 20).toLowerCase()
-    return ['active', 'inactive'].includes(value) ? value : ''
+    return ['active', 'inactive', 'pending', 'declined'].includes(value) ? value : ''
 }
 
 async function invalidateUserEntityCache(discordId) {
