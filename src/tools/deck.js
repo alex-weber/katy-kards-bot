@@ -37,13 +37,19 @@ async function createDeckImages(
             '\n\n' +
             await analyseDeck(deckCode, language) +
             '```'
-        if (!deckInfo) return message.channel.send(translate(language, 'error'))
+        if (!deckInfo) {
+            await message.channel.send(translate(language, 'error'))
+            return false
+        }
     }
     let sentMessage = await message.channel.send(translate(language, 'screenshot'))
     sentMessage.react('🔄')
     const filename = await takeScreenshot(url)
     sentMessage.delete()
-    if (!filename) return message.channel.send(translate(language, 'error'))
+    if (!filename) {
+        await message.channel.send(translate(language, 'error'))
+        return false
+    }
     const files = getDeckFiles(filename)
     sentMessage = await message.channel.send({content: deckInfo, files: files})
     console.log('Screenshot captured and sent successfully')

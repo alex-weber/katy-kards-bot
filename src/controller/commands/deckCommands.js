@@ -51,7 +51,9 @@ async function handleDeck(ctx)
 
     //not cached: queue the capture (the queue throttles concurrent renders)
     const sent = await createDeckImages(prefix, message, command, language)
-    await cacheSentMessage(redis, deckKey, sent, deckExp)
+    if (sent) {
+        await cacheSentMessage(redis, deckKey, sent, deckExp)
+    }
 
     return true
 }
