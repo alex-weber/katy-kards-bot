@@ -1,3 +1,17 @@
+## v4.11.0
+
+### Features
+
+- Added `pending` and `declined` options to the Users page status filter (`aefbf78`).
+- Aggregated Top 100 Commands list on the dashboard by command name, dropping server and channel information (`ec2a248`).
+- Added a 30-day counter to the screenshots-taken widget and a total message counter to the screenshot-commands widget on the home page (`063424a`).
+- Simplified the Users page layout (`b126acf`).
+- Added `KARDS_API_URL` configuration support (`c1d73fa`).
+
+### Bug Fixes
+
+- Fixed caching of error messages: bot responses are now only cached after a successful screenshot run (`b3d6d60`).
+
 ## v4.10.1
 
 - Added Terms of Service and Privacy Policy bot command (`9461b54`).

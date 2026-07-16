@@ -61,4 +61,8 @@ You should see the bot's home page.
 Add this bot to a server.
 Send `!help` in a chat and see if the bot answers.
 
+# Sync the database with kards.com
+GOD users are able to sync the database.
+`!sync` is the command for it.
+
 
