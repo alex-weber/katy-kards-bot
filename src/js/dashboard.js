@@ -95,8 +95,18 @@ function drawChart(chartSettings)
 }
 function renderTopMessages(apiData) {
     const topMessagesDiv = document.getElementById('topMessages')
-    const items = apiData.data
+    const aggregated = apiData.data
         .filter(item => !item.command.startsWith('%%')) // exclude commands starting with %%
+        .reduce((acc, item) => {
+            const command = item.command.split(' -> ').pop()
+            if (!acc[command]) {
+                acc[command] = { command, count: 0 }
+            }
+            acc[command].count += item.count
+            return acc
+        }, {})
+
+    const items = Object.values(aggregated).sort((a, b) => b.count - a.count)
     const maxCount = Math.max(...items.map(item => item.count), 1)
 
     topMessagesDiv.innerHTML = items
@@ -111,7 +121,7 @@ function renderTopMessages(apiData) {
                         <span style="width: ${getBarWidth(item.count, maxCount)}%"></span>
                     </span>
                 </td>
-                <td class="leaderboard-rank-cell">${formatPosition(item.allTimePosition)}</td>
+                <td class="leaderboard-rank-cell">n/a</td>
                 <td class="leaderboard-count-cell">${formatCount(item.count)}</td>
             </tr>
         `)
