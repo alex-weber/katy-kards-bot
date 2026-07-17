@@ -520,7 +520,7 @@ async function computeTopMessages(fromDate, toDate)
                 content: 'desc'
             }
         },
-        take: 100,
+        take: 1000,
     })
 
     return grouped.map(group => ({ key: group.content, count: group._count.content }))
@@ -568,9 +568,23 @@ async function getAllTimeMessagePositions(commands = []) {
 async function getTopMessages({period} = {})
 {
     const merged = await getStatsPeriodAggregateCached('top-messages', computeTopMessages, period)
-    const allTimePositions = await getAllTimeMessagePositions(merged.map(([command]) => command))
 
-    return merged.map(([command, count], index) => ({
+    const aggregatedMap = merged.reduce((acc, [command, count]) => {
+        const cleanCommand = command.split(' -> ').pop()
+        if (cleanCommand.startsWith('%%')) return acc
+
+        if (!acc[cleanCommand]) acc[cleanCommand] = 0
+        acc[cleanCommand] += count
+        return acc
+    }, {})
+
+    const aggregatedArr = Object.entries(aggregatedMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 100)
+
+    const allTimePositions = await getAllTimeMessagePositions(aggregatedArr.map(([command]) => command))
+
+    return aggregatedArr.map(([command, count], index) => ({
         position: index + 1,
         allTimePosition: allTimePositions[String(command)] || null,
         command,

@@ -21,14 +21,12 @@ describe('getUsers', () => {
         mockDisconnect.mockClear()
     })
 
-    test('inactive status filter matches any non-active status', async () => {
+    test('inactive status filter matches exact inactive status', async () => {
         await getUsers({status: 'inactive'})
 
         expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
             where: {
-                status: {
-                    not: 'active',
-                },
+                status: 'inactive'
             },
         }))
     })

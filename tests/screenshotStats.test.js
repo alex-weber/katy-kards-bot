@@ -27,7 +27,7 @@ describe('screenshotStats', () => {
         await incrementScreenshotCounters(redis)
 
         const counters = await getScreenshotCounters(redis)
-        expect(counters).toEqual({ total: 2, daily: 2 })
+        expect(counters).toEqual({ total: 2, daily: 2, last30d: 2 })
     })
 
     test('daily counter is namespaced by date and given a TTL', async () => {
@@ -38,12 +38,12 @@ describe('screenshotStats', () => {
         const dailyKey = 'test:screenshot:daily:' + today
         expect(redis.incr).toHaveBeenCalledWith('test:screenshot:total')
         expect(redis.incr).toHaveBeenCalledWith(dailyKey)
-        expect(redis.expire).toHaveBeenCalledWith(dailyKey, 60 * 60 * 24 * 2)
+        expect(redis.expire).toHaveBeenCalledWith(dailyKey, 60 * 60 * 24 * 31)
     })
 
     test('missing keys read back as zero', async () => {
         const redis = makeRedis()
         const counters = await getScreenshotCounters(redis)
-        expect(counters).toEqual({ total: 0, daily: 0 })
+        expect(counters).toEqual({ total: 0, daily: 0, last30d: 0 })
     })
 })
