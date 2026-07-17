@@ -30,7 +30,7 @@
   "blocked": "This feature is not available for you.",
   "termsPrompt": "📜 Please review and accept our Terms of Service and Privacy Policy before using the bot.",
   "termsButton": "📜 Read Terms",
-  "termsExplain": "📜 **Terms of Service & Privacy Policy**\n\nKatyusha is a card-search bot. It only reads messages that start with the command prefix — to identify the command and its arguments; all other messages are ignored. It does not archive conversations, and stored data is limited to what is required to run your commands.\n\nBy accepting, you allow the public sharing of your avatar, username, and commands. Your input is also used to improve search functionality.\n\nClick **Accept** to agree to the Terms of Service and Privacy Policy and use the bot. Click **Decline** and you will not be able to use the bot until you accept.{{links}}",
+  "termsExplain": "📜 **Terms of Service & Privacy Policy**\n\nKatyusha is a card-search bot. It only reads messages that start with the command prefix — to identify the command and its arguments; all other messages are ignored. It does not archive conversations, and stored data is limited to what is required to run your commands.\n\nBy accepting, you allow the public sharing of your avatar, username, and commands. Your input is also used to improve search functionality. We may restrict your usage of the bot without your consent and without any explanation.\n\nClick **Accept** to agree to the Terms of Service and Privacy Policy and use the bot. Click **Decline** and you will not be able to use the bot until you accept.{{links}}",
   "termsAccept": "✅ Accept",
   "termsDecline": "❌ Decline",
   "termsAccepted": "✅ Thank you! You have accepted the Terms of Service and Privacy Policy. You can now use the bot.",
