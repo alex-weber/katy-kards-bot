@@ -1,3 +1,16 @@
+## v4.12.0
+
+### Features
+
+- Updated the Privacy Policy to state the website is secured over HTTPS, specify stored personal information limits, connection visibility, and top 100 commands anonymization (`85b7a32`).
+- Updated the Terms of Service to clarify user consent for data usage, public sharing of avatars/usernames/commands, search improvement usage, and a clause regarding access restriction (`ec361db`, `85b7a32`).
+
+## v4.11.1
+
+### Bug Fixes
+
+- Fixed the issue where the "Top 100 Commands" widget on the start page was showing less than 100 commands by increasing the database fetch limit before aggregation (`a30fc80`).
+
 ## v4.11.0
 
 ### Features
