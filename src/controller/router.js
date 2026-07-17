@@ -610,9 +610,9 @@ async function renderCards(req, res) {
 }
 
 // Legal pages required for Discord application verification. Public and static —
-// the "Last updated" date bumps on deploy so the pages always reflect their
+// the "Last updated" date bumps on deployment, so the pages always reflect their
 // current content.
-const LEGAL_EFFECTIVE_DATE = 'July 5, 2026'
+const LEGAL_EFFECTIVE_DATE = 'July 17, 2026'
 
 function renderTerms(req, res) {
     res.render('terms', {
