@@ -14,6 +14,7 @@ const {
     handleUtc,
     handleStats,
     handleDm,
+    handleContact,
     handleLanguageSwitch,
     handleHelp,
     handleSync,
@@ -182,6 +183,7 @@ async function discordHandler(message, client, redis)
     if (await handleDeck(ctx)) return message
     if (await handleStats(ctx)) return message
     if (await handleDm(ctx)) return message
+    if (await handleContact(ctx)) return message
     if (await handleLanguageSwitch(ctx)) return message
     if (await handleHelp(ctx)) return message
     if (handleSync(ctx)) return message

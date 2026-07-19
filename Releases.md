@@ -1,3 +1,9 @@
+## v4.14.0
+
+### Features
+
+- Added `!contact` command to allow users to reach bot administrators, and updated legal pages to mention it for data deletion and opt-out requests.
+
 ## v4.13.0
 
 ### Features

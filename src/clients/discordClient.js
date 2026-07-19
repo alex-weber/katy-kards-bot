@@ -1,6 +1,6 @@
 // ================= DISCORD JS ===================
 const { Client, GatewayIntentBits, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder} = require('discord.js')
-const {getUser, updateUser, getProfileStats} = require("../database/db")
+const {getUser, updateUser, getProfileStats, getUsers} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {languages} = require("../tools/language")
 const {discordHandler} = require("../controller/discordHandler")
@@ -194,6 +194,66 @@ async function onInteractionCreate(interaction)
         })
 
         return await discordHandler(message, client, redis)
+    }
+
+    if (interaction.customId === 'contact_admins_button')
+    {
+        const modal = new ModalBuilder()
+            .setCustomId('contact_admins_modal')
+            .setTitle(translate(user.language, 'contactModalTitle') || 'Contact Administrators')
+
+        const input = new TextInputBuilder()
+            .setCustomId('contactMessage')
+            .setLabel(translate(user.language, 'contactModalInputLabel') || 'Your Message')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true)
+            .setPlaceholder(translate(user.language, 'contactModalInputPlaceholder') || 'Please describe your issue or request...')
+
+        const row = new ActionRowBuilder().addComponents(input)
+        modal.addComponents(row)
+
+        await interaction.showModal(modal)
+        await interaction.message.delete().catch(() => {}) // ignore errors if already deleted
+        return
+    }
+
+    if (interaction.customId === 'contact_admins_modal')
+    {
+        const messageText = interaction.fields.getTextInputValue('contactMessage')
+        const { users } = await getUsers({ role: 'GOD', pageSize: 100 })
+        
+        if (users && users.length > 0) {
+            let sent = false
+            for (const admin of users) {
+                try {
+                    const adminUser = await client.users.fetch(admin.discordId)
+                    if (adminUser) {
+                        await adminUser.send(`**Contact from ${interaction.user.username}** (${interaction.user.id}):\n${messageText}`)
+                        sent = true
+                    }
+                } catch (e) {
+                    console.error('Failed to send contact DM to admin', admin.discordId, e)
+                }
+            }
+            
+            if (sent) {
+                await interaction.reply({
+                    content: translate(user.language, 'contactSuccess') || 'Your message has been sent to the bot administrators.',
+                    flags: MessageFlags.Ephemeral
+                })
+            } else {
+                await interaction.reply({
+                    content: translate(user.language, 'contactFailDeliver') || 'Could not deliver the message. Please try opening an issue on GitHub.',
+                    flags: MessageFlags.Ephemeral
+                })
+            }
+        } else {
+            await interaction.reply({
+                content: translate(user.language, 'contactFailAdmins') || 'Could not find any administrators to contact.',
+                flags: MessageFlags.Ephemeral
+            })
+        }
+        return
     }
 
     if (interaction.customId.startsWith('show_commands:'))

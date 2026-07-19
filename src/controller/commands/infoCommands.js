@@ -1,6 +1,6 @@
 const bot = require("../bot")
 const {cacheKeyPrefix} = require("../messageCache")
-const {getTopDeckStats} = require("../../database/db")
+const {getTopDeckStats, getUsers} = require("../../database/db")
 const {translate} = require("../../tools/translation/translator")
 const {getStats, getServerList} = require("../../tools/stats")
 const {myTDRank} = require("../../games/topDeck")
@@ -221,6 +221,26 @@ async function handleServers(ctx)
     return true
 }
 
+/**
+ * Present the user with a button to contact bot admins via DM.
+ *
+ * @param ctx
+ * @returns {Promise<boolean>}
+ */
+async function handleContact(ctx)
+{
+    const {command, message, language} = ctx
+    if (!command.startsWith('contact')) return false
+
+    await message.channel.send({
+        content: translate(language, 'contactPrompt') || 'Click the button below to send a message to bot administrators.',
+        components: getButtonRow(
+            translate(language, 'contactButton') || 'Contact Admins', 'contact_admins_button'),
+    })
+
+    return true
+}
+
 module.exports = {
     handleMidnight,
     handleUtc,
@@ -233,4 +253,5 @@ module.exports = {
     handleMyRank,
     handleProfile,
     handleServers,
+    handleContact,
 }
