@@ -1,6 +1,6 @@
 const bot = require("../bot")
 const {cacheKeyPrefix} = require("../messageCache")
-const {getTopDeckStats, getUsers} = require("../../database/db")
+const {getTopDeckStats} = require("../../database/db")
 const {translate} = require("../../tools/translation/translator")
 const {getStats, getServerList} = require("../../tools/stats")
 const {myTDRank} = require("../../games/topDeck")
@@ -230,7 +230,7 @@ async function handleServers(ctx)
 async function handleContact(ctx)
 {
     const {command, message, language} = ctx
-    if (!command.startsWith('contact')) return false
+    if (command !== 'contact') return false
 
     await message.channel.send({
         content: translate(language, 'contactPrompt') || 'Click the button below to send a message to bot administrators.',
