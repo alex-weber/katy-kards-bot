@@ -164,7 +164,7 @@ describe('stats period selection', () => {
     test('handleApi defaults invalid periods', async () => {
         const res = makeRes()
         await router.handleApi(
-            { params: { method: 'top-users' }, session: {}, query: {period: 'weekly'} },
+            { params: { method: 'messages' }, session: {}, query: {period: 'weekly'} },
             res
         )
         const args = API.run.mock.calls[0][1]
@@ -175,7 +175,7 @@ describe('stats period selection', () => {
     test('handleApi passes allowed periods through', async () => {
         const res = makeRes()
         await router.handleApi(
-            { params: { method: 'top-users' }, session: { user: { id: '1' } }, query: {period: 'yearly'} },
+            { params: { method: 'messages' }, session: { user: { id: '1' } }, query: {period: 'yearly'} },
             res
         )
         const args = API.run.mock.calls[0][1]
@@ -198,12 +198,12 @@ describe('public profile', () => {
         expect(res.status).toHaveBeenCalledWith(404)
     })
 
-    test("another user's profile shows stats only, no history, with avatar", async () => {
+    test("another user's profile shows stats only, no history, with avatar for managers", async () => {
         const res = makeRes()
         db.getUserById.mockResolvedValueOnce({ id: 5, name: 'Alice', discordId: '111' })
         db.getProfileStats.mockResolvedValueOnce({ total: 10, lastMonth: 4, lastDay: 1 })
 
-        await router.renderPublicProfile({ params: { id: '5' }, session: {} }, res, { client: true })
+        await router.renderPublicProfile({ params: { id: '5' }, session: { user: { isManager: true } } }, res, { client: true })
 
         expect(db.getUserMessages).not.toHaveBeenCalled() // history stays private
         const locals = res.render.mock.calls[0][1]
@@ -212,6 +212,16 @@ describe('public profile', () => {
         expect(locals.displayName).toBe('Alice')
         expect(locals.avatarUrl).toBe('http://avatar/x.webp')
         expect(resolveAvatarUrl).toHaveBeenCalled()
+    })
+
+    test("another user's profile is forbidden for non-managers", async () => {
+        const res = makeRes()
+        db.getUserById.mockResolvedValueOnce({ id: 5, name: 'Alice', discordId: '111' })
+
+        await router.renderPublicProfile({ params: { id: '5' }, session: { user: { isManager: false } } }, res, { client: true })
+
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(res.send).toHaveBeenCalledWith('Not permitted')
     })
 
     test('own profile via /profile/:id shows the private history', async () => {

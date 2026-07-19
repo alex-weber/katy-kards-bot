@@ -591,6 +591,14 @@ async function renderPublicProfile(req, res, client) {
         return renderOwnProfile(req, res, target.id)
     }
 
+    if (req.session.user && req.session.user.role === undefined) {
+        await refreshSessionUser(req)
+    }
+
+    if (!req.session.user || !req.session.user.isManager) {
+        return res.status(403).send('Not permitted')
+    }
+
     const stats = await getProfileStats(target.id)
     renderProfileView(req, res, {
         displayName: target.name || 'Unknown',
@@ -612,7 +620,7 @@ async function renderCards(req, res) {
 // Legal pages required for Discord application verification. Public and static —
 // the "Last updated" date bumps on deployment, so the pages always reflect their
 // current content.
-const LEGAL_EFFECTIVE_DATE = 'July 17, 2026'
+const LEGAL_EFFECTIVE_DATE = 'July 19, 2026'
 
 function renderTerms(req, res) {
     res.render('terms', {
@@ -633,6 +641,18 @@ function renderPrivacy(req, res) {
 async function handleApi(req, res) {
     const { method } = req.params
     const period = resolveStatsPeriod(req)
+
+    if (method === 'top-users') {
+        const user = req.session ? req.session.user : null
+        if (!user || !user.isManager) {
+            return res.status(403).json({
+                result: 403,
+                success: false,
+                message: 'Forbidden',
+                data: []
+            })
+        }
+    }
 
     const apiResponse = await API.run(method, { period })
 

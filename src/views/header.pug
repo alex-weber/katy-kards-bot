@@ -32,9 +32,7 @@ header.header-sticky
                     div.nav-group
                         ul.navbar-nav.nav-group-items
                             +navItem('/', 'Home', currentPath.endsWith('/'))
-                            +navItem('/servers', 'Guilds', currentPath.startsWith('/servers'))
                             +navItem('/cards', 'Cards', currentPath.startsWith('/cards'))
-                            +navItem('/topdeck', 'Top Deck', currentPath.startsWith('/topdeck'))
 
                     if user && user.isManager
                         div.nav-group
@@ -43,6 +41,8 @@ header.header-sticky
                                 +navItem('/commands', 'Custom Commands', currentPath.startsWith('/commands'))
                                 +navItem('/messages', 'Log', currentPath.startsWith('/messages'))
                                 +navItem('/users', 'Users', currentPath.startsWith('/users'))
+                                +navItem('/servers', 'Guilds', currentPath.startsWith('/servers'))
+                                +navItem('/topdeck', 'Top Deck', currentPath.startsWith('/topdeck'))
                                 +navItem('/system', 'System', currentPath.startsWith('/system'))
                                 if user.role === 'GOD'
                                     +navItem('/roles', 'Roles', currentPath.startsWith('/roles'))

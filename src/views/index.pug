@@ -71,7 +71,7 @@ block content
       // Canvas for Messages Chart
       canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
 
-    div.dashboard-leaderboards
+    div.dashboard-leaderboards(style=(user && user.isManager) ? "" : "grid-template-columns: 1fr;")
       section.leaderboard-panel.panel-accent-teal
         div.panel-header
           div.panel-title-group
@@ -91,26 +91,27 @@ block content
                 th.leaderboard-count-col(scope='col') Count
             tbody#topMessages
 
-      section.leaderboard-panel.panel-accent-amber
-        div.panel-header
-          div.panel-title-group
-            span.panel-icon(aria-hidden="true")
-              svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
-                path(d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2")
-                circle(cx="9" cy="7" r="4")
-                path(d="M22 21v-2a4 4 0 0 0-3-3.87")
-                path(d="M16 3.13a4 4 0 0 1 0 7.75")
-            h4.panel-title Top 100 Users
-          span.panel-kicker Most active
-        div.leaderboard-table-wrap
-          table.leaderboard-table
-            thead
-              tr
-                th.leaderboard-rank-col(scope='col') #
-                th(scope='col') User
-                th.leaderboard-rank-col(scope='col') All-Time
-                th.leaderboard-count-col(scope='col') Commands
-            tbody#topUsers
+      if user && user.isManager
+        section.leaderboard-panel.panel-accent-amber
+          div.panel-header
+            div.panel-title-group
+              span.panel-icon(aria-hidden="true")
+                svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+                  path(d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2")
+                  circle(cx="9" cy="7" r="4")
+                  path(d="M22 21v-2a4 4 0 0 0-3-3.87")
+                  path(d="M16 3.13a4 4 0 0 1 0 7.75")
+              h4.panel-title Top 100 Users
+            span.panel-kicker Most active
+          div.leaderboard-table-wrap
+            table.leaderboard-table
+              thead
+                tr
+                  th.leaderboard-rank-col(scope='col') #
+                  th(scope='col') User
+                  th.leaderboard-rank-col(scope='col') All-Time
+                  th.leaderboard-count-col(scope='col') Commands
+              tbody#topUsers
   .my-5
   p &nbsp;
   p &nbsp;

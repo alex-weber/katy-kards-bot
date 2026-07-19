@@ -726,12 +726,13 @@
 .mini-stats {
     display: grid;
     gap: 1.25rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .mini-stat-row {
     display: flex;
-    gap: 1.75rem;
+    justify-content: space-between;
+    gap: 0.5rem;
     padding: 1rem 1.1rem;
 }
 

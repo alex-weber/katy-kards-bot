@@ -1,3 +1,13 @@
+## v4.13.0
+
+### Features
+
+- Restricted the Top 100 Users dashboard widget and API endpoint to managers only.
+- Expanded the Top 100 Commands dashboard widget to full-width for non-managers.
+- Restricted public profile pages to managers only.
+- Moved Guilds and Top Deck pages to the admin section and restricted them to managers only.
+- Updated Terms of Service and Privacy Policy to clarify that username, avatar, and commands are no longer public and are visible only to Admins.
+
 ## v4.12.0
 
 ### Features

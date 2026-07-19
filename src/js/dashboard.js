@@ -195,6 +195,8 @@ function renderScreenshotCommandCounters(apiData, totalCount) {
 
 function renderTopUsers(apiData) {
     const topUsersElement = document.getElementById('topUsers')
+    if (!topUsersElement || !apiData.data) return
+
     const maxCount = Math.max(...apiData.data.map(item => item.count), 1)
 
     topUsersElement.innerHTML = apiData.data

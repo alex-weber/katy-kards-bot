@@ -26,7 +26,7 @@ describe('getUsers', () => {
 
         expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
             where: {
-                status: 'inactive'
+                status: { not: 'active' }
             },
         }))
     })
