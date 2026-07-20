@@ -1,3 +1,11 @@
+## v4.14.1
+
+### Bug Fixes
+
+- Added safe Browserless API key slot logging so logs show which configured key is selected without exposing token values.
+- Fixed Browserless key rotation tracking so duplicate token values in different environment variables still keep independent request slots.
+- Fixed screenshot counters to count every generated Browserless screenshot file from a real capture instead of only one logical deck render.
+
 ## v4.14.0
 
 ### Features

@@ -64,8 +64,10 @@ describe('createScreenshotTaker dedup + copy', () => {
         expect(second).toBe('deck_1_copy')
         expect(copyFiles).toHaveBeenCalledTimes(1)
         expect(copyFiles).toHaveBeenCalledWith('deck_1')
-        // the counter only counts the single real capture
+        // the counter only counts the single real capture, but includes both
+        // generated screenshot files for Browserless usage tracking
         expect(incrementCounters).toHaveBeenCalledTimes(1)
+        expect(incrementCounters).toHaveBeenCalledWith({}, 2)
     })
 
     test('a failed capture yields false for every caller and skips the copy', async () => {
@@ -113,5 +115,29 @@ describe('createScreenshotTaker dedup + copy', () => {
         calls[1].resolve('deck_y')
         await expect(a).resolves.toBe('deck_x')
         await expect(b).resolves.toBe('deck_y')
+    })
+
+    test('duplicate Browserless key values keep independent slots', async () => {
+        const { capture, calls } = deferredCapture()
+        const taker = makeTaker({
+            keys: [
+                {name: 'BROWSERLESS_API_KEY_2', value: 'same-key'},
+                {name: 'BROWSERLESS_API_KEY_3', value: 'same-key'},
+            ],
+            concurrency: 1,
+            capture,
+        })
+
+        const first = taker.takeScreenshot('deck-1')
+        const second = taker.takeScreenshot('deck-2')
+
+        expect(capture).toHaveBeenCalledTimes(2)
+        expect(capture).toHaveBeenNthCalledWith(1, 'deck-1', 'same-key')
+        expect(capture).toHaveBeenNthCalledWith(2, 'deck-2', 'same-key')
+
+        calls[0].resolve('deck_1')
+        calls[1].resolve('deck_2')
+        await expect(first).resolves.toBe('deck_1')
+        await expect(second).resolves.toBe('deck_2')
     })
 })

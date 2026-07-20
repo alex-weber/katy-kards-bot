@@ -15,6 +15,11 @@ function makeRedis(store = new Map()) {
             store.set(key, next)
             return next
         }),
+        incrBy: jest.fn(async (key, count) => {
+            const next = (store.get(key) || 0) + count
+            store.set(key, next)
+            return next
+        }),
         get: jest.fn(async key => (store.has(key) ? String(store.get(key)) : null)),
         expire: jest.fn(async () => {}),
     }
@@ -39,6 +44,17 @@ describe('screenshotStats', () => {
         expect(redis.incr).toHaveBeenCalledWith('test:screenshot:total')
         expect(redis.incr).toHaveBeenCalledWith(dailyKey)
         expect(redis.expire).toHaveBeenCalledWith(dailyKey, 60 * 60 * 24 * 31)
+    })
+
+    test('increment can count every generated screenshot file from one capture', async () => {
+        const redis = makeRedis()
+        await incrementScreenshotCounters(redis, 2)
+
+        const counters = await getScreenshotCounters(redis)
+        expect(counters).toEqual({ total: 2, daily: 2, last30d: 2 })
+        expect(redis.incrBy).toHaveBeenCalledWith('test:screenshot:total', 2)
+        expect(redis.incrBy).toHaveBeenCalledWith(
+            'test:screenshot:daily:' + new Date().toISOString().slice(0, 10), 2)
     })
 
     test('missing keys read back as zero', async () => {

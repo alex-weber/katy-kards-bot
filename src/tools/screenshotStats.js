@@ -31,18 +31,26 @@ function day(daysAgo) {
 }
 
 /**
- * Record one captured screenshot in both the total and today's counter.
+ * Record captured screenshots in both the total and today's counter.
  *
  * @param redis
+ * @param {number} count
  * @returns {Promise<void>}
  */
-async function incrementScreenshotCounters(redis) {
+async function incrementScreenshotCounters(redis, count = 1) {
+    const incrementBy = parseInt(count, 10) || 1
     const dailyKey = dailyPrefix + today()
     await Promise.all([
-        redis.incr(totalKey),
-        redis.incr(dailyKey),
+        increment(redis, totalKey, incrementBy),
+        increment(redis, dailyKey, incrementBy),
     ])
     await redis.expire(dailyKey, dailyTtl)
+}
+
+async function increment(redis, key, count) {
+    if (count === 1 || !redis.incrBy) return redis.incr(key)
+
+    return redis.incrBy(key, count)
 }
 
 /**

@@ -14,11 +14,11 @@ const perKeyConcurrency = parseInt(process.env.SCREENSHOT_CONCURRENCY) || 2
  * injected, so the dedup + copy orchestration can be unit-tested without a
  * real browser, Redis, or filesystem.
  *
- * @param keys              Browserless API keys (capacity = keys * concurrency)
+ * @param keys              Browserless API key slots (capacity = keys * concurrency)
  * @param concurrency       requests a single key may handle at once
  * @param capture           (url, key) => Promise<string|false>, the browser job
  * @param copyFiles         (filename) => string|false, clones a capture's files
- * @param incrementCounters (redis) => Promise, bumps the screenshot counters
+ * @param incrementCounters (redis, count) => Promise, bumps the screenshot counters
  * @param redis             redis client handed to incrementCounters
  * @returns {{takeScreenshot: function(string): Promise<string|false>}}
  */
@@ -30,10 +30,12 @@ function createScreenshotTaker({
     incrementCounters,
     redis,
 }) {
+    const keySlots = keys.map((key, index) =>
+        typeof key === 'string' ? {name: `Browserless key #${index + 1}`, value: key} : key)
     //in-flight request count per key, so no key is pushed past its limit
-    const keyLoad = new Map(keys.map(key => [key, 0]))
+    const keyLoad = new Map(keySlots.map(key => [key, 0]))
     //total capacity across all keys; the queue holds the overflow until a slot frees
-    const queue = new RequestQueue(keys.length * concurrency)
+    const queue = new RequestQueue(keySlots.length * concurrency)
     //captures currently queued or running, keyed by url, so a duplicate request
     //for the same deck reuses the running job instead of launching another browser
     const inFlight = new Map()
@@ -51,7 +53,7 @@ function createScreenshotTaker({
      * @returns {Promise<string|false>}
      */
     function takeScreenshot(url) {
-        if (!keys.length) return Promise.resolve(false)
+        if (!keySlots.length) return Promise.resolve(false)
 
         const running = inFlight.get(url)
         if (running) {
@@ -79,10 +81,11 @@ function createScreenshotTaker({
                 const key = leastLoadedKey()
                 keyLoad.set(key, keyLoad.get(key) + 1)
                 try {
-                    const filename = await capture(url, key)
+                    console.log(`Browserless key selected: ${key.name}`)
+                    const filename = await capture(url, key.value)
                     if (filename) {
                         //counter bookkeeping must never sink a good screenshot
-                        incrementCounters(redis).catch(error =>
+                        incrementCounters(redis, getDeckFiles(filename).length).catch(error =>
                             console.error('Failed to update screenshot counters:', error))
                     }
                     resolve(filename)
@@ -101,11 +104,11 @@ function createScreenshotTaker({
      * queue caps total in-flight work at keys * concurrency, so the
      * least-loaded key is always below the per-key limit.
      *
-     * @returns {string}
+     * @returns {{name: string, value: string}}
      */
     function leastLoadedKey() {
-        let chosen = keys[0]
-        for (const key of keys) {
+        let chosen = keySlots[0]
+        for (const key of keySlots) {
             if (keyLoad.get(key) < keyLoad.get(chosen)) chosen = key
         }
 
@@ -258,10 +261,23 @@ async function captureScreenshot(url, blKey) {
 function getBrowserlessKeys()
 {
     const keys = []
-    if (process.env.BROWSERLESS_API_KEY) keys.push(process.env.BROWSERLESS_API_KEY)
+    if (process.env.BROWSERLESS_API_KEY) {
+        keys.push({name: 'BROWSERLESS_API_KEY', value: process.env.BROWSERLESS_API_KEY})
+    }
     for (let i = 2; i < 10; i++) {
-        if (!process.env['BROWSERLESS_API_KEY_'+i]) break
-        keys.push(process.env['BROWSERLESS_API_KEY_'+i])
+        const name = 'BROWSERLESS_API_KEY_'+i
+        if (!process.env[name]) break
+        keys.push({name, value: process.env[name]})
+    }
+
+    if (keys.length) {
+        const duplicateKeys = keys.filter(key =>
+            keys.filter(candidate => candidate.value === key.value).length > 1)
+        console.log('Browserless keys configured:', keys.map(key => key.name).join(', '))
+        if (duplicateKeys.length) {
+            console.warn('Duplicate Browserless key values configured for:',
+                duplicateKeys.map(key => key.name).join(', '))
+        }
     }
 
     return keys
