@@ -178,13 +178,13 @@ async function buildAnswerFiles(files)
  */
 async function handleJsonSynonym(ctx, m)
 {
-    const {message, client, redis, command, user} = ctx
+    const {message, client, redis, command, user, language} = ctx
     const cacheKey =
         cacheKeyPrefix + getGuildPart(message) + 'syn:' + command
     if (await redis.exists(cacheKey) && !m.content) {
         const cached = await redis.json.get(cacheKey, '$')
         if (await forwardCachedMessage(
-            client, cached, message.channel, message.channelId))
+            client, cached, message, {language, query: command}))
             return {stop: true}
         //forward failed (e.g. no Read Message History) -> rebuild below
     }

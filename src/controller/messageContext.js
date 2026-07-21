@@ -77,9 +77,21 @@ async function loadUser(message, redis)
 }
 
 /**
- * React and reply for blocked users. Users who still need to accept the Terms
- * of Service ('pending'/'declined') are not hard-blocked here — the terms gate
- * handles them next so they can read the policy and accept.
+ * Whether the user is blocked from using the bot outright. Users who still
+ * need to accept the Terms of Service ('pending'/'declined') are not counted
+ * as blocked here — the terms gate handles them separately so they can read
+ * the policy and accept.
+ *
+ * @param user
+ * @returns {boolean}
+ */
+function isUserBlocked(user)
+{
+    return user.status !== 'active' && !requiresTermsAcceptance(user)
+}
+
+/**
+ * React and reply for blocked users.
  *
  * @param user
  * @param message
@@ -87,7 +99,7 @@ async function loadUser(message, redis)
  */
 function checkUserStatus(user, message)
 {
-    if (user.status === 'active' || requiresTermsAcceptance(user)) return false
+    if (!isUserBlocked(user)) return false
 
     message.react('🚫')
     console.log('blocked user\n', user)
@@ -148,6 +160,7 @@ async function resolveLanguage(ctx)
 module.exports = {
     resolveButtonCommand,
     loadUser,
+    isUserBlocked,
     checkUserStatus,
     ensureUserName,
     resolveLanguage,

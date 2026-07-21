@@ -12,6 +12,7 @@ const {getButtonRow} = require("../../tools/button")
 const {isBotCommandChannel} = require("../../tools/search")
 const {react} = require("../../tools/reactions")
 const {checkRoleDeckScreenshotLimit} = require("../../tools/roles")
+const {sendPrivately} = require("../../tools/privateReply")
 
 //cache lifetimes (seconds)
 const deckExp = process.env.REDIS_EXP_DECK || 60 * 60 * 24 * 30 // 30 days
@@ -38,7 +39,7 @@ async function handleDeck(ctx)
         const response = await redis.json.get(deckKey, '$')
         console.log('serving deck from cache', deckKey)
         if (await forwardCachedMessage(
-            client, response, message.channel, message.channelId))
+            client, response, message, {language, query: command}))
             return true
         //forward failed (e.g. no Read Message History) -> rebuild below
     }
@@ -98,7 +99,7 @@ async function handleAlt(ctx)
         const response = await redis.json.get(cacheKey, '$')
         console.log('serving alt from cache', cacheKey)
         if (await forwardCachedMessage(
-            client, response, message.channel, message.channelId)) {
+            client, response, message, {language, query: ctx.command})) {
             // forward() drops the page's "Next" button, so re-attach one by
             // following the cached "next-message" link (alt -> alt10 -> ...).
             // It lives on its own message (a forward can't carry components);
@@ -121,7 +122,7 @@ async function handleAlt(ctx)
     const syns = await getAllSynonyms()
     const files = collectAltFiles(syns)
     if (!files.length) {
-        await message.channel.send(translate(language, 'noresult'))
+        await sendPrivately(message, translate(language, 'noresult'))
 
         return true
     }

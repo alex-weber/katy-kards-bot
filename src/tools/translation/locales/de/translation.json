@@ -15,6 +15,7 @@
   "min": "mindestens 2 Zeichen, bitte",
   "fetching": "Laden...",
   "next": "Weiter",
+  "deprecated": "⚠️ Textbefehle (wie `!search`) werden bald eingestellt, da Discord dem Bot den Zugriff auf den Nachrichtentext entzieht. Bitte wechsle zu den neuen Slash-Befehlen — tippe `/` und wähle einen aus (z. B. `/search`, `/alt`, `/commands`, `/help`).",
   "commandsButton": "Befehle anzeigen",
   "commandsPrompt": "Klicke auf den Button, um die Liste der Befehle zu sehen.",
   "profileButton": "Mein Profil anzeigen",
@@ -54,7 +55,7 @@
   "info_fighters": "Jäger: ",
   "deck_code": "Deck code: ",
   "reserved": "Reserve",
-  "help": "Katyusha Kards Bot Befehle\n\n\n!profile - deine Bot Einstellungen and Statistiken\n\n!! - Steam-Spieler online\n\n!leo - entspricht einem Teil des Titels einer Karte: LEOpold. Sie erhalten also die LEOPOLD-Karte als Ergebnis.\n\nDer Bot erkennt alle Schlüsselwörter des Spiels wie BLITZ, GUARD, etc.\n\nAlle nicht erkannten Wörter werden zur Suche im Titel und Text verwendet.\n\n3k - Bereitstellungskosten\n\n2c oder 2op - Betriebskosten\n\n5-5 oder 5/5 - Angriff: 5, Verteidigung: 5\n\n!soviet infantry guard 1/8 3k 1c - erhält die einzige Karte, die allen Schlüsselwörtern entspricht.\n\nSie können * als Platzhalter für jeden Angriff oder jede Verteidigung verwenden.\n\nSie können auch die Suche mitten in einem Satz auslösen - zeige mir bitte %leo%.\n\nEs funktioniert nur, wenn es GENAU EIN Ergebnis gibt.\n\nNationen zur Suche: SOVIET GERMANY BRITAIN USA JAPAN POLAND FRANCE ITALY FINLAND\n\n!td infantry tank artillery fighter bomber\n\n2 zufällige Karten kämpfen. Sie können den Einheitstyp auswählen oder leer lassen.\n\n!ranking - Top-Deck-Rangliste\n\n!myrank - Ihre persönliche Top-Deck-Rangliste.\n\n!en !de !es !fr !it !jp !ko !pl !pt !ru !tw !zh - Suchsprache ändern.\n\n!Link zum Deck oder Import Code - liefert einen Screenshot des Decks.\n\n!terms - Nutzungsbedingungen & Datenschutzerklärung ansehen und akzeptieren\n\n!contact - Bot-Administratoren kontaktieren\n\n",
+  "help": "Katyusha Kards Bot Befehle\n\n\n/search - Karten suchen, gib deine Anfrage direkt nach dem Befehl ein.\n\nDer Bot erkennt alle Schlüsselwörter des Spiels wie BLITZ, GUARD usw. Alle nicht erkannten Wörter werden zur Suche in Titel und Text verwendet.\n\n3k - Bereitstellungskosten\n2c oder 2op - Betriebskosten\n5-5 oder 5/5 - Angriff 5, Verteidigung 5\nVerwende * als Platzhalter für beliebigen Angriff oder Verteidigung: */4 - alle Einheiten mit 4 Verteidigung. 0/* - alle Einheiten mit 0 Angriff.\n\nNationen zur Suche: SOVIET GERMANY BRITAIN USA JAPAN POLAND FRANCE ITALY FINLAND ANZAC\n\n/search soviet infantry guard 1/8 3k 1c - die einzige Karte, die allen Schlüsselwörtern entspricht.\n\n/alt - Galerie der alternativen Artworks\n/deck - Screenshot eines Decks aus einem Link oder Import-Code\n/commands - alle benutzerdefinierten Befehle auflisten (mit text filtern, z. B. /commands a)\n/profile - deine Bot-Statistiken und Einstellungen (Suchsprache hier ändern)\n/online - Steam-Spieler online und Statistiken\n/utc - aktuelle UTC-Zeit\n/midnight - relative Zeit bis 00:00 UTC+0 (täglicher Reset)\n/ranking - Top-Deck-Rangliste\n/myrank - deine persönliche Top-Deck-Rangliste mit Statistiken\n/contact - Bot-Administratoren kontaktieren\n/terms - Nutzungsbedingungen & Datenschutzerklärung ansehen und akzeptieren\n/help - diese Nachricht",
   "contactPrompt": "Klicke auf den Button unten, um eine Nachricht an die Bot-Administratoren zu senden.",
   "contactButton": "Admins kontaktieren",
   "contactModalTitle": "Administratoren kontaktieren",
@@ -62,5 +63,9 @@
   "contactModalInputPlaceholder": "Bitte beschreibe dein Problem oder deine Anfrage...",
   "contactSuccess": "Deine Nachricht wurde an die Bot-Administratoren gesendet.",
   "contactFailDeliver": "Die Nachricht konnte nicht zugestellt werden. Bitte versuche, ein Issue auf GitHub zu öffnen.",
-  "contactFailAdmins": "Es konnten keine Administratoren zum Kontaktieren gefunden werden."
+  "contactFailAdmins": "Es konnten keine Administratoren zum Kontaktieren gefunden werden.",
+  "requestedBy": "_Angefragt von {{name}}_",
+  "requestedByQuery": "_Angefragt von {{name}}: {{query}}_",
+  "cacheForwardNotice": "Suchanfrage von {{name}}: {{query}}. Leite zwischengespeicherte Nachricht weiter.",
+  "cacheRequestNotice": "Anfrage von {{name}}: {{query}}. Leite zwischengespeicherte Nachricht weiter."
 }
