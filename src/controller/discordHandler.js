@@ -1,6 +1,8 @@
 const bot = require("./bot")
 const {createMessage} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
+const {defaultLanguage} = require("../tools/language")
+const {cacheKeyPrefix} = require("./messageCache")
 const {isBotCommandChannel} = require("../tools/search")
 const {
     resolveButtonCommand,
@@ -43,6 +45,35 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = parseInt(process.env.MAX_STR_LEN) || 4000
 //load more results button limit
 const paginationLimit = 10
+//how often each user is nudged about the legacy-command deprecation (24h)
+const deprecationWarnExp = parseInt(process.env.REDIS_EXP_DEPRECATION) || 60 * 60 * 24
+
+/**
+ * Nudge users of the legacy `!` prefix commands toward slash commands. Discord
+ * is removing the Message Content Intent these depend on, so text commands will
+ * stop working soon. Rate-limited to once per user per day so the channel is
+ * not flooded. The reminder is skipped for slash-routed commands and for the
+ * bot's own pagination button presses.
+ *
+ * @param message
+ * @param redis
+ * @returns {Promise<void>}
+ */
+async function warnLegacyCommand(message, redis)
+{
+    const key = 'deprecation:warned:' + message.author.id
+    //atomic check-and-set (NX): two commands from the same user racing each
+    //other can't both pass a separate exists-then-set, which would send the
+    //nag twice
+    const firstWarning = await redis.set(key, '1', {NX: true, EX: deprecationWarnExp})
+    if (!firstWarning) return
+
+    //best-effort language from the cached user; default when not cached yet
+    const userKey = cacheKeyPrefix + 'user:' + message.author.id
+    const cached = await redis.json.get(userKey, '$')
+    const language = (cached && cached.language) || defaultLanguage
+    await message.channel.send(translate(language, 'deprecated')).catch(() => {})
+}
 
 /**
  * Confirm the bot may write in this channel (always true in DMs).
@@ -137,6 +168,12 @@ async function discordHandler(message, client, redis)
 
     //return if the message is empty
     if (!text.command.length) return message
+
+    //remind legacy prefix-command users to switch to slash commands (skip
+    //slash-routed commands and pagination button presses)
+    if (!message.isSlash && !message.buttonId) {
+        await warnLegacyCommand(message, redis)
+    }
 
     const ctx = {
         message, client, redis, prefix,

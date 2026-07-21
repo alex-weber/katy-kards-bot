@@ -13,6 +13,7 @@ const {
 } = require("../../tools/search")
 const {getButtonRow} = require("../../tools/button")
 const {react} = require("../../tools/reactions")
+const {sendPrivately} = require("../../tools/privateReply")
 
 //cache lifetimes (seconds)
 const paginationExp = process.env.REDIS_EXP_PAGINATION || 60 * 10 // 10 min
@@ -37,9 +38,10 @@ async function serveSearchCache(ctx, cacheKey)
     console.log('serving from cache: ', language, command, limit)
     const answer = await redis.json.get(cacheKey, '$')
     console.timeEnd('cache')
+
     //forward failed (e.g. no Read Message History) -> let handleSearch regenerate
-    if (!await forwardCachedMessage(
-        client, answer, message.channel, message.channelId))
+    if (!await forwardCachedMessage(client, answer, message,
+        {language, query: command, key: 'cacheForwardNotice'}))
         return false
     react(message, '✅', user)
 
@@ -206,7 +208,7 @@ async function handleSearch(ctx)
         let reply = translate(language, 'noresult')
         if (user.mode) reply = user.mode + '\n\n' + reply
         react(message, '❓', user)
-        await message.channel.send(reply)
+        await sendPrivately(message, reply)
 
         return true
     }

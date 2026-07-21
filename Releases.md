@@ -1,3 +1,12 @@
+## v4.15.0
+
+### Features
+
+- Added Discord slash commands ahead of the Message Content Intent removal. All commands are top-level (matching the familiar bare commands, e.g. `/utc`): `/search` and `/deck`, `/alt`, `/commands` (custom-command list, replied privately; optional text filters by prefix, e.g. `/commands a`), `/profile` (also where the search language is changed), `/online`, `/utc`, `/midnight`, `/ranking`, `/myrank`, `/contact`, `/terms`, and `/help`.
+- Rewrote the in-bot help text (all languages) to document the slash commands instead of the legacy `!` prefix.
+- Auto-registered slash commands for every connected guild on startup, and whenever the bot joins a new guild, the already-registered commands are checked first, so restarts skip needless re-registration.
+- Added a deprecation notice (rate-limited to once per user per day) that nudges legacy `!` prefix-command users toward the new slash commands.
+
 ## v4.14.1
 
 ### Bug Fixes

@@ -1,4 +1,5 @@
 const {PermissionsBitField} = require('discord.js')
+const {translate} = require('../tools/translation/translator')
 
 //cache key prefix is namespaced by environment
 const cacheKeyPrefix = process.env.NODE_ENV === 'production'
@@ -54,22 +55,33 @@ function canForwardInto(client, channel)
 }
 
 /**
- * Replay a cached message by forwarding it into the target channel. Returns
- * false (rather than throwing) when the forward cannot happen — most commonly
- * because the bot lacks Read Message History on this server's channel — so the
- * caller can fall back to regenerating the answer with a fresh send.
+ * Replay a cached message by forwarding it into the requesting message's
+ * channel. Returns false (rather than throwing) when the forward cannot
+ * happen — most commonly because the bot lacks Read Message History on this
+ * server's channel — so the caller can fall back to regenerating the answer
+ * with a fresh send.
+ *
+ * A forwarded message can't carry the usual "Requested by/from" attribution
+ * line (Discord rejects any `content` on a forward with API error 160011), so
+ * for slash commands a small notice is posted as its own message right before
+ * the forward — otherwise a cache hit would be a public channel message with
+ * no visible origin at all. Legacy `!` commands skip this: the user's own
+ * message is already visible right above, so there's nothing to add.
  *
  * @param client
  * @param cachedData
- * @param targetChannel
- * @param fallbackChannelId
+ * @param message the invoking message/interaction wrapper — its `.channel` is
+ *   the forward target, and (for slash commands) its `.isSlash`/`.author`/
+ *   `.channel.sendRaw` drive the pre-forward notice
+ * @param notice {language, query, key} for the pre-forward notice; `key`
+ *   defaults to the generic 'cacheRequestNotice' translation key
  * @returns {Promise<boolean>} true when the message was forwarded
  */
-async function forwardCachedMessage(
-    client, cachedData, targetChannel, fallbackChannelId)
+async function forwardCachedMessage(client, cachedData, message, notice = {})
 {
+    const {language, query, key = 'cacheRequestNotice'} = notice
     if (!cachedData || !cachedData.id) return false
-    if (!canForwardInto(client, targetChannel)) {
+    if (!canForwardInto(client, message.channel)) {
         console.log('no Read Message History permission, skipping forward')
 
         return false
@@ -81,11 +93,18 @@ async function forwardCachedMessage(
             channel = await guild.channels.fetch(cachedData.channelId)
         } else {
             channel = await client.channels.fetch(
-                cachedData.channelId || fallbackChannelId)
+                cachedData.channelId || message.channelId)
         }
         const messageToForward = await channel.messages.fetch(cachedData.id)
         if (!messageToForward) return false
-        await messageToForward.forward(targetChannel)
+
+        if (message.isSlash) {
+            await message.channel.sendRaw(translate(language, key, {
+                name: message.author.username,
+                query,
+            }))
+        }
+        await messageToForward.forward(message.channel)
 
         return true
     } catch (e) {

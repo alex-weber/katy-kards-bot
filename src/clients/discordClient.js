@@ -1,6 +1,6 @@
 // ================= DISCORD JS ===================
-const { Client, GatewayIntentBits, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder} = require('discord.js')
-const {getUser, updateUser, getProfileStats, getUsers} = require("../database/db")
+const { Client, GatewayIntentBits, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = require('discord.js')
+const {getUser, updateUser, getUsers} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {languages} = require("../tools/language")
 const {discordHandler} = require("../controller/discordHandler")
@@ -10,9 +10,11 @@ const {getSynonymById, updateSynonym} = require("../database/synonym")
 const {isManager} = require("../tools/search")
 const {buildCommandList} = require("../controller/commands/synonymCommands")
 const {invalidateSynonymCache} = require("../controller/synonymCache")
-const {renderProfileText, reactionsLabel} = require("../tools/profile")
-const {getButtonRow, ButtonStyle} = require("../tools/button")
+const {buildProfileView} = require("../controller/commands/profileView")
+const {buildContactModal} = require("../tools/contactModal")
 const {buildTermsView} = require("../controller/commands/termsCommands")
+const {handleSlashCommand, handleSlashModal} = require("../controller/slashHandler")
+const {attributeChannel} = require("../tools/attributedChannel")
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -38,56 +40,18 @@ async function refreshCachedUser(discordUserId, path, value)
     }
 }
 
-/**
- * Build the search-language select, with the user's current choice preselected.
- *
- * @param language the user's current search language
- * @returns {ActionRowBuilder}
- */
-function getLanguageSelectRow(language)
-{
-    const menu = new StringSelectMenuBuilder()
-        .setCustomId('profile_language')
-        .setPlaceholder(translate(language, 'profileLanguage'))
-        .addOptions(languages.map(lang => ({
-            label: lang.toUpperCase(),
-            value: lang,
-            default: lang === language,
-        })))
-
-    return new ActionRowBuilder().addComponents(menu)
-}
-
-/**
- * Build the ephemeral profile overview (stats + language select + reactions
- * toggle) for a user.
- *
- * @param user
- * @returns {Promise<{content: string, components: *}>}
- */
-async function buildProfileView(user)
-{
-    const stats = await getProfileStats(user.id)
-    const content = renderProfileText(user.language, stats)
-    const components = [
-        getLanguageSelectRow(user.language),
-        ...getButtonRow(
-            reactionsLabel(user.language, user),
-            'profile_reactions',
-            ButtonStyle.Secondary),
-        //Discord-only: DMs are blocked until the user opens a channel with the
-        //bot. Telegram allows them by default, so no equivalent button there.
-        ...getButtonRow(
-            translate(user.language, 'dmButton'),
-            'profile_dm',
-            ButtonStyle.Primary),
-    ]
-
-    return {content, components}
-}
-
 async function onInteractionCreate(interaction)
 {
+    //slash (application) commands — the replacement for the legacy `!` prefix
+    //commands, which depend on the Message Content Intent Discord is removing.
+    if (interaction.isChatInputCommand()) {
+        return await handleSlashCommand(interaction, client, redis)
+    }
+
+    //submitted /deck popups route through the slash handler
+    if (interaction.isModalSubmit() &&
+        await handleSlashModal(interaction, client, redis)) return
+
     if (!interaction.isButton() && !interaction.isModalSubmit() &&
         !interaction.isStringSelectMenu()) return
 
@@ -181,6 +145,15 @@ async function onInteractionCreate(interaction)
         // page under the user, the paged-in ones under the bot).
         message.author = interaction.user
         message.buttonId = interaction.customId
+        // attribute the next page to whoever clicked, not the button's owner.
+        // `channel` is a getter-only accessor on discord.js's Message class
+        // (no setter), so a plain `message.channel = ...` silently no-ops in
+        // this file's sloppy-mode CommonJS; defineProperty shadows it instead.
+        Object.defineProperty(message, 'channel', {
+            value: attributeChannel(message.channel, interaction.user, user.language),
+            writable: true,
+            configurable: true,
+        })
 
         // remove the button
         await interaction.message.edit({ components: [] })
@@ -198,21 +171,7 @@ async function onInteractionCreate(interaction)
 
     if (interaction.customId === 'contact_admins_button')
     {
-        const modal = new ModalBuilder()
-            .setCustomId('contact_admins_modal')
-            .setTitle(translate(user.language, 'contactModalTitle') || 'Contact Administrators')
-
-        const input = new TextInputBuilder()
-            .setCustomId('contactMessage')
-            .setLabel(translate(user.language, 'contactModalInputLabel') || 'Your Message')
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true)
-            .setPlaceholder(translate(user.language, 'contactModalInputPlaceholder') || 'Please describe your issue or request...')
-
-        const row = new ActionRowBuilder().addComponents(input)
-        modal.addComponents(row)
-
-        await interaction.showModal(modal)
+        await interaction.showModal(buildContactModal(user.language))
         await interaction.message.delete().catch(() => {}) // ignore errors if already deleted
         return
     }
@@ -308,7 +267,9 @@ async function onInteractionCreate(interaction)
         await updateSynonym(synonym.key, value)
         if (synonym.value !== value) await invalidateSynonymCache(synonym.key)
 
-        await interaction.reply(`${synonym.key} updated`)
+        //public, so name the editor — otherwise this is a channel message
+        //with no visible origin at all
+        await interaction.reply(`${synonym.key} updated by ${interaction.user.username}`)
         console.log(interaction.user.username, 'edited', synonym.key, '. New value: ' + newValue)
 
     }

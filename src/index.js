@@ -13,6 +13,11 @@ const {telegramHandler, telegramCallbackHandler} = require("./controller/telegra
 
 //discord client
 const {client} = require('./clients/discordClient.js')
+//slash command auto-registration
+const {
+    registerAllGuildCommands,
+    registerGuildCommands,
+} = require('./tools/deployCommands')
 //stats
 const {getServerList} = require("./tools/stats")
 //for shutdown
@@ -149,6 +154,8 @@ async function onClientReady()
     client.user.setActivity(
         'Watching ' + client.guilds.cache.size + ' servers'
     )
+    //register slash commands for every guild the bot is already in
+    await registerAllGuildCommands(client)
 }
 
 async function onMessageCreate(message)
@@ -161,6 +168,8 @@ const {onInteractionCreate} = require('./clients/discordClient')
 client.on('clientReady', onClientReady)
 client.on('messageCreate', onMessageCreate)
 client.on('interactionCreate', onInteractionCreate)
+//register slash commands when the bot joins a new guild
+client.on('guildCreate', guild => registerGuildCommands(client, guild.id))
 
 //start Discord-Bot's session
 client.login(process.env.DISCORD_TOKEN).then(() =>
