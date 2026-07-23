@@ -49,7 +49,12 @@ const {
     handleSystemSettingsUpdate,
     handleUserStatusToggle,
     handleLogout,
-    handleLogin
+    handleLogin,
+    synonymImageUpload,
+    handleSynonymImageUpload,
+    handleSynonymCreate,
+    handleSynonymUpdate,
+    handleSynonymDelete,
 } = require('./controller/router')
 
 const {redis, redisStore, secure} = require('./controller/redis')
@@ -123,6 +128,10 @@ app.get('/login', webRateLimiter, startDiscordAuth)
 app.post('/login', webRateLimiter, handleLogin)
 app.post('/logout', webRateLimiter, handleLogout)
 app.get('/commands', webRateLimiter, isAuthenticated, requireManager, renderCommands)
+app.post('/commands', webRateLimiter, isAuthenticated, requireManager, handleSynonymCreate)
+app.post('/commands/upload', webRateLimiter, isAuthenticated, requireManager, synonymImageUpload, handleSynonymImageUpload)
+app.post('/commands/:key', webRateLimiter, isAuthenticated, requireManager, handleSynonymUpdate)
+app.post('/commands/:key/delete', webRateLimiter, isAuthenticated, requireManager, handleSynonymDelete)
 app.get('/messages', webRateLimiter, isAuthenticated, requireManager, renderMessages)
 app.get('/users', webRateLimiter, isAuthenticated, requireManager, renderUsers)
 app.post('/users/:id', webRateLimiter, isAuthenticated, requireManager, handleUserUpdate)

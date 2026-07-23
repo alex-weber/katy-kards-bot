@@ -508,6 +508,7 @@ module.exports = {
     getFiles,
     listSynonyms,
     handleSynonym,
+    checkSynonymKey,
     isBotCommandChannel,
     isEnglishOnlyChannel,
     isManager,

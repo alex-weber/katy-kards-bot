@@ -144,6 +144,7 @@ async function cacheSentMessage(redis, key, sentMessage, ttl, extra = {})
 module.exports = {
     cacheKeyPrefix,
     getGuildPart,
+    canForwardInto,
     forwardCachedMessage,
     cacheSentMessage,
 }

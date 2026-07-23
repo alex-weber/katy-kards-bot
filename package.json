@@ -1,6 +1,6 @@
 {
   "name": "katyusha-kards-bot",
-  "version": "4.15.0",
+  "version": "5.0.0",
   "description": "cards search and more",
   "main": "src/index.js",
   "scripts": {
@@ -29,6 +29,7 @@
     "i18next": "^25.8.13",
     "i18next-fs-backend": "2.6.6",
     "lusca": "^1.7.0",
+    "multer": "^2.2.0",
     "pg": "^8.16.3",
     "prisma": "^6.11.1",
     "pug": "^3.0.3",

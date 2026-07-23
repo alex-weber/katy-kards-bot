@@ -252,4 +252,4 @@ async function discordHandler(message, client, redis)
     return message
 }
 
-module.exports = {discordHandler}
+module.exports = {discordHandler, warnLegacyCommand}

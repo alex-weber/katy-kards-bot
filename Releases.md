@@ -1,3 +1,24 @@
+## v5.0.0
+
+### Features
+
+- Added the `/td` slash command for the Top Deck mini-game, with an optional unit-type choice (infantry/artillery/bomber/fighter/tank).
+- `/profile`, `/contact`, and `/terms` now reply directly and privately instead of posting a public "click here" button first.
+- `/search` now takes the query as a command option (`/search <query>`) instead of opening a popup.
+- Slash-command channel messages are now attributed to the requesting user (and, where known, the command text they used), including a notice posted before a cached result is re-forwarded — so a public message from the bot is always traceable to who triggered it.
+- "Nothing found" replies (search, alt) are now shown privately to the requester instead of posted publicly.
+- Added full custom-command management (add/edit/delete) to the web dashboard's Custom Commands page, admin-only — previously this required the `^key=value` Discord chat syntax. Supports text replies, image uploads (via the same image host Discord attachments use), and search-alias redirects.
+
+### Bug Fixes
+
+- Fixed a Discord API error (forwarding a cached result while also attributing it) that broke the response cache for repeated searches/decks/alt-art/custom commands.
+- Fixed pagination attribution silently not applying, due to a getter-only property on discord.js's Message class.
+- Fixed `/profile`, `/contact`, and `/terms` dropping the moderator-set "blocked" note for blocked users.
+- Fixed a race that could send the legacy-command deprecation notice twice in one day.
+- Fixed `/deck` opening its input popup before checking whether the user is blocked or needs to accept the Terms of Service.
+- Fixed a potential crash when a slash command's channel isn't cached.
+- Editing a custom command via the dashboard-triggered modal now names the editor in the (public) confirmation reply.
+
 ## v4.15.0
 
 ### Features

@@ -66,11 +66,28 @@ function buildCommands()
         .setName('help')
         .setDescription('Show how to use the bot')
 
+    // Top Deck mini-game: two random cards fight. The unit type is optional —
+    // a bare /td matches any type, same as the legacy `!td` with no argument.
+    const td = new SlashCommandBuilder()
+        .setName('td')
+        .setDescription('Top Deck: two random cards fight')
+        .addStringOption(option => option
+            .setName('unit')
+            .setDescription('Restrict both cards to a unit type (optional)')
+            .setRequired(false)
+            .addChoices(
+                {name: 'Infantry', value: 'infantry'},
+                {name: 'Artillery', value: 'artillery'},
+                {name: 'Bomber', value: 'bomber'},
+                {name: 'Fighter', value: 'fighter'},
+                {name: 'Tank', value: 'tank'},
+            ))
+
     const simple = SIMPLE_COMMANDS.map(entry => new SlashCommandBuilder()
         .setName(entry.name)
         .setDescription(entry.description))
 
-    return [search, commands, deck, help, ...simple]
+    return [search, commands, deck, help, td, ...simple]
         .map(command => command.toJSON())
 }
 
@@ -222,5 +239,8 @@ async function registerGuildCommands(client, guildId)
 module.exports = {
     registerAllGuildCommands,
     registerGuildCommands,
+    ensureGuildCommands,
+    buildCommands,
+    commandsSignature,
     SIMPLE_COMMANDS,
 }

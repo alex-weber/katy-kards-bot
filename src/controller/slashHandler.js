@@ -375,12 +375,22 @@ async function handleSlashCommand(interaction, client, redis)
                 return await showContactModal(interaction, redis)
             case 'terms':
                 return await replyTerms(interaction, redis)
+            case 'td': {
+                const unit = interaction.options.getString('unit')
+                return await routeThroughHandler(interaction, client, redis,
+                    prefix, unit ? `td ${unit}` : 'td')
+            }
             default: {
                 //plain commands (alt, utc, online, midnight, ranking, myrank, …)
                 const command = simpleLookup[interaction.commandName]
                 if (command) {
-                    return await routeThroughHandler(interaction, client, redis,
-                        prefix, command)
+                    return await routeThroughHandler(
+                        interaction,
+                        client,
+                        redis,
+                        prefix,
+                        command
+                    )
                 }
             }
         }

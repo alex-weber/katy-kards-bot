@@ -1,11 +1,56 @@
 extends layout
 
+mixin synonymContentFields(values)
+  .command-fields
+    .form-check.form-check-inline
+      input.form-check-input(type="radio" name="contentType" value="text" checked=values.contentType !== 'redirect' onchange="toggleSynonymContentType(this)")
+      label.form-check-label Text reply
+    .form-check.form-check-inline
+      input.form-check-input(type="radio" name="contentType" value="redirect" checked=values.contentType === 'redirect' onchange="toggleSynonymContentType(this)")
+      label.form-check-label Redirect (search alias)
+
+    .command-field-text(class=values.contentType === 'redirect' ? 'd-none' : '')
+      textarea.form-control(name="text" rows="3" maxlength="2000" placeholder="Message text shown to users")= values.text
+
+    .command-field-redirect(class=values.contentType === 'redirect' ? '' : 'd-none')
+      input.form-control(type="text" name="redirectTarget" value=values.redirectTarget maxlength="200" placeholder="Card name / search terms to run instead")
+      p.form-text.text-muted.mb-0 Runs a search under this text instead of replying directly — e.g. an alias like "lion" → "lion for a day".
+
+    .command-field-images
+      each file in values.files
+        .command-file-chip
+          input(type="hidden" name="keepFiles" value=file)
+          a(href=file target="_blank" rel="noopener")= file
+          button.btn.btn-sm.btn-outline-danger.ms-2(type="button" onclick="this.closest('.command-file-chip').remove()") Remove
+      .command-file-upload
+        input.form-control.form-control-sm(type="file" accept="image/png,image/jpeg,image/gif,image/webp")
+        button.btn.btn-sm.btn-outline-secondary(type="button" onclick="uploadSynonymImage(this)") Add image
+        span.command-upload-status.text-muted
+
 block content
+
+  input#csrfToken(type="hidden" value=_csrf)
 
   .sticky-page-head
     .page-hero
       h2.page-title= title
       p.page-subtitle #{synonyms.length} custom command mappings
+
+  .content-panel.data-panel-page
+    .panel-header
+      .panel-title-group
+        span.panel-icon(aria-hidden="true")
+          svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+            path(d="M12 5v14M5 12h14")
+        h3.panel-title New Command
+    form.command-form(method="post" action="/commands")
+      if _csrf
+        input(type="hidden" name="_csrf" value=_csrf)
+      .mb-3
+        label.form-label(for="newCommandKey") Key
+        input#newCommandKey.form-control(type="text" name="key" required maxlength="100" pattern="[\\sa-z0-9_-]+" title="Lowercase letters, numbers, spaces, - and _ only" placeholder="e.g. lion")
+      +synonymContentFields({contentType: 'text', text: '', redirectTarget: '', files: []})
+      button.btn.btn-primary.mt-3(type="submit") Create
 
   .content-panel.data-panel-page
     .panel-header
@@ -22,24 +67,30 @@ block content
           th.rank-col(scope='col') #
           th(scope='col') Key
           th(scope='col') Value
+          th(scope='col') Actions
       tbody
-        each synonym, index in synonyms
+        if synonyms.length
+          each synonym, index in synonyms
+            tr
+              td
+                span.rank-badge= index+1
+              td
+                span.data-primary= synonym.key
+              td
+                form.command-form(method="post" action=`/commands/${encodeURIComponent(synonym.key)}`)
+                  if _csrf
+                    input(type="hidden" name="_csrf" value=_csrf)
+                  +synonymContentFields(synonym.parsed)
+                  button.btn.btn-outline-primary.btn-sm.mt-2(type="submit") Save
+              td
+                form(method="post" action=`/commands/${encodeURIComponent(synonym.key)}/delete` data-key=synonym.key onsubmit="return confirmSynonymDelete(this)")
+                  if _csrf
+                    input(type="hidden" name="_csrf" value=_csrf)
+                  button.btn.btn-outline-danger.btn-sm(type="submit") Delete
+        else
           tr
-            td
-              span.rank-badge= index+1
-            each value in synonym
-              if value[0] === '{'
-                - let obj = JSON.parse(value)
-                td
-                  if obj.content
-                    - let htmlContent = obj.content.replaceAll('\n', '<br>')
-                    p.mb-2!= htmlContent
-                  if obj.files && obj.files.length
-                    ul.command-file-list
-                      each file in obj.files
-                        li: a(href=file target="_blank")= file
-              else if value !== synonym.id
-                td
-                  span.data-primary= value
+            td(colspan="4").text-center No custom commands yet
   p &nbsp;
   p &nbsp;
+
+  script(src="/static/commands.js")

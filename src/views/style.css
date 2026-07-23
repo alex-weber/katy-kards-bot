@@ -442,9 +442,52 @@
     width: 42px;
 }
 
-.command-file-list {
-    margin: 0.5rem 0 0;
-    padding-left: 1.1rem;
+.command-form {
+    max-width: 640px;
+}
+
+.command-fields > * + * {
+    margin-top: 0.75rem;
+}
+
+.command-field-images {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.command-file-chip {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+}
+
+.command-file-chip a {
+    color: #adb5bd;
+    flex: 1;
+    overflow: hidden;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.command-file-chip a:hover {
+    color: #20c997;
+}
+
+.command-file-upload {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.command-upload-status {
+    font-size: 0.85rem;
 }
 
 .cards-faction-tables {

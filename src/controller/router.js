@@ -1,5 +1,9 @@
 const {
     getAllSynonyms,
+    getSynonym,
+    createSynonym,
+    updateSynonym,
+    deleteSynonym,
     getUser,
     getUserById,
     getUsers,
@@ -10,7 +14,12 @@ const {
     getTopDeckRanking,
 } = require('../database/db')
 
-const {isManager} = require("../tools/search")
+const path = require('path')
+const fs = require('fs')
+const multer = require('multer')
+const {isManager, checkSynonymKey} = require("../tools/search")
+const {invalidateSynonymCache} = require('./synonymCache')
+const {uploadImage} = require('../tools/imageUpload')
 const {resolveAvatarUrl} = require("../tools/avatar")
 const {
     ROLE,
@@ -175,15 +184,244 @@ function handleLogout(req, res, next) {
 }
 
 
+// Temp home for admin-uploaded synonym images before they're re-hosted by
+// uploadImage() — same directory downloadImageAsFile()/uploadImage() already
+// use for the Discord-attachment upload path, so no new gitignore entry needed.
+const synonymUploadDir = path.join(__dirname, '../tmp/downloads')
+const synonymImageUploadMiddleware = multer({
+    storage: multer.diskStorage({
+        destination: synonymUploadDir,
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname).slice(0, 10)
+            cb(null, `synadmin_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`)
+        },
+    }),
+    limits: {fileSize: 8 * 1024 * 1024},
+    fileFilter: (req, file, cb) => {
+        cb(null, /^image\/(png|jpe?g|gif|webp)$/.test(file.mimetype))
+    },
+}).single('image')
+
+/**
+ * multer reports failures (wrong field name, over the size limit, …) by
+ * calling `next(err)` — with no global Express error handler in this app,
+ * that would otherwise fall through to a default HTML error page instead of
+ * the JSON response commands.js's fetch call expects. Catch it here instead.
+ *
+ * @param req
+ * @param res
+ * @param next
+ */
+function synonymImageUpload(req, res, next) {
+    synonymImageUploadMiddleware(req, res, error => {
+        if (!error) return next()
+
+        const message = error.code === 'LIMIT_FILE_SIZE'
+            ? 'Image is too large (max 8MB)'
+            : 'Upload failed'
+        res.status(400).json({error: message})
+    })
+}
+
+/**
+ * Build the stored `value` JSON for a synonym from the web form's fields.
+ * Mirrors handleSynonym()'s convention (src/tools/search.js): a "text:"
+ * prefix on `content` means a literal reply, its absence means a search
+ * redirect/alias — so a redirect's content is stored without the prefix.
+ *
+ * @param contentType 'text' | 'redirect'
+ * @param text the reply body (used when contentType === 'text')
+ * @param redirectTarget the alias target (used when contentType === 'redirect')
+ * @param files array of already-hosted image URLs
+ * @returns {string|null} JSON string, or null when there's nothing to store
+ */
+function buildSynonymValue({contentType, text, redirectTarget, files}) {
+    const value = {}
+    if (contentType === 'redirect') {
+        const target = sanitizeText(redirectTarget, 200)
+        if (target) value.content = target
+    } else {
+        const body = sanitizeText(text, 2000)
+        if (body) value.content = 'text:' + body
+    }
+    if (Array.isArray(files) && files.length) value.files = files
+
+    if (!value.content && !value.files) return null
+
+    return JSON.stringify(value)
+}
+
+/**
+ * Parse a stored synonym `value` into web-form-friendly fields. Handles the
+ * legacy bare-string formats (resolveSynonym() in synonymCommands.js has to
+ * deal with the same three: a raw image URL, a bare "text:" string, or a bare
+ * redirect target) in addition to the canonical JSON shape.
+ *
+ * @param rawValue
+ * @returns {{contentType: string, text: string, redirectTarget: string, files: string[]}}
+ */
+function parseSynonymValue(rawValue) {
+    let content = ''
+    let files = []
+
+    if (typeof rawValue === 'string' && rawValue.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(rawValue)
+            content = typeof parsed.content === 'string' ? parsed.content : ''
+            files = Array.isArray(parsed.files) ? parsed.files : []
+        } catch {
+            content = rawValue
+        }
+    } else if (typeof rawValue === 'string' && rawValue.startsWith('http')) {
+        files = [rawValue]
+    } else if (typeof rawValue === 'string') {
+        content = rawValue
+    }
+
+    const isText = content.startsWith('text:')
+
+    return {
+        contentType: isText || !content ? 'text' : 'redirect',
+        text: isText ? content.slice('text:'.length) : '',
+        redirectTarget: !isText ? content : '',
+        files,
+    }
+}
+
+/**
+ * Which of an existing synonym's files the admin left checked in the edit
+ * form (unchecked ones are dropped; new uploads are appended by the caller).
+ *
+ * @param req
+ * @param existingFiles
+ * @returns {string[]}
+ */
+function resolveKeptSynonymFiles(req, existingFiles) {
+    const keep = req.body.keepFiles
+    if (keep === undefined) return []
+    const kept = Array.isArray(keep) ? keep : [keep]
+
+    return existingFiles.filter(file => kept.includes(file))
+}
+
+/**
+ * New uploads arrive as hidden `files` inputs already populated by the
+ * /commands/upload endpoint (see synonymImageUpload) — the actual binary
+ * upload already happened client-side, so this is just reading form fields.
+ *
+ * @param req
+ * @returns {string[]}
+ */
+function resolveNewSynonymFiles(req) {
+    const submitted = req.body.files
+    if (!submitted) return []
+
+    return (Array.isArray(submitted) ? submitted : [submitted])
+        .filter(url => typeof url === 'string' && url.startsWith('http'))
+}
+
+function redirectBackToCommands(req, res) {
+    res.redirect('/commands')
+}
+
 async function renderCommands(req, res) {
 
     const synonyms = await getAllSynonyms()
 
     res.render('synonyms', {
         title: 'Custom Bot Commands',
-        synonyms,
+        synonyms: synonyms.map(synonym => ({
+            ...synonym,
+            parsed: parseSynonymValue(synonym.value),
+        })),
         user: req.session.user
     })
+}
+
+/**
+ * Upload a single admin-provided image for a custom command, via the same
+ * image host Discord attachments use. A dedicated JSON endpoint (called from
+ * commands.js via fetch) rather than folding this into the create/update
+ * forms: those stay plain application/x-www-form-urlencoded POSTs like every
+ * other admin form in this dashboard, and multer's multipart parsing only
+ * runs on this one route.
+ *
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
+async function handleSynonymImageUpload(req, res) {
+    if (!req.session.user || !req.session.user.isManager) {
+        return res.status(403).json({error: 'Not permitted'})
+    }
+    if (!req.file) return res.status(400).json({error: 'No image received'})
+
+    try {
+        const url = await uploadImage(req.file.path)
+        if (!url) return res.status(502).json({error: 'Upload failed'})
+        res.json({url})
+    } finally {
+        await fs.promises.unlink(req.file.path).catch(() => {})
+    }
+}
+
+async function handleSynonymCreate(req, res) {
+    if (!req.session.user || !req.session.user.isManager) {
+        return res.status(403).send('Not permitted')
+    }
+
+    const key = sanitizeText(req.body.key, 100).toLowerCase()
+    if (!key || !checkSynonymKey(key) || await getSynonym(key)) {
+        return redirectBackToCommands(req, res)
+    }
+
+    const value = buildSynonymValue({
+        contentType: req.body.contentType,
+        text: req.body.text,
+        redirectTarget: req.body.redirectTarget,
+        files: resolveNewSynonymFiles(req),
+    })
+    if (!value) return redirectBackToCommands(req, res)
+
+    await createSynonym(key, value)
+    await invalidateSynonymCache(key)
+    redirectBackToCommands(req, res)
+}
+
+async function handleSynonymUpdate(req, res) {
+    if (!req.session.user || !req.session.user.isManager) {
+        return res.status(403).send('Not permitted')
+    }
+
+    const key = sanitizeText(req.params.key, 100).toLowerCase()
+    const existing = key && await getSynonym(key)
+    if (!existing) return redirectBackToCommands(req, res)
+
+    const keptFiles = resolveKeptSynonymFiles(req, parseSynonymValue(existing.value).files)
+    const value = buildSynonymValue({
+        contentType: req.body.contentType,
+        text: req.body.text,
+        redirectTarget: req.body.redirectTarget,
+        files: [...keptFiles, ...resolveNewSynonymFiles(req)],
+    })
+    if (!value) return redirectBackToCommands(req, res)
+
+    await updateSynonym(key, value)
+    if (existing.value !== value) await invalidateSynonymCache(key)
+    redirectBackToCommands(req, res)
+}
+
+async function handleSynonymDelete(req, res) {
+    if (!req.session.user || !req.session.user.isManager) {
+        return res.status(403).send('Not permitted')
+    }
+
+    const key = sanitizeText(req.params.key, 100).toLowerCase()
+    if (key && await getSynonym(key)) {
+        await deleteSynonym(key)
+        await invalidateSynonymCache(key)
+    }
+    redirectBackToCommands(req, res)
 }
 
 async function renderMessages(req, res) {
@@ -695,5 +933,12 @@ module.exports = {
     handleSystemSettingsUpdate,
     handleUserStatusToggle,
     handleLogout,
-    handleLogin
+    handleLogin,
+    synonymImageUpload,
+    handleSynonymImageUpload,
+    handleSynonymCreate,
+    handleSynonymUpdate,
+    handleSynonymDelete,
+    buildSynonymValue,
+    parseSynonymValue,
 }
