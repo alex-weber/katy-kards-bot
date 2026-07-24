@@ -8,6 +8,9 @@
 - Slash-command channel messages are now attributed to the requesting user (and, where known, the command text they used), including a notice posted before a cached result is re-forwarded — so a public message from the bot is always traceable to who triggered it.
 - "Nothing found" replies (search, alt) are now shown privately to the requester instead of posted publicly.
 - Added full custom-command management (add/edit/delete) to the web dashboard's Custom Commands page, admin-only — previously this required the `^key=value` Discord chat syntax. Supports text replies, image uploads (via the same image host Discord attachments use), and search-alias redirects.
+- Rebuilt the Custom Commands page for long lists: search across keys, reply text and redirect targets, a filter by command type, and pagination at 20 per page. Adding and editing now happen in a dialog, and each row's edit/delete controls appear on hover.
+- Command attachments are now visible in the list as thumbnails, and clicking one opens a full-size preview showing its image URL.
+- Filter dropdowns across the dashboard (user role and status, dashboard period, custom-command type) now apply as soon as they change, instead of also needing the Filter button.
 
 ### Bug Fixes
 
