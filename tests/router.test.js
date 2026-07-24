@@ -298,7 +298,8 @@ describe('manager pages', () => {
     test('renderCommands renders the synonyms view with the loaded list', async () => {
         const res = makeRes()
         db.getAllSynonyms.mockResolvedValueOnce([{ key: 'k', value: 'v' }])
-        await router.renderCommands({ session: { user: { isManager: true } } }, res)
+        await router.renderCommands(
+            { session: { user: { isManager: true } }, path: '/commands', query: {} }, res)
         const [view, locals] = res.render.mock.calls[0]
         expect(view).toBe('synonyms')
         expect(locals.synonyms).toHaveLength(1)
@@ -962,18 +963,84 @@ describe('synonym value helpers', () => {
 })
 
 describe('renderCommands', () => {
-    test('parses each synonym\'s value for the template', async () => {
-        db.getAllSynonyms.mockResolvedValueOnce([
-            {id: 1, key: 'lion', value: JSON.stringify({content: 'text:Roar!'})},
-        ])
+    function makeCommandsReq(query = {}) {
+        return {session: {user: {isManager: true}}, path: '/commands', query}
+    }
+
+    async function renderWith(synonyms, query) {
+        db.getAllSynonyms.mockResolvedValueOnce(synonyms)
         const res = makeRes()
 
-        await router.renderCommands({session: {user: {isManager: true}}}, res)
+        await router.renderCommands(makeCommandsReq(query), res)
 
-        const locals = res.render.mock.calls[0][1]
+        return res.render.mock.calls[0][1]
+    }
+
+    test('parses each synonym\'s value for the template', async () => {
+        const locals = await renderWith([
+            {id: 1, key: 'lion', value: JSON.stringify({content: 'text:Roar!'})},
+        ])
+
         expect(locals.synonyms[0].parsed).toEqual({
             contentType: 'text', text: 'Roar!', redirectTarget: '', files: [],
         })
+        expect(locals.synonyms[0].kind).toBe('text')
+    })
+
+    test('sorts by key and labels each command\'s kind', async () => {
+        const locals = await renderWith([
+            {id: 1, key: 'zebra', value: JSON.stringify({content: 'othercommand'})},
+            {id: 2, key: 'meme', value: JSON.stringify({files: ['http://x/a.png']})},
+            {id: 3, key: 'aardvark', value: JSON.stringify({content: 'text:hi'})},
+        ])
+
+        expect(locals.synonyms.map(synonym => [synonym.key, synonym.kind])).toEqual([
+            ['aardvark', 'text'],
+            ['meme', 'image'],
+            ['zebra', 'redirect'],
+        ])
+    })
+
+    test('searches keys, reply text and redirect targets', async () => {
+        const all = [
+            {id: 1, key: 'lion', value: JSON.stringify({content: 'lion for a day'})},
+            {id: 2, key: 'roar', value: JSON.stringify({content: 'text:the lion roars'})},
+            {id: 3, key: 'unrelated', value: JSON.stringify({content: 'text:nothing here'})},
+        ]
+
+        const locals = await renderWith(all, {q: 'LION'})
+
+        expect(locals.synonyms.map(synonym => synonym.key)).toEqual(['lion', 'roar'])
+        expect(locals.totalCount).toBe(2)
+        expect(locals.allCount).toBe(3)
+    })
+
+    test('filters by kind and ignores an unknown type', async () => {
+        const all = [
+            {id: 1, key: 'alias', value: JSON.stringify({content: 'othercommand'})},
+            {id: 2, key: 'reply', value: JSON.stringify({content: 'text:hi'})},
+        ]
+
+        expect((await renderWith(all, {type: 'redirect'})).synonyms.map(s => s.key))
+            .toEqual(['alias'])
+        expect((await renderWith(all, {type: 'bogus'})).synonyms).toHaveLength(2)
+    })
+
+    test('pages the filtered list and clamps an out-of-range page', async () => {
+        const all = Array.from({length: 30}, (unused, index) => ({
+            id: index,
+            key: `cmd${String(index).padStart(2, '0')}`,
+            value: JSON.stringify({content: 'text:hi'}),
+        }))
+
+        const first = await renderWith(all, {})
+        expect(first.synonyms).toHaveLength(20)
+        expect(first.totalPages).toBe(2)
+
+        const clamped = await renderWith(all, {page: '99'})
+        expect(clamped.page).toBe(2)
+        expect(clamped.synonyms).toHaveLength(10)
+        expect(clamped.synonyms[0].key).toBe('cmd20')
     })
 })
 

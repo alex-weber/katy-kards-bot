@@ -320,20 +320,82 @@ function resolveNewSynonymFiles(req) {
         .filter(url => typeof url === 'string' && url.startsWith('http'))
 }
 
+/**
+ * Back to the list, keeping the admin's search/page position when the form
+ * carried one (same `returnTo` convention the user rows use). Only same-page
+ * relative targets are honoured, so a tampered field can't turn a redirect
+ * into an open redirect.
+ *
+ * @param req
+ * @param res
+ */
 function redirectBackToCommands(req, res) {
-    res.redirect('/commands')
+    const returnTo = typeof req.body?.returnTo === 'string' ? req.body.returnTo : ''
+
+    return res.redirect(/^\/commands(\?[^\s]*)?$/.test(returnTo) ? returnTo : '/commands')
 }
 
-async function renderCommands(req, res) {
+/**
+ * Which flavour of command a stored value represents — drives both the `type`
+ * filter and the badge shown in each row.
+ *
+ * @param parsed output of parseSynonymValue()
+ * @returns {'text'|'redirect'|'image'}
+ */
+function synonymKind(parsed) {
+    if (parsed.contentType === 'redirect') return 'redirect'
+    if (!parsed.text && parsed.files.length) return 'image'
 
-    const synonyms = await getAllSynonyms()
+    return 'text'
+}
+
+const SYNONYM_KINDS = ['text', 'redirect', 'image']
+
+/**
+ * getAllSynonyms() has no filtering/paging of its own and the whole set is
+ * small enough to hold in memory (it's already loaded in full elsewhere, see
+ * search.js), so search and paging happen here rather than in the query.
+ *
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
+async function renderCommands(req, res) {
+    const search = sanitizeText(req.query.q, 100).toLowerCase()
+    const type = SYNONYM_KINDS.includes(req.query.type) ? req.query.type : ''
+    const pageSize = 20
+
+    const all = (await getAllSynonyms())
+        .map(synonym => {
+            const parsed = parseSynonymValue(synonym.value)
+
+            return {...synonym, parsed, kind: synonymKind(parsed)}
+        })
+        .sort((a, b) => a.key.localeCompare(b.key))
+
+    const filtered = all.filter(synonym => {
+        if (type && synonym.kind !== type) return false
+        if (!search) return true
+
+        return [synonym.key, synonym.parsed.text, synonym.parsed.redirectTarget]
+            .some(field => field.toLowerCase().includes(search))
+    })
+
+    const totalCount = filtered.length
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+    const page = Math.min(sanitizePage(req.query.page), totalPages)
 
     res.render('synonyms', {
         title: 'Custom Bot Commands',
-        synonyms: synonyms.map(synonym => ({
-            ...synonym,
-            parsed: parseSynonymValue(synonym.value),
-        })),
+        synonyms: filtered.slice((page - 1) * pageSize, page * pageSize),
+        totalCount,
+        allCount: all.length,
+        page,
+        pageSize,
+        totalPages,
+        search,
+        type,
+        currentPath: req.path,
         user: req.session.user
     })
 }

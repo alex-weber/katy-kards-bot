@@ -1,58 +1,74 @@
 extends layout
 
-mixin synonymContentFields(values)
-  .command-fields
-    .form-check.form-check-inline
-      input.form-check-input(type="radio" name="contentType" value="text" checked=values.contentType !== 'redirect' onchange="toggleSynonymContentType(this)")
-      label.form-check-label Text reply
-    .form-check.form-check-inline
-      input.form-check-input(type="radio" name="contentType" value="redirect" checked=values.contentType === 'redirect' onchange="toggleSynonymContentType(this)")
-      label.form-check-label Redirect (search alias)
-
-    .command-field-text(class=values.contentType === 'redirect' ? 'd-none' : '')
-      textarea.form-control(name="text" rows="3" maxlength="2000" placeholder="Message text shown to users")= values.text
-
-    .command-field-redirect(class=values.contentType === 'redirect' ? '' : 'd-none')
-      input.form-control(type="text" name="redirectTarget" value=values.redirectTarget maxlength="200" placeholder="Card name / search terms to run instead")
-      p.form-text.text-muted.mb-0 Runs a search under this text instead of replying directly — e.g. an alias like "lion" → "lion for a day".
-
-    .command-field-images
-      each file in values.files
-        .command-file-chip
-          input(type="hidden" name="keepFiles" value=file)
-          a(href=file target="_blank" rel="noopener")= file
-          button.btn.btn-sm.btn-outline-danger.ms-2(type="button" onclick="this.closest('.command-file-chip').remove()") Remove
-      .command-file-upload
-        input.form-control.form-control-sm(type="file" accept="image/png,image/jpeg,image/gif,image/webp")
-        button.btn.btn-sm.btn-outline-secondary(type="button" onclick="uploadSynonymImage(this)") Add image
-        span.command-upload-status.text-muted
+mixin commandIcon(name)
+  svg(xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true")
+    case name
+      when 'edit'
+        path(d="M12 20h9")
+        path(d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z")
+      when 'trash'
+        path(d="M3 6h18")
+        path(d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2")
+        path(d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6")
+      when 'plus'
+        path(d="M12 5v14M5 12h14")
+      when 'search'
+        circle(cx="11" cy="11" r="7")
+        path(d="m20 20-3.5-3.5")
+      when 'redirect'
+        path(d="M4 12h13")
+        path(d="m13 6 6 6-6 6")
+      when 'text'
+        path(d="M4 7V5h16v2")
+        path(d="M12 5v14")
+        path(d="M9 19h6")
+      when 'image'
+        rect(x="3" y="4" width="18" height="16" rx="2")
+        circle(cx="8.5" cy="9.5" r="1.5")
+        path(d="m21 16-5-5L5 20")
 
 block content
+  -
+    const queryBase = `q=${encodeURIComponent(search || '')}&type=${encodeURIComponent(type || '')}`
+    const returnTo = currentPath + '?' + queryBase + `&page=${page}`
+    const kindLabels = {text: 'Text reply', redirect: 'Redirect', image: 'Image only'}
 
   input#csrfToken(type="hidden" value=_csrf)
 
-  .sticky-page-head
+  .sticky-page-head.log-sticky-head
     .page-hero
       h2.page-title= title
-      p.page-subtitle #{synonyms.length} custom command mappings
+      p.page-subtitle
+        if search || type
+          | #{totalCount} of #{allCount} custom commands match
+        else
+          | #{allCount} custom commands mapped to text, redirects and images
 
-  .content-panel.data-panel-page
-    .panel-header
-      .panel-title-group
-        span.panel-icon(aria-hidden="true")
-          svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
-            path(d="M12 5v14M5 12h14")
-        h3.panel-title New Command
-    form.command-form(method="post" action="/commands")
-      if _csrf
-        input(type="hidden" name="_csrf" value=_csrf)
-      .mb-3
-        label.form-label(for="newCommandKey") Key
-        input#newCommandKey.form-control(type="text" name="key" required maxlength="100" pattern="[\\sa-z0-9_-]+" title="Lowercase letters, numbers, spaces, - and _ only" placeholder="e.g. lion")
-      +synonymContentFields({contentType: 'text', text: '', redirectTarget: '', files: []})
-      button.btn.btn-primary.mt-3(type="submit") Create
+    form#filterForm.filter-panel(method="get" action="/commands")
+      .row.g-3.align-items-end.mb-3
+        .col-lg-6
+          label.form-label(for="q") Search
+          .input-group.command-search
+            span.input-group-text
+              +commandIcon('search')
+            input#q.form-control(type="search" name="q" value=search placeholder="Key, reply text or redirect target" autocomplete="off")
+            if search
+              button.btn.btn-outline-secondary(type="button" title="Clear search" onclick="document.getElementById('q').value=''; document.getElementById('filterForm').submit();") &times;
+        .col-lg-3.col-sm-6
+          label.form-label(for="type") Type
+          select#type.form-select(name="type" onchange="this.form.submit()")
+            option(value="" selected=!type) Any type
+            option(value="text" selected=type === 'text') Text reply
+            option(value="redirect" selected=type === 'redirect') Redirect
+            option(value="image" selected=type === 'image') Image only
+        .col-lg-3.col-sm-6.command-toolbar-actions
+          button.btn.btn-outline-secondary(type="submit") Filter
+          button.btn.btn-primary(type="button" data-bs-toggle="modal" data-bs-target="#commandModal")
+            span.me-1
+              +commandIcon('plus')
+            | New command
 
-  .content-panel.data-panel-page
+  .content-panel.data-panel-page.log-data-panel
     .panel-header
       .panel-title-group
         span.panel-icon(aria-hidden="true")
@@ -61,35 +77,226 @@ block content
             path(d="M4 12h12")
             path(d="M4 17h8")
         h3.panel-title Custom Commands
-    table.data-table
+      span.panel-kicker Page #{page} / #{totalPages}
+    table.data-table.align-middle.commands-table
       thead
         tr
           th.rank-col(scope='col') #
-          th(scope='col') Key
-          th(scope='col') Value
-          th(scope='col') Actions
+          th.commands-key-col(scope='col') Key
+          th.commands-type-col(scope='col') Type
+          th(scope='col') Content
+          th.commands-media-col(scope='col') Attachments
+          th.commands-actions-col(scope='col')
+            span.visually-hidden Actions
       tbody
         if synonyms.length
           each synonym, index in synonyms
             tr
               td
-                span.rank-badge= index+1
+                span.rank-badge #{(page - 1) * pageSize + index + 1}
               td
-                span.data-primary= synonym.key
+                code.command-key= synonym.key
+              td.commands-type-col
+                span.command-kind(class=`command-kind-${synonym.kind}`)
+                  +commandIcon(synonym.kind)
+                  span= kindLabels[synonym.kind]
               td
-                form.command-form(method="post" action=`/commands/${encodeURIComponent(synonym.key)}`)
-                  if _csrf
-                    input(type="hidden" name="_csrf" value=_csrf)
-                  +synonymContentFields(synonym.parsed)
-                  button.btn.btn-outline-primary.btn-sm.mt-2(type="submit") Save
-              td
-                form(method="post" action=`/commands/${encodeURIComponent(synonym.key)}/delete` data-key=synonym.key onsubmit="return confirmSynonymDelete(this)")
-                  if _csrf
-                    input(type="hidden" name="_csrf" value=_csrf)
-                  button.btn.btn-outline-danger.btn-sm(type="submit") Delete
+                .command-preview
+                  if synonym.kind === 'redirect'
+                    span.command-preview-redirect
+                      | searches
+                      code.ms-1= synonym.parsed.redirectTarget
+                  else if synonym.parsed.text
+                    span.command-preview-text= synonym.parsed.text
+                  else
+                    span.data-muted No text
+              td.commands-media-col
+                if synonym.parsed.files.length
+                  .command-media
+                    each file, fileIndex in synonym.parsed.files.slice(0, 3)
+                      button.command-thumb-btn(
+                        type="button"
+                        title=file
+                        aria-label=`Preview attachment ${fileIndex + 1} of ${synonym.key}`
+                        data-bs-toggle="modal"
+                        data-bs-target="#commandImageModal"
+                        data-image=file
+                      )
+                        img.command-thumb(src=file alt="" loading="lazy")
+                    if synonym.parsed.files.length > 3
+                      span.command-media-more +#{synonym.parsed.files.length - 3}
+                  a.command-media-url(href=synonym.parsed.files[0] target="_blank" rel="noopener" title=synonym.parsed.files[0])= synonym.parsed.files[0]
+                else
+                  span.data-muted —
+              td.commands-actions-col
+                .command-row-actions
+                  button.command-action(
+                    type="button"
+                    title=`Edit ${synonym.key}`
+                    aria-label=`Edit ${synonym.key}`
+                    data-bs-toggle="modal"
+                    data-bs-target="#commandModal"
+                    data-command=JSON.stringify({key: synonym.key, ...synonym.parsed})
+                  )
+                    +commandIcon('edit')
+                  button.command-action.command-action-danger(
+                    type="button"
+                    title=`Delete ${synonym.key}`
+                    aria-label=`Delete ${synonym.key}`
+                    data-bs-toggle="modal"
+                    data-bs-target="#commandDeleteModal"
+                    data-key=synonym.key
+                  )
+                    +commandIcon('trash')
         else
           tr
-            td(colspan="4").text-center No custom commands yet
+            td(colspan="6")
+              .command-empty
+                span.panel-icon(aria-hidden="true")
+                  +commandIcon('search')
+                if search || type
+                  p.mb-2 No commands match this filter.
+                  a.btn.btn-sm.btn-outline-secondary(href="/commands") Clear filters
+                else
+                  p.mb-2 No custom commands yet.
+                  button.btn.btn-sm.btn-primary(type="button" data-bs-toggle="modal" data-bs-target="#commandModal") Create the first one
+
+  if totalPages > 1
+    -
+      const maxPages = 10
+      let start = Math.max(1, page - Math.floor(maxPages / 2))
+      let end = start + maxPages - 1
+      if (end > totalPages) {
+        end = totalPages
+        start = Math.max(1, end - maxPages + 1)
+      }
+      const pages = []
+      for (let i = start; i <= end; i++) pages.push(i)
+
+    nav.mt-4
+      ul.pagination.justify-content-center
+        if page > 1
+          li.page-item
+            a.page-link(href=`?${queryBase}&page=${page - 1}`) Previous
+        else
+          li.page-item.disabled
+            span.page-link Previous
+
+        each i in pages
+          if i === page
+            li.page-item.active
+              span.page-link #{i}
+          else
+            li.page-item
+              a.page-link(href=`?${queryBase}&page=${i}`) #{i}
+
+        if page < totalPages
+          li.page-item
+            a.page-link(href=`?${queryBase}&page=${page + 1}`) Next
+        else
+          li.page-item.disabled
+            span.page-link Next
+
+  //- One modal serves both create and update: commands.js repoints the form's
+  //- action and fills the fields from the clicked row's data-command payload.
+  #commandModal.modal.fade(tabindex="-1" aria-labelledby="commandModalTitle" aria-hidden="true")
+    .modal-dialog.modal-lg.modal-dialog-centered.modal-dialog-scrollable
+      .modal-content.command-modal
+        form#commandForm(method="post" action="/commands")
+          .modal-header
+            .panel-title-group
+              span.panel-icon(aria-hidden="true")
+                span#commandModalIconNew
+                  +commandIcon('plus')
+                span#commandModalIconEdit.d-none
+                  +commandIcon('edit')
+              div
+                h3#commandModalTitle.panel-title New command
+                p#commandModalSubtitle.command-modal-subtitle Reply with text, images, or redirect to a card search.
+            button.btn-close(type="button" data-bs-dismiss="modal" aria-label="Close")
+          .modal-body
+            if _csrf
+              input(type="hidden" name="_csrf" value=_csrf)
+            input(type="hidden" name="returnTo" value=returnTo)
+
+            .mb-4
+              label.form-label(for="commandKey") Key
+              input#commandKey.form-control(type="text" name="key" required maxlength="100" pattern="[\\sa-z0-9_-]+" placeholder="e.g. lion" autocomplete="off")
+              p#commandKeyHelp.form-text.text-muted Lowercase letters, numbers, spaces, - and _ only.
+
+            .command-fields
+              label.form-label Response
+              .command-type-toggle
+                input#commandTypeText.btn-check(type="radio" name="contentType" value="text" checked autocomplete="off" onchange="toggleSynonymContentType(this)")
+                label.btn.btn-outline-secondary(for="commandTypeText")
+                  span.me-1
+                    +commandIcon('text')
+                  | Text reply
+                input#commandTypeRedirect.btn-check(type="radio" name="contentType" value="redirect" autocomplete="off" onchange="toggleSynonymContentType(this)")
+                label.btn.btn-outline-secondary(for="commandTypeRedirect")
+                  span.me-1
+                    +commandIcon('redirect')
+                  | Redirect
+
+              .command-field-text
+                textarea#commandText.form-control(name="text" rows="4" maxlength="2000" placeholder="Message text shown to users")
+                p.form-text.text-muted.mb-0 Up to 2000 characters. Leave empty to reply with images only.
+
+              .command-field-redirect.d-none
+                input#commandRedirect.form-control(type="text" name="redirectTarget" maxlength="200" placeholder="Card name / search terms to run instead")
+                p.form-text.text-muted.mb-0 Runs a search under this text instead of replying directly — e.g. an alias like "lion" → "lion for a day".
+
+              .command-field-images
+                label.form-label.mb-0 Images
+                #commandFileList.command-file-list
+                .command-file-upload
+                  input.form-control.form-control-sm(type="file" accept="image/png,image/jpeg,image/gif,image/webp")
+                  button.btn.btn-sm.btn-outline-secondary(type="button" onclick="uploadSynonymImage(this)") Add image
+                  span.command-upload-status.text-muted
+          .modal-footer
+            button.btn.btn-outline-secondary(type="button" data-bs-dismiss="modal") Cancel
+            button#commandSubmit.btn.btn-primary(type="submit") Create command
+
+  //- Full-size look at one attachment, with its URL spelled out — the row
+  //- thumbnails are too small to tell two similar images apart.
+  #commandImageModal.modal.fade(tabindex="-1" aria-labelledby="commandImageTitle" aria-hidden="true")
+    .modal-dialog.modal-lg.modal-dialog-centered
+      .modal-content.command-modal
+        .modal-header
+          .panel-title-group
+            span.panel-icon(aria-hidden="true")
+              +commandIcon('image')
+            h3#commandImageTitle.panel-title Attachment
+          button.btn-close(type="button" data-bs-dismiss="modal" aria-label="Close")
+        .modal-body.text-center
+          img#commandImagePreview.command-image-preview(src="" alt="")
+        .modal-footer.command-image-footer
+          a#commandImageLink.command-image-url(href="#" target="_blank" rel="noopener")
+          button.btn.btn-outline-secondary(type="button" data-bs-dismiss="modal") Close
+
+  #commandDeleteModal.modal.fade(tabindex="-1" aria-labelledby="commandDeleteTitle" aria-hidden="true")
+    .modal-dialog.modal-dialog-centered
+      .modal-content.command-modal
+        form#commandDeleteForm(method="post" action="/commands")
+          .modal-header
+            .panel-title-group
+              span.panel-icon.command-icon-danger(aria-hidden="true")
+                +commandIcon('trash')
+              h3#commandDeleteTitle.panel-title Delete command
+            button.btn-close(type="button" data-bs-dismiss="modal" aria-label="Close")
+          .modal-body
+            if _csrf
+              input(type="hidden" name="_csrf" value=_csrf)
+            input(type="hidden" name="returnTo" value=returnTo)
+            p.mb-0
+              | Delete
+              code#commandDeleteKey.command-key.mx-1
+              | ? This cannot be undone.
+          .modal-footer
+            button.btn.btn-outline-secondary(type="button" data-bs-dismiss="modal") Cancel
+            button.btn.btn-danger(type="submit") Delete
+
+  .my-5
   p &nbsp;
   p &nbsp;
 
