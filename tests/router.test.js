@@ -70,6 +70,7 @@ jest.mock('../src/tools/search', () => ({
 }))
 jest.mock('axios', () => ({ get: jest.fn() }))
 
+const path = require('path')
 const db = require('../src/database/db')
 const {getSynonym, createSynonym, updateSynonym, deleteSynonym} = db
 const API = require('../src/controller/api')
@@ -1212,6 +1213,9 @@ describe('handleSynonymDelete', () => {
 })
 
 describe('handleSynonymImageUpload', () => {
+    // Where the handler re-anchors every temp file (see synonymUploadDir).
+    const uploadDir = path.join(__dirname, '../src/tmp/downloads')
+
     test('rejects non-managers', async () => {
         const res = makeRes()
 
@@ -1237,8 +1241,19 @@ describe('handleSynonymImageUpload', () => {
             session: {user: {isManager: true}}, file: {path: '/tmp/fake-upload.png'},
         }, res)
 
-        expect(uploadImage).toHaveBeenCalledWith('/tmp/fake-upload.png')
+        expect(uploadImage).toHaveBeenCalledWith(path.join(uploadDir, 'fake-upload.png'))
         expect(res.json).toHaveBeenCalledWith({url: 'https://img.example.com/x.webp'})
+    })
+
+    test('confines the file to the upload dir, whatever path it arrives with', async () => {
+        uploadImage.mockResolvedValueOnce('https://img.example.com/x.webp')
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({
+            session: {user: {isManager: true}}, file: {path: '/etc/passwd'},
+        }, res)
+
+        expect(uploadImage).toHaveBeenCalledWith(path.join(uploadDir, 'passwd'))
     })
 
     test('reports failure when the upload itself fails', async () => {

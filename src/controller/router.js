@@ -188,17 +188,29 @@ function handleLogout(req, res, next) {
 // uploadImage() — same directory downloadImageAsFile()/uploadImage() already
 // use for the Discord-attachment upload path, so no new gitignore entry needed.
 const synonymUploadDir = path.join(__dirname, '../tmp/downloads')
+
+// Doubles as the allowlist for fileFilter: the extension comes from the
+// mimetype rather than from the client-supplied original name, so nothing
+// user-controlled ever reaches the temp file's path.
+const SYNONYM_IMAGE_EXTENSIONS = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+}
+
 const synonymImageUploadMiddleware = multer({
     storage: multer.diskStorage({
         destination: synonymUploadDir,
         filename: (req, file, cb) => {
-            const ext = path.extname(file.originalname).slice(0, 10)
+            const ext = SYNONYM_IMAGE_EXTENSIONS[file.mimetype]
             cb(null, `synadmin_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`)
         },
     }),
     limits: {fileSize: 8 * 1024 * 1024},
     fileFilter: (req, file, cb) => {
-        cb(null, /^image\/(png|jpe?g|gif|webp)$/.test(file.mimetype))
+        cb(null, Object.hasOwn(SYNONYM_IMAGE_EXTENSIONS, file.mimetype))
     },
 }).single('image')
 
@@ -418,12 +430,17 @@ async function handleSynonymImageUpload(req, res) {
     }
     if (!req.file) return res.status(400).json({error: 'No image received'})
 
+    // Re-anchor the temp file inside synonymUploadDir before touching the
+    // filesystem: multer builds the name itself, but basename() keeps a path
+    // that only ever points at our own upload directory.
+    const filePath = path.join(synonymUploadDir, path.basename(req.file.path))
+
     try {
-        const url = await uploadImage(req.file.path)
+        const url = await uploadImage(filePath)
         if (!url) return res.status(502).json({error: 'Upload failed'})
         res.json({url})
     } finally {
-        await fs.promises.unlink(req.file.path).catch(() => {})
+        await fs.promises.unlink(filePath).catch(() => {})
     }
 }
 
