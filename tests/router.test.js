@@ -20,7 +20,7 @@ jest.mock('../src/controller/synonymCache', () => ({
     invalidateSynonymCache: jest.fn(async () => {}),
 }))
 jest.mock('../src/tools/imageUpload', () => ({
-    uploadImage: jest.fn(async () => 'https://img.example.com/uploaded.webp'),
+    uploadImageFile: jest.fn(async () => 'https://img.example.com/uploaded.webp'),
 }))
 jest.mock('../src/controller/api', () => ({ run: jest.fn(async () => ({ success: true, data: [] })) }))
 jest.mock('../src/controller/redis', () => ({
@@ -82,7 +82,7 @@ const axios = require('axios')
 const { isManager} = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
 const { invalidateSynonymCache } = require('../src/controller/synonymCache')
-const { uploadImage } = require('../src/tools/imageUpload')
+const { uploadImageFile } = require('../src/tools/imageUpload')
 const { startSync, getSyncState } = require('../src/tools/syncRunner')
 const router = require('../src/controller/router')
 const { redis } = require('../src/controller/redis')
@@ -1323,7 +1323,7 @@ describe('handleSynonymImageUpload', () => {
         await router.handleSynonymImageUpload({session: {user: {isManager: false}}}, res)
 
         expect(res.status).toHaveBeenCalledWith(403)
-        expect(uploadImage).not.toHaveBeenCalled()
+        expect(uploadImageFile).not.toHaveBeenCalled()
     })
 
     test('rejects when no file was received', async () => {
@@ -1335,30 +1335,30 @@ describe('handleSynonymImageUpload', () => {
     })
 
     test('uploads the file and returns its URL', async () => {
-        uploadImage.mockResolvedValueOnce('https://img.example.com/x.webp')
+        uploadImageFile.mockResolvedValueOnce('https://img.example.com/x.webp')
         const res = makeRes()
 
         await router.handleSynonymImageUpload({
             session: {user: {isManager: true}}, file: {path: '/tmp/fake-upload.png'},
         }, res)
 
-        expect(uploadImage).toHaveBeenCalledWith(path.join(uploadDir, 'fake-upload.png'))
+        expect(uploadImageFile).toHaveBeenCalledWith(path.join(uploadDir, 'fake-upload.png'))
         expect(res.json).toHaveBeenCalledWith({url: 'https://img.example.com/x.webp'})
     })
 
     test('confines the file to the upload dir, whatever path it arrives with', async () => {
-        uploadImage.mockResolvedValueOnce('https://img.example.com/x.webp')
+        uploadImageFile.mockResolvedValueOnce('https://img.example.com/x.webp')
         const res = makeRes()
 
         await router.handleSynonymImageUpload({
             session: {user: {isManager: true}}, file: {path: '/etc/passwd'},
         }, res)
 
-        expect(uploadImage).toHaveBeenCalledWith(path.join(uploadDir, 'passwd'))
+        expect(uploadImageFile).toHaveBeenCalledWith(path.join(uploadDir, 'passwd'))
     })
 
     test('reports failure when the upload itself fails', async () => {
-        uploadImage.mockResolvedValueOnce(false)
+        uploadImageFile.mockResolvedValueOnce(false)
         const res = makeRes()
 
         await router.handleSynonymImageUpload({

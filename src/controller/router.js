@@ -19,7 +19,7 @@ const fs = require('fs')
 const multer = require('multer')
 const {isManager, checkSynonymKey} = require("../tools/search")
 const {invalidateSynonymCache} = require('./synonymCache')
-const {uploadImage} = require('../tools/imageUpload')
+const {uploadImageFile} = require('../tools/imageUpload')
 const {safeImageUrl} = require('../tools/imageUrl')
 const {resolveAvatarUrl} = require("../tools/avatar")
 const {getSyncState, startSync} = require('../tools/syncRunner')
@@ -205,8 +205,8 @@ function handleLogout(req, res, next) {
 
 
 // Temp home for admin-uploaded synonym images before they're re-hosted by
-// uploadImage() — same directory downloadImageAsFile()/uploadImage() already
-// use for the Discord-attachment upload path, so no new gitignore entry needed.
+// uploadImageFile() — same directory the Discord-attachment path already uses,
+// so no new gitignore entry needed.
 const synonymUploadDir = path.join(__dirname, '../tmp/downloads')
 
 // Doubles as the allowlist for fileFilter: the extension comes from the
@@ -495,11 +495,12 @@ async function handleSynonymImageUpload(req, res) {
 
     // Re-anchor the temp file inside synonymUploadDir before touching the
     // filesystem: multer builds the name itself, but basename() keeps a path
-    // that only ever points at our own upload directory.
+    // that only ever points at our own upload directory. It is handed to
+    // uploadImageFile(), which reads the file and never fetches a URL.
     const filePath = path.join(synonymUploadDir, path.basename(req.file.path))
 
     try {
-        const url = await uploadImage(filePath)
+        const url = await uploadImageFile(filePath)
         if (!url) return res.status(502).json({error: 'Upload failed'})
         res.json({url})
     } finally {

@@ -58,53 +58,42 @@ async function downloadImageAsFile(url, language = null) {
 }
 
 /**
- *
- * @param imagePath
- * @param expiration
- * @returns {Promise<*|boolean>}
+ * @returns {boolean} whether an image host is configured at all
  */
-async function uploadImage(imagePath, expiration = 0)
+function hasImageHost()
 {
-    let downloadedPath = null
+    if (process.env.IMG_UPLOAD_API_KEY && process.env.IMG_UPLOAD_API_ENDPOINT) return true
+
+    console.log('no upload api key or endpoint set')
+
+    return false
+}
+
+/**
+ * Send a file that is already on disk to the image host.
+ *
+ * @param filePath file inside our own tmp directory
+ * @param expiration
+ * @param hostPath optional folder for the host to file the image under
+ * @returns {Promise<*|boolean>} the hosted URL, or false
+ */
+async function postImageFile(filePath, expiration, hostPath = null)
+{
     let imageBuffer = null
 
-    if (!process.env.IMG_UPLOAD_API_KEY || !process.env.IMG_UPLOAD_API_ENDPOINT)
-    {
-        console.log('no upload api key or endpoint set')
-        return false
-    }
-    try
-    {
-        const API_URL = process.env.IMG_UPLOAD_API_ENDPOINT
-
+    try {
         const postData = {
             key: process.env.IMG_UPLOAD_API_KEY,
         }
         if (expiration) postData.expiration = expiration
+        if (hostPath) postData.path = hostPath
 
-        //read file from URL
-        if (imagePath.startsWith('http'))
-        {
-            const imageExtension = imagePath.split('.').pop().split('?').shift().toLowerCase()
-            downloadedPath = await downloadImageAsFile(imagePath)
+        // Use async file reading to avoid blocking
+        imageBuffer = await fs.promises.readFile(filePath)
+        postData.image = imageBuffer.toString('base64')
+        imageBuffer = null // Release immediately after conversion
 
-            if (imageExtension === 'png' || imageExtension === 'jpg' || imageExtension === 'jpeg')
-            {
-                downloadedPath = await convertImageToWEBP(downloadedPath)
-            }
-            // Use async file reading to avoid blocking
-            imageBuffer = await fs.promises.readFile(downloadedPath)
-            postData.image = imageBuffer.toString('base64')
-            imageBuffer = null // Release immediately after conversion
-            postData.path = 'custom'
-        } else {
-            //read file from disk
-            imageBuffer = await fs.promises.readFile(imagePath)
-            postData.image = imageBuffer.toString('base64')
-            imageBuffer = null // Release immediately after conversion
-        }
-
-        const response = await axios.post(API_URL, postData)
+        const response = await axios.post(process.env.IMG_UPLOAD_API_ENDPOINT, postData)
 
         // Clear base64 string from memory after upload
         postData.image = null
@@ -116,15 +105,69 @@ async function uploadImage(imagePath, expiration = 0)
         console.log('Image uploaded successfully:', response.data.url)
 
         return response.data.url
+    } finally {
+        // Ensure buffers are cleared
+        imageBuffer = null
+    }
+}
 
+/**
+ * Re-host an image we already have on disk — an admin's upload from the
+ * dashboard, which multer has written into our tmp directory.
+ *
+ * Deliberately separate from uploadImageFromUrl(): one takes a path and never
+ * makes an outbound request of its own, the other takes a URL and fetches it.
+ * Deciding between the two by asking whether the string starts with 'http'
+ * meant a caller holding a file path was one bad value away from making the
+ * bot fetch a URL, which is a distinction worth having in the signature.
+ *
+ * @param filePath
+ * @param expiration
+ * @returns {Promise<*|boolean>}
+ */
+async function uploadImageFile(filePath, expiration = 0)
+{
+    if (!hasImageHost()) return false
+
+    try {
+        return await postImageFile(filePath, expiration)
+    } catch (error) {
+        console.error('Error uploading image:', error)
+
+        return false
+    }
+}
+
+/**
+ * Re-host an image that lives somewhere else — a Discord attachment, whose URL
+ * expires after two weeks. The URL is checked against the host allowlist by
+ * downloadImageAsFile() before anything is fetched.
+ *
+ * @param url
+ * @param expiration
+ * @returns {Promise<*|boolean>}
+ */
+async function uploadImageFromUrl(url, expiration = 0)
+{
+    if (!hasImageHost()) return false
+
+    let downloadedPath = null
+
+    try {
+        const imageExtension = url.split('.').pop().split('?').shift().toLowerCase()
+        downloadedPath = await downloadImageAsFile(url)
+
+        if (imageExtension === 'png' || imageExtension === 'jpg' || imageExtension === 'jpeg')
+        {
+            downloadedPath = await convertImageToWEBP(downloadedPath)
+        }
+
+        return await postImageFile(downloadedPath, expiration, 'custom')
     } catch (error) {
         console.error('Error uploading image:', error)
 
         return false
     } finally {
-        // Ensure buffers are cleared
-        imageBuffer = null
-
         // Clean up temporary files
         if (downloadedPath) {
             try {
@@ -188,7 +231,8 @@ async function convertImageToWEBP(imagePath) {
 }
 
 module.exports = {
-    uploadImage,
+    uploadImageFile,
+    uploadImageFromUrl,
     downloadImageAsFile,
     convertImageToWEBP,
 }
