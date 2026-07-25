@@ -14,7 +14,7 @@ const {
   updateUserAdminFields,
 } = require('./user')
 const {createSynonym, updateSynonym, deleteSynonym, getAllSynonyms, getSynonym} = require('./synonym')
-const  {createCard, getCardsDB, getCardsByFaction, getCardStatsMessage} = require('./card')
+const  {createCard, getCardsDB, getCardsByFaction, getCardStats, getCardStatsMessage} = require('./card')
 const {
   getRandomCard,
   getOpenTopDeck,
@@ -55,6 +55,7 @@ module.exports = {
   getRandomCard,
   getUserMessages,
   getProfileStats,
+  getCardStats,
   getCardStatsMessage,
   disconnect,
 }
