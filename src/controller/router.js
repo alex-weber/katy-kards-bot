@@ -20,6 +20,7 @@ const multer = require('multer')
 const {isManager, checkSynonymKey} = require("../tools/search")
 const {invalidateSynonymCache} = require('./synonymCache')
 const {uploadImage} = require('../tools/imageUpload')
+const {safeImageUrl} = require('../tools/imageUrl')
 const {resolveAvatarUrl} = require("../tools/avatar")
 const {getSyncState, startSync} = require('../tools/syncRunner')
 const {buildSyncView} = require('../tools/syncFormat')
@@ -340,6 +341,11 @@ function resolveKeptSynonymFiles(req, existingFiles) {
  * /commands/upload endpoint (see synonymImageUpload) — the actual binary
  * upload already happened client-side, so this is just reading form fields.
  *
+ * They are put through safeImageUrl() rather than trusted: the form is the one
+ * place an admin-supplied URL can enter a stored command, and every stored
+ * file is later fetched server-side and posted back into a channel. A URL the
+ * bot would refuse to download is dropped here instead of being saved.
+ *
  * @param req
  * @returns {string[]}
  */
@@ -348,7 +354,8 @@ function resolveNewSynonymFiles(req) {
     if (!submitted) return []
 
     return (Array.isArray(submitted) ? submitted : [submitted])
-        .filter(url => typeof url === 'string' && url.startsWith('http'))
+        .map(url => typeof url === 'string' ? safeImageUrl(url) : null)
+        .filter(Boolean)
 }
 
 /**

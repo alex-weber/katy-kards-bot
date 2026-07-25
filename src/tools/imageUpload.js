@@ -3,6 +3,7 @@ const fs = require('fs')
 const sharp = require('sharp')
 const path = require('path')
 const { pipeline } = require('stream/promises')
+const { safeImageUrl, isAllowedImageHost } = require('./imageUrl')
 
 // Configure sharp to use less memory
 sharp.cache({ memory: 50 }) // Limit cache to 50MB
@@ -10,8 +11,14 @@ sharp.concurrency(1) // Process one image at a time to reduce memory spikes
 
 async function downloadImageAsFile(url, language = null) {
 
+    const safeUrl = safeImageUrl(url)
+    if (!safeUrl) {
+        console.error('Refused to download an image from a host that is not allowlisted:', url)
+        throw new Error('Image host is not allowed')
+    }
+
     let fileName = path.basename(
-        url.split('?')[0]
+        safeUrl.split('?')[0]
     )
 
     if (language)
@@ -29,10 +36,17 @@ async function downloadImageAsFile(url, language = null) {
     } catch {}
 
     const response = await axios({
-        url,
+        url: safeUrl,
         method: 'GET',
         responseType: 'stream',
-        timeout: 10000
+        timeout: 10000,
+        // An allowlisted host answering with a redirect would otherwise walk
+        // straight past the check above, so every hop is validated again.
+        beforeRedirect: (options) => {
+            if (options.protocol !== 'https:' || !isAllowedImageHost(String(options.hostname).toLowerCase())) {
+                throw new Error('Image host redirected to a host that is not allowed')
+            }
+        }
     })
 
     await pipeline(
@@ -173,7 +187,7 @@ async function convertImageToWEBP(imagePath) {
 module.exports = {
     uploadImage,
     downloadImageAsFile,
-    convertImageToWEBP
+    convertImageToWEBP,
 }
 
 

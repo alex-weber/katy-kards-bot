@@ -1112,6 +1112,9 @@ describe('handleSynonymCreate', () => {
 })
 
 describe('handleSynonymUpdate', () => {
+    // A host the bot is actually allowed to fetch images from.
+    const cdn = 'https://cdn.discordapp.com/attachments/1/2/'
+
     function makeReq(params, body) {
         return {session: {user: {isManager: true}}, params, body}
     }
@@ -1142,19 +1145,37 @@ describe('handleSynonymUpdate', () => {
     test('keeps only the checked existing files, and appends newly uploaded ones', async () => {
         getSynonym.mockResolvedValueOnce({
             id: 1, key: 'lion',
-            value: JSON.stringify({content: 'text:old', files: ['http://x/a.png', 'http://x/b.png']}),
+            value: JSON.stringify({content: 'text:old', files: [cdn + 'a.png', cdn + 'b.png']}),
         })
         const res = makeRes()
         res.redirect = jest.fn()
 
         await router.handleSynonymUpdate(makeReq({key: 'lion'}, {
             contentType: 'text', text: 'new',
-            keepFiles: 'http://x/a.png', // b.png was left unchecked
-            files: 'http://x/c.png', // newly uploaded
+            keepFiles: cdn + 'a.png', // b.png was left unchecked
+            files: cdn + 'c.png', // newly uploaded
         }), res)
 
         const [, storedValue] = updateSynonym.mock.calls[0]
-        expect(JSON.parse(storedValue).files).toEqual(['http://x/a.png', 'http://x/c.png'])
+        expect(JSON.parse(storedValue).files).toEqual([cdn + 'a.png', cdn + 'c.png'])
+    })
+
+    // The form is the one place an admin-supplied URL enters a stored command,
+    // and every stored file is later fetched server-side (see imageUrl.js).
+    test('drops a submitted file URL the bot would refuse to download', async () => {
+        getSynonym.mockResolvedValueOnce({
+            id: 1, key: 'lion', value: JSON.stringify({content: 'text:old', files: []}),
+        })
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(makeReq({key: 'lion'}, {
+            contentType: 'text', text: 'new',
+            files: ['http://169.254.169.254/latest/meta-data/', cdn + 'ok.png'],
+        }), res)
+
+        const [, storedValue] = updateSynonym.mock.calls[0]
+        expect(JSON.parse(storedValue).files).toEqual([cdn + 'ok.png'])
     })
 
     test('does nothing for an unknown key', async () => {
