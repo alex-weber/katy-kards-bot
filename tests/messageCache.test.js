@@ -90,10 +90,13 @@ describe('forwardCachedMessage', () => {
         const sourceChannel = {messages: {fetch: jest.fn(async () => forwardable)}}
         const client = makeClient(sourceChannel)
         const target = makeTargetChannel()
-        target.sendRaw = jest.fn(async payload => { calls.push('notice:' + payload) })
+        target.sendRaw = jest.fn(async payload => { calls.push('notice:' + payload.content) })
         const message = {
             channel: target, channelId: 'c1', isSlash: true,
-            author: {username: 'alice'},
+            // the name shown on this server, resolved where the interaction was
+            // handled; author is kept for the DM/legacy fallback
+            authorName: 'alice',
+            author: {username: 'alice-unique'},
         }
 
         const ok = await forwardCachedMessage(client, {id: 'm1'}, message,
@@ -112,14 +115,55 @@ describe('forwardCachedMessage', () => {
         const target = makeTargetChannel()
         const message = {
             channel: target, channelId: 'c1', isSlash: true,
-            author: {username: 'bob'},
+            authorName: 'bob',
+            author: {username: 'bob-unique'},
         }
 
         await forwardCachedMessage(client, {id: 'm1'}, message,
             {language: 'en', query: 'AAECAX...'})
 
+        expect(target.sendRaw).toHaveBeenCalledWith({
+            content: 'Request from bob: AAECAX.... Forwarding cached message.',
+            allowedMentions: {parse: []},
+        })
+    })
+
+    // The notice names the requester, and a nickname is theirs to choose.
+    test('cannot be made to ping the server through the requester name', async () => {
+        const forwardable = makeForwardableMessage()
+        const sourceChannel = {messages: {fetch: jest.fn(async () => forwardable)}}
+        const client = makeClient(sourceChannel)
+        const target = makeTargetChannel()
+        const message = {
+            channel: target, channelId: 'c1', isSlash: true,
+            authorName: '@everyone',
+            author: {username: 'troll'},
+        }
+
+        await forwardCachedMessage(client, {id: 'm1'}, message,
+            {language: 'en', query: 'x'})
+
         expect(target.sendRaw).toHaveBeenCalledWith(
-            'Request from bob: AAECAX.... Forwarding cached message.')
+            expect.objectContaining({allowedMentions: {parse: []}}))
+    })
+
+    // Nothing resolves a member in a DM, so the unique username is all there is.
+    test('falls back to the username when no server name was resolved', async () => {
+        const forwardable = makeForwardableMessage()
+        const sourceChannel = {messages: {fetch: jest.fn(async () => forwardable)}}
+        const client = makeClient(sourceChannel)
+        const target = makeTargetChannel()
+        const message = {
+            channel: target, channelId: 'c1', isSlash: true,
+            author: {username: 'bob-unique'},
+        }
+
+        await forwardCachedMessage(client, {id: 'm1'}, message,
+            {language: 'en', query: 'AAECAX...'})
+
+        expect(target.sendRaw).toHaveBeenCalledWith(expect.objectContaining({
+            content: 'Request from bob-unique: AAECAX.... Forwarding cached message.',
+        }))
     })
 
     test('fetches the source message via the cached guild/channel when known', async () => {

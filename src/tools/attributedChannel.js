@@ -1,5 +1,11 @@
 const {translate} = require('./translation/translator')
 
+// Nothing the bot posts on someone's behalf needs to mention anyone, and the
+// attribution line carries a name that person chose. Without this, a nickname
+// of "@everyone" turns any slash command into a server-wide ping sent with the
+// bot's permissions rather than the requester's.
+const noMentions = {parse: []}
+
 /**
  * Prefix a channel.send payload with a small "requested by" line naming the
  * user whose action triggered it (and the command text they used, when
@@ -12,21 +18,26 @@ const {translate} = require('./translation/translator')
  * content"), so attribution is simply not possible on that path.
  *
  * @param payload string or discord.js message-options object
- * @param user
+ * @param name what to call the requester — already resolved and escaped by
+ *   attributionName(), so it is interpolated as-is
  * @param language
  * @param query the command text (e.g. a search query), if known
  * @returns {*}
  */
-function withAttribution(payload, user, language, query)
+function withAttribution(payload, name, language, query)
 {
     if (payload && typeof payload === 'object' && payload.forward) return payload
 
     const tag = query
-        ? translate(language, 'requestedByQuery', {name: user.username, query})
-        : translate(language, 'requestedBy', {name: user.username})
-    if (typeof payload === 'string') return `${tag}\n${payload}`
+        ? translate(language, 'requestedByQuery', {name, query})
+        : translate(language, 'requestedBy', {name})
+    if (typeof payload === 'string') return {content: `${tag}\n${payload}`, allowedMentions: noMentions}
     if (payload && typeof payload === 'object') {
-        return {...payload, content: payload.content ? `${tag}\n${payload.content}` : tag}
+        return {
+            ...payload,
+            content: payload.content ? `${tag}\n${payload.content}` : tag,
+            allowedMentions: payload.allowedMentions || noMentions,
+        }
     }
 
     return payload
@@ -44,13 +55,14 @@ function withAttribution(payload, user, language, query)
  *   passed through untouched when falsy (e.g. interaction.channel can be null
  *   when the channel isn't cached), so callers see the same null they would
  *   have without this wrapper rather than a Proxy-construction crash
- * @param user the discord.js User whose action triggered the send
+ * @param name what to call the requester, from attributionName() — the name is
+ *   resolved at the call site because only there is the GuildMember available
  * @param language language for the attribution line
  * @param query optional command text (e.g. the search query) to include in
  *   the attribution line, so moderators can see not just who but what
  * @returns {*} a proxy exposing the same channel API, with .send wrapped
  */
-function attributeChannel(channel, user, language, query)
+function attributeChannel(channel, name, language, query)
 {
     if (!channel) return channel
 
@@ -58,7 +70,7 @@ function attributeChannel(channel, user, language, query)
         get(target, prop)
         {
             if (prop === 'send') {
-                return payload => target.send(withAttribution(payload, user, language, query))
+                return payload => target.send(withAttribution(payload, name, language, query))
             }
             //escape hatch for callers that already build their own fully-formed
             //attribution text (e.g. the cache-forward notice, which can't reuse

@@ -1,3 +1,14 @@
+## v5.1.0
+
+### Features
+
+- The "Requested by" line under a slash-command result, and the notice before a cached result is re-forwarded, now name the requester by the nickname they show on that server instead of their unique @username — the name the other people in the channel actually recognise. In DMs, or where no nickname is set, the account's display name is used, then the username.
+
+### Bug Fixes
+
+- Fixed the attribution line's formatting breaking when a name contains markdown characters — including plain usernames, which may contain underscores.
+- The bot can no longer be made to ping a whole server through the attribution line: mentions are disabled on the messages it posts on a user's behalf, so a nickname of `@everyone` is printed as text.
+
 ## v5.0.0
 
 ### Security

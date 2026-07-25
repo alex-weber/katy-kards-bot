@@ -234,7 +234,7 @@ describe('next_button pagination attribution', () => {
         // the defineProperty fix means message.channel is now the wrapped
         // proxy, not the original — sending through it must attribute bob
         await passedMessage.channel.send('page 2 results')
-        expect(sent[0]).toContain('bob')
+        expect(sent[0].content).toContain('bob')
         expect(realChannel.send).toHaveBeenCalledTimes(1)
     })
 })

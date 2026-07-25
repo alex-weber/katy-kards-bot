@@ -15,6 +15,7 @@ const {buildContactModal} = require("../tools/contactModal")
 const {buildTermsView} = require("../controller/commands/termsCommands")
 const {handleSlashCommand, handleSlashModal} = require("../controller/slashHandler")
 const {attributeChannel} = require("../tools/attributedChannel")
+const {attributionName} = require("../tools/attributionName")
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -150,7 +151,10 @@ async function onInteractionCreate(interaction)
         // (no setter), so a plain `message.channel = ...` silently no-ops in
         // this file's sloppy-mode CommonJS; defineProperty shadows it instead.
         Object.defineProperty(message, 'channel', {
-            value: attributeChannel(message.channel, interaction.user, user.language),
+            value: attributeChannel(
+                message.channel,
+                attributionName(interaction.user, interaction.member),
+                user.language),
             writable: true,
             configurable: true,
         })

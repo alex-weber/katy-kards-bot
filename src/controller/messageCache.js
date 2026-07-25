@@ -99,10 +99,16 @@ async function forwardCachedMessage(client, cachedData, message, notice = {})
         if (!messageToForward) return false
 
         if (message.isSlash) {
-            await message.channel.sendRaw(translate(language, key, {
-                name: message.author.username,
-                query,
-            }))
+            await message.channel.sendRaw({
+                //authorName is the requester's name on this server, resolved and
+                //escaped by attributionName() where the interaction was handled
+                content: translate(language, key, {
+                    name: message.authorName || message.author.username,
+                    query,
+                }),
+                //a name someone picked must not be able to ping the server
+                allowedMentions: {parse: []},
+            })
         }
         await messageToForward.forward(message.channel)
 

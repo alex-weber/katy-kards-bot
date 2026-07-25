@@ -15,6 +15,7 @@ const {buildProfileView} = require('./commands/profileView')
 const {buildContactModal} = require('../tools/contactModal')
 const {requiresTermsAcceptance, buildTermsView} = require('./commands/termsCommands')
 const {attributeChannel} = require('../tools/attributedChannel')
+const {attributionName} = require('../tools/attributionName')
 const {loadUser, isUserBlocked} = require('./messageContext')
 
 //map a plain command name -> the legacy command text it maps to
@@ -45,10 +46,16 @@ const simpleLookup = Object.fromEntries(
  */
 function buildInteractionMessage(interaction, content, language, state, query)
 {
+    //resolved here, where the GuildMember is in hand: the attribution line and
+    //the cache-forward notice both name the requester, and further down the
+    //call chain only the User survives
+    const authorName = attributionName(interaction.user, interaction.member)
+
     return {
         content,
         author: interaction.user,
-        channel: attributeChannel(interaction.channel, interaction.user, language, query),
+        authorName,
+        channel: attributeChannel(interaction.channel, authorName, language, query),
         channelId: interaction.channelId,
         guildId: interaction.guildId,
         guild: interaction.guild,

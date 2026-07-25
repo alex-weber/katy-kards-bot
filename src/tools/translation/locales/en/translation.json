@@ -65,7 +65,7 @@
   "contactFailDeliver": "Could not deliver the message. Please try opening an issue on GitHub.",
   "contactFailAdmins": "Could not find any administrators to contact.",
   "requestedBy": "_Requested by {{name}}_",
-  "requestedByQuery": "_Requested from {{name}}: {{query}}_",
+  "requestedByQuery": "_Requested by {{name}}: {{query}}_",
   "cacheForwardNotice": "Search request from {{name}}: {{query}}. Forwarding cached message.",
   "cacheRequestNotice": "Request from {{name}}: {{query}}. Forwarding cached message."
 }
