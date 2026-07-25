@@ -59,26 +59,35 @@ describe('safeImageUrl', () => {
             .toBe('https://cdn.discordapp.com/attachments/1/2/c.png')
     })
 
+    // Where the uploader re-hosts every image a custom command stores — the one
+    // host a deployment has to configure for its own commands to keep working.
     describe('IMAGE_ALLOWED_HOSTS', () => {
         const original = process.env.IMAGE_ALLOWED_HOSTS
         afterEach(() => { process.env.IMAGE_ALLOWED_HOSTS = original })
 
         test('allows a configured host', () => {
-            process.env.IMAGE_ALLOWED_HOSTS = 'i.ibb.co'
+            process.env.IMAGE_ALLOWED_HOSTS = 'images.example.net'
 
-            expect(safeImageUrl('https://i.ibb.co/abc/x.webp')).toBe('https://i.ibb.co/abc/x.webp')
+            expect(safeImageUrl('https://images.example.net/uploads/x.webp'))
+                .toBe('https://images.example.net/uploads/x.webp')
         })
 
         test('allows a configured wildcard and the domain itself', () => {
-            process.env.IMAGE_ALLOWED_HOSTS = '*.ibb.co'
+            process.env.IMAGE_ALLOWED_HOSTS = '*.example.net'
 
-            expect(safeImageUrl('https://i.ibb.co/abc/x.webp')).not.toBeNull()
-            expect(safeImageUrl('https://ibb.co/abc/x.webp')).not.toBeNull()
-            expect(safeImageUrl('https://ibb.co.evil.example.com/x.webp')).toBeNull()
+            expect(safeImageUrl('https://images.example.net/uploads/x.webp')).not.toBeNull()
+            expect(safeImageUrl('https://example.net/uploads/x.webp')).not.toBeNull()
+            expect(safeImageUrl('https://example.net.evil.example.com/x.webp')).toBeNull()
+        })
+
+        test('reads a list, ignoring the spacing', () => {
+            process.env.IMAGE_ALLOWED_HOSTS = 'a.example.net , b.example.net'
+
+            expect(safeImageUrl('https://b.example.net/x.webp')).not.toBeNull()
         })
 
         test('never drops the built-in Discord hosts', () => {
-            process.env.IMAGE_ALLOWED_HOSTS = 'i.ibb.co'
+            process.env.IMAGE_ALLOWED_HOSTS = 'images.example.net'
 
             expect(safeImageUrl(discordUrl)).toBe(discordUrl)
         })

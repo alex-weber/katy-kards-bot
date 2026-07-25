@@ -9,9 +9,11 @@
 // localhost and the bot fetches it and hands the response to whoever ran the
 // command.
 //
-// Discord's CDN is built in because the bot cannot work without it. Add the
-// host your image uploader serves finished images from via IMAGE_ALLOWED_HOSTS
-// — exact hosts or *.example.com patterns, comma-separated.
+// Discord's CDN is built in because every attachment comes from it and the bot
+// cannot work without it. The host your uploader (IMG_UPLOAD_API_ENDPOINT)
+// serves finished images from is deployment-specific and belongs in the
+// environment: put it in IMAGE_ALLOWED_HOSTS, as exact hosts or *.example.com
+// patterns, comma-separated. Images on hosts not listed are not delivered.
 const builtInImageHosts = ['cdn.discordapp.com', 'media.discordapp.net']
 
 /**
