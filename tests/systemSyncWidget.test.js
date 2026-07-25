@@ -102,13 +102,16 @@ test('renders without a sync local at all', () => {
 })
 
 describe('the history log table', () => {
-    // Everything between <tbody id="syncHistoryBody"> and its </tbody>.
+    // The text of each cell of each row, read out of the rendered <tbody>. The
+    // cell text is taken from the capture group rather than by stripping tags
+    // out of the match: it is already matched as "no < in it", so there is
+    // nothing left to strip.
     function historyRows(html) {
         const body = html.match(/<tbody id="syncHistoryBody">([\s\S]*?)<\/tbody>/)
         if (!body) return []
+
         return body[1].split('<tr>').slice(1).map(
-            row => (row.match(/<td[^>]*>([^<]*)<\/td>/g) || []).map(
-                cell => cell.replace(/<[^>]+>/g, '')))
+            row => [...row.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map(cell => cell[1]))
     }
 
     test('lists who ran each sync, when, and what it did', () => {
