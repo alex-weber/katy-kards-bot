@@ -6,6 +6,9 @@
 
 ### Bug Fixes
 
+- Fixed deck statistics counting some cards twice. A card that exists in the database under more than one card id — a reprint — had all of its copies counted once per row, so a deck could be reported as holding more cards than it does (the reported case showed 21 infantry in a deck of 17).
+- Fixed the average kredit cost of a deck, which was averaged over the distinct cards in it rather than over the copies, so a card played as a single weighed as much as one played four times.
+- Fixed deck codes being misread when a group's length is not a whole number of card ids: ids are now read one group at a time instead of from the groups concatenated, and matched exactly rather than by substring.
 - Uploading a command image from the dashboard now says so immediately when the bot would not be able to deliver it, instead of accepting the upload and quietly saving the command without its picture.
 - Fixed the attribution line's formatting breaking when a name contains markdown characters — including plain usernames, which may contain underscores.
 - The bot can no longer be made to ping a whole server through the attribution line: mentions are disabled on the messages it posts on a user's behalf, so a nickname of `@everyone` is printed as text.

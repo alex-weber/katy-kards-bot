@@ -68,36 +68,50 @@ async function createDeckImages(
  */
 async function analyseDeck(deckCode, language)
 {
-    const cardsCode = deckCode.slice(deckCode.indexOf('|')+1).replace(/;/g, '')
-    const cards = splitByTwoChars(cardsCode)
-    if (!cards) return false
-    const cardsArray = deckCode.slice(deckCode.indexOf('|')+1).split(';')
+    const counts = readDeckCounts(deckCode.slice(deckCode.indexOf('|')+1))
+    if (!counts.size) return false
 
     const dbCards = await getCardsDB({
         importId: {
-            in: cards,
+            in: [...counts.keys()],
         },
     })
 
-    return calculateAverages(dbCards, cardsArray, language)
+    return calculateAverages(dbCards, counts, language)
 }
 
-function splitByTwoChars(str) {
-    return str.match(/.{1,2}/g)
-}
+/**
+ * How many copies of each card the deck holds, keyed by importId.
+ *
+ * A deck code lists its cards in `;`-separated groups, and a card's group says
+ * how many copies it runs: the first group one copy each, the second two, and
+ * so on. Ids are two characters and are read one group at a time — reading
+ * them out of the groups concatenated meant a single odd-length group would
+ * shift every id after it by one character. A well-formed code names each card
+ * once.
+ *
+ * @param body the deck code after the '|'
+ * @returns {Map<string, number>}
+ */
+function readDeckCounts(body) {
+    const counts = new Map()
 
-function getCardCount(importId, cardsArray) {
-
-    for (let i = 0; i < cardsArray.length; i++) {
-        if (cardsArray[i].includes(importId)) {
-            return i + 1
+    body.split(';').forEach((group, index) => {
+        for (const importId of group.match(/.{1,2}/g) || []) {
+            //a leftover single character means the group was not a whole
+            //number of ids; counting it would be inventing a card
+            if (importId.length < 2) {
+                console.error('Ignored a trailing character in a deck code group:', group)
+                continue
+            }
+            counts.set(importId, index + 1)
         }
-    }
+    })
 
-    return 0
+    return counts
 }
 
-function calculateAverages(cards, cardsArray, language) {
+function calculateAverages(cards, counts, language) {
 
     if (!cards) return false
 
@@ -114,9 +128,17 @@ function calculateAverages(cards, cardsArray, language) {
     let fighter = 0
     let tank = 0
 
+    // importId does not identify a row: only cardId is unique, so a card
+    // reprinted under a second cardId comes back twice and every copy of it
+    // used to be counted twice with it.
+    const counted = new Set()
+
     // Loop through each card and accumulate the values
     cards.forEach(card => {
-        const amount = getCardCount(card.importId, cardsArray)
+        const amount = counts.get(card.importId) || 0
+        if (!amount || counted.has(card.importId)) return
+        counted.add(card.importId)
+
         if (card.type !== 'order' && card.type !== 'countermeasure')
         {
             if (card.type === 'infantry') infantry += amount
@@ -133,8 +155,16 @@ function calculateAverages(cards, cardsArray, language) {
         } else if (card.type === 'order') {
             orders += amount
         }
-        totalKredits += card.kredits
+        //every copy costs its kredits, so the deck's average is over copies
+        totalKredits += card.kredits * amount
     })
+
+    //a card in the code that no row answered for: the stats below are missing
+    //it entirely, which is worth knowing when a count looks wrong
+    const missing = [...counts.keys()].filter(importId => !counted.has(importId))
+    if (missing.length) {
+        console.error('Deck code names cards that are not in the database:', missing.join(' '))
+    }
 
     let averageAttack = 0
     let averageDefense = 0
@@ -146,7 +176,8 @@ function calculateAverages(cards, cardsArray, language) {
         averageOperationCost = (totalOperationCost / units).toFixed(2)
     }
 
-    const averageKredits = (totalKredits / cards.length).toFixed(2)
+    const totalCards = units + orders + countermeasures
+    const averageKredits = (totalCards ? totalKredits / totalCards : 0).toFixed(2)
 
     let info = ''
     if (orders) info +=  translate(language, 'info_orders') + orders + '\n'
@@ -169,4 +200,4 @@ function calculateAverages(cards, cardsArray, language) {
 
 }
 
-module.exports = {createDeckImages, analyseDeck}
+module.exports = {createDeckImages, analyseDeck, readDeckCounts}
