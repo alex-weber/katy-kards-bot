@@ -142,7 +142,9 @@ async function getFileSize(url)
     //return 0 if the content-length header is not set
     if (!response.headers.has('content-length')) return 0
     const fileSize = parseInt(response.headers["content-length"])
-    console.log(url, fileSize)
+    // Same reason as above: the URL is not ours, so it cannot be the first
+    // argument, where console.* would read it as a format string.
+    console.log('image size:', safeUrl, fileSize)
 
     return fileSize
 

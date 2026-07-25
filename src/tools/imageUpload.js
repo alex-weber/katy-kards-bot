@@ -172,7 +172,10 @@ async function convertImageToWEBP(imagePath) {
 
         return webpPath
     } catch (error) {
-        console.error(`Failed to process image from ${imagePath}:`, error)
+        // imagePath is passed as an argument, never interpolated into the first
+        // one: console.* treats that as a format string, so a %s in a path the
+        // bot did not choose would swallow the error being reported.
+        console.error('Failed to process image from', imagePath, error)
         throw error
     } finally {
         // Ensure sharp instance is destroyed
