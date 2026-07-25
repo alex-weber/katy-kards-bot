@@ -13,6 +13,16 @@ function getCardStatsMessage() {
     return `Created: ${cardStats.created}\nUpdated: ${cardStats.updated}`
 }
 
+/**
+ * The same counters as getCardStatsMessage(), unformatted — the system page
+ * widget stores and renders the numbers itself.
+ *
+ * @returns {{created: number, updated: number}}
+ */
+function getCardStats() {
+    return {...cardStats}
+}
+
 
 /**
  *
@@ -204,5 +214,6 @@ module.exports = {
     getCardsByFaction,
     createCard,
     getCardsDB,
+    getCardStats,
     getCardStatsMessage,
 }

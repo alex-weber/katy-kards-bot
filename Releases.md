@@ -1,11 +1,28 @@
-## v4.15.0
+## v5.0.0
+
+### Security
+
+- The bot now only downloads custom-command images from allowlisted hosts. A command's image URLs were fetched server-side and the response posted back into the channel, so an admin account could point one at an internal address and have the bot read it out. Discord's CDN is always allowed; set `IMAGE_ALLOWED_HOSTS` to the host your image uploader serves from — **images on any other host stop working until it is listed**.
+
+### Bug Fixes
+
+- Fixed custom commands showing the wrong picture. Downloaded images were cached under the file name from their URL, so two images that happened to share one — `image.png` is a common attachment name — landed on the same file, and whichever was fetched first was served for both until the temp file was cleared.
 
 ### Features
 
-- Added Discord slash commands ahead of the Message Content Intent removal. All commands are top-level (matching the familiar bare commands, e.g. `/utc`): `/search` and `/deck`, `/alt`, `/commands` (custom-command list, replied privately; optional text filters by prefix, e.g. `/commands a`), `/profile` (also where the search language is changed), `/online`, `/utc`, `/midnight`, `/ranking`, `/myrank`, `/contact`, `/terms`, and `/help`.
+- Added Discord slash commands ahead of the Message Content Intent removal. All commands are top-level (matching the familiar bare commands, e.g. `/utc`): `/search <query>` and `/deck`, `/alt`, `/td` (Top Deck mini-game, with an optional unit-type choice: infantry/artillery/bomber/fighter/tank), `/commands` (custom-command list, replied privately; optional text filters by prefix, e.g. `/commands a`), `/profile` (also where the search language is changed), `/online`, `/utc`, `/midnight`, `/ranking`, `/myrank`, `/contact`, `/terms`, and `/help`.
+- `/profile`, `/contact`, and `/terms` reply directly and privately.
+- Slash-command channel messages are attributed to the requesting user (and, where known, the command text they used), including a notice posted before a cached result is re-forwarded — so a public message from the bot is always traceable to who triggered it.
+- "Nothing found" replies (search, alt) are now shown privately to the requester instead of posted publicly.
 - Rewrote the in-bot help text (all languages) to document the slash commands instead of the legacy `!` prefix.
 - Auto-registered slash commands for every connected guild on startup, and whenever the bot joins a new guild, the already-registered commands are checked first, so restarts skip needless re-registration.
 - Added a deprecation notice (rate-limited to once per user per day) that nudges legacy `!` prefix-command users toward the new slash commands.
+- Added full custom-command management (add/edit/delete) to the web dashboard's Custom Commands page, admin-only — previously this required the `^key=value` Discord chat syntax. Supports text replies, image uploads (via the same image host Discord attachments use), and search-alias redirects. The page carries search across keys, reply text and redirect targets, a filter by command type, and pagination at 20 per page; adding and editing happen in a dialog, and each row's edit/delete controls appear on hover.
+- Command attachments are visible in the list as thumbnails, and clicking one opens a full-size preview showing its image URL.
+- Filter dropdowns across the dashboard (user role and status, dashboard period, custom-command type) now apply as soon as they change, instead of also needing the Filter button.
+- Added a Card Database Sync panel to the dashboard's System page (admin-only): a Sync now button that pulls the card list from kards.com, live progress while the sync runs, the created/updated counts and duration of the last run, and a log of the last 20 syncs showing who started each one and what it changed. The panel reads correctly without JavaScript, and the number of syncs kept in the log is configurable via `SYNC_HISTORY_LIMIT`.
+- Removed the `!sync` Discord command — the database sync now runs only from the System page, which shows the progress the command used to post into the channel.
+- Only one sync can be in flight at a time, and a sync that wedges is stopped after `SYNC_TIMEOUT_MS` (15 minutes by default) and recorded as a failure, so a stuck run can no longer block every later one.
 
 ## v4.14.1
 

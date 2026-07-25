@@ -442,9 +442,397 @@
     width: 42px;
 }
 
+/* --- Custom commands page --- */
+
+.command-toolbar-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.command-toolbar-actions .btn {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.command-toolbar-actions .btn-primary {
+    flex: 1;
+}
+
+.command-search .input-group-text {
+    background: #111418;
+    border-color: #343a40;
+    color: #6c757d;
+}
+
+.commands-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.commands-key-col {
+    width: 16rem;
+}
+
+.commands-type-col {
+    width: 9.5rem;
+}
+
+.commands-media-col {
+    width: 12rem;
+}
+
+.commands-actions-col {
+    width: 6rem;
+}
+
+.command-key {
+    background: rgba(32, 201, 151, 0.1);
+    border: 1px solid rgba(32, 201, 151, 0.25);
+    border-radius: 6px;
+    color: #20c997;
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0.2rem 0.5rem;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.command-kind {
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 700;
+    gap: 0.35rem;
+    letter-spacing: 0.02em;
+    padding: 0.28rem 0.6rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.command-kind svg {
+    height: 13px;
+    width: 13px;
+}
+
+.command-kind-text {
+    background: rgba(63, 110, 253, 0.12);
+    border-color: rgba(63, 110, 253, 0.3);
+    color: #7ea0ff;
+}
+
+.command-kind-redirect {
+    background: rgba(32, 201, 151, 0.12);
+    border-color: rgba(32, 201, 151, 0.3);
+    color: #20c997;
+}
+
+.command-kind-image {
+    background: rgba(255, 193, 7, 0.12);
+    border-color: rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+}
+
+.command-preview {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.command-preview-text,
+.command-preview-redirect {
+    color: #adb5bd;
+    display: block;
+    flex: 1;
+    font-size: 0.9rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.command-preview-redirect code {
+    color: #20c997;
+}
+
+.command-media {
+    align-items: center;
+    display: flex;
+    gap: 0.3rem;
+}
+
+.command-thumb-btn {
+    background: #111418;
+    border: 1px solid #343a40;
+    border-radius: 6px;
+    flex: 0 0 auto;
+    height: 34px;
+    overflow: hidden;
+    padding: 0;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+    width: 34px;
+}
+
+.command-thumb-btn:hover {
+    border-color: #20c997;
+    transform: scale(1.08);
+}
+
+.command-thumb {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+/* A URL that no longer resolves would otherwise leave an invisible gap — show
+   a placeholder so the row still reads as "has an attachment". */
+.command-thumb-broken img {
+    display: none;
+}
+
+.command-thumb-broken::after {
+    color: #6c757d;
+    content: "?";
+    display: block;
+    font-weight: 700;
+    line-height: 32px;
+}
+
+.command-media-more {
+    color: #adb5bd;
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.command-media-url {
+    color: #6c757d;
+    display: block;
+    font-size: 0.72rem;
+    margin-top: 0.3rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.command-media-url:hover {
+    color: #20c997;
+}
+
+.command-image-preview {
+    background: #111418;
+    border: 1px solid #343a40;
+    border-radius: 8px;
+    max-height: 60vh;
+    max-width: 100%;
+}
+
+.command-image-footer {
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.command-image-url {
+    color: #adb5bd;
+    flex: 1;
+    font-size: 0.8rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.command-image-url:hover {
+    color: #20c997;
+}
+
+/* Row controls stay out of the way until the row is hovered or focused —
+   pointer-less devices get them permanently, since there's no hover there. */
+.command-row-actions {
+    display: flex;
+    gap: 0.35rem;
+    justify-content: flex-end;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.data-table tbody tr:hover .command-row-actions,
+.command-row-actions:focus-within {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .command-row-actions {
+        opacity: 1;
+    }
+}
+
+.command-action {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid #343a40;
+    border-radius: 8px;
+    color: #adb5bd;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 2rem;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    width: 2rem;
+}
+
+.command-action:hover {
+    background: rgba(32, 201, 151, 0.12);
+    border-color: rgba(32, 201, 151, 0.45);
+    color: #20c997;
+    transform: translateY(-1px);
+}
+
+.command-action-danger:hover {
+    background: rgba(220, 53, 69, 0.14);
+    border-color: rgba(220, 53, 69, 0.45);
+    color: #ea868f;
+}
+
+.command-empty {
+    align-items: center;
+    color: #adb5bd;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 2.5rem 1rem;
+    text-align: center;
+}
+
+.command-modal {
+    background: linear-gradient(180deg, #20252b 0%, #171a1f 100%);
+    border: 1px solid #343a40;
+}
+
+.command-modal .modal-header,
+.command-modal .modal-footer {
+    border-color: #343a40;
+}
+
+.command-modal .modal-header {
+    align-items: flex-start;
+}
+
+/* The key can't be renamed once a command exists — make that obvious before
+   the admin types into it rather than after. */
+.command-modal .form-control[readonly] {
+    background: rgba(255, 255, 255, 0.02);
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+.command-modal-subtitle {
+    color: #adb5bd;
+    font-size: 0.85rem;
+    margin: 0.2rem 0 0;
+}
+
+.command-icon-danger {
+    color: #ea868f;
+}
+
+.command-fields > * + * {
+    margin-top: 1rem;
+}
+
+.command-type-toggle {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.command-type-toggle .btn {
+    align-items: center;
+    display: inline-flex;
+}
+
+.command-field-images {
+    border-top: 1px solid #343a40;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 1rem;
+}
+
+.command-file-list:empty {
+    display: none;
+}
+
 .command-file-list {
-    margin: 0.5rem 0 0;
-    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.command-file-chip {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.35rem 0.45rem;
+}
+
+.command-file-link {
+    align-items: center;
+    color: #adb5bd;
+    display: flex;
+    flex: 1;
+    gap: 0.6rem;
+    min-width: 0;
+    text-decoration: none;
+}
+
+.command-file-link:hover {
+    color: #20c997;
+}
+
+.command-file-thumb {
+    border: 1px solid #343a40;
+    border-radius: 6px;
+    flex: 0 0 auto;
+    height: 34px;
+    object-fit: cover;
+    width: 34px;
+}
+
+.command-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.command-file-upload {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.command-file-upload input[type="file"] {
+    flex: 1;
+    min-width: 12rem;
+}
+
+.command-upload-status {
+    font-size: 0.85rem;
 }
 
 .cards-faction-tables {
@@ -573,6 +961,28 @@
 
 .system-stat-card {
     padding: 0.65rem;
+}
+
+.system-sync-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.system-sync-status {
+    color: #adb5bd;
+    font-size: 0.9rem;
+}
+
+.system-sync-hint {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.system-sync-failed {
+    color: #dc3545;
 }
 
 .system-stat-card .stat-value {

@@ -86,7 +86,7 @@ describe('handleSynonym cache invalidation', () => {
             invalidateSynonymCache: jest.fn(),
         }))
         jest.doMock('../src/tools/imageUpload', () => ({
-            uploadImage: jest.fn(),
+            uploadImageFile: jest.fn(), uploadImageFromUrl: jest.fn(),
         }))
         jest.doMock('../src/tools/button', () => ({
             getButtonRow: jest.fn(),

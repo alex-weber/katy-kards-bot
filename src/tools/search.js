@@ -14,7 +14,7 @@ const {
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
 const maxMessageLength = parseInt(process.env.MESSAGE_MAX_LENGTH) || 1950
-const {uploadImage} = require("../tools/imageUpload")
+const {uploadImageFromUrl} = require("../tools/imageUpload")
 const {getButtonRow} = require("./button")
 const {invalidateSynonymCache} = require("../controller/synonymCache")
 
@@ -380,7 +380,7 @@ async function handleSynonym(user, message)
         for (const [, attachment] of message.attachments)
         {
             //upload it to a different hosting because Discord's images will expire in 2 weeks
-            const uploaded = await uploadImage(attachment.url)
+            const uploaded = await uploadImageFromUrl(attachment.url)
             if (uploaded) files.push(uploaded)
             else return 'file upload error'
         }
@@ -508,6 +508,7 @@ module.exports = {
     getFiles,
     listSynonyms,
     handleSynonym,
+    checkSynonymKey,
     isBotCommandChannel,
     isEnglishOnlyChannel,
     isManager,

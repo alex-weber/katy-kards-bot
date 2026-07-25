@@ -4,7 +4,7 @@ if canFilter
         .row.mb-3
             .col-md-3
                 label.form-label(for="period") Period:
-                select#period.form-select(name="period")
+                select#period.form-select(name="period" onchange="this.form.submit()")
                     each option in periods
                         option(
                             value=option.value

@@ -1,6 +1,7 @@
 const { PermissionsBitField } = require('discord.js')
 const {updateUser} = require("../database/db")
 const {languages} = require("../tools/language")
+const {safeImageUrl} = require("../tools/imageUrl")
 const axios = require("axios")
 
 const deckCodeRegEx =/%%(\d{2,3}|\d{1}a)\|(\w*;){1,3}\w*/
@@ -121,17 +122,29 @@ function isLanguageSwitch(command)
 }
 
 /**
+ * Size of a custom command's image, so Telegram is not handed something over
+ * its limit. The URL comes out of a stored command, so it goes through the same
+ * host allowlist as the download path — a HEAD to an arbitrary address is still
+ * a request the bot should not be making on anyone's behalf.
  *
  * @param url
  * @returns {Promise<Integer>}
  */
 async function getFileSize(url)
 {
-    const response = await axios.head(url, { responseType: 'json' })
+    const safeUrl = safeImageUrl(url)
+    if (!safeUrl) {
+        console.error('Refused to check an image on a host that is not allowlisted:', url)
+        throw new Error('Image host is not allowed')
+    }
+
+    const response = await axios.head(safeUrl, { responseType: 'json' })
     //return 0 if the content-length header is not set
     if (!response.headers.has('content-length')) return 0
     const fileSize = parseInt(response.headers["content-length"])
-    console.log(url, fileSize)
+    // Same reason as above: the URL is not ours, so it cannot be the first
+    // argument, where console.* would read it as a format string.
+    console.log('image size:', safeUrl, fileSize)
 
     return fileSize
 

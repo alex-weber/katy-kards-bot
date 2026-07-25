@@ -47,9 +47,16 @@ const {
     handleUserUpdate,
     handleRoleRulesUpdate,
     handleSystemSettingsUpdate,
+    handleSyncStart,
+    handleSyncStatus,
     handleUserStatusToggle,
     handleLogout,
-    handleLogin
+    handleLogin,
+    synonymImageUpload,
+    handleSynonymImageUpload,
+    handleSynonymCreate,
+    handleSynonymUpdate,
+    handleSynonymDelete,
 } = require('./controller/router')
 
 const {redis, redisStore, secure} = require('./controller/redis')
@@ -123,6 +130,10 @@ app.get('/login', webRateLimiter, startDiscordAuth)
 app.post('/login', webRateLimiter, handleLogin)
 app.post('/logout', webRateLimiter, handleLogout)
 app.get('/commands', webRateLimiter, isAuthenticated, requireManager, renderCommands)
+app.post('/commands', webRateLimiter, isAuthenticated, requireManager, handleSynonymCreate)
+app.post('/commands/upload', webRateLimiter, isAuthenticated, requireManager, synonymImageUpload, handleSynonymImageUpload)
+app.post('/commands/:key', webRateLimiter, isAuthenticated, requireManager, handleSynonymUpdate)
+app.post('/commands/:key/delete', webRateLimiter, isAuthenticated, requireManager, handleSynonymDelete)
 app.get('/messages', webRateLimiter, isAuthenticated, requireManager, renderMessages)
 app.get('/users', webRateLimiter, isAuthenticated, requireManager, renderUsers)
 app.post('/users/:id', webRateLimiter, isAuthenticated, requireManager, handleUserUpdate)
@@ -131,6 +142,8 @@ app.get('/roles', webRateLimiter, isAuthenticated, requireGod, renderRoles)
 app.post('/roles', webRateLimiter, isAuthenticated, requireGod, handleRoleRulesUpdate)
 app.get('/system', webRateLimiter, isAuthenticated, requireManager, renderSystem)
 app.post('/system', webRateLimiter, isAuthenticated, requireManager, handleSystemSettingsUpdate)
+app.get('/system/sync', webRateLimiter, isAuthenticated, requireManager, handleSyncStatus)
+app.post('/system/sync', webRateLimiter, isAuthenticated, requireManager, handleSyncStart)
 app.get('/profile', webRateLimiter, isAuthenticated, renderProfile)
 app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, res, client))
 app.get('/servers', webRateLimiter, isAuthenticated, requireManager, (req, res) => renderServers(req, res, servers))

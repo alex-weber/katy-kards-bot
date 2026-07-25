@@ -45,13 +45,13 @@ block content
             button.btn.btn-outline-secondary(type="button" onclick="document.getElementById('discordId').value=''; document.getElementById('filterForm').submit();") x
         .col-md-2
           label.form-label(for="role") Role:
-          select#role.form-select(name="role")
+          select#role.form-select(name="role" onchange="this.form.submit()")
             option(value="" selected=!role) Any
             each option in roleOptions
               option(value=option.value selected=role === option.value) #{option.label} (#{option.description})
         .col-md-2
           label.form-label(for="status") Status:
-          select#status.form-select(name="status")
+          select#status.form-select(name="status" onchange="this.form.submit()")
             option(value="" selected=!status) Any
             option(value="active" selected=status === 'active') Active
             option(value="inactive" selected=status === 'inactive') Inactive

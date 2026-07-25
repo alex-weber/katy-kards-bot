@@ -19,7 +19,6 @@ const {
     handleContact,
     handleLanguageSwitch,
     handleHelp,
-    handleSync,
     handleRanking,
     handleMyRank,
     handleProfile,
@@ -223,7 +222,6 @@ async function discordHandler(message, client, redis)
     if (await handleContact(ctx)) return message
     if (await handleLanguageSwitch(ctx)) return message
     if (await handleHelp(ctx)) return message
-    if (handleSync(ctx)) return message
     if (await handleRanking(ctx)) return message
     if (await handleMyRank(ctx)) return message
     if (await handleProfile(ctx)) return message
@@ -252,4 +250,4 @@ async function discordHandler(message, client, redis)
     return message
 }
 
-module.exports = {discordHandler}
+module.exports = {discordHandler, warnLegacyCommand}

@@ -3,6 +3,10 @@
 
 jest.mock('../src/database/db', () => ({
     getAllSynonyms: jest.fn(async () => []),
+    getSynonym: jest.fn(),
+    createSynonym: jest.fn(async () => {}),
+    updateSynonym: jest.fn(async () => {}),
+    deleteSynonym: jest.fn(async () => {}),
     getUser: jest.fn(),
     getUserById: jest.fn(),
     getUsers: jest.fn(),
@@ -11,6 +15,12 @@ jest.mock('../src/database/db', () => ({
     getProfileStats: jest.fn(),
     updateUserAdminFields: jest.fn(),
     getTopDeckRanking: jest.fn(),
+}))
+jest.mock('../src/controller/synonymCache', () => ({
+    invalidateSynonymCache: jest.fn(async () => {}),
+}))
+jest.mock('../src/tools/imageUpload', () => ({
+    uploadImageFile: jest.fn(async () => 'https://img.example.com/uploaded.webp'),
 }))
 jest.mock('../src/controller/api', () => ({ run: jest.fn(async () => ({ success: true, data: [] })) }))
 jest.mock('../src/controller/redis', () => ({
@@ -54,14 +64,26 @@ jest.mock('../src/controller/redis', () => ({
 }))
 jest.mock('../src/controller/messageCache', () => ({ cacheKeyPrefix: 'discord:test:' }))
 jest.mock('../src/tools/avatar', () => ({ resolveAvatarUrl: jest.fn(async () => 'http://avatar/x.webp') }))
-jest.mock('../src/tools/search', () => ({ isManager: jest.fn(() => false) }))
+jest.mock('../src/tools/syncRunner', () => ({
+    startSync: jest.fn(() => ({ started: true })),
+    getSyncState: jest.fn(async () => ({ running: false, startedAt: null, last: null })),
+}))
+jest.mock('../src/tools/search', () => ({
+    isManager: jest.fn(() => false),
+    checkSynonymKey: jest.fn(key => /^[\sa-z0-9_-]+$/.test(key)),
+}))
 jest.mock('axios', () => ({ get: jest.fn() }))
 
+const path = require('path')
 const db = require('../src/database/db')
+const {getSynonym, createSynonym, updateSynonym, deleteSynonym} = db
 const API = require('../src/controller/api')
 const axios = require('axios')
-const { isManager } = require('../src/tools/search')
+const { isManager} = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
+const { invalidateSynonymCache } = require('../src/controller/synonymCache')
+const { uploadImageFile } = require('../src/tools/imageUpload')
+const { startSync, getSyncState } = require('../src/tools/syncRunner')
 const router = require('../src/controller/router')
 const { redis } = require('../src/controller/redis')
 const {
@@ -282,7 +304,8 @@ describe('manager pages', () => {
     test('renderCommands renders the synonyms view with the loaded list', async () => {
         const res = makeRes()
         db.getAllSynonyms.mockResolvedValueOnce([{ key: 'k', value: 'v' }])
-        await router.renderCommands({ session: { user: { isManager: true } } }, res)
+        await router.renderCommands(
+            { session: { user: { isManager: true } }, path: '/commands', query: {} }, res)
         const [view, locals] = res.render.mock.calls[0]
         expect(view).toBe('synonyms')
         expect(locals.synonyms).toHaveLength(1)
@@ -863,5 +886,485 @@ describe('systemMetrics peak memory', () => {
         const peak = await getPeakMemoryUsage(redisClient, { rss: 110, timestamp: '2026-06-19T00:00:00.000Z' })
         expect(peak.rss).toBe(420)
         expect(peak.timestamp).toBe('2026-06-18T22:00:00.000Z')
+    })
+})
+
+describe('synonym value helpers', () => {
+    describe('buildSynonymValue', () => {
+        test('stores a text reply with the "text:" prefix', () => {
+            const value = router.buildSynonymValue({
+                contentType: 'text', text: 'Roar!', redirectTarget: '', files: [],
+            })
+            expect(JSON.parse(value)).toEqual({content: 'text:Roar!'})
+        })
+
+        test('stores a redirect target without any prefix', () => {
+            const value = router.buildSynonymValue({
+                contentType: 'redirect', text: '', redirectTarget: 'lion for a day', files: [],
+            })
+            expect(JSON.parse(value)).toEqual({content: 'lion for a day'})
+        })
+
+        test('includes files alongside text', () => {
+            const value = router.buildSynonymValue({
+                contentType: 'text', text: 'hi', redirectTarget: '', files: ['http://x/img.png'],
+            })
+            expect(JSON.parse(value)).toEqual({content: 'text:hi', files: ['http://x/img.png']})
+        })
+
+        test('files alone (no text) is valid', () => {
+            const value = router.buildSynonymValue({
+                contentType: 'text', text: '', redirectTarget: '', files: ['http://x/img.png'],
+            })
+            expect(JSON.parse(value)).toEqual({files: ['http://x/img.png']})
+        })
+
+        test('returns null when there is nothing to store', () => {
+            expect(router.buildSynonymValue({
+                contentType: 'text', text: '  ', redirectTarget: '', files: [],
+            })).toBeNull()
+        })
+    })
+
+    describe('parseSynonymValue', () => {
+        test('parses canonical JSON with a text reply', () => {
+            expect(router.parseSynonymValue(JSON.stringify({content: 'text:Roar!'})))
+                .toEqual({contentType: 'text', text: 'Roar!', redirectTarget: '', files: []})
+        })
+
+        test('parses canonical JSON with a redirect', () => {
+            expect(router.parseSynonymValue(JSON.stringify({content: 'lion for a day'})))
+                .toEqual({contentType: 'redirect', text: '', redirectTarget: 'lion for a day', files: []})
+        })
+
+        test('parses canonical JSON with files only', () => {
+            expect(router.parseSynonymValue(JSON.stringify({files: ['http://x/img.png']})))
+                .toEqual({contentType: 'text', text: '', redirectTarget: '', files: ['http://x/img.png']})
+        })
+
+        test('upgrades a legacy bare image URL', () => {
+            expect(router.parseSynonymValue('http://x/img.png'))
+                .toEqual({contentType: 'text', text: '', redirectTarget: '', files: ['http://x/img.png']})
+        })
+
+        test('upgrades a legacy bare "text:" string', () => {
+            expect(router.parseSynonymValue('text:old style'))
+                .toEqual({contentType: 'text', text: 'old style', redirectTarget: '', files: []})
+        })
+
+        test('treats a legacy bare redirect string as a redirect', () => {
+            expect(router.parseSynonymValue('someothercommand'))
+                .toEqual({contentType: 'redirect', text: '', redirectTarget: 'someothercommand', files: []})
+        })
+
+        test('round-trips through buildSynonymValue', () => {
+            const built = router.buildSynonymValue({
+                contentType: 'text', text: 'hello', redirectTarget: '', files: ['http://x/a.png'],
+            })
+            expect(router.parseSynonymValue(built)).toEqual({
+                contentType: 'text', text: 'hello', redirectTarget: '', files: ['http://x/a.png'],
+            })
+        })
+    })
+})
+
+describe('renderCommands', () => {
+    function makeCommandsReq(query = {}) {
+        return {session: {user: {isManager: true}}, path: '/commands', query}
+    }
+
+    async function renderWith(synonyms, query) {
+        db.getAllSynonyms.mockResolvedValueOnce(synonyms)
+        const res = makeRes()
+
+        await router.renderCommands(makeCommandsReq(query), res)
+
+        return res.render.mock.calls[0][1]
+    }
+
+    test('parses each synonym\'s value for the template', async () => {
+        const locals = await renderWith([
+            {id: 1, key: 'lion', value: JSON.stringify({content: 'text:Roar!'})},
+        ])
+
+        expect(locals.synonyms[0].parsed).toEqual({
+            contentType: 'text', text: 'Roar!', redirectTarget: '', files: [],
+        })
+        expect(locals.synonyms[0].kind).toBe('text')
+    })
+
+    test('sorts by key and labels each command\'s kind', async () => {
+        const locals = await renderWith([
+            {id: 1, key: 'zebra', value: JSON.stringify({content: 'othercommand'})},
+            {id: 2, key: 'meme', value: JSON.stringify({files: ['http://x/a.png']})},
+            {id: 3, key: 'aardvark', value: JSON.stringify({content: 'text:hi'})},
+        ])
+
+        expect(locals.synonyms.map(synonym => [synonym.key, synonym.kind])).toEqual([
+            ['aardvark', 'text'],
+            ['meme', 'image'],
+            ['zebra', 'redirect'],
+        ])
+    })
+
+    test('searches keys, reply text and redirect targets', async () => {
+        const all = [
+            {id: 1, key: 'lion', value: JSON.stringify({content: 'lion for a day'})},
+            {id: 2, key: 'roar', value: JSON.stringify({content: 'text:the lion roars'})},
+            {id: 3, key: 'unrelated', value: JSON.stringify({content: 'text:nothing here'})},
+        ]
+
+        const locals = await renderWith(all, {q: 'LION'})
+
+        expect(locals.synonyms.map(synonym => synonym.key)).toEqual(['lion', 'roar'])
+        expect(locals.totalCount).toBe(2)
+        expect(locals.allCount).toBe(3)
+    })
+
+    test('filters by kind and ignores an unknown type', async () => {
+        const all = [
+            {id: 1, key: 'alias', value: JSON.stringify({content: 'othercommand'})},
+            {id: 2, key: 'reply', value: JSON.stringify({content: 'text:hi'})},
+        ]
+
+        expect((await renderWith(all, {type: 'redirect'})).synonyms.map(s => s.key))
+            .toEqual(['alias'])
+        expect((await renderWith(all, {type: 'bogus'})).synonyms).toHaveLength(2)
+    })
+
+    test('pages the filtered list and clamps an out-of-range page', async () => {
+        const all = Array.from({length: 30}, (unused, index) => ({
+            id: index,
+            key: `cmd${String(index).padStart(2, '0')}`,
+            value: JSON.stringify({content: 'text:hi'}),
+        }))
+
+        const first = await renderWith(all, {})
+        expect(first.synonyms).toHaveLength(20)
+        expect(first.totalPages).toBe(2)
+
+        const clamped = await renderWith(all, {page: '99'})
+        expect(clamped.page).toBe(2)
+        expect(clamped.synonyms).toHaveLength(10)
+        expect(clamped.synonyms[0].key).toBe('cmd20')
+    })
+})
+
+describe('handleSynonymCreate', () => {
+    function makeReq(body) {
+        return {session: {user: {isManager: true}}, body}
+    }
+
+    test('rejects non-managers', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymCreate({session: {user: {isManager: false}}, body: {}}, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(createSynonym).not.toHaveBeenCalled()
+    })
+
+    test('creates a new synonym and invalidates its cache', async () => {
+        getSynonym.mockResolvedValueOnce(null)
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymCreate(
+            makeReq({key: 'lion', contentType: 'text', text: 'Roar!'}), res)
+
+        expect(createSynonym).toHaveBeenCalledWith('lion', JSON.stringify({content: 'text:Roar!'}))
+        expect(invalidateSynonymCache).toHaveBeenCalledWith('lion')
+        expect(res.redirect).toHaveBeenCalledWith('/commands')
+    })
+
+    test('rejects an invalid key without touching the database', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymCreate(
+            makeReq({key: 'bad key!', contentType: 'text', text: 'x'}), res)
+
+        expect(createSynonym).not.toHaveBeenCalled()
+        expect(res.redirect).toHaveBeenCalledWith('/commands')
+    })
+
+    test('refuses to overwrite an existing key (edit that row instead)', async () => {
+        getSynonym.mockResolvedValueOnce({id: 1, key: 'lion', value: '{}'})
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymCreate(
+            makeReq({key: 'lion', contentType: 'text', text: 'x'}), res)
+
+        expect(createSynonym).not.toHaveBeenCalled()
+    })
+
+    test('does nothing when there is no content or files', async () => {
+        getSynonym.mockResolvedValueOnce(null)
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymCreate(makeReq({key: 'lion', contentType: 'text', text: '  '}), res)
+
+        expect(createSynonym).not.toHaveBeenCalled()
+    })
+})
+
+describe('handleSynonymUpdate', () => {
+    // A host the bot is actually allowed to fetch images from.
+    const cdn = 'https://cdn.discordapp.com/attachments/1/2/'
+
+    function makeReq(params, body) {
+        return {session: {user: {isManager: true}}, params, body}
+    }
+
+    test('rejects non-managers', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(
+            {session: {user: {isManager: false}}, params: {key: 'lion'}, body: {}}, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(updateSynonym).not.toHaveBeenCalled()
+    })
+
+    test('updates an existing synonym and invalidates the cache when the value changed', async () => {
+        getSynonym.mockResolvedValueOnce({id: 1, key: 'lion', value: JSON.stringify({content: 'text:old'})})
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(
+            makeReq({key: 'lion'}, {contentType: 'text', text: 'new'}), res)
+
+        expect(updateSynonym).toHaveBeenCalledWith('lion', JSON.stringify({content: 'text:new'}))
+        expect(invalidateSynonymCache).toHaveBeenCalledWith('lion')
+    })
+
+    test('keeps only the checked existing files, and appends newly uploaded ones', async () => {
+        getSynonym.mockResolvedValueOnce({
+            id: 1, key: 'lion',
+            value: JSON.stringify({content: 'text:old', files: [cdn + 'a.png', cdn + 'b.png']}),
+        })
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(makeReq({key: 'lion'}, {
+            contentType: 'text', text: 'new',
+            keepFiles: cdn + 'a.png', // b.png was left unchecked
+            files: cdn + 'c.png', // newly uploaded
+        }), res)
+
+        const [, storedValue] = updateSynonym.mock.calls[0]
+        expect(JSON.parse(storedValue).files).toEqual([cdn + 'a.png', cdn + 'c.png'])
+    })
+
+    // The form is the one place an admin-supplied URL enters a stored command,
+    // and every stored file is later fetched server-side (see imageUrl.js).
+    test('drops a submitted file URL the bot would refuse to download', async () => {
+        getSynonym.mockResolvedValueOnce({
+            id: 1, key: 'lion', value: JSON.stringify({content: 'text:old', files: []}),
+        })
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(makeReq({key: 'lion'}, {
+            contentType: 'text', text: 'new',
+            files: ['http://169.254.169.254/latest/meta-data/', cdn + 'ok.png'],
+        }), res)
+
+        const [, storedValue] = updateSynonym.mock.calls[0]
+        expect(JSON.parse(storedValue).files).toEqual([cdn + 'ok.png'])
+    })
+
+    test('does nothing for an unknown key', async () => {
+        getSynonym.mockResolvedValueOnce(null)
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(makeReq({key: 'ghost'}, {contentType: 'text', text: 'x'}), res)
+
+        expect(updateSynonym).not.toHaveBeenCalled()
+    })
+
+    test('skips the cache invalidation when nothing actually changed', async () => {
+        getSynonym.mockResolvedValueOnce({id: 1, key: 'lion', value: JSON.stringify({content: 'text:same'})})
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(makeReq({key: 'lion'}, {contentType: 'text', text: 'same'}), res)
+
+        expect(updateSynonym).toHaveBeenCalled()
+        expect(invalidateSynonymCache).not.toHaveBeenCalled()
+    })
+})
+
+describe('handleSynonymDelete', () => {
+    test('rejects non-managers', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymDelete(
+            {session: {user: {isManager: false}}, params: {key: 'lion'}}, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(deleteSynonym).not.toHaveBeenCalled()
+    })
+
+    test('deletes an existing synonym and invalidates its cache', async () => {
+        getSynonym.mockResolvedValueOnce({id: 1, key: 'lion', value: '{}'})
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymDelete(
+            {session: {user: {isManager: true}}, params: {key: 'lion'}}, res)
+
+        expect(deleteSynonym).toHaveBeenCalledWith('lion')
+        expect(invalidateSynonymCache).toHaveBeenCalledWith('lion')
+        expect(res.redirect).toHaveBeenCalledWith('/commands')
+    })
+
+    test('does nothing for an unknown key (still redirects)', async () => {
+        getSynonym.mockResolvedValueOnce(null)
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymDelete(
+            {session: {user: {isManager: true}}, params: {key: 'ghost'}}, res)
+
+        expect(deleteSynonym).not.toHaveBeenCalled()
+        expect(res.redirect).toHaveBeenCalledWith('/commands')
+    })
+})
+
+describe('the sync endpoints', () => {
+    const manager = { session: { user: { isManager: true, username: 'Katy' } } }
+
+    test('handleSyncStart rejects non-managers', async () => {
+        const res = makeRes()
+
+        await router.handleSyncStart({ session: { user: { isManager: false } } }, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(startSync).not.toHaveBeenCalled()
+    })
+
+    test('handleSyncStatus rejects non-managers', async () => {
+        const res = makeRes()
+
+        await router.handleSyncStatus({ session: { user: { isManager: false } } }, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+    })
+
+    test('handleSyncStart kicks off a sync and returns the new state', async () => {
+        getSyncState.mockResolvedValueOnce(
+            { running: true, startedAt: '2026-07-25T09:13:00Z', progress: '40 / 900 cards checked', last: null })
+        const res = makeRes()
+
+        await router.handleSyncStart(manager, res)
+
+        expect(startSync).toHaveBeenCalledWith(expect.objectContaining({ triggeredBy: 'Katy' }))
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            running: true,
+            startedAt: '2026-07-25T09:13:00Z',
+            kicker: 'in progress',
+            status: '40 / 900 cards checked',
+        }))
+    })
+
+    test('handleSyncStart answers 409 when a sync is already running', async () => {
+        startSync.mockReturnValueOnce({ started: false, reason: 'A sync is already running' })
+        const res = makeRes()
+
+        await router.handleSyncStart(manager, res)
+
+        expect(res.status).toHaveBeenCalledWith(409)
+        expect(res.json).toHaveBeenCalledWith({ error: 'A sync is already running' })
+    })
+
+    // The poll loop gets the display strings ready-made, so the widget never
+    // formats a duration or an outcome the server-rendered page formats too.
+    test('handleSyncStatus returns the current state, ready to print', async () => {
+        getSyncState.mockResolvedValueOnce({
+            running: false,
+            startedAt: null,
+            last: { finishedAt: '2026-07-25T09:14:00Z', ok: true, created: 1, updated: 2,
+                totalCards: 917, seconds: 2.5, triggeredBy: 'Katy' },
+            history: [{ finishedAt: '2026-07-24T08:00:00Z', ok: false, seconds: 0.4,
+                triggeredBy: 'Tim', error: 'kards.com returned no cards' }],
+        })
+        const res = makeRes()
+
+        await router.handleSyncStatus(manager, res)
+
+        const view = res.json.mock.calls[0][0]
+        expect(view).toMatchObject({
+            running: false,
+            kicker: 'last run by Katy',
+            status: '917 cards checked',
+            last: { duration: '2.5s', outcome: '1 created, 2 updated' },
+        })
+        expect(view.history[0]).toMatchObject({
+            duration: '0.4s',
+            outcome: 'Failed: kards.com returned no cards',
+        })
+    })
+})
+
+describe('handleSynonymImageUpload', () => {
+    // Where the handler re-anchors every temp file (see synonymUploadDir).
+    const uploadDir = path.join(__dirname, '../src/tmp/downloads')
+
+    test('rejects non-managers', async () => {
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({session: {user: {isManager: false}}}, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(uploadImageFile).not.toHaveBeenCalled()
+    })
+
+    test('rejects when no file was received', async () => {
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({session: {user: {isManager: true}}, file: undefined}, res)
+
+        expect(res.status).toHaveBeenCalledWith(400)
+    })
+
+    test('uploads the file and returns its URL', async () => {
+        uploadImageFile.mockResolvedValueOnce('https://img.example.com/x.webp')
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({
+            session: {user: {isManager: true}}, file: {path: '/tmp/fake-upload.png'},
+        }, res)
+
+        expect(uploadImageFile).toHaveBeenCalledWith(path.join(uploadDir, 'fake-upload.png'))
+        expect(res.json).toHaveBeenCalledWith({url: 'https://img.example.com/x.webp'})
+    })
+
+    test('confines the file to the upload dir, whatever path it arrives with', async () => {
+        uploadImageFile.mockResolvedValueOnce('https://img.example.com/x.webp')
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({
+            session: {user: {isManager: true}}, file: {path: '/etc/passwd'},
+        }, res)
+
+        expect(uploadImageFile).toHaveBeenCalledWith(path.join(uploadDir, 'passwd'))
+    })
+
+    test('reports failure when the upload itself fails', async () => {
+        uploadImageFile.mockResolvedValueOnce(false)
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({
+            session: {user: {isManager: true}}, file: {path: '/tmp/fake-upload.png'},
+        }, res)
+
+        expect(res.status).toHaveBeenCalledWith(502)
     })
 })

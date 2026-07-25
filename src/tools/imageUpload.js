@@ -1,26 +1,63 @@
 const axios = require('axios')
 const fs = require('fs')
+const crypto = require('crypto')
 const sharp = require('sharp')
 const path = require('path')
 const { pipeline } = require('stream/promises')
+const { safeImageUrl, isAllowedImageHost } = require('./imageUrl')
 
 // Configure sharp to use less memory
 sharp.cache({ memory: 50 }) // Limit cache to 50MB
 sharp.concurrency(1) // Process one image at a time to reduce memory spikes
 
+/**
+ * Where a URL is kept on disk once downloaded.
+ *
+ * Named after a digest of the URL rather than its last path segment: a
+ * basename is not unique — Discord serves any number of attachments called
+ * image.png — and downloadImageAsFile() reuses whatever is already sitting
+ * under the target name. Keyed by basename alone, the second command posting an
+ * image.png silently served the first one's picture, for as long as the file
+ * stayed in the temp directory.
+ *
+ * The query string is left out of the digest on purpose: Discord's attachment
+ * URLs carry an expiring signature that changes for the same image, while the
+ * path holds the attachment id, so the path alone is the stable identity. That
+ * keeps the download cache working instead of re-fetching on every signature.
+ *
+ * The original name is kept in front, sanitized and short, only so the temp
+ * directory stays readable.
+ *
+ * @param safeUrl URL that already passed safeImageUrl()
+ * @param language optional prefix, as before
+ * @returns {string}
+ */
+function cacheFileName(safeUrl, language = null) {
+    const address = safeUrl.split('?')[0]
+    const digest = crypto.createHash('sha256').update(address).digest('hex').slice(0, 16)
+
+    // The readable part comes off the URL's path, not off the address as a
+    // whole: path.basename() of a host-root URL hands back the hostname.
+    const base = path.basename(new URL(safeUrl).pathname)
+    const rawExtension = path.extname(base)
+    const extension = /^\.[a-z0-9]{1,8}$/i.test(rawExtension) ? rawExtension.toLowerCase() : ''
+    const stem = path.basename(base, rawExtension).replace(/[^a-z0-9_-]/gi, '').slice(0, 24)
+
+    return `${language ? language + '_' : ''}${stem ? stem + '-' : ''}${digest}${extension}`
+}
+
 async function downloadImageAsFile(url, language = null) {
 
-    let fileName = path.basename(
-        url.split('?')[0]
-    )
-
-    if (language)
-        fileName = `${language}_${fileName}`
+    const safeUrl = safeImageUrl(url)
+    if (!safeUrl) {
+        console.error('Refused to download an image from a host that is not allowlisted:', url)
+        throw new Error('Image host is not allowed')
+    }
 
     const filePath = path.join(
         __dirname,
         '../tmp/downloads',
-        fileName
+        cacheFileName(safeUrl, language)
     )
 
     try {
@@ -29,10 +66,17 @@ async function downloadImageAsFile(url, language = null) {
     } catch {}
 
     const response = await axios({
-        url,
+        url: safeUrl,
         method: 'GET',
         responseType: 'stream',
-        timeout: 10000
+        timeout: 10000,
+        // An allowlisted host answering with a redirect would otherwise walk
+        // straight past the check above, so every hop is validated again.
+        beforeRedirect: (options) => {
+            if (options.protocol !== 'https:' || !isAllowedImageHost(String(options.hostname).toLowerCase())) {
+                throw new Error('Image host redirected to a host that is not allowed')
+            }
+        }
     })
 
     await pipeline(
@@ -44,53 +88,42 @@ async function downloadImageAsFile(url, language = null) {
 }
 
 /**
- *
- * @param imagePath
- * @param expiration
- * @returns {Promise<*|boolean>}
+ * @returns {boolean} whether an image host is configured at all
  */
-async function uploadImage(imagePath, expiration = 0)
+function hasImageHost()
 {
-    let downloadedPath = null
+    if (process.env.IMG_UPLOAD_API_KEY && process.env.IMG_UPLOAD_API_ENDPOINT) return true
+
+    console.log('no upload api key or endpoint set')
+
+    return false
+}
+
+/**
+ * Send a file that is already on disk to the image host.
+ *
+ * @param filePath file inside our own tmp directory
+ * @param expiration
+ * @param hostPath optional folder for the host to file the image under
+ * @returns {Promise<*|boolean>} the hosted URL, or false
+ */
+async function postImageFile(filePath, expiration, hostPath = null)
+{
     let imageBuffer = null
 
-    if (!process.env.IMG_UPLOAD_API_KEY || !process.env.IMG_UPLOAD_API_ENDPOINT)
-    {
-        console.log('no upload api key or endpoint set')
-        return false
-    }
-    try
-    {
-        const API_URL = process.env.IMG_UPLOAD_API_ENDPOINT
-
+    try {
         const postData = {
             key: process.env.IMG_UPLOAD_API_KEY,
         }
         if (expiration) postData.expiration = expiration
+        if (hostPath) postData.path = hostPath
 
-        //read file from URL
-        if (imagePath.startsWith('http'))
-        {
-            const imageExtension = imagePath.split('.').pop().split('?').shift().toLowerCase()
-            downloadedPath = await downloadImageAsFile(imagePath)
+        // Use async file reading to avoid blocking
+        imageBuffer = await fs.promises.readFile(filePath)
+        postData.image = imageBuffer.toString('base64')
+        imageBuffer = null // Release immediately after conversion
 
-            if (imageExtension === 'png' || imageExtension === 'jpg' || imageExtension === 'jpeg')
-            {
-                downloadedPath = await convertImageToWEBP(downloadedPath)
-            }
-            // Use async file reading to avoid blocking
-            imageBuffer = await fs.promises.readFile(downloadedPath)
-            postData.image = imageBuffer.toString('base64')
-            imageBuffer = null // Release immediately after conversion
-            postData.path = 'custom'
-        } else {
-            //read file from disk
-            imageBuffer = await fs.promises.readFile(imagePath)
-            postData.image = imageBuffer.toString('base64')
-            imageBuffer = null // Release immediately after conversion
-        }
-
-        const response = await axios.post(API_URL, postData)
+        const response = await axios.post(process.env.IMG_UPLOAD_API_ENDPOINT, postData)
 
         // Clear base64 string from memory after upload
         postData.image = null
@@ -102,15 +135,69 @@ async function uploadImage(imagePath, expiration = 0)
         console.log('Image uploaded successfully:', response.data.url)
 
         return response.data.url
+    } finally {
+        // Ensure buffers are cleared
+        imageBuffer = null
+    }
+}
 
+/**
+ * Re-host an image we already have on disk — an admin's upload from the
+ * dashboard, which multer has written into our tmp directory.
+ *
+ * Deliberately separate from uploadImageFromUrl(): one takes a path and never
+ * makes an outbound request of its own, the other takes a URL and fetches it.
+ * Deciding between the two by asking whether the string starts with 'http'
+ * meant a caller holding a file path was one bad value away from making the
+ * bot fetch a URL, which is a distinction worth having in the signature.
+ *
+ * @param filePath
+ * @param expiration
+ * @returns {Promise<*|boolean>}
+ */
+async function uploadImageFile(filePath, expiration = 0)
+{
+    if (!hasImageHost()) return false
+
+    try {
+        return await postImageFile(filePath, expiration)
+    } catch (error) {
+        console.error('Error uploading image:', error)
+
+        return false
+    }
+}
+
+/**
+ * Re-host an image that lives somewhere else — a Discord attachment, whose URL
+ * expires after two weeks. The URL is checked against the host allowlist by
+ * downloadImageAsFile() before anything is fetched.
+ *
+ * @param url
+ * @param expiration
+ * @returns {Promise<*|boolean>}
+ */
+async function uploadImageFromUrl(url, expiration = 0)
+{
+    if (!hasImageHost()) return false
+
+    let downloadedPath = null
+
+    try {
+        const imageExtension = url.split('.').pop().split('?').shift().toLowerCase()
+        downloadedPath = await downloadImageAsFile(url)
+
+        if (imageExtension === 'png' || imageExtension === 'jpg' || imageExtension === 'jpeg')
+        {
+            downloadedPath = await convertImageToWEBP(downloadedPath)
+        }
+
+        return await postImageFile(downloadedPath, expiration, 'custom')
     } catch (error) {
         console.error('Error uploading image:', error)
 
         return false
     } finally {
-        // Ensure buffers are cleared
-        imageBuffer = null
-
         // Clean up temporary files
         if (downloadedPath) {
             try {
@@ -158,7 +245,10 @@ async function convertImageToWEBP(imagePath) {
 
         return webpPath
     } catch (error) {
-        console.error(`Failed to process image from ${imagePath}:`, error)
+        // imagePath is passed as an argument, never interpolated into the first
+        // one: console.* treats that as a format string, so a %s in a path the
+        // bot did not choose would swallow the error being reported.
+        console.error('Failed to process image from', imagePath, error)
         throw error
     } finally {
         // Ensure sharp instance is destroyed
@@ -171,9 +261,11 @@ async function convertImageToWEBP(imagePath) {
 }
 
 module.exports = {
-    uploadImage,
+    uploadImageFile,
+    uploadImageFromUrl,
     downloadImageAsFile,
-    convertImageToWEBP
+    convertImageToWEBP,
+    cacheFileName,
 }
 
 
