@@ -1,0 +1,49 @@
+# CodeQL code scanning.
+#
+# This is the "advanced" setup, which exists here for one reason: it is the only
+# form that reads .github/codeql/codeql-config.yml, and that file is what keeps
+# the test suite out of the results.
+#
+# GitHub's default setup has to be turned off before this runs, or the two
+# configurations fight over the same analysis:
+# Settings -> Code security -> Code scanning -> CodeQL analysis -> Disable
+# (the "Advanced" option in that menu switches over to this workflow).
+name: CodeQL
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # Weekly, so a new query release is noticed without waiting for a push.
+    - cron: '17 6 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      # Uploading the results is what needs a write scope; nothing else does.
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          config-file: ./.github/codeql/codeql-config.yml
+
+      # No build and no npm install: CodeQL reads JavaScript straight from the
+      # checkout, and node_modules is excluded from analysis anyway.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"

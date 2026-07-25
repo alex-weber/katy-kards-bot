@@ -1,0 +1,16 @@
+name: "CodeQL config"
+
+# Code that ships is scanned; code that only supports it is not.
+#
+# Test files are full of shapes the security queries are built to catch —
+# hand-rolled HTML parsing, fake credentials, deliberately hostile fixtures
+# (see tests/imageUrl.test.js, which is *made* of SSRF payloads). None of it
+# runs in production and none of it takes real input, so every hit is noise
+# that buries the alerts worth reading.
+#
+# The vendored chart.js is third-party and minified: we do not fix its findings,
+# and a minified bundle produces them by the dozen.
+paths-ignore:
+  - tests/
+  - src/js/vendor/
+  - coverage/
