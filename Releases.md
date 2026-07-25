@@ -12,6 +12,9 @@
 - Added full custom-command management (add/edit/delete) to the web dashboard's Custom Commands page, admin-only — previously this required the `^key=value` Discord chat syntax. Supports text replies, image uploads (via the same image host Discord attachments use), and search-alias redirects. The page carries search across keys, reply text and redirect targets, a filter by command type, and pagination at 20 per page; adding and editing happen in a dialog, and each row's edit/delete controls appear on hover.
 - Command attachments are visible in the list as thumbnails, and clicking one opens a full-size preview showing its image URL.
 - Filter dropdowns across the dashboard (user role and status, dashboard period, custom-command type) now apply as soon as they change, instead of also needing the Filter button.
+- Added a Card Database Sync panel to the dashboard's System page (admin-only): a Sync now button that pulls the card list from kards.com, live progress while the sync runs, the created/updated counts and duration of the last run, and a log of the last 20 syncs showing who started each one and what it changed. The panel reads correctly without JavaScript, and the number of syncs kept in the log is configurable via `SYNC_HISTORY_LIMIT`.
+- Removed the `!sync` Discord command — the database sync now runs only from the System page, which shows the progress the command used to post into the channel.
+- Only one sync can be in flight at a time, and a sync that wedges is stopped after `SYNC_TIMEOUT_MS` (15 minutes by default) and recorded as a failure, so a stuck run can no longer block every later one.
 
 ## v4.14.1
 

@@ -49,7 +49,7 @@ GOD users can configure role rules, such as daily/hourly command limits in the w
  *Custom Prefix for a Server (legacy commands only)*
 
 You can set a different prefix,
-for example for the server with the ID 12345,
+for example, for the server with the ID 12345,
 set the env var `PREFIX_12345` = `?`.
 The bot on this server now listens only to messages starting with `?`
 The other servers recognize commands with the default prefix `!` (or `DEFAULT_PREFIX`).
@@ -83,7 +83,8 @@ moment to appear in Discord's command list.
 
 # Sync the database with kards.com
 GOD and VIP users are able to sync the database.
-`!sync` is the command for it — this one has no slash equivalent and is still invoked with the
-prefix.
+It runs from the web dashboard: **System → Card Database Sync → Sync now**.
+The panel shows the progress of a running sync, what the last one changed, and a log of the
+previous runs. There is no Discord command for it.
 
 
