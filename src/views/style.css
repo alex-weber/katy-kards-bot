@@ -835,6 +835,12 @@
     font-size: 0.85rem;
 }
 
+/* The same line carries "Uploading..." and the reason an upload was refused,
+   so a failure has to look different from progress. */
+.command-upload-status.is-error {
+    color: #dc3545;
+}
+
 .cards-faction-tables {
     display: grid;
     gap: 1rem;

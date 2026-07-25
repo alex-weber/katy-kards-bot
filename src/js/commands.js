@@ -72,7 +72,15 @@ async function uploadSynonymImage(button) {
     const formData = new FormData()
     formData.append('image', file)
 
-    status.textContent = 'Uploading...'
+    // One line reports both progress and refusals — a refusal is why an image
+    // would otherwise go missing from the saved command without explanation, so
+    // it is coloured rather than left looking like another progress message.
+    const setStatus = (text, isError = false) => {
+        status.textContent = text
+        status.classList.toggle('is-error', isError)
+    }
+
+    setStatus('Uploading...')
     button.disabled = true
     try {
         const response = await fetch('/commands/upload', {
@@ -82,15 +90,15 @@ async function uploadSynonymImage(button) {
         })
         const data = await response.json().catch(() => ({}))
         if (!response.ok || !data.url) {
-            status.textContent = data.error || 'Upload failed'
+            setStatus(data.error || 'Upload failed', true)
             return
         }
 
         fields.querySelector('#commandFileList').appendChild(buildSynonymFileChip(data.url, 'files'))
         input.value = ''
-        status.textContent = ''
+        setStatus('')
     } catch (e) {
-        status.textContent = 'Upload failed'
+        setStatus('Upload failed', true)
     } finally {
         button.disabled = false
     }

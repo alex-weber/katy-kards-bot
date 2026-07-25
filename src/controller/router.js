@@ -519,7 +519,27 @@ async function handleSynonymImageUpload(req, res) {
     try {
         const url = await uploadImageFile(filePath)
         if (!url) return res.status(502).json({error: 'Upload failed'})
-        res.json({url})
+
+        // Refuse here rather than at save time. The bot can only deliver an
+        // image from a host it is allowed to fetch, so an uploader answering
+        // from anywhere else produces a URL that would be dropped when the
+        // command is saved — after the thumbnail had already appeared and the
+        // admin had no reason to think anything was wrong. The upload status
+        // line in commands.js shows this message straight away.
+        const safeUrl = safeImageUrl(url)
+        if (!safeUrl) {
+            console.error(
+                'The image host answered from a host the bot may not fetch.',
+                'Add it to IMAGE_ALLOWED_HOSTS. URL:',
+                url)
+
+            return res.status(502).json({
+                error: 'Uploaded, but the bot cannot deliver images from that host. '
+                    + 'Add it to IMAGE_ALLOWED_HOSTS.',
+            })
+        }
+
+        res.json({url: safeUrl})
     } finally {
         await fs.promises.unlink(filePath).catch(() => {})
     }

@@ -1325,6 +1325,12 @@ describe('handleSynonymImageUpload', () => {
     // Where the handler re-anchors every temp file (see synonymUploadDir).
     const uploadDir = path.join(__dirname, '../src/tmp/downloads')
 
+    // Stands in for a deployment's configured image host: the endpoint only
+    // hands back a URL the bot would later be allowed to fetch.
+    const originalHosts = process.env.IMAGE_ALLOWED_HOSTS
+    beforeEach(() => { process.env.IMAGE_ALLOWED_HOSTS = 'img.example.com' })
+    afterEach(() => { process.env.IMAGE_ALLOWED_HOSTS = originalHosts })
+
     test('rejects non-managers', async () => {
         const res = makeRes()
 
@@ -1374,5 +1380,34 @@ describe('handleSynonymImageUpload', () => {
         }, res)
 
         expect(res.status).toHaveBeenCalledWith(502)
+    })
+
+    // Otherwise the admin sees a thumbnail, saves, and gets a command with no
+    // image and no explanation — the upload succeeded, the delivery cannot.
+    test('refuses a URL the bot would not be allowed to fetch back', async () => {
+        uploadImageFile.mockResolvedValueOnce('https://somewhere-else.example/x.webp')
+        const logged = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({
+            session: {user: {isManager: true}}, file: {path: '/tmp/fake-upload.png'},
+        }, res)
+
+        expect(res.status).toHaveBeenCalledWith(502)
+        expect(res.json).toHaveBeenCalledWith({error: expect.stringContaining('IMAGE_ALLOWED_HOSTS')})
+        expect(logged).toHaveBeenCalled()
+        logged.mockRestore()
+    })
+
+    // What is stored is then exactly what the bot will ask for later.
+    test('returns the normalized URL', async () => {
+        uploadImageFile.mockResolvedValueOnce('http://img.example.com/x.webp')
+        const res = makeRes()
+
+        await router.handleSynonymImageUpload({
+            session: {user: {isManager: true}}, file: {path: '/tmp/fake-upload.png'},
+        }, res)
+
+        expect(res.json).toHaveBeenCalledWith({url: 'https://img.example.com/x.webp'})
     })
 })

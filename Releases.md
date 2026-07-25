@@ -6,6 +6,7 @@
 
 ### Bug Fixes
 
+- Uploading a command image from the dashboard now says so immediately when the bot would not be able to deliver it, instead of accepting the upload and quietly saving the command without its picture.
 - Fixed the attribution line's formatting breaking when a name contains markdown characters — including plain usernames, which may contain underscores.
 - The bot can no longer be made to ping a whole server through the attribution line: mentions are disabled on the messages it posts on a user's behalf, so a nickname of `@everyone` is printed as text.
 
