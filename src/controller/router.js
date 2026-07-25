@@ -353,9 +353,26 @@ function resolveNewSynonymFiles(req) {
     const submitted = req.body.files
     if (!submitted) return []
 
-    return (Array.isArray(submitted) ? submitted : [submitted])
-        .map(url => typeof url === 'string' ? safeImageUrl(url) : null)
-        .filter(Boolean)
+    const files = []
+    for (const url of Array.isArray(submitted) ? submitted : [submitted]) {
+        const safe = typeof url === 'string' ? safeImageUrl(url) : null
+        if (safe) {
+            files.push(safe)
+            continue
+        }
+
+        // Worth a line in the log because the admin gets no other sign: the
+        // upload endpoint already returned a URL and the form showed the
+        // thumbnail, so a drop here looks like a command that simply saved
+        // without its image. By far the likeliest cause is the uploader's own
+        // host missing from IMAGE_ALLOWED_HOSTS on this deployment.
+        console.error(
+            'Dropped a command image the bot would refuse to download.',
+            'Is its host in IMAGE_ALLOWED_HOSTS? URL:',
+            url)
+    }
+
+    return files
 }
 
 /**

@@ -1168,6 +1168,7 @@ describe('handleSynonymUpdate', () => {
         })
         const res = makeRes()
         res.redirect = jest.fn()
+        const logged = jest.spyOn(console, 'error').mockImplementation(() => {})
 
         await router.handleSynonymUpdate(makeReq({key: 'lion'}, {
             contentType: 'text', text: 'new',
@@ -1176,6 +1177,13 @@ describe('handleSynonymUpdate', () => {
 
         const [, storedValue] = updateSynonym.mock.calls[0]
         expect(JSON.parse(storedValue).files).toEqual([cdn + 'ok.png'])
+
+        // The admin sees nothing when this happens — the log is the only trace,
+        // and a missing IMAGE_ALLOWED_HOSTS is the usual reason.
+        expect(logged).toHaveBeenCalledTimes(1)
+        expect(logged.mock.calls[0].join(' ')).toContain('IMAGE_ALLOWED_HOSTS')
+        expect(logged.mock.calls[0]).toContain('http://169.254.169.254/latest/meta-data/')
+        logged.mockRestore()
     })
 
     test('does nothing for an unknown key', async () => {
