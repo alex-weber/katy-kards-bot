@@ -1,49 +1,61 @@
 # CodeQL code scanning.
 #
-# This is the "advanced" setup, which exists here for one reason: it is the only
-# form that reads .github/codeql/codeql-config.yml, and that file is what keeps
-# the test suite out of the results.
-#
-# GitHub's default setup has to be turned off before this runs, or the two
-# configurations fight over the same analysis:
-# Settings -> Code security -> Code scanning -> CodeQL analysis -> Disable
-# (the "Advanced" option in that menu switches over to this workflow).
-name: CodeQL
+# Started from the workflow GitHub generates when you switch a repository from
+# default setup to advanced, with three changes:
+#   - config-file, which is the reason for running advanced setup at all: it is
+#     what keeps tests/ and the vendored chart.js out of the results, and
+#     default setup has no way to express that.
+#   - checkout v7, because v4 targets Node 20 and the runners now force those
+#     actions onto Node 24 with a deprecation warning.
+#   - dropped the swift runner switch and the manual-build step: this repo
+#     analyses one language and builds nothing, so neither can ever fire.
+name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [master]
+    branches: [ "master" ]
   pull_request:
-    branches: [master]
+    branches: [ "master" ]
   schedule:
-    # Weekly, so a new query release is noticed without waiting for a push.
-    - cron: '17 6 * * 1'
+    - cron: '21 20 * * 6'
 
 jobs:
   analyze:
-    name: Analyze JavaScript
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     permissions:
-      # Uploading the results is what needs a write scope; nothing else does.
+      # required for all workflows
       security-events: write
+
+      # required to fetch internal or private CodeQL packs
+      packages: read
+
+      # only required for workflows in private repositories
       actions: read
       contents: read
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - language: javascript-typescript
+          build-mode: none
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+    - name: Checkout repository
+      uses: actions/checkout@v7
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: javascript-typescript
-          config-file: ./.github/codeql/codeql-config.yml
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        config-file: ./.github/codeql/codeql-config.yml
 
-      # No build and no npm install: CodeQL reads JavaScript straight from the
-      # checkout, and node_modules is excluded from analysis anyway.
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
-        with:
-          category: "/language:javascript-typescript"
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{matrix.language}}"
