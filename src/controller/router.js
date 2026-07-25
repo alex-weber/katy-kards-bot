@@ -333,22 +333,61 @@ function resolveNewSynonymFiles(req) {
 }
 
 /**
- * Back to the list, keeping the admin's search/page position when the form
- * carried one (same `returnTo` convention the user rows use). Only same-page
- * relative targets are honoured, so a tampered field can't turn a redirect
+ * The query a form's `returnTo` field carried, or nothing when it is missing
+ * or points somewhere other than `path`. Handed back as parsed params rather
+ * than a string so callers have to re-validate each value before it can reach
+ * res.redirect() — the submitted string itself never gets there.
+ *
+ * @param req
+ * @param path list route the field is allowed to point at
+ * @returns {URLSearchParams}
+ */
+function parseReturnToQuery(req, path) {
+    const submitted = typeof req.body?.returnTo === 'string' ? req.body.returnTo : ''
+    const prefix = path + '?'
+
+    return new URLSearchParams(submitted.startsWith(prefix) ? submitted.slice(prefix.length) : '')
+}
+
+/**
+ * Rebuilds a list URL from `path` (a literal) plus already-validated values,
+ * dropping empty ones. Nothing user-controlled reaches res.redirect() except
+ * as a percent-encoded query value, so a tampered `returnTo` can't turn this
  * into an open redirect.
+ *
+ * @param res
+ * @param path
+ * @param entries
+ */
+function redirectToList(res, path, entries) {
+    const params = new URLSearchParams()
+    for (const [name, value] of entries) {
+        if (value) params.set(name, String(value))
+    }
+    const query = params.toString()
+
+    return res.redirect(query ? `${path}?${query}` : path)
+}
+
+/**
+ * Back to the list, keeping the admin's search/page position when the form
+ * carried one (same `returnTo` convention the user rows use).
  *
  * @param req
  * @param res
  */
 function redirectBackToCommands(req, res) {
-    const returnTo = typeof req.body?.returnTo === 'string' ? req.body.returnTo : ''
+    const query = parseReturnToQuery(req, '/commands')
 
-    return res.redirect(/^\/commands(\?[^\s]*)?$/.test(returnTo) ? returnTo : '/commands')
+    return redirectToList(res, '/commands', [
+        ['q', sanitizeText(query.get('q'), 100).toLowerCase()],
+        ['type', SYNONYM_KINDS.includes(query.get('type')) ? query.get('type') : ''],
+        ['page', query.has('page') ? sanitizePage(query.get('page')) : ''],
+    ])
 }
 
 /**
- * Which flavour of command a stored value represents — drives both the `type`
+ * Which flavor of command a stored value represents — drives both the `type`
  * filter and the badge shown in each row.
  *
  * @param parsed output of parseSynonymValue()
@@ -610,14 +649,23 @@ function canEditUserField(actor, target, field) {
     return ['mode', 'status'].includes(field)
 }
 
+/**
+ * Same as redirectBackToCommands, for the user list's filters.
+ *
+ * @param req
+ * @param res
+ */
 function redirectBackToUsers(req, res) {
-    const body = req.body || {}
-    const fallback = '/users'
-    const returnTo = typeof body.returnTo === 'string' && body.returnTo.startsWith('/users')
-        ? body.returnTo
-        : fallback
-    const url = new URL('http://local' + returnTo)
-    res.redirect(url.pathname + url.search)
+    const query = parseReturnToQuery(req, '/users')
+
+    return redirectToList(res, '/users', [
+        ['username', sanitizeText(query.get('username'), 40)],
+        ['discordId', sanitizeText(query.get('discordId'), 32)],
+        ['role', sanitizeUserRoleFilter(query.get('role'))],
+        ['status', sanitizeUserStatusFilter(query.get('status'))],
+        ['mode', sanitizeText(query.get('mode'), 100)],
+        ['page', query.has('page') ? sanitizePage(query.get('page')) : ''],
+    ])
 }
 
 function buildRoleInfoCards(rules) {
