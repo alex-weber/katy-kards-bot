@@ -17,7 +17,7 @@ jest.mock('../src/controller/messageContext', () => ({
 jest.mock('../src/controller/commands/infoCommands', () => ({
     handleMidnight: jest.fn(), handleUtc: jest.fn(), handleStats: jest.fn(),
     handleDm: jest.fn(), handleContact: jest.fn(), handleLanguageSwitch: jest.fn(),
-    handleHelp: jest.fn(), handleSync: jest.fn(), handleRanking: jest.fn(),
+    handleHelp: jest.fn(), handleRanking: jest.fn(),
     handleMyRank: jest.fn(), handleProfile: jest.fn(), handleServers: jest.fn(),
 }))
 jest.mock('../src/controller/commands/deckCommands', () => ({

@@ -117,42 +117,6 @@ async function handleHelp(ctx)
 }
 
 /**
- * Spawn a DB sync with kards.com (managers only).
- *
- * @param ctx
- * @returns {boolean}
- */
-function handleSync(ctx)
-{
-    const {message, user} = ctx
-    if (ctx.command !== 'sync' || !isManager(user)) return false
-
-    const spawn = require('child_process').spawn
-    const child = spawn('node', ['src/tools/sync.js'],
-        {stdio: ['inherit', 'inherit', 'inherit', 'ipc']})
-    message.channel.send('starting DB sync with kards.com...')
-    const startTime = Date.now()
-    console.time('db_sync')
-    child.on('close', function(code)
-    {
-        console.timeEnd('db_sync')
-        const endTime = Date.now()
-        const duration = ((endTime - startTime) / 1000).toFixed(3)
-        if (code === 0)
-            return message.channel.send('DB sync done in ' + duration + 's')
-    })
-    child.on('message', m => message.channel.send(m))
-    child.on('error', function(error)
-    {
-        console.log(error)
-        console.timeEnd('db_sync')
-        return message.channel.send('DB sync error. Check log for details.')
-    })
-
-    return true
-}
-
-/**
  * Reply with the top 9 TD ranking.
  *
  * @param ctx
@@ -248,7 +212,6 @@ module.exports = {
     handleDm,
     handleLanguageSwitch,
     handleHelp,
-    handleSync,
     handleRanking,
     handleMyRank,
     handleProfile,
