@@ -963,6 +963,28 @@
     padding: 0.65rem;
 }
 
+.system-sync-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.system-sync-status {
+    color: #adb5bd;
+    font-size: 0.9rem;
+}
+
+.system-sync-hint {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.system-sync-failed {
+    color: #dc3545;
+}
+
 .system-stat-card .stat-value {
     font-size: 1.15rem;
 }

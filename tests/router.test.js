@@ -64,6 +64,10 @@ jest.mock('../src/controller/redis', () => ({
 }))
 jest.mock('../src/controller/messageCache', () => ({ cacheKeyPrefix: 'discord:test:' }))
 jest.mock('../src/tools/avatar', () => ({ resolveAvatarUrl: jest.fn(async () => 'http://avatar/x.webp') }))
+jest.mock('../src/tools/syncRunner', () => ({
+    startSync: jest.fn(() => ({ started: true })),
+    getSyncState: jest.fn(async () => ({ running: false, startedAt: null, last: null })),
+}))
 jest.mock('../src/tools/search', () => ({
     isManager: jest.fn(() => false),
     checkSynonymKey: jest.fn(key => /^[\sa-z0-9_-]+$/.test(key)),
@@ -79,6 +83,7 @@ const { isManager} = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
 const { invalidateSynonymCache } = require('../src/controller/synonymCache')
 const { uploadImage } = require('../src/tools/imageUpload')
+const { startSync, getSyncState } = require('../src/tools/syncRunner')
 const router = require('../src/controller/router')
 const { redis } = require('../src/controller/redis')
 const {
@@ -1209,6 +1214,81 @@ describe('handleSynonymDelete', () => {
 
         expect(deleteSynonym).not.toHaveBeenCalled()
         expect(res.redirect).toHaveBeenCalledWith('/commands')
+    })
+})
+
+describe('the sync endpoints', () => {
+    const manager = { session: { user: { isManager: true, username: 'Katy' } } }
+
+    test('handleSyncStart rejects non-managers', async () => {
+        const res = makeRes()
+
+        await router.handleSyncStart({ session: { user: { isManager: false } } }, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(startSync).not.toHaveBeenCalled()
+    })
+
+    test('handleSyncStatus rejects non-managers', async () => {
+        const res = makeRes()
+
+        await router.handleSyncStatus({ session: { user: { isManager: false } } }, res)
+
+        expect(res.status).toHaveBeenCalledWith(403)
+    })
+
+    test('handleSyncStart kicks off a sync and returns the new state', async () => {
+        getSyncState.mockResolvedValueOnce(
+            { running: true, startedAt: '2026-07-25T09:13:00Z', progress: '40 / 900 cards checked', last: null })
+        const res = makeRes()
+
+        await router.handleSyncStart(manager, res)
+
+        expect(startSync).toHaveBeenCalledWith(expect.objectContaining({ triggeredBy: 'Katy' }))
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            running: true,
+            startedAt: '2026-07-25T09:13:00Z',
+            kicker: 'in progress',
+            status: '40 / 900 cards checked',
+        }))
+    })
+
+    test('handleSyncStart answers 409 when a sync is already running', async () => {
+        startSync.mockReturnValueOnce({ started: false, reason: 'A sync is already running' })
+        const res = makeRes()
+
+        await router.handleSyncStart(manager, res)
+
+        expect(res.status).toHaveBeenCalledWith(409)
+        expect(res.json).toHaveBeenCalledWith({ error: 'A sync is already running' })
+    })
+
+    // The poll loop gets the display strings ready-made, so the widget never
+    // formats a duration or an outcome the server-rendered page formats too.
+    test('handleSyncStatus returns the current state, ready to print', async () => {
+        getSyncState.mockResolvedValueOnce({
+            running: false,
+            startedAt: null,
+            last: { finishedAt: '2026-07-25T09:14:00Z', ok: true, created: 1, updated: 2,
+                totalCards: 917, seconds: 2.5, triggeredBy: 'Katy' },
+            history: [{ finishedAt: '2026-07-24T08:00:00Z', ok: false, seconds: 0.4,
+                triggeredBy: 'Tim', error: 'kards.com returned no cards' }],
+        })
+        const res = makeRes()
+
+        await router.handleSyncStatus(manager, res)
+
+        const view = res.json.mock.calls[0][0]
+        expect(view).toMatchObject({
+            running: false,
+            kicker: 'last run by Katy',
+            status: '917 cards checked',
+            last: { duration: '2.5s', outcome: '1 created, 2 updated' },
+        })
+        expect(view.history[0]).toMatchObject({
+            duration: '0.4s',
+            outcome: 'Failed: kards.com returned no cards',
+        })
     })
 })
 

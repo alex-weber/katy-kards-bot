@@ -21,6 +21,8 @@ const {isManager, checkSynonymKey} = require("../tools/search")
 const {invalidateSynonymCache} = require('./synonymCache')
 const {uploadImage} = require('../tools/imageUpload')
 const {resolveAvatarUrl} = require("../tools/avatar")
+const {getSyncState, startSync} = require('../tools/syncRunner')
+const {buildSyncView} = require('../tools/syncFormat')
 const {
     ROLE,
     ROLE_OPTIONS,
@@ -83,6 +85,23 @@ async function requireGod(req, res, next) {
     if (req.session.user) await refreshSessionUser(req)
     if (req.session.user && isGod(req.session.user)) return next()
     res.status(403).send('Not permitted')
+}
+
+/**
+ * The same check requireManager makes, for the JSON endpoints the dashboard's
+ * scripts call: they are already behind requireManager, so this only answers in
+ * the shape their fetch() callers expect (and keeps them safe if a route is
+ * ever wired up without the middleware).
+ *
+ * @param req
+ * @param res
+ * @returns {boolean} true when the request was answered with a 403
+ */
+function denyNonManager(req, res) {
+    if (req.session.user && req.session.user.isManager) return false
+
+    res.status(403).json({error: 'Not permitted'})
+    return true
 }
 
 function resolveStatsPeriod(req) {
@@ -464,9 +483,7 @@ async function renderCommands(req, res) {
  * @returns {Promise<void>}
  */
 async function handleSynonymImageUpload(req, res) {
-    if (!req.session.user || !req.session.user.isManager) {
-        return res.status(403).json({error: 'Not permitted'})
-    }
+    if (denyNonManager(req, res)) return
     if (!req.file) return res.status(400).json({error: 'No image received'})
 
     // Re-anchor the temp file inside synonymUploadDir before touching the
@@ -774,8 +791,49 @@ async function renderSystem(req, res) {
     res.render('system', {
         title: 'System',
         user: req.session.user,
+        sync: await getSyncView(),
         ...systemData,
     })
+}
+
+/**
+ * The sync widget's data, ready to print — the same object the page is
+ * rendered from and the poll loop receives, so both draw it identically.
+ *
+ * @returns {Promise<object>}
+ */
+async function getSyncView() {
+    return buildSyncView(await getSyncState(redis))
+}
+
+/**
+ * Kick off a kards.com DB sync from the system page. Returns as soon as the
+ * child process is spawned — the widget polls handleSyncStatus for the outcome.
+ *
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
+async function handleSyncStart(req, res) {
+    if (denyNonManager(req, res)) return
+
+    const {started, reason} = startSync({triggeredBy: req.session.user.username || 'web'})
+    if (!started) return res.status(409).json({error: reason})
+
+    res.json(await getSyncView())
+}
+
+/**
+ * Current sync state for the system page widget's poll loop.
+ *
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
+async function handleSyncStatus(req, res) {
+    if (denyNonManager(req, res)) return
+
+    res.json(await getSyncView())
 }
 
 async function handleSystemSettingsUpdate(req, res) {
@@ -1058,6 +1116,8 @@ module.exports = {
     handleUserUpdate,
     handleRoleRulesUpdate,
     handleSystemSettingsUpdate,
+    handleSyncStart,
+    handleSyncStatus,
     handleUserStatusToggle,
     handleLogout,
     handleLogin,

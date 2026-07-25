@@ -47,6 +47,8 @@ const {
     handleUserUpdate,
     handleRoleRulesUpdate,
     handleSystemSettingsUpdate,
+    handleSyncStart,
+    handleSyncStatus,
     handleUserStatusToggle,
     handleLogout,
     handleLogin,
@@ -140,6 +142,8 @@ app.get('/roles', webRateLimiter, isAuthenticated, requireGod, renderRoles)
 app.post('/roles', webRateLimiter, isAuthenticated, requireGod, handleRoleRulesUpdate)
 app.get('/system', webRateLimiter, isAuthenticated, requireManager, renderSystem)
 app.post('/system', webRateLimiter, isAuthenticated, requireManager, handleSystemSettingsUpdate)
+app.get('/system/sync', webRateLimiter, isAuthenticated, requireManager, handleSyncStatus)
+app.post('/system/sync', webRateLimiter, isAuthenticated, requireManager, handleSyncStart)
 app.get('/profile', webRateLimiter, isAuthenticated, renderProfile)
 app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, res, client))
 app.get('/servers', webRateLimiter, isAuthenticated, requireManager, (req, res) => renderServers(req, res, servers))

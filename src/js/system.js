@@ -235,6 +235,153 @@ function colorMemorySummary(samples, thresholdMb, availableMb) {
     })
 }
 
+// --- Card database sync ---------------------------------------------------
+// The sync runs as a child process on the server and takes minutes, so the
+// button only kicks it off; everything after that comes from polling /system/sync.
+// Polling backs off instead of using one fixed interval: a sync usually
+// finishes in a few seconds, so a flat 10s made every run *look* like it took
+// 10s. Starting at 500ms keeps short runs feeling immediate, and the backoff
+// keeps a long run from burning the admin's WEB_RATE_LIMIT_MAX budget (300
+// requests per 15 min by default) — capped at 10s, a 5 minute sync costs ~35.
+const syncPollStartMs = 500
+const syncPollMaxMs = 10000
+const syncPollBackoff = 1.6
+let syncPollTimer = null
+let syncPollDelayMs = syncPollStartMs
+
+// Durations, outcomes and the status line arrive pre-formatted from the server
+// (src/tools/syncFormat.js) so this and system.pug can't drift apart.
+// Timestamps are the exception: the server can only send UTC, and an admin
+// wants to read them in their own timezone.
+function formatSyncTimestamp(value, fallback) {
+    const date = new Date(value)
+    if (!value || Number.isNaN(date.getTime())) return fallback || '–'
+    return date.toLocaleString([], {
+        year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    })
+}
+
+function renderSyncHistory(history) {
+    const body = document.getElementById('syncHistoryBody')
+    const empty = document.getElementById('syncHistoryEmpty')
+    if (!body) return
+
+    body.textContent = ''
+    empty.hidden = history.length > 0
+
+    history.forEach(entry => {
+        const row = document.createElement('tr')
+        // Built via DOM APIs, not innerHTML — entry.error is whatever the
+        // sync process reported and entry.triggeredBy is a Discord username.
+        const cells = [
+            entry.triggeredBy || 'unknown',
+            formatSyncTimestamp(entry.finishedAt, entry.executed),
+            entry.duration,
+            entry.outcome,
+        ]
+        cells.forEach((text, index) => {
+            const cell = document.createElement('td')
+            cell.textContent = text
+            if (index === 3 && !entry.ok) cell.className = 'system-sync-failed'
+            row.appendChild(cell)
+        })
+        body.appendChild(row)
+    })
+}
+
+function renderSyncState(state) {
+    const button = document.getElementById('syncButton')
+    const status = document.getElementById('syncStatus')
+    const kicker = document.getElementById('syncKicker')
+    if (!button) return
+
+    const last = state.last || {}
+    document.getElementById('syncLastRun').textContent = formatSyncTimestamp(last.finishedAt, last.executed)
+    document.getElementById('syncCreated').textContent = last.finishedAt ? (last.created || 0) : '–'
+    document.getElementById('syncUpdated').textContent = last.finishedAt ? (last.updated || 0) : '–'
+    document.getElementById('syncDuration').textContent = last.duration || '–'
+    renderSyncHistory(state.history || [])
+
+    button.disabled = Boolean(state.running)
+    button.textContent = state.running ? 'Syncing…' : 'Sync now'
+    kicker.textContent = state.kicker || ''
+
+    // The only line rebuilt here rather than taken from state.status: while a
+    // sync runs without a progress line yet, the server can only date it in UTC.
+    status.textContent = state.running && !state.progress
+        ? 'Running since ' + formatSyncTimestamp(state.startedAt)
+        : (state.status || '')
+}
+
+function stopSyncPolling() {
+    if (syncPollTimer) clearTimeout(syncPollTimer)
+    syncPollTimer = null
+    syncPollDelayMs = syncPollStartMs
+}
+
+async function pollSyncState() {
+    let stillRunning = true
+    try {
+        const response = await fetch('/system/sync')
+        if (response.ok) {
+            const state = await response.json()
+            renderSyncState(state)
+            stillRunning = Boolean(state.running)
+        }
+    } catch (e) {
+        // A dropped poll is not worth surfacing — the next tick retries.
+    }
+
+    // Stop once it finishes; the button restarts the loop.
+    if (!stillRunning) return stopSyncPolling()
+
+    syncPollDelayMs = Math.min(Math.round(syncPollDelayMs * syncPollBackoff), syncPollMaxMs)
+    syncPollTimer = setTimeout(pollSyncState, syncPollDelayMs)
+}
+
+function startSyncPolling() {
+    if (syncPollTimer) return
+    syncPollDelayMs = syncPollStartMs
+    syncPollTimer = setTimeout(pollSyncState, syncPollDelayMs)
+}
+
+async function requestSync() {
+    const button = document.getElementById('syncButton')
+    const status = document.getElementById('syncStatus')
+    button.disabled = true
+    status.textContent = 'Starting…'
+
+    try {
+        const response = await fetch('/system/sync', {
+            method: 'POST',
+            headers: {'X-CSRF-Token': document.getElementById('csrfToken').value},
+        })
+        const state = await response.json().catch(() => ({}))
+        if (!response.ok) {
+            status.textContent = state.error || 'Could not start the sync'
+            button.disabled = false
+            return
+        }
+        renderSyncState(state)
+        startSyncPolling()
+    } catch (e) {
+        status.textContent = 'Could not start the sync'
+        button.disabled = false
+    }
+}
+
+function initSyncWidget() {
+    const button = document.getElementById('syncButton')
+    if (!button) return
+
+    const state = window.systemSyncState || {}
+    renderSyncState(state)
+    button.addEventListener('click', requestSync)
+    if (state.running) startSyncPolling()
+}
+
+initSyncWidget()
+
 drawRedisChart(window.systemRedisData || {})
 const systemMemorySamples = window.systemMemoryData || []
 const systemMemoryThresholdMb = Number(window.systemMemoryThresholdMb) || 0
