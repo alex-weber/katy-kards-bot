@@ -10,7 +10,7 @@ jest.mock('sharp', () => Object.assign(jest.fn(), {cache: jest.fn(), concurrency
 
 const axios = require('axios')
 const {safeImageUrl} = require('../src/tools/imageUrl')
-const {downloadImageAsFile} = require('../src/tools/imageUpload')
+const {downloadImageAsFile, cacheFileName} = require('../src/tools/imageUpload')
 
 const discordUrl = 'https://cdn.discordapp.com/attachments/1/2/card.png'
 
@@ -112,6 +112,52 @@ describe('getFileSize', () => {
         await getFileSize(discordUrl)
 
         expect(axios.head).toHaveBeenCalledWith(discordUrl, expect.anything())
+    })
+})
+
+// A downloaded image is reused if a file is already sitting under the name this
+// produces, so two images sharing a name means one is served in the other's
+// place — the local name has to be as distinct as the URL is.
+describe('cacheFileName', () => {
+    const attachment = id => `https://cdn.discordapp.com/attachments/1/${id}/image.png`
+
+    test('separates two images that share a basename', () => {
+        expect(cacheFileName(attachment('111'))).not.toBe(cacheFileName(attachment('222')))
+    })
+
+    test('gives the same image the same name every time', () => {
+        expect(cacheFileName(attachment('111'))).toBe(cacheFileName(attachment('111')))
+    })
+
+    // Discord re-signs attachment URLs; the path is what identifies the image,
+    // so a fresh signature must not cost another download.
+    test('ignores the query string', () => {
+        expect(cacheFileName(attachment('111') + '?ex=aaa&is=bbb'))
+            .toBe(cacheFileName(attachment('111') + '?ex=ccc&is=ddd'))
+    })
+
+    test('keeps the extension and a readable stem', () => {
+        expect(cacheFileName(attachment('111'))).toMatch(/^image-[0-9a-f]{16}\.png$/)
+    })
+
+    test('still prefixes the language', () => {
+        expect(cacheFileName(attachment('111'), 'de')).toMatch(/^de_image-/)
+    })
+
+    test('leaves off the extension when the URL has none', () => {
+        expect(cacheFileName('https://cdn.discordapp.com/attachments/1/2/'))
+            .toMatch(/^2-[0-9a-f]{16}$/)
+    })
+
+    test('is still a name when there is nothing to read off the URL', () => {
+        expect(cacheFileName('https://cdn.discordapp.com')).toMatch(/^[0-9a-f]{16}$/)
+    })
+
+    test('never lets the URL shape into the file name', () => {
+        const name = cacheFileName('https://cdn.discordapp.com/a/..%2f..%2fpasswd.png')
+
+        expect(name).not.toMatch(/[/\\]/)
+        expect(name).toMatch(/^[a-z0-9_.-]+$/i)
     })
 })
 

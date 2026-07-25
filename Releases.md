@@ -4,6 +4,10 @@
 
 - The bot now only downloads custom-command images from allowlisted hosts. A command's image URLs were fetched server-side and the response posted back into the channel, so an admin account could point one at an internal address and have the bot read it out. Discord's CDN is always allowed; set `IMAGE_ALLOWED_HOSTS` to the host your image uploader serves from — **images on any other host stop working until it is listed**.
 
+### Bug Fixes
+
+- Fixed custom commands showing the wrong picture. Downloaded images were cached under the file name from their URL, so two images that happened to share one — `image.png` is a common attachment name — landed on the same file, and whichever was fetched first was served for both until the temp file was cleared.
+
 ### Features
 
 - Added Discord slash commands ahead of the Message Content Intent removal. All commands are top-level (matching the familiar bare commands, e.g. `/utc`): `/search <query>` and `/deck`, `/alt`, `/td` (Top Deck mini-game, with an optional unit-type choice: infantry/artillery/bomber/fighter/tank), `/commands` (custom-command list, replied privately; optional text filters by prefix, e.g. `/commands a`), `/profile` (also where the search language is changed), `/online`, `/utc`, `/midnight`, `/ranking`, `/myrank`, `/contact`, `/terms`, and `/help`.

@@ -1,5 +1,6 @@
 const axios = require('axios')
 const fs = require('fs')
+const crypto = require('crypto')
 const sharp = require('sharp')
 const path = require('path')
 const { pipeline } = require('stream/promises')
@@ -9,6 +10,42 @@ const { safeImageUrl, isAllowedImageHost } = require('./imageUrl')
 sharp.cache({ memory: 50 }) // Limit cache to 50MB
 sharp.concurrency(1) // Process one image at a time to reduce memory spikes
 
+/**
+ * Where a URL is kept on disk once downloaded.
+ *
+ * Named after a digest of the URL rather than its last path segment: a
+ * basename is not unique — Discord serves any number of attachments called
+ * image.png — and downloadImageAsFile() reuses whatever is already sitting
+ * under the target name. Keyed by basename alone, the second command posting an
+ * image.png silently served the first one's picture, for as long as the file
+ * stayed in the temp directory.
+ *
+ * The query string is left out of the digest on purpose: Discord's attachment
+ * URLs carry an expiring signature that changes for the same image, while the
+ * path holds the attachment id, so the path alone is the stable identity. That
+ * keeps the download cache working instead of re-fetching on every signature.
+ *
+ * The original name is kept in front, sanitized and short, only so the temp
+ * directory stays readable.
+ *
+ * @param safeUrl URL that already passed safeImageUrl()
+ * @param language optional prefix, as before
+ * @returns {string}
+ */
+function cacheFileName(safeUrl, language = null) {
+    const address = safeUrl.split('?')[0]
+    const digest = crypto.createHash('sha256').update(address).digest('hex').slice(0, 16)
+
+    // The readable part comes off the URL's path, not off the address as a
+    // whole: path.basename() of a host-root URL hands back the hostname.
+    const base = path.basename(new URL(safeUrl).pathname)
+    const rawExtension = path.extname(base)
+    const extension = /^\.[a-z0-9]{1,8}$/i.test(rawExtension) ? rawExtension.toLowerCase() : ''
+    const stem = path.basename(base, rawExtension).replace(/[^a-z0-9_-]/gi, '').slice(0, 24)
+
+    return `${language ? language + '_' : ''}${stem ? stem + '-' : ''}${digest}${extension}`
+}
+
 async function downloadImageAsFile(url, language = null) {
 
     const safeUrl = safeImageUrl(url)
@@ -17,17 +54,10 @@ async function downloadImageAsFile(url, language = null) {
         throw new Error('Image host is not allowed')
     }
 
-    let fileName = path.basename(
-        safeUrl.split('?')[0]
-    )
-
-    if (language)
-        fileName = `${language}_${fileName}`
-
     const filePath = path.join(
         __dirname,
         '../tmp/downloads',
-        fileName
+        cacheFileName(safeUrl, language)
     )
 
     try {
@@ -235,6 +265,7 @@ module.exports = {
     uploadImageFromUrl,
     downloadImageAsFile,
     convertImageToWEBP,
+    cacheFileName,
 }
 
 
