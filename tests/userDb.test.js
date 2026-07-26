@@ -31,6 +31,21 @@ describe('getUsers', () => {
         }))
     })
 
+    test('new status filter matches users registered today, not a status', async () => {
+        const startOfUtcToday = new Date(Date.UTC(
+            new Date().getUTCFullYear(),
+            new Date().getUTCMonth(),
+            new Date().getUTCDate()
+        ))
+
+        await getUsers({status: 'new'})
+
+        const where = mockFindMany.mock.calls[0][0].where
+        expect(where.status).toBeUndefined()
+        expect(where.createdAt.gte).toBeInstanceOf(Date)
+        expect(where.createdAt.gte.getTime()).toBe(startOfUtcToday.getTime())
+    })
+
     test('sorts by role hierarchy, then total command count descending', async () => {
         mockFindMany.mockResolvedValueOnce([
             {id: 1, role: null, _count: {messages: 100}},

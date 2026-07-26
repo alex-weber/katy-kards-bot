@@ -73,7 +73,7 @@ block content
                       else
                         span= row.userName
                     td
-                      span.badge(class=row.field === 'role' ? 'text-bg-info' : 'text-bg-secondary')= row.field
+                      span.badge(class=row.field === 'role' ? 'text-bg-info' : (row.field === 'registered' ? 'text-bg-success' : 'text-bg-secondary'))= row.field
                     td
                       span.audit-old #{row.oldValue}
                       span.audit-arrow(aria-hidden="true")  →
@@ -129,6 +129,7 @@ block content
             option(value="inactive" selected=status === 'inactive') Inactive
             option(value="pending" selected=status === 'pending') Pending
             option(value="declined" selected=status === 'declined') Declined
+            option(value="new" selected=status === 'new') New (today)
         .col-md-2
           label.form-label(for="mode") Custom Reply:
           .input-group

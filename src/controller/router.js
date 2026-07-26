@@ -694,9 +694,12 @@ function sanitizeUserStatus(value) {
     return ['active', 'inactive', 'pending', 'declined'].includes(value) ? value : 'inactive'
 }
 
+// 'new' is a filter-only pseudo-status (users who registered today), not a
+// value a user can actually be set to — hence it is here but not in
+// sanitizeUserStatus above.
 function sanitizeUserStatusFilter(value) {
     value = sanitizeText(value, 20).toLowerCase()
-    return ['active', 'inactive', 'pending', 'declined'].includes(value) ? value : ''
+    return ['active', 'inactive', 'pending', 'declined', 'new'].includes(value) ? value : ''
 }
 
 async function invalidateUserEntityCache(discordId) {

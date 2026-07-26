@@ -15,12 +15,25 @@ const ROLE_PRIORITY = Object.freeze({
  */
 async function createUser(data)
 {
-
-    return await prisma.user.create({
+    const user = await prisma.user.create({
         data: data
     }).
     catch((e) => { throw e }).
     finally(async () => { await prisma.$disconnect() })
+
+    // Record the registration in the users-page change log, so a brand-new
+    // account shows up there the same way a later status/role change would.
+    // Marked self-initiated: a user row is created the first time someone
+    // uses the bot. `newValue` is the initial status (e.g. 'pending').
+    await createUserAudit({
+        userId: user.id,
+        field: 'registered',
+        oldValue: null,
+        newValue: user.status,
+        actor: 'self',
+    })
+
+    return user
 }
 
 /**
@@ -103,7 +116,12 @@ async function getUsers({ page = 1, pageSize = 50, username, discordId, role, st
     if (role) {
         where.role = (role === '__empty' || role === 'STANDARD') ? null : role
     }
-    if (status) {
+    if (status === 'new') {
+        // Filter-only pseudo-status: users who registered today (UTC), mirroring
+        // the "New today" tile in the overview. Rows with a null createdAt are
+        // excluded by the gte comparison.
+        where.createdAt = { gte: startOfUtcToday() }
+    } else if (status) {
         where.status = status === 'inactive'
             ? { not: 'active' }
             : status
