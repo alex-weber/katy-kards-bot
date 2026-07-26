@@ -6,7 +6,7 @@
 
 ### Bug Fixes
 
-- Fixed the dashboard reporting roughly twice as many screenshots as were taken (23 screenshot commands against 42 screenshots on the day it was reported). Each capture counted once per image file it cropped out of the page — two — rather than once per Browserless session. Counters written before this fix are still doubled; `node scripts/halveScreenshotCounters.js --apply` repairs them (it prints what it would change unless `--apply` is given).
+- Fixed the dashboard reporting roughly twice as many screenshots as were taken (23 screenshot commands against 42 screenshots on the day it was reported). Each capture counted once per image file it cropped out of the page — two — rather than once per Browserless session. The counters that had already been written were halved to match.
 - Deck links are now counted as screenshot commands alongside deck codes. Both have the bot render a deck through Browserless, but only the codes were counted, so the command total read lower than the screenshots it produced.
 - Fixed deck statistics counting some cards twice. A card that exists in the database under more than one card id — a reprint — had all of its copies counted once per row, so a deck could be reported as holding more cards than it does (the reported case showed 21 infantry in a deck of 17).
 - Fixed the average kredit cost of a deck, which was averaged over the distinct cards in it rather than over the copies, so a card played as a single weighed as much as one played four times.
