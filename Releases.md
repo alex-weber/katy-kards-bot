@@ -1,3 +1,11 @@
+## v5.3.0
+
+### Features
+
+- Reworked the dashboard's period selector. It now offers Current month, Last month, Last year and All-time, and applies as soon as it is changed — the Apply button is gone. The all-time chart adapts its resolution to how much history there is: quarters once the data spans more than five years, months below that.
+- The Users page status filter gained a "New (today)" option, listing the users who registered today — the same figure the User Overview shows.
+- New user registrations now appear in the Users page change log, recorded the first time someone uses the bot, so an account's first log entry is its sign-up rather than its first later change.
+
 ## v5.2.0
 
 ### Features
