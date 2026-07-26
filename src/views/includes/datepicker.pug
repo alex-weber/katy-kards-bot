@@ -1,4 +1,5 @@
-// Stats period selector
+// Stats period selector. No submit button — changing the dropdown reloads the
+// dashboard for the chosen period.
 if canFilter
     form#filterForm.filter-panel(method="get" action="")
         .row.mb-3
@@ -10,5 +11,3 @@ if canFilter
                             value=option.value
                             selected=option.value === period
                         ) #{option.label}
-            .col-md-1.align-self-end
-                button.btn.btn-primary(type="submit") Apply

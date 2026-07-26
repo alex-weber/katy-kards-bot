@@ -5,7 +5,10 @@ const {redis, cachePrefix} = require('../controller/redis')
 const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
 //profile stats cache lifetime (seconds)
 const profileExpiration = parseInt(process.env.REDIS_EXP_PROFILE) || 60 * 5
-const STATS_PERIODS = ['yearly', 'quarterly', 'monthly', 'daily']
+// Dashboard chart periods, plus 'daily' — the rolling 30-day series the
+// mini-counters read. Each maps to a chart granularity + date window in
+// periodPlan(); 'daily' stays a fixed 30-day window.
+const STATS_PERIODS = ['current-month', 'last-month', 'last-year', 'all-time', 'daily']
 const {languages} = require('../tools/language')
 // A screenshot command is anything that asks for a deck render: a deck code,
 // which bot.js recognises by its %% prefix, or a kards.com deck link (see
@@ -254,7 +257,7 @@ async function getTotalScreenshotCommandCount()
 
 function normalizeStatsPeriod(period)
 {
-    return STATS_PERIODS.includes(period) ? period : 'daily'
+    return STATS_PERIODS.includes(period) ? period : 'current-month'
 }
 
 function addUtcDays(date, days)
@@ -271,52 +274,100 @@ function addUtcMonths(date, months)
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1))
 }
 
-function addUtcYears(date, years)
-{
-    return new Date(Date.UTC(date.getUTCFullYear() + years, 0, 1))
-}
+// The functions below work on a chart *granularity* — 'daily', 'monthly' or
+// 'quarterly' — the size of a single bucket. A UI period (current-month,
+// all-time, …) is mapped to a granularity plus a date window by periodPlan().
 
-function startOfStatsPeriod(period, date)
+function startOfGranularity(granularity, date)
 {
     const year = date.getUTCFullYear()
     const month = date.getUTCMonth()
-    if (period === 'yearly') return new Date(Date.UTC(year, 0, 1))
-    if (period === 'quarterly') return new Date(Date.UTC(year, month - (month % 3), 1))
-    if (period === 'monthly') return new Date(Date.UTC(year, month, 1))
+    if (granularity === 'quarterly') return new Date(Date.UTC(year, month - (month % 3), 1))
+    if (granularity === 'monthly') return new Date(Date.UTC(year, month, 1))
     return new Date(Date.UTC(year, month, date.getUTCDate()))
 }
 
-function nextStatsPeriod(period, date)
+function nextGranularity(granularity, date)
 {
-    if (period === 'yearly') return addUtcYears(date, 1)
-    if (period === 'quarterly') return addUtcMonths(date, 3)
-    if (period === 'monthly') return addUtcMonths(date, 1)
+    if (granularity === 'quarterly') return addUtcMonths(date, 3)
+    if (granularity === 'monthly') return addUtcMonths(date, 1)
     return addUtcDays(date, 1)
 }
 
-function statsPeriodKey(period, date)
+function granularityKey(granularity, date)
 {
     const year = date.getUTCFullYear()
     const month = date.getUTCMonth()
-    if (period === 'yearly') return `${year}`
-    if (period === 'quarterly') return `${year}-Q${Math.floor(month / 3) + 1}`
-    if (period === 'monthly') return `${year}-${(month + 1).toString().padStart(2, '0')}`
+    if (granularity === 'quarterly') return `${year}-Q${Math.floor(month / 3) + 1}`
+    if (granularity === 'monthly') return `${year}-${(month + 1).toString().padStart(2, '0')}`
     return date.toISOString().split('T')[0]
 }
 
-function statsPeriodLabel(period, date)
+function granularityLabel(granularity, date)
 {
-    if (period === 'daily') {
+    if (granularity === 'daily') {
         return date.toLocaleDateString('en-GB', {month: '2-digit', day: '2-digit'})
     }
-    return statsPeriodKey(period, date)
+    return granularityKey(granularity, date)
 }
 
-function statsPeriodLookback(period)
+// Whether the data spans more than five years, deciding the all-time chart's
+// granularity: quarters past that point (else the axis would carry 60+ month
+// buckets), months below it.
+function allTimeGranularity(firstDate, now)
 {
-    if (period === 'quarterly') return 8
-    if (period === 'monthly') return 12
-    return 30
+    const fiveYearsAgo = new Date(Date.UTC(
+        now.getUTCFullYear() - 5,
+        now.getUTCMonth(),
+        now.getUTCDate()
+    ))
+    return firstDate < fiveYearsAgo ? 'quarterly' : 'monthly'
+}
+
+// Map a UI period to the chart granularity and the inclusive [start, end]
+// window of bucket-start dates to render. `firstDate` (first day with data) is
+// only consulted for all-time.
+function periodPlan(period, firstDate)
+{
+    const now = new Date()
+    const todayStart = startOfGranularity('daily', now)
+    const year = now.getUTCFullYear()
+    const month = now.getUTCMonth()
+
+    if (period === 'daily') {
+        // Rolling 30-day window for the mini-counters (not shown in the chart).
+        return {granularity: 'daily', start: addUtcDays(todayStart, -29), end: todayStart}
+    }
+    if (period === 'last-month') {
+        const thisMonthStart = new Date(Date.UTC(year, month, 1))
+        return {
+            granularity: 'daily',
+            start: new Date(Date.UTC(year, month - 1, 1)),
+            end: addUtcDays(thisMonthStart, -1),
+        }
+    }
+    if (period === 'last-year') {
+        return {
+            granularity: 'monthly',
+            start: new Date(Date.UTC(year - 1, 0, 1)),
+            end: new Date(Date.UTC(year - 1, 11, 1)),
+        }
+    }
+    if (period === 'all-time') {
+        const first = firstDate || todayStart
+        const granularity = allTimeGranularity(first, now)
+        return {
+            granularity,
+            start: startOfGranularity(granularity, first),
+            end: startOfGranularity(granularity, todayStart),
+        }
+    }
+    // current-month (default): the days of the current month so far.
+    return {
+        granularity: 'daily',
+        start: new Date(Date.UTC(year, month, 1)),
+        end: todayStart,
+    }
 }
 
 function normalizeRedisJsonObject(value) {
@@ -348,26 +399,16 @@ function firstDailyCountDate(dailyMap)
 function buildStatsBuckets(period, firstDate = null)
 {
     period = normalizeStatsPeriod(period)
-    const todayStart = startOfStatsPeriod('daily', new Date())
-    const bucketPeriod = period
-    const currentStart = startOfStatsPeriod(bucketPeriod, todayStart)
-    let start
-
-    if (period === 'yearly') {
-        start = startOfStatsPeriod('yearly', firstDate || currentStart)
-    } else {
-        const bucketCount = statsPeriodLookback(period)
-        if (period === 'quarterly') start = addUtcMonths(currentStart, -(bucketCount - 1) * 3)
-        else if (period === 'monthly') start = addUtcMonths(currentStart, -(bucketCount - 1))
-        else start = addUtcDays(currentStart, -(bucketCount - 1))
-    }
+    const todayStart = startOfGranularity('daily', new Date())
+    const {granularity, start, end} = periodPlan(period, firstDate)
 
     const buckets = []
-    for (let current = start; current <= currentStart; current = nextStatsPeriod(bucketPeriod, current)) {
-        const next = nextStatsPeriod(bucketPeriod, current)
+    for (let current = start; current <= end; current = nextGranularity(granularity, current)) {
+        const next = nextGranularity(granularity, current)
         buckets.push({
-            key: statsPeriodKey(bucketPeriod, current),
-            label: statsPeriodLabel(bucketPeriod, current),
+            granularity,
+            key: granularityKey(granularity, current),
+            label: granularityLabel(granularity, current),
             fromDate: current,
             toDate: new Date(next.getTime() - 1),
             completed: next <= todayStart,
@@ -430,7 +471,7 @@ async function getDailyCountMap(extraWhere, fromDate, toDate)
 
 async function getDailyCountSourceCached(keyBase, extraWhere)
 {
-    const todayStart = startOfStatsPeriod('daily', new Date())
+    const todayStart = startOfGranularity('daily', new Date())
     const today = dailyCountKey(todayStart)
     const yesterdayEnd = new Date(todayStart.getTime() - 1)
     const yesterday = dailyCountKey(yesterdayEnd)
@@ -441,7 +482,7 @@ async function getDailyCountSourceCached(keyBase, extraWhere)
     if (historical === null || historical === undefined) {
         historical = {}
         const firstDate = await getStatsFirstMessageDate(extraWhere)
-        const historicalStart = startOfStatsPeriod('daily', firstDate)
+        const historicalStart = startOfGranularity('daily', firstDate)
         if (historicalStart <= yesterdayEnd) {
             historical = await getDailyCountMap(extraWhere, historicalStart, yesterdayEnd)
         }
@@ -451,7 +492,7 @@ async function getDailyCountSourceCached(keyBase, extraWhere)
         const through = historical.__through || latestDailyCountKey(historical)
         const firstDate = through
             ? addUtcDays(new Date(`${through}T00:00:00Z`), 1)
-            : startOfStatsPeriod('daily', await getStatsFirstMessageDate(extraWhere))
+            : startOfGranularity('daily', await getStatsFirstMessageDate(extraWhere))
 
         if (firstDate <= yesterdayEnd) {
             const missingCounts = await getDailyCountMap(extraWhere, firstDate, yesterdayEnd)
@@ -474,9 +515,9 @@ async function getDailyCountSourceCached(keyBase, extraWhere)
     return dailyMap
 }
 
-function statsBucketValue(period, bucket, dailyMap)
+function statsBucketValue(bucket, dailyMap)
 {
-    if (period === 'daily') return dailyMap[dailyCountKey(bucket.fromDate)] || 0
+    if (bucket.granularity === 'daily') return dailyMap[dailyCountKey(bucket.fromDate)] || 0
 
     let count = 0
     for (const [day, value] of Object.entries(dailyMap)) {
@@ -491,9 +532,9 @@ async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
     period = normalizeStatsPeriod(period)
     const dailyMap = await getDailyCountSourceCached(keyBase, extraWhere)
     const results = []
-    const firstDate = period === 'yearly' ? firstDailyCountDate(dailyMap) : null
+    const firstDate = period === 'all-time' ? firstDailyCountDate(dailyMap) : null
     for (const bucket of buildStatsBuckets(period, firstDate)) {
-        results.push({label: bucket.label, count: statsBucketValue(period, bucket, dailyMap)})
+        results.push({label: bucket.label, count: statsBucketValue(bucket, dailyMap)})
     }
     return results
 }
@@ -501,7 +542,7 @@ async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
 async function getStatsPeriodAggregateCached(keyBase, computeFn, period)
 {
     period = normalizeStatsPeriod(period)
-    const firstDate = period === 'yearly' ? await getStatsFirstMessageDate() : null
+    const firstDate = period === 'all-time' ? await getStatsFirstMessageDate() : null
     const buckets = buildStatsBuckets(period, firstDate)
     const first = buckets[0]
     const last = buckets[buckets.length - 1]
@@ -759,4 +800,6 @@ module.exports = {
     getTopUsers,
     getTotalMessageCount,
     getTotalScreenshotCommandCount,
+    // Exported for unit testing the chart bucketing.
+    buildStatsBuckets,
 }

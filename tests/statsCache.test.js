@@ -125,6 +125,7 @@ const {
     getTopMessages,
     getTopUsers,
     getDashboardMessages,
+    buildStatsBuckets,
 } = require('../src/database/message')
 
 beforeEach(() => {
@@ -137,8 +138,8 @@ beforeEach(() => {
 })
 
 describe('period stats caching', () => {
-    test('top-messages queries the selected yearly range once', async () => {
-        const result = await getTopMessages({period: 'yearly'})
+    test('top-messages queries the selected all-time range once', async () => {
+        const result = await getTopMessages({period: 'all-time'})
         const leo = result.find(r => r.command === 'leo')
         const is2 = result.find(r => r.command === 'is2')
 
@@ -151,35 +152,92 @@ describe('period stats caching', () => {
         expect(mockQueryRawCalls).toHaveLength(1)
     })
 
-    test('top-users queries the selected yearly range and resolves usernames', async () => {
-        const result = await getTopUsers({period: 'yearly'})
+    test('top-users queries the selected all-time range and resolves usernames', async () => {
+        const result = await getTopUsers({period: 'all-time'})
         const alice = result.find(u => u.authorId === 1)
         expect(alice.username).toBe('Alice')
         expect(alice.count).toBe(405)
         expect(alice.allTimePosition).toBe(1)
     })
 
-    test('period aggregate range is reused and current range gets a TTL', async () => {
-        await getTopMessages({period: 'yearly'})
+    test('current-month aggregates only the current-year range', async () => {
+        const result = await getTopMessages({period: 'current-month'})
+        const leo = result.find(r => r.command === 'leo')
+        expect(leo.count).toBe(5)
+    })
+
+    test('aggregate range is reused and the current range gets a TTL', async () => {
+        await getTopMessages({period: 'all-time'})
         expect(mockGroupByCalls).toHaveLength(1)
         expect(mockExpire).toHaveBeenCalledTimes(2)
 
-        await getTopMessages({period: 'yearly'})
+        await getTopMessages({period: 'all-time'})
         expect(mockGroupByCalls).toHaveLength(1)
         expect(mockQueryRawCalls).toHaveLength(1)
 
         for (const key of [...mockJsonStore.keys()]) {
-            if (key.endsWith(':yearly:range')) mockJsonStore.delete(key)
+            if (key.endsWith(':all-time:range')) mockJsonStore.delete(key)
         }
 
-        await getTopMessages({period: 'yearly'})
+        await getTopMessages({period: 'all-time'})
         expect(mockGroupByCalls).toHaveLength(2)
         expect(mockQueryRawCalls).toHaveLength(1)
     })
 
-    test('dashboard time-series includes completed and current yearly buckets', async () => {
-        const series = await getDashboardMessages({period: 'yearly'})
-        expect(series).toHaveLength(5)
-        expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(14)
+    test('last-year time-series is 12 monthly buckets summing that year', async () => {
+        const series = await getDashboardMessages({period: 'last-year'})
+        const lastYear = new Date().getUTCFullYear() - 1
+
+        expect(series).toHaveLength(12)
+        expect(series.every(bucket => /^\d{4}-\d{2}$/.test(bucket.label))).toBe(true)
+        expect(series[0].label).toBe(`${lastYear}-01`)
+        // Only Jan/Feb/Mar of last year carry data in the fixture (one each).
+        expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(3)
+    })
+})
+
+describe('buildStatsBuckets granularity', () => {
+    const now = new Date()
+    const year = now.getUTCFullYear()
+    const month = now.getUTCMonth()
+
+    test('current-month is daily from the 1st to today', () => {
+        const buckets = buildStatsBuckets('current-month')
+        expect(buckets.every(b => b.granularity === 'daily')).toBe(true)
+        expect(buckets).toHaveLength(now.getUTCDate())
+        expect(buckets[0].fromDate.getTime()).toBe(Date.UTC(year, month, 1))
+        expect(buckets[buckets.length - 1].fromDate.getTime())
+            .toBe(Date.UTC(year, month, now.getUTCDate()))
+    })
+
+    test('last-month is daily and covers the whole previous month', () => {
+        const buckets = buildStatsBuckets('last-month')
+        const daysInLastMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+        expect(buckets.every(b => b.granularity === 'daily')).toBe(true)
+        expect(buckets.every(b => b.completed)).toBe(true)
+        expect(buckets).toHaveLength(daysInLastMonth)
+        expect(buckets[0].fromDate.getTime()).toBe(Date.UTC(year, month - 1, 1))
+    })
+
+    test('last-year is 12 completed monthly buckets of the previous year', () => {
+        const buckets = buildStatsBuckets('last-year')
+        expect(buckets).toHaveLength(12)
+        expect(buckets.every(b => b.granularity === 'monthly')).toBe(true)
+        expect(buckets.every(b => b.completed)).toBe(true)
+        expect(buckets[0].key).toBe(`${year - 1}-01`)
+        expect(buckets[11].key).toBe(`${year - 1}-12`)
+    })
+
+    test('all-time uses months when data spans five years or less', () => {
+        const buckets = buildStatsBuckets('all-time', new Date(Date.UTC(year - 3, 0, 1)))
+        expect(buckets.every(b => b.granularity === 'monthly')).toBe(true)
+        expect(buckets[0].key).toBe(`${year - 3}-01`)
+    })
+
+    test('all-time uses quarters when data spans more than five years', () => {
+        const buckets = buildStatsBuckets('all-time', new Date(Date.UTC(year - 7, 0, 1)))
+        expect(buckets.every(b => b.granularity === 'quarterly')).toBe(true)
+        expect(buckets.every(b => /^\d{4}-Q[1-4]$/.test(b.key))).toBe(true)
+        expect(buckets[0].key).toBe(`${year - 7}-Q1`)
     })
 })

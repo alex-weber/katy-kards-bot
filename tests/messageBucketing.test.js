@@ -35,23 +35,29 @@ beforeEach(() => {
 })
 
 describe('period buckets via getDashboardMessages', () => {
-    test.each([
-        ['daily', 30, /^\d{2}\/\d{2}$/],
-        ['monthly', 12, /^\d{4}-\d{2}$/],
-        ['quarterly', 8, /^\d{4}-Q[1-4]$/],
-        ['yearly', 1, /^\d{4}$/],
-    ])('%s returns fixed period buckets from the Redis source map', async (period, length, labelPattern) => {
+    test('daily returns a rolling 30-day window from the Redis source map', async () => {
         mockFindFirst.mockResolvedValue({createdAt: new Date()})
         mockFindMany.mockResolvedValue(rows(todayIso(), todayIso()))
 
-        const series = await getDashboardMessages({period})
-        expect(series).toHaveLength(length)
-        expect(series[0].label).toMatch(labelPattern)
+        const series = await getDashboardMessages({period: 'daily'})
+        expect(series).toHaveLength(30)
+        expect(series[0].label).toMatch(/^\d{2}\/\d{2}$/)
         expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(2)
     })
 
-    test('yearly returns all-time yearly buckets from the first message year', async () => {
+    test('current-month returns a daily bucket per day of the month so far', async () => {
+        mockFindFirst.mockResolvedValue({createdAt: new Date()})
+        mockFindMany.mockResolvedValue(rows(todayIso(), todayIso()))
+
+        const series = await getDashboardMessages({period: 'current-month'})
+        expect(series).toHaveLength(new Date().getUTCDate())
+        expect(series[0].label).toMatch(/^\d{2}\/\d{2}$/)
+        expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(2)
+    })
+
+    test('all-time returns monthly buckets from the first data month (span <= 5y)', async () => {
         const currentYear = new Date().getUTCFullYear()
+        const currentMonth = new Date().getUTCMonth()
         mockFindFirst.mockResolvedValue({createdAt: new Date(Date.UTC(currentYear - 2, 5, 1))})
         mockFindMany
             .mockResolvedValueOnce(rows(
@@ -60,13 +66,12 @@ describe('period buckets via getDashboardMessages', () => {
             ))
             .mockResolvedValueOnce(rows(todayIso()))
 
-        const series = await getDashboardMessages({period: 'yearly'})
+        const series = await getDashboardMessages({period: 'all-time'})
+        const lastLabel = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
 
-        expect(series.map(bucket => bucket.label)).toEqual([
-            String(currentYear - 2),
-            String(currentYear - 1),
-            String(currentYear),
-        ])
+        expect(series.every(bucket => /^\d{4}-\d{2}$/.test(bucket.label))).toBe(true)
+        expect(series[0].label).toBe(`${currentYear - 2}-06`)
+        expect(series[series.length - 1].label).toBe(lastLabel)
         expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(3)
     })
 
@@ -76,11 +81,11 @@ describe('period buckets via getDashboardMessages', () => {
             .mockResolvedValueOnce(rows('2024-01-01T00:00:00Z'))
             .mockResolvedValueOnce(rows(todayIso()))
 
-        await getDashboardMessages({period: 'monthly'})
+        await getDashboardMessages({period: 'current-month'})
         expect(mockFindMany).toHaveBeenCalledTimes(2)
         expect(mockExpire).toHaveBeenCalledTimes(1)
 
-        await getDashboardMessages({period: 'monthly'})
+        await getDashboardMessages({period: 'current-month'})
         expect(mockFindMany).toHaveBeenCalledTimes(2)
     })
 
@@ -88,10 +93,10 @@ describe('period buckets via getDashboardMessages', () => {
         mockFindFirst.mockResolvedValue({createdAt: new Date()})
         mockFindMany.mockResolvedValue([])
 
-        await getDashboardMessages({period: 'yearly'})
+        await getDashboardMessages({period: 'current-month'})
         const firstCallCount = mockFindMany.mock.calls.length
 
-        await getDashboardMessages({period: 'yearly'})
+        await getDashboardMessages({period: 'current-month'})
         expect(mockFindMany).toHaveBeenCalledTimes(firstCallCount)
     })
 

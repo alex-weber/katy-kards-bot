@@ -37,11 +37,11 @@ describe('API.run', () => {
     })
 
     test('messages: computes on a cache miss and stores the result', async () => {
-        const res = await API.run('messages', {period: 'monthly'})
+        const res = await API.run('messages', {period: 'last-month'})
         expect(res.success).toBe(true)
         expect(res.data).toEqual([{ label: '01/01', count: 3 }])
         expect(message.getDashboardMessages).toHaveBeenCalledTimes(1)
-        expect(message.getDashboardMessages).toHaveBeenCalledWith({period: 'monthly'})
+        expect(message.getDashboardMessages).toHaveBeenCalledWith({period: 'last-month'})
         expect(redis.json.set).toHaveBeenCalledTimes(1)
         expect(redis.expire).toHaveBeenCalledTimes(1) // default TTL applied
     })
@@ -55,8 +55,8 @@ describe('API.run', () => {
     })
 
     test('different periods use different cache keys', async () => {
-        await API.run('top-messages', {period: 'monthly'})
-        await API.run('top-messages', {period: 'yearly'})
+        await API.run('top-messages', {period: 'last-month'})
+        await API.run('top-messages', {period: 'all-time'})
         expect(message.getTopMessages).toHaveBeenCalledTimes(2)
     })
 
@@ -78,10 +78,10 @@ describe('API.run', () => {
         ['top-messages', 'getTopMessages'],
         ['top-users', 'getTopUsers'],
     ])('%s dispatches to %s and succeeds', async (method, fn) => {
-        const res = await API.run(method, {period: 'quarterly'})
+        const res = await API.run(method, {period: 'last-year'})
         expect(res.success).toBe(true)
         expect(message[fn]).toHaveBeenCalledTimes(1)
-        expect(message[fn]).toHaveBeenCalledWith({period: 'quarterly'})
+        expect(message[fn]).toHaveBeenCalledWith({period: 'last-year'})
     })
 
     test('cards-by-faction served from cache on a hit', async () => {

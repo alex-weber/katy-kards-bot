@@ -165,26 +165,26 @@ describe('auth middleware', () => {
 })
 
 describe('stats period selection', () => {
-    test('landing defaults to daily and exposes the allowed periods', () => {
+    test('landing defaults to current month and exposes the allowed periods', () => {
         const res = makeRes()
         router.renderLanding({ session: {}, query: {period: 'weekly'} }, res)
         const locals = res.render.mock.calls[0][1]
-        expect(locals.period).toBe('daily')
+        expect(locals.period).toBe('current-month')
         expect(locals.periods).toEqual([
-            {value: 'daily', label: 'Last 30 days'},
-            {value: 'monthly', label: 'Last 12 months'},
-            {value: 'quarterly', label: 'Last 8 quarters'},
-            {value: 'yearly', label: 'All-time'},
+            {value: 'current-month', label: 'Current month'},
+            {value: 'last-month', label: 'Last month'},
+            {value: 'last-year', label: 'Last year'},
+            {value: 'all-time', label: 'All-time'},
         ])
         expect(locals.canFilter).toBe(true)
     })
 
     test('dashboard honors an allowed period', () => {
         const res = makeRes()
-        const req = { session: { user: { id: '1' } }, query: {period: 'quarterly'} }
+        const req = { session: { user: { id: '1' } }, query: {period: 'all-time'} }
         router.renderDashboard(req, res)
         const locals = res.render.mock.calls[0][1]
-        expect(locals.period).toBe('quarterly')
+        expect(locals.period).toBe('all-time')
         expect(locals.canFilter).toBe(true)
     })
 
@@ -195,18 +195,28 @@ describe('stats period selection', () => {
             res
         )
         const args = API.run.mock.calls[0][1]
-        expect(args.period).toBe('daily')
+        expect(args.period).toBe('current-month')
         expect(res.json).toHaveBeenCalled()
     })
 
     test('handleApi passes allowed periods through', async () => {
         const res = makeRes()
         await router.handleApi(
-            { params: { method: 'messages' }, session: { user: { id: '1' } }, query: {period: 'yearly'} },
+            { params: { method: 'messages' }, session: { user: { id: '1' } }, query: {period: 'all-time'} },
             res
         )
         const args = API.run.mock.calls[0][1]
-        expect(args.period).toBe('yearly')
+        expect(args.period).toBe('all-time')
+    })
+
+    test('handleApi passes the daily counter series period through', async () => {
+        const res = makeRes()
+        await router.handleApi(
+            { params: { method: 'messages' }, session: {}, query: {period: 'daily'} },
+            res
+        )
+        const args = API.run.mock.calls[0][1]
+        expect(args.period).toBe('daily')
     })
 })
 

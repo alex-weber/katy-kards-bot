@@ -219,10 +219,10 @@ function renderTopUsers(apiData) {
 }
 
 
-const allowedPeriods = ['yearly', 'quarterly', 'monthly', 'daily']
+const allowedPeriods = ['current-month', 'last-month', 'last-year', 'all-time']
 
 function normalizePeriod(period) {
-    return allowedPeriods.includes(period) ? period : 'daily'
+    return allowedPeriods.includes(period) ? period : 'current-month'
 }
 
 async function getDashboardData({ period } = {}) {

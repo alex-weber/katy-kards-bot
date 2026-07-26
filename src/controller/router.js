@@ -53,12 +53,16 @@ const axios = require('axios')
 //API
 const API = require('../controller/api')
 const STATS_PERIOD_OPTIONS = [
-    {value: 'daily', label: 'Last 30 days'},
-    {value: 'monthly', label: 'Last 12 months'},
-    {value: 'quarterly', label: 'Last 8 quarters'},
-    {value: 'yearly', label: 'All-time'},
+    {value: 'current-month', label: 'Current month'},
+    {value: 'last-month', label: 'Last month'},
+    {value: 'last-year', label: 'Last year'},
+    {value: 'all-time', label: 'All-time'},
 ]
-const STATS_PERIODS = STATS_PERIOD_OPTIONS.map(option => option.value)
+// The dropdown offers the four periods above; 'daily' is additionally accepted
+// (but not shown) because the dashboard's mini-counters read a rolling 30-day
+// daily series through the same stats endpoints, independent of the chart.
+const STATS_PERIODS = [...STATS_PERIOD_OPTIONS.map(option => option.value), 'daily']
+const DEFAULT_STATS_PERIOD = 'current-month'
 const topDeckPageExpiration = parseInt(process.env.CACHE_TOPDECK_PAGE_EXPIRE, 10) || 60 * 5
 
 async function refreshSessionUser(req) {
@@ -109,7 +113,7 @@ function denyNonManager(req, res) {
 }
 
 function resolveStatsPeriod(req) {
-    return STATS_PERIODS.includes(req.query.period) ? req.query.period : 'daily'
+    return STATS_PERIODS.includes(req.query.period) ? req.query.period : DEFAULT_STATS_PERIOD
 }
 
 function renderPage(req, res, { title, user, loginLink }) {

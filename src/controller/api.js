@@ -14,8 +14,10 @@ const {getScreenshotCounters} = require('../tools/screenshotStats')
 const expiration = parseInt(process.env.CACHE_API_EXPIRE) || 60*10
 // Bump when the shape of any cached API response changes, so stale payloads
 // from a previous deploy are abandoned instead of served verbatim.
-const CACHE_VERSION = 'v2'
-const STATS_PERIODS = ['yearly', 'quarterly', 'monthly', 'daily']
+const CACHE_VERSION = 'v3'
+// The four dashboard periods plus 'daily' (the rolling 30-day series the
+// mini-counters read); see message.js for how each maps to chart buckets.
+const STATS_PERIODS = ['current-month', 'last-month', 'last-year', 'all-time', 'daily']
 
 const statsMethods = new Set([
     'messages',
@@ -25,7 +27,7 @@ const statsMethods = new Set([
 ])
 
 function normalizeStatsPeriod(period) {
-    return STATS_PERIODS.includes(period) ? period : 'daily'
+    return STATS_PERIODS.includes(period) ? period : 'current-month'
 }
 
 async function run(method, { period } = {}) {
