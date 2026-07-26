@@ -64,10 +64,10 @@ describe('createScreenshotTaker dedup + copy', () => {
         expect(second).toBe('deck_1_copy')
         expect(copyFiles).toHaveBeenCalledTimes(1)
         expect(copyFiles).toHaveBeenCalledWith('deck_1')
-        // the counter only counts the single real capture, but includes both
-        // generated screenshot files for Browserless usage tracking
+        // one Browserless call, so one screenshot counted — the coalesced
+        // caller and the second cropped image file must not add to it
         expect(incrementCounters).toHaveBeenCalledTimes(1)
-        expect(incrementCounters).toHaveBeenCalledWith({}, 2)
+        expect(incrementCounters).toHaveBeenCalledWith({})
     })
 
     test('a failed capture yields false for every caller and skips the copy', async () => {

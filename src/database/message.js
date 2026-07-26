@@ -7,6 +7,26 @@ const expiration = parseInt(process.env.CACHE_PAGE_EXPIRE) || 60*5
 const profileExpiration = parseInt(process.env.REDIS_EXP_PROFILE) || 60 * 5
 const STATS_PERIODS = ['yearly', 'quarterly', 'monthly', 'daily']
 const {languages} = require('../tools/language')
+// A screenshot command is anything that asks for a deck render: a deck code,
+// which bot.js recognises by its %% prefix, or a kards.com deck link (see
+// bot.isDeckLink). Both go through Browserless, so both belong in the count.
+// Prisma passes `contains` values into LIKE untouched, hence the escaped
+// percent signs in the deck-code pattern.
+const screenshotCommandWhere = {
+    OR: [
+        { content: { contains: '%\\%\\%%' } },
+        {
+            AND: [
+                { content: { contains: 'https://www.kards.com/' } },
+                { content: { contains: '/decks/' } },
+            ],
+        },
+    ],
+}
+// Cache namespace for the daily counts above. The historical half of that
+// cache never expires, so this changes whenever the filter does — otherwise
+// counts taken under the old filter would be served forever.
+const screenshotCommandKeyBase = 'screenshot-commands'
 const topMessageContentFilters = [
     { content: { not: { startsWith: 'td' } } },
     { content: { not: { startsWith: 'command' } } },
@@ -222,14 +242,13 @@ async function getTotalMessageCount()
 
 async function getScreenshotMessages({period} = {})
 {
-    const extraWhere = { content: { contains: '%\\%\\%%' } }
-    return getStatsPeriodCountsCached('screenshot', extraWhere, normalizeStatsPeriod(period))
+    return getStatsPeriodCountsCached(
+        screenshotCommandKeyBase, screenshotCommandWhere, normalizeStatsPeriod(period))
 }
 
 async function getTotalScreenshotCommandCount()
 {
-    const extraWhere = { content: { contains: '%\\%\\%%' } }
-    return await prisma.message.count({where: extraWhere})
+    return await prisma.message.count({where: screenshotCommandWhere})
 }
 
 

@@ -69,9 +69,15 @@ describe('getScreenshotMessages', () => {
         const series = await getScreenshotMessages({period: 'daily'})
         expect(series).toHaveLength(30)
         expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(1)
-        // the screenshot content marker is applied to the query
+        // both screenshot markers are applied to the query: the deck code and
+        // the deck link, since either one triggers a Browserless capture
         const where = mockFindMany.mock.calls[0][0].where
-        expect(where.content).toBeDefined()
+        expect(where.OR).toHaveLength(2)
+        expect(where.OR[0].content.contains).toBe('%\\%\\%%')
+        expect(where.OR[1].AND.map(clause => clause.content.contains)).toEqual([
+            'https://www.kards.com/',
+            '/decks/',
+        ])
     })
 })
 

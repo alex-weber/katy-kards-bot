@@ -3,7 +3,6 @@ const puppeteer = require('puppeteer-core')
 const RequestQueue = require('./queue')
 const {redis} = require('../controller/redis')
 const {incrementScreenshotCounters} = require('./screenshotStats')
-const {getDeckFiles} = require('./fileManager')
 
 const browserLessKeys = getBrowserlessKeys()
 //how many requests a single Browserless key may handle at the same time
@@ -18,7 +17,7 @@ const perKeyConcurrency = parseInt(process.env.SCREENSHOT_CONCURRENCY) || 2
  * @param concurrency       requests a single key may handle at once
  * @param capture           (url, key) => Promise<string|false>, the browser job
  * @param copyFiles         (filename) => string|false, clones a capture's files
- * @param incrementCounters (redis, count) => Promise, bumps the screenshot counters
+ * @param incrementCounters (redis) => Promise, bumps the screenshot counters
  * @param redis             redis client handed to incrementCounters
  * @returns {{takeScreenshot: function(string): Promise<string|false>}}
  */
@@ -84,8 +83,11 @@ function createScreenshotTaker({
                     console.log(`Browserless key selected: ${key.name}`)
                     const filename = await capture(url, key.value)
                     if (filename) {
-                        //counter bookkeeping must never sink a good screenshot
-                        incrementCounters(redis, getDeckFiles(filename).length).catch(error =>
+                        //one Browserless session counts as one screenshot, no
+                        //matter how many image files the capture cropped out of
+                        //the page. Counter bookkeeping must never sink a good
+                        //screenshot, so failures are logged and swallowed.
+                        incrementCounters(redis).catch(error =>
                             console.error('Failed to update screenshot counters:', error))
                     }
                     resolve(filename)

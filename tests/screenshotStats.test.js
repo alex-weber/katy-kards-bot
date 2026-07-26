@@ -46,15 +46,15 @@ describe('screenshotStats', () => {
         expect(redis.expire).toHaveBeenCalledWith(dailyKey, 60 * 60 * 24 * 31)
     })
 
-    test('increment can count every generated screenshot file from one capture', async () => {
+    test('one capture counts once, whatever it is handed', async () => {
         const redis = makeRedis()
+        // a stray argument (the file count this used to be given) must not
+        // inflate the counters — a capture is one screenshot
         await incrementScreenshotCounters(redis, 2)
 
         const counters = await getScreenshotCounters(redis)
-        expect(counters).toEqual({ total: 2, daily: 2, last30d: 2 })
-        expect(redis.incrBy).toHaveBeenCalledWith('test:screenshot:total', 2)
-        expect(redis.incrBy).toHaveBeenCalledWith(
-            'test:screenshot:daily:' + new Date().toISOString().slice(0, 10), 2)
+        expect(counters).toEqual({ total: 1, daily: 1, last30d: 1 })
+        expect(redis.incrBy).not.toHaveBeenCalled()
     })
 
     test('missing keys read back as zero', async () => {

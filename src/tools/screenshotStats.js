@@ -31,26 +31,20 @@ function day(daysAgo) {
 }
 
 /**
- * Record captured screenshots in both the total and today's counter.
+ * Record one captured screenshot in both the total and today's counter. A
+ * screenshot is one Browserless capture, not one image file — a single capture
+ * crops several files out of the same page.
  *
  * @param redis
- * @param {number} count
  * @returns {Promise<void>}
  */
-async function incrementScreenshotCounters(redis, count = 1) {
-    const incrementBy = parseInt(count, 10) || 1
+async function incrementScreenshotCounters(redis) {
     const dailyKey = dailyPrefix + today()
     await Promise.all([
-        increment(redis, totalKey, incrementBy),
-        increment(redis, dailyKey, incrementBy),
+        redis.incr(totalKey),
+        redis.incr(dailyKey),
     ])
     await redis.expire(dailyKey, dailyTtl)
-}
-
-async function increment(redis, key, count) {
-    if (count === 1 || !redis.incrBy) return redis.incr(key)
-
-    return redis.incrBy(key, count)
 }
 
 /**
