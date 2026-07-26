@@ -6,6 +6,7 @@
 
 ### Bug Fixes
 
+- The "Requested by" line is now posted once per command instead of once per message. A finished Top Deck game posts three messages — the progress notice, the battle result and the ping for the opponent — and each carried its own attribution line, filling the bot-command channel with three times the notices it needed.
 - Fixed the dashboard reporting roughly twice as many screenshots as were taken (23 screenshot commands against 42 screenshots on the day it was reported). Each capture counted once per image file it cropped out of the page — two — rather than once per Browserless session. The counters that had already been written were halved to match.
 - Deck links are now counted as screenshot commands alongside deck codes. Both have the bot render a deck through Browserless, but only the codes were counted, so the command total read lower than the screenshots it produced.
 - Fixed deck statistics counting some cards twice. A card that exists in the database under more than one card id — a reprint — had all of its copies counted once per row, so a deck could be reported as holding more cards than it does (the reported case showed 21 infantry in a deck of 17).

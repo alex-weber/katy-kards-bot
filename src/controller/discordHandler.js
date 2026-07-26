@@ -105,8 +105,20 @@ function logCommand(message)
         guildName = message.guild.name
         channelName = message.channel.name
     }
-    console.log('bot command:', guildName, channelName,
-        message.author.username, '->', message.content)
+    //slash commands are reconstructed as prefix + query (e.g. "!td"), so the
+    //content alone can't tell them apart from a real "!td" text message — log
+    //the source explicitly. buttonId marks a pagination-button press, which
+    //also arrives without a slash interaction.
+    const source = message.isSlash
+        ? 'slash command'
+        : message.buttonId ? 'button command' : 'text command'
+    //a real text command shows the prefix the user typed; a slash command's
+    //prefix is only an internal reconstruction, so strip it from the log
+    const loggedContent = message.isSlash
+        ? bot.parseCommand(bot.getPrefix(message), message.content)
+        : message.content
+    console.log(source, 'received:', guildName, channelName,
+        message.author.username, '->', loggedContent)
 
     return {guildName, channelName}
 }

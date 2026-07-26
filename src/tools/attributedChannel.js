@@ -7,6 +7,37 @@ const {translate} = require('./translation/translator')
 const noMentions = {parse: []}
 
 /**
+ * A forward (`{forward: {...}}`, used to re-serve a cached result via
+ * Message#forward) cannot carry content, so it can never be attributed.
+ *
+ * @param payload
+ * @returns {boolean}
+ */
+function isForward(payload)
+{
+    return !!(payload && typeof payload === 'object' && payload.forward)
+}
+
+/**
+ * The mention guard an attributed message gets, without the attribution line —
+ * for the messages after the first one. A caller that means to ping someone can
+ * still say so by setting allowedMentions itself.
+ *
+ * @param payload string or discord.js message-options object
+ * @returns {*}
+ */
+function withoutMentions(payload)
+{
+    if (isForward(payload)) return payload
+    if (typeof payload === 'string') return {content: payload, allowedMentions: noMentions}
+    if (payload && typeof payload === 'object') {
+        return {...payload, allowedMentions: payload.allowedMentions || noMentions}
+    }
+
+    return payload
+}
+
+/**
  * Prefix a channel.send payload with a small "requested by" line naming the
  * user whose action triggered it (and the command text they used, when
  * known), without disturbing anything else already on the payload (embeds,
@@ -26,7 +57,7 @@ const noMentions = {parse: []}
  */
 function withAttribution(payload, name, language, query)
 {
-    if (payload && typeof payload === 'object' && payload.forward) return payload
+    if (isForward(payload)) return payload
 
     const tag = query
         ? translate(language, 'requestedByQuery', {name, query})
@@ -66,11 +97,27 @@ function attributeChannel(channel, name, language, query)
 {
     if (!channel) return channel
 
+    //One line per command, not per message. A handler is free to post several
+    //messages for a single command — the top-deck game posts a progress
+    //notice, the battle result and a ping for the opponent — and repeating the
+    //attribution on each one is just noise in the channel. Naming the command
+    //once is all a moderator needs to trace it.
+    let attributed = false
+
     return new Proxy(channel, {
         get(target, prop)
         {
             if (prop === 'send') {
-                return payload => target.send(withAttribution(payload, name, language, query))
+                return payload => {
+                    //a forward can't carry the line, so it must not consume
+                    //the one attribution this command gets
+                    const attribute = !attributed && !isForward(payload)
+                    if (attribute) attributed = true
+
+                    return target.send(attribute
+                        ? withAttribution(payload, name, language, query)
+                        : withoutMentions(payload))
+                }
             }
             //escape hatch for callers that already build their own fully-formed
             //attribution text (e.g. the cache-forward notice, which can't reuse

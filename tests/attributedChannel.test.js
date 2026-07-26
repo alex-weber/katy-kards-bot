@@ -102,6 +102,65 @@ describe('attributeChannel', () => {
         expect(channel.sent[0]).toBe('already-formatted notice')
     })
 
+    // The top-deck game posts three messages for one command (progress notice,
+    // battle result, opponent ping) — one "requested by" line between them is
+    // enough to trace who ran it, three is channel spam.
+    test('attributes only the first message of a command', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en', 'td')
+        await wrapped.send('getting battle results...')
+        await wrapped.send({content: 'battle log', files: ['battle.png']})
+        await wrapped.send('<@42>')
+
+        expect(channel.sent[0].content).toBe(
+            '_Requested by alice: td_\ngetting battle results...')
+        expect(channel.sent[1].content).toBe('battle log')
+        expect(channel.sent[2].content).toBe('<@42>')
+    })
+
+    test('later messages keep the mention guard', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en')
+        await wrapped.send('first')
+        await wrapped.send('<@everyone>')
+
+        expect(channel.sent[1].allowedMentions).toEqual({parse: []})
+    })
+
+    test('a later message may opt into mentions of its own', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en')
+        await wrapped.send('first')
+        await wrapped.send({content: '<@42>', allowedMentions: {users: ['42']}})
+
+        expect(channel.sent[1].allowedMentions).toEqual({users: ['42']})
+    })
+
+    // The two below are about the cached search/deck path, where a hit is
+    // re-served with Message#forward — not the top-deck game, which builds a
+    // new battle every time and never forwards anything. A forward carries no
+    // content, so it never shows the line, and it must not spend the single
+    // attribution the command is allowed either.
+    test('a cached-result forward does not consume the attribution', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en')
+        await wrapped.send({forward: {message: '1', channel: '2', guild: '3'}})
+        await wrapped.send('the regenerated result')
+
+        expect(channel.sent[1].content).toBe(
+            '_Requested by alice_\nthe regenerated result')
+    })
+
+    test('the cache-forward notice sent via sendRaw does not consume it either', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en')
+        await wrapped.sendRaw('cache-forward notice')
+        await wrapped.send('the regenerated result')
+
+        expect(channel.sent[1].content).toBe(
+            '_Requested by alice_\nthe regenerated result')
+    })
+
     test('other properties and methods pass through to the real channel', () => {
         const channel = makeChannel({id: 'real-id', name: 'general'})
         const wrapped = attributeChannel(channel, 'alice', 'en')
