@@ -21,7 +21,7 @@ const {Routes, SlashCommandBuilder} = require('discord.js')
 const SIMPLE_COMMANDS = [
     {name: 'alt', command: 'alt', description: 'Show the alternate-art card gallery'},
     {name: 'profile', description: 'Your bot stats and settings'},
-    {name: 'online', command: 'online', description: 'Steam players online and in-game stats'},
+    {name: 'online', command: 'online', description: 'Steam players online'},
     {name: 'utc', command: 'utc', description: 'Current UTC time'},
     {name: 'midnight', command: 'midnight', description: 'Relative time to 00:00 UTC+0 (daily reset)'},
     {name: 'ranking', command: 'ranking', description: 'Top Deck ranking'},
