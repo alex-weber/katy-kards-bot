@@ -1,3 +1,11 @@
+## v5.2.0
+
+### Features
+
+- The Users page now opens with a User Overview: the total number of registered users, how many are active, pending, declined or banned — "banned" being anyone whose status is none of the first three — and how many users registered today.
+- Added a status and role change log to the Users page, showing the last 20 changes to any user's status or role. Each entry records what changed, the value before and after, when it happened (in UTC) and who made it — an admin from the dashboard, or the user themselves by accepting or declining the Terms of Service.
+- The User Overview, the change log and the role rules are now grouped into tabs above the user filter, with the overview shown by default and the log and role rules a click away.
+
 ## v5.1.0
 
 ### Features

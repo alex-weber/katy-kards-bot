@@ -1,6 +1,6 @@
 // ================= DISCORD JS ===================
 const { Client, GatewayIntentBits, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = require('discord.js')
-const {getUser, updateUser, getUsers} = require("../database/db")
+const {getUser, updateUser, getUsers, createUserAudit} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {languages} = require("../tools/language")
 const {discordHandler} = require("../controller/discordHandler")
@@ -73,8 +73,18 @@ async function onInteractionCreate(interaction)
     if (interaction.customId === 'terms_accept' ||
         interaction.customId === 'terms_decline') {
         const accepted = interaction.customId === 'terms_accept'
+        const previousStatus = user.status
         user.status = accepted ? 'active' : 'declined'
         await updateUser(user)
+        if (previousStatus !== user.status) {
+            await createUserAudit({
+                userId: user.id,
+                field: 'status',
+                oldValue: previousStatus,
+                newValue: user.status,
+                actor: 'self',
+            })
+        }
         await refreshCachedUser(interaction.user.id, '$.status', user.status)
 
         return await interaction.update({

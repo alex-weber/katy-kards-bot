@@ -7,6 +7,9 @@ const {
     getUser,
     getUserById,
     getUsers,
+    getUserStatusCounts,
+    createUserAudit,
+    getRecentUserAudits,
     getMessages,
     getUserMessages,
     getProfileStats,
@@ -749,6 +752,36 @@ function buildRoleInfoCards(rules) {
     })
 }
 
+// Human-readable timestamp for an audit-log row.
+function formatAuditTimestamp(date) {
+    return new Intl.DateTimeFormat('en-GB', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC',
+        timeZoneName: 'short',
+    }).format(new Date(date))
+}
+
+// Shape the recent status/role changes for the users page's change log. `self`
+// marks a user-initiated change (a Terms of Service accept/decline); anything
+// else is the admin username who made the change.
+function buildUserAuditRows(audits) {
+    return audits.map(entry => ({
+        id: entry.id,
+        timestamp: formatAuditTimestamp(entry.createdAt),
+        userId: entry.user ? entry.user.id : null,
+        userName: (entry.user && entry.user.name) || 'Unknown',
+        field: entry.field,
+        oldValue: entry.oldValue || '—',
+        newValue: entry.newValue || '—',
+        actor: entry.actor === 'self' ? 'User (self)' : entry.actor,
+        isSelf: entry.actor === 'self',
+    }))
+}
+
 async function renderUsers(req, res) {
     let { page = '1', username, discordId, role, status, mode } = req.query
 
@@ -760,6 +793,9 @@ async function renderUsers(req, res) {
     status = sanitizeUserStatusFilter(status)
     mode = sanitizeText(mode, 100)
 
+    // These all share user.js's Prisma client (each disconnects when it
+    // settles), so they run one after another rather than in parallel — a
+    // disconnect from one must not tear down another's in-flight query.
     const { users, totalCount } = await getUsers({
         page: pageNumber,
         pageSize,
@@ -769,12 +805,16 @@ async function renderUsers(req, res) {
         status,
         mode,
     })
+    const statusCounts = await getUserStatusCounts()
+    const auditRows = buildUserAuditRows(await getRecentUserAudits(20))
     const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
     const showRoleInfo = req.session.user && req.session.user.isManager
     const roleInfoCards = showRoleInfo ? buildRoleInfoCards(await getRoleRules()) : []
 
     res.render('users', {
         title: 'Users',
+        statusCounts,
+        auditRows,
         users: users.map(target => ({
             ...target,
             isAdmin: isManager(target),
@@ -962,6 +1002,9 @@ async function handleUserUpdate(req, res) {
     }
 
     const data = {}
+    // Only role/status changes are audited (mode is a free-text reply, not a
+    // status/role change); null when nothing auditable actually changed.
+    let audit = null
     if (field === 'mode') data.mode = sanitizeText(req.body.mode, 500) || null
     else if (field === 'role') {
         const role = sanitizeUserRole(req.body.role)
@@ -969,11 +1012,30 @@ async function handleUserUpdate(req, res) {
             return redirectBackToUsers(req, res)
         }
         data.role = roleToDbValue(role)
+        const oldLabel = roleLabel(target.role)
+        const newLabel = roleLabel(role)
+        if (oldLabel !== newLabel) {
+            audit = { field: 'role', oldValue: oldLabel, newValue: newLabel }
+        }
     }
-    else if (field === 'status') data.status = sanitizeUserStatus(req.body.status)
+    else if (field === 'status') {
+        data.status = sanitizeUserStatus(req.body.status)
+        if (target.status !== data.status) {
+            audit = { field: 'status', oldValue: target.status, newValue: data.status }
+        }
+    }
     else return redirectBackToUsers(req, res)
 
     await updateUserAdminFields(id, data)
+    if (audit) {
+        await createUserAudit({
+            userId: id,
+            field: audit.field,
+            oldValue: audit.oldValue,
+            newValue: audit.newValue,
+            actor: req.session.user.username || 'admin',
+        })
+    }
     await invalidateUserEntityCache(target.discordId)
     redirectBackToUsers(req, res)
 }
@@ -996,6 +1058,15 @@ async function handleUserStatusToggle(req, res) {
 
     const nextStatus = target.status === 'active' ? 'inactive' : 'active'
     await updateUserAdminFields(id, { status: nextStatus })
+    if (target.status !== nextStatus) {
+        await createUserAudit({
+            userId: id,
+            field: 'status',
+            oldValue: target.status,
+            newValue: nextStatus,
+            actor: req.session.user.username || 'admin',
+        })
+    }
     await invalidateUserEntityCache(target.discordId)
     redirectBackToUsers(req, res)
 }

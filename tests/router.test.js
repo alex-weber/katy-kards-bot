@@ -10,6 +10,11 @@ jest.mock('../src/database/db', () => ({
     getUser: jest.fn(),
     getUserById: jest.fn(),
     getUsers: jest.fn(),
+    getUserStatusCounts: jest.fn(async () => ({
+        total: 0, active: 0, pending: 0, declined: 0, banned: 0, newToday: 0,
+    })),
+    createUserAudit: jest.fn(async () => {}),
+    getRecentUserAudits: jest.fn(async () => []),
     getMessages: jest.fn(),
     getUserMessages: jest.fn(),
     getProfileStats: jest.fn(),

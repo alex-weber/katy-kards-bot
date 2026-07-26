@@ -5,32 +5,104 @@ block content
     const queryBase = `username=${encodeURIComponent(username || '')}&discordId=${encodeURIComponent(discordId || '')}&role=${encodeURIComponent(role || '')}&status=${encodeURIComponent(status || '')}&mode=${encodeURIComponent(mode || '')}`
     const returnTo = currentPath + '?' + queryBase + `&page=${page}`
 
-  .sticky-page-head.log-sticky-head
-    .page-hero
-      h2.page-title= title
-      p.page-subtitle #{totalCount} registered users
+  .page-hero
+    h2.page-title= title
+    p.page-subtitle #{totalCount} registered users
+
+  ul#usersAdminTabs.nav.nav-tabs.users-admin-tabs(role="tablist")
+    li.nav-item(role="presentation")
+      button#overview-tab.nav-link.active(type="button" data-bs-toggle="tab" data-bs-target="#overviewPane" role="tab" aria-controls="overviewPane" aria-selected="true") Overview
+    li.nav-item(role="presentation")
+      button#log-tab.nav-link(type="button" data-bs-toggle="tab" data-bs-target="#logPane" role="tab" aria-controls="logPane" aria-selected="false") Change Log
+    if showRoleInfo
+      li.nav-item(role="presentation")
+        button#roles-tab.nav-link(type="button" data-bs-toggle="tab" data-bs-target="#rolesPane" role="tab" aria-controls="rolesPane" aria-selected="false") Roles
+
+  .tab-content.users-admin-tab-content.mb-4
+    #overviewPane.tab-pane.fade.show.active(role="tabpanel" aria-labelledby="overview-tab")
+      if statusCounts
+        .content-panel.users-summary-panel
+          .stat-grid.users-status-grid
+            .stat-card.users-stat-total
+              .stat-label Total
+              .stat-value #{statusCounts.total}
+            .stat-card.users-stat-active
+              .stat-label Active
+              .stat-value #{statusCounts.active}
+            .stat-card.users-stat-pending
+              .stat-label Pending
+              .stat-value #{statusCounts.pending}
+            .stat-card.users-stat-declined
+              .stat-label Declined
+              .stat-value #{statusCounts.declined}
+            .stat-card.users-stat-banned
+              .stat-label Banned
+              .stat-value #{statusCounts.banned}
+            .stat-card.users-stat-new
+              .stat-label New today
+              .stat-value #{statusCounts.newToday}
+
+    #logPane.tab-pane.fade(role="tabpanel" aria-labelledby="log-tab")
+      if auditRows
+        .content-panel.data-panel-page.log-data-panel
+          .panel-header
+            .panel-title-group
+              span.panel-icon(aria-hidden="true")
+                svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+                  path(d="M3 3v5h5")
+                  path(d="M3.05 13A9 9 0 1 0 6 5.3L3 8")
+                  path(d="M12 7v5l4 2")
+              h3.panel-title Status & Role Change Log
+            span.panel-kicker Last #{auditRows.length}
+          table.data-table.align-middle
+            thead
+              tr
+                th(scope='col') When
+                th(scope='col') User
+                th(scope='col') Change
+                th(scope='col') From → To
+                th(scope='col') By
+            tbody
+              if auditRows.length
+                each row in auditRows
+                  tr
+                    td.text-nowrap #{row.timestamp}
+                    td
+                      if row.userId
+                        a.data-link(href=`/profile/${row.userId}`)= row.userName
+                      else
+                        span= row.userName
+                    td
+                      span.badge(class=row.field === 'role' ? 'text-bg-info' : 'text-bg-secondary')= row.field
+                    td
+                      span.audit-old #{row.oldValue}
+                      span.audit-arrow(aria-hidden="true")  →
+                      span.audit-new #{row.newValue}
+                    td
+                      if row.isSelf
+                        span.badge.text-bg-dark User (self)
+                      else
+                        span #{row.actor}
+              else
+                tr
+                  td(colspan="5").text-center No changes recorded yet
 
     if showRoleInfo
-      .mb-3
-        button.btn.btn-sm.btn-outline-secondary(type="button" data-bs-toggle="collapse" data-bs-target="#roleSection" aria-expanded="false" aria-controls="roleSection")
-          span.me-1(aria-hidden="true")
-            svg(xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
-              path(d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z")
-          | Roles
-        #roleSection.collapse.mt-3
-          .role-info-grid.mb-4
-            each info in roleInfoCards
-              .role-info-card(class=`role-info-card-${info.role.toLowerCase()}`)
-                .role-info-header
-                  div
-                    h3.role-info-title #{info.label}
-                    p.role-info-subtitle #{info.description}
-                .role-info-stats
-                  each stat in info.stats
-                    .role-info-stat
-                      span.role-info-stat-label #{stat.label}
-                      strong.role-info-stat-value #{stat.value}
+      #rolesPane.tab-pane.fade(role="tabpanel" aria-labelledby="roles-tab")
+        .role-info-grid
+          each info in roleInfoCards
+            .role-info-card(class=`role-info-card-${info.role.toLowerCase()}`)
+              .role-info-header
+                div
+                  h3.role-info-title #{info.label}
+                  p.role-info-subtitle #{info.description}
+              .role-info-stats
+                each stat in info.stats
+                  .role-info-stat
+                    span.role-info-stat-label #{stat.label}
+                    strong.role-info-stat-value #{stat.value}
 
+  .sticky-page-head.log-sticky-head
     form#filterForm.filter-panel(method="get" action="/users")
       .row.mb-3
         .col-md-3

@@ -163,6 +163,94 @@ function sortUsersByRolePriority(users)
     })
 }
 
+// Statuses that get their own tile on the users page. Anything not in this
+// list (admin-disabled 'inactive' users, plus any stray/legacy value) is
+// counted as "banned" — see getUserStatusCounts.
+const NAMED_STATUSES = Object.freeze(['active', 'pending', 'declined'])
+
+function startOfUtcToday()
+{
+    const now = new Date()
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+}
+
+/**
+ * Headline user counts for the users page: the total, one count per named
+ * status, everything else lumped together as "banned", and how many users
+ * registered today (UTC). One grouped query plus two counts.
+ *
+ * @returns {Promise<{total: number, active: number, pending: number, declined: number, banned: number, newToday: number}>}
+ */
+async function getUserStatusCounts()
+{
+    const [grouped, total, newToday] = await Promise.all([
+        prisma.user.groupBy({
+            by: ['status'],
+            _count: { _all: true },
+        }),
+        prisma.user.count(),
+        prisma.user.count({ where: { createdAt: { gte: startOfUtcToday() } } }),
+    ]).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+
+    const counts = { total, active: 0, pending: 0, declined: 0, banned: 0, newToday }
+    for (const row of grouped) {
+        const status = (row.status || '').toLowerCase()
+        if (NAMED_STATUSES.includes(status)) counts[status] += row._count._all
+        else counts.banned += row._count._all
+    }
+
+    return counts
+}
+
+/**
+ * Record a status/role change for the users-page audit log.
+ *
+ * @param userId internal User.id whose field changed
+ * @param field 'status' | 'role'
+ * @param oldValue display value before the change (null when unknown)
+ * @param newValue display value after the change
+ * @param actor admin username, or 'self' for a user-initiated change
+ * @returns {Promise<*>}
+ */
+async function createUserAudit({ userId, field, oldValue, newValue, actor })
+{
+    return await prisma.userAuditLog.create({
+        data: {
+            userId: parseInt(userId, 10),
+            field,
+            oldValue: oldValue ?? null,
+            newValue: newValue ?? null,
+            actor,
+        },
+    }).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+}
+
+/**
+ * The most recent status/role changes, newest first, with each target user's
+ * name and internal id for linking to their profile.
+ *
+ * @param limit how many entries to return
+ * @returns {Promise<array>}
+ */
+async function getRecentUserAudits(limit = 20)
+{
+    return await prisma.userAuditLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: Math.max(1, parseInt(limit, 10) || 20),
+        include: {
+            user: {
+                select: { id: true, name: true, discordId: true },
+            },
+        },
+    }).
+    catch((e) => { throw e }).
+    finally(async () => { await prisma.$disconnect() })
+}
+
 async function updateUserAdminFields(id, data)
 {
     return await prisma.user.update({
@@ -202,6 +290,9 @@ module.exports = {
     getUser,
     getUserById,
     getUsers,
+    getUserStatusCounts,
+    createUserAudit,
+    getRecentUserAudits,
     updateUser,
     updateUserAdminFields,
 }
