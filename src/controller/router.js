@@ -782,7 +782,7 @@ function buildUserAuditRows(audits) {
         userId: entry.user ? entry.user.id : null,
         userName: (entry.user && entry.user.name) || 'Unknown',
         field: entry.field,
-        oldValue: entry.oldValue || '—',
+        oldValue: entry.oldValue || (entry.field === 'registered' ? 'new' : '—'),
         newValue: entry.newValue || '—',
         actor: entry.actor === 'self' ? 'User (self)' : entry.actor,
         isSelf: entry.actor === 'self',

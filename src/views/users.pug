@@ -73,11 +73,11 @@ block content
                       else
                         span= row.userName
                     td
-                      span.badge(class=row.field === 'role' ? 'text-bg-info' : (row.field === 'registered' ? 'text-bg-success' : 'text-bg-secondary'))= row.field
+                      span.badge(class=row.field === 'role' ? 'text-bg-info' : (row.field === 'registered' ? 'text-bg-success' : 'text-bg-info'))= row.field
                     td
-                      span.audit-old #{row.oldValue}
+                      span.audit-old(class=(row.field === 'status' || row.field === 'registered') ? `audit-status-${row.oldValue}` : '') #{row.oldValue}
                       span.audit-arrow(aria-hidden="true")  →
-                      span.audit-new #{row.newValue}
+                      span.audit-new(class=(row.field === 'status' || row.field === 'registered') ? `audit-status-${row.newValue}` : '') #{row.newValue}
                     td
                       if row.isSelf
                         span.badge.text-bg-dark User (self)

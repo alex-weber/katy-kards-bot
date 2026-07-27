@@ -1198,6 +1198,25 @@
     font-weight: 600;
 }
 
+/* Match the change log's badge text to the surrounding cell text (Bootstrap
+   defaults badges to 0.75em). Scoped to the log tab so the User Directory's
+   own badges are unaffected. */
+#logPane .badge {
+    --bs-badge-font-size: 1em;
+    --bs-badge-padding-y: 0.15em;
+    --bs-badge-padding-x: 0.5em;
+    font-weight: 600;
+}
+
+/* Status-value colouring in the change log's From → To column. Placed after
+   .audit-old/.audit-new so it wins on equal specificity via source order. */
+.audit-status-active { color: #20c997; }
+.audit-status-pending { color: #ffc107; }
+.audit-status-declined { color: #fd7e14; }
+.audit-status-banned { color: #dc3545; }
+.audit-status-new { color: #0d6efd; }
+.audit-status-inactive { color: #adb5bd; }
+
 .mini-stats {
     display: grid;
     gap: 1.25rem;
