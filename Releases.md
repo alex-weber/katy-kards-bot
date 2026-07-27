@@ -1,6 +1,12 @@
-## v5.3.0
+## v5.4.0
 
 ### Features
+
+- The bot's messages are now available in every language it can search cards in — Spanish, French, Italian, Polish, Portuguese, Japanese, Korean, Simplified and Traditional Chinese join the existing English, German and Russian. Whatever a user sets as their search language, the bot now answers in it instead of falling back to English. The Terms of Service text stays in English (with the reviewed German and Russian versions), and the new translations are machine-generated pending a native review.
+
+### Bug Fixes
+
+- Polished the Users page change log: the status and role badges now match the size of the surrounding text instead of appearing shrunken, the "Change" badge uses the info colour, status values in the "From → To" column are colour-coded (green for active, yellow for pending, and so on), and a registration entry reads "new → active" rather than showing a bare dash as the old value.
 
 - Reworked the dashboard's period selector. It now offers Current month, Last month, Last year and All-time, and applies as soon as it is changed — the Apply button is gone. The all-time chart adapts its resolution to how much history there is: quarters once the data spans more than five years, months below that.
 - The Users page status filter gained a "New (today)" option, listing the users who registered today — the same figure the User Overview shows.
