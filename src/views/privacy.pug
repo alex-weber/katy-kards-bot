@@ -30,11 +30,9 @@ block content
             h3.legal-heading 5. Gateway Intents
             p The Bot uses the following Discord gateway intents:
             ul.legal-list
-                li #[strong Guilds] — to receive guild information required for Bot operation, such as server metadata and member counts.
-                li #[strong Guild Messages] — to receive message events from guild channels.
+                li #[strong Guilds] — to receive guild information required for Bot operation, such as server metadata and member counts, and to handle slash commands and interactions.
                 li #[strong Direct Messages] — to receive and respond to user messages sent in Direct Messages.
-                li #[strong Message Content] — to detect prefix commands and parse command arguments required to execute user requests.
-            p The Bot does not request the Guild Members or Presence privileged intents.
+            p The Bot does not request the Message Content, Guild Members or Presence privileged intents.
 
             h3.legal-heading 6. Third-Party Services
             p The Bot runs on the Discord platform and queries an external card database to fulfill search requests. Your use of Discord is governed by Discord's #[a.data-link(href="https://discord.com/privacy" target="_blank" rel="noopener noreferrer") Privacy Policy]. We are not responsible for the privacy practices of third-party services.

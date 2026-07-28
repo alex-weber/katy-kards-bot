@@ -187,8 +187,11 @@ async function discordHandler(message, client, redis)
     if (!text.command.length) return message
 
     //remind legacy prefix-command users to switch to slash commands (skip
-    //slash-routed commands and pagination button presses)
-    if (!message.isSlash && !message.buttonId) {
+    //slash-routed commands and pagination button presses). Only nag in guilds:
+    //text commands remain a supported fallback in DMs, and with the Guild
+    //Messages/Message Content intents dropped this branch is reached only by the
+    //DM path anyway — so the nag stays dormant until guild text commands return.
+    if (!message.isSlash && !message.buttonId && message.guildId) {
         await warnLegacyCommand(message, redis)
     }
 

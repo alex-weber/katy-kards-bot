@@ -1,5 +1,5 @@
 // ================= DISCORD JS ===================
-const { Client, GatewayIntentBits, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = require('discord.js')
+const { Client, GatewayIntentBits, Partials, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = require('discord.js')
 const {getUser, updateUser, getUsers, createUserAudit} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {languages} = require("../tools/language")
@@ -17,11 +17,19 @@ const {handleSlashCommand, handleSlashModal} = require("../controller/slashHandl
 const {attributeChannel} = require("../tools/attributedChannel")
 const {attributionName} = require("../tools/attributionName")
 const client = new Client({
+    //Guilds covers slash commands, interactions (buttons/modals/selects) and
+    //guild metadata. DirectMessages keeps text commands working in DMs, where
+    //message content is not gated by the (now-removed) Message Content intent.
+    //Guild text commands are gone — GuildMessages/MessageContent are dropped.
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.MessageContent,
+    ],
+    //DM channels are created lazily and never cached, so without the Channel
+    //partial discord.js drops messageCreate for incoming DMs — required for
+    //text commands to work in DMs.
+    partials: [
+        Partials.Channel,
     ]})
 
 /**
