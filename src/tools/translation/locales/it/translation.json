@@ -15,7 +15,7 @@
   "min": "Minimo 2 caratteri, per favore",
   "fetching": "Caricamento dei risultati...",
   "next": "Avanti",
-  "deprecated": "⚠️ I comandi testuali (come `!search`) verranno presto rimossi, perché Discord sta togliendo al bot l'accesso al testo dei messaggi. Passa ai nuovi comandi slash — digita `/` e scegline uno (es. `/search`, `/alt`, `/commands`, `/help`).",
+  "deprecated": "⚠️ I comandi testuali (come `!search`) verranno rimossi {{deadline}}, perché Discord sta togliendo al bot l'accesso al testo dei messaggi. Passa ai nuovi comandi slash — digita `/` e scegline uno (es. `/search`, `/alt`, `/commands`, `/help`).",
   "commandsButton": "Mostra comandi",
   "commandsPrompt": "Clicca il pulsante per vedere la lista dei comandi personalizzati.",
   "profileButton": "Mostra il mio profilo",

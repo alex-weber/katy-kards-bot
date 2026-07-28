@@ -15,7 +15,7 @@
   "min": "Minimum 2 znaki, proszę",
   "fetching": "Ładowanie wyników...",
   "next": "Dalej",
-  "deprecated": "⚠️ Komendy tekstowe (jak `!search`) wkrótce przestaną działać, ponieważ Discord odbiera botowi dostęp do treści wiadomości. Przejdź na nowe komendy ukośnikowe — wpisz `/` i wybierz jedną (np. `/search`, `/alt`, `/commands`, `/help`).",
+  "deprecated": "⚠️ Komendy tekstowe (jak `!search`) przestaną działać {{deadline}}, ponieważ Discord odbiera botowi dostęp do treści wiadomości. Przejdź na nowe komendy ukośnikowe — wpisz `/` i wybierz jedną (np. `/search`, `/alt`, `/commands`, `/help`).",
   "commandsButton": "Pokaż komendy",
   "commandsPrompt": "Kliknij przycisk, aby zobaczyć listę własnych komend.",
   "profileButton": "Pokaż mój profil",

@@ -15,7 +15,7 @@
   "min": "Minimum 2 characters, please",
   "fetching": "Fetching results...",
   "next": "Next",
-  "deprecated": "⚠️ Text commands (like `!search`) are being discontinued soon, because Discord is removing the bot's access to message text. Please switch to the new slash commands — type `/` and pick one (e.g. `/search`, `/alt`, `/commands`, `/help`).",
+  "deprecated": "⚠️ Text commands (like `!search`) are being discontinued {{deadline}}, because Discord is removing the bot's access to message text. Please switch to the new slash commands — type `/` and pick one (e.g. `/search`, `/alt`, `/commands`, `/help`).",
   "commandsButton": "Show commands",
   "commandsPrompt": "Click the button to view the custom commands list.",
   "profileButton": "Show my profile",

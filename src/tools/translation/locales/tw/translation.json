@@ -15,7 +15,7 @@
   "min": "請至少輸入 2 個字元",
   "fetching": "正在載入結果……",
   "next": "下一頁",
-  "deprecated": "⚠️ 文字指令（如 `!search`）即將停用，因為 Discord 正在移除機器人對訊息文字的存取權限。請改用新的斜線指令——輸入 `/` 並選擇一個（例如 `/search`、`/alt`、`/commands`、`/help`）。",
+  "deprecated": "⚠️ 文字指令（如 `!search`）將於{{deadline}}停用，因為 Discord 正在移除機器人對訊息文字的存取權限。請改用新的斜線指令——輸入 `/` 並選擇一個（例如 `/search`、`/alt`、`/commands`、`/help`）。",
   "commandsButton": "顯示指令",
   "commandsPrompt": "點擊按鈕查看自訂指令清單。",
   "profileButton": "顯示我的個人檔案",

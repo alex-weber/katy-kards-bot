@@ -46,6 +46,9 @@ const maxStrLen = parseInt(process.env.MAX_STR_LEN) || 4000
 const paginationLimit = 10
 //how often each user is nudged about the legacy-command deprecation (24h)
 const deprecationWarnExp = parseInt(process.env.REDIS_EXP_DEPRECATION) || 60 * 60 * 24
+//when text commands stop working, shown as a Discord relative timestamp in the
+//nag so it counts down (and localises) per viewer. Defaults to 2 Aug 2026, 12:00 UTC
+const deprecationDeadline = process.env.DEPRECATION_DEADLINE || '2026-08-02T12:00:00Z'
 
 /**
  * Nudge users of the legacy `!` prefix commands toward slash commands. Discord
@@ -71,7 +74,10 @@ async function warnLegacyCommand(message, redis)
     const userKey = cacheKeyPrefix + 'user:' + message.author.id
     const cached = await redis.json.get(userKey, '$')
     const language = (cached && cached.language) || defaultLanguage
-    await message.channel.send(translate(language, 'deprecated')).catch(() => {})
+    //Discord renders <t:unix:R> as a live, viewer-localised relative time
+    //(e.g. "in 5 days"), replacing the old hard-coded "soon"
+    const deadline = `<t:${Math.floor(new Date(deprecationDeadline).getTime() / 1000)}:R>`
+    await message.channel.send(translate(language, 'deprecated', {deadline})).catch(() => {})
 }
 
 /**
