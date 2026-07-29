@@ -38,6 +38,23 @@ function withoutMentions(payload)
 }
 
 /**
+ * The "requested by" line naming the user whose action triggered the message
+ * (and the command text they used, when known).
+ *
+ * @param name what to call the requester — already resolved and escaped by
+ *   attributionName(), so it is interpolated as-is
+ * @param language
+ * @param query the command text (e.g. a search query), if known
+ * @returns {string}
+ */
+function attributionTag(name, language, query)
+{
+    return query
+        ? translate(language, 'requestedByQuery', {name, query})
+        : translate(language, 'requestedBy', {name})
+}
+
+/**
  * Prefix a channel.send payload with a small "requested by" line naming the
  * user whose action triggered it (and the command text they used, when
  * known), without disturbing anything else already on the payload (embeds,
@@ -59,9 +76,7 @@ function withAttribution(payload, name, language, query)
 {
     if (isForward(payload)) return payload
 
-    const tag = query
-        ? translate(language, 'requestedByQuery', {name, query})
-        : translate(language, 'requestedBy', {name})
+    const tag = attributionTag(name, language, query)
     if (typeof payload === 'string') return {content: `${tag}\n${payload}`, allowedMentions: noMentions}
     if (payload && typeof payload === 'object') {
         return {
@@ -117,6 +132,26 @@ function attributeChannel(channel, name, language, query)
                     return target.send(attribute
                         ? withAttribution(payload, name, language, query)
                         : withoutMentions(payload))
+                }
+            }
+            //Post the "requested by" line as its own standalone message and
+            //spend this command's one attribution on it, so a later content
+            //message is sent unattributed. Needed when that content message
+            //gets cached and replayed via Message#forward: a forward re-serves
+            //the original message, so any attribution baked into its content
+            //would ride along into every future replay (naming the first
+            //requester) on top of the fresh per-replay notice. The deck
+            //screenshot takes this path. No-op (resolving to null) once the
+            //attribution is already spent, or when there is no name to show.
+            if (prop === 'sendAttribution') {
+                return () => {
+                    if (attributed || !name) return Promise.resolve(null)
+                    attributed = true
+
+                    return target.send({
+                        content: attributionTag(name, language, query),
+                        allowedMentions: noMentions,
+                    })
                 }
             }
             //escape hatch for callers that already build their own fully-formed

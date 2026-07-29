@@ -161,6 +161,40 @@ describe('attributeChannel', () => {
             '_Requested by alice_\nthe regenerated result')
     })
 
+    // The deck screenshot posts the tag as its own message so the screenshot
+    // message's content stays clean — that message is cached and replayed via
+    // forward(), which would otherwise carry a stale requester into every hit.
+    test('sendAttribution posts the tag as its own standalone message', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en', 'soviet infantry')
+        await wrapped.sendAttribution()
+
+        expect(channel.sent[0]).toEqual({
+            content: '_Requested by alice: soviet infantry_',
+            allowedMentions: {parse: []},
+        })
+    })
+
+    test('sendAttribution spends the attribution so later content is unattributed', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en')
+        await wrapped.sendAttribution()
+        await wrapped.send({content: 'deck stats', files: ['deck.png']})
+
+        expect(channel.sent[1].content).toBe('deck stats')
+        expect(channel.sent[1].allowedMentions).toEqual({parse: []})
+    })
+
+    test('sendAttribution is a no-op once the attribution is already spent', async () => {
+        const channel = makeChannel()
+        const wrapped = attributeChannel(channel, 'alice', 'en')
+        await wrapped.send('first')
+        const result = await wrapped.sendAttribution()
+
+        expect(result).toBeNull()
+        expect(channel.send).toHaveBeenCalledTimes(1)
+    })
+
     test('other properties and methods pass through to the real channel', () => {
         const channel = makeChannel({id: 'real-id', name: 'general'})
         const wrapped = attributeChannel(channel, 'alice', 'en')
