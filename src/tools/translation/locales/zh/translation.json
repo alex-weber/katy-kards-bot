@@ -15,7 +15,7 @@
   "min": "请至少输入 2 个字符",
   "fetching": "正在加载结果……",
   "next": "下一页",
-  "deprecated": "⚠️ 文本命令（如 `!search`）将于{{deadline}}停用，因为 Discord 正在移除机器人对消息文本的访问权限。请改用新的斜杠命令——输入 `/` 并选择一个（例如 `/search`、`/alt`、`/commands`、`/help`）。",
+  "deprecated": "⚠️ 文本命令（如 `!server`）将于{{deadline}}停用，因为 Discord 正在移除机器人对消息文本的访问权限。请改用新的斜杠命令——输入 `/` 并选择一个（例如 `/help`、`/search`、`/deck`）。",
   "commandsButton": "显示命令",
   "commandsPrompt": "点击按钮查看自定义命令列表。",
   "profileButton": "显示我的资料",

@@ -15,7 +15,7 @@
   "min": "mindestens 2 Zeichen, bitte",
   "fetching": "Laden...",
   "next": "Weiter",
-  "deprecated": "⚠️ Textbefehle (wie `!search`) werden {{deadline}} eingestellt, da Discord dem Bot den Zugriff auf den Nachrichtentext entzieht. Bitte wechsle zu den neuen Slash-Befehlen — tippe `/` und wähle einen aus (z. B. `/search`, `/alt`, `/commands`, `/help`).",
+  "deprecated": "⚠️ Textbefehle (wie `!server`) werden {{deadline}} eingestellt, da Discord dem Bot den Zugriff auf den Nachrichtentext entzieht. Bitte wechsle zu den neuen Slash-Befehlen — tippe `/` und wähle einen aus (z. B. `/help`, `/search`, `/deck`).",
   "commandsButton": "Befehle anzeigen",
   "commandsPrompt": "Klicke auf den Button, um die Liste der Befehle zu sehen.",
   "profileButton": "Mein Profil anzeigen",

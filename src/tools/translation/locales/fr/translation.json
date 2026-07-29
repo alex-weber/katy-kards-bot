@@ -15,7 +15,7 @@
   "min": "Minimum 2 caractères, s'il te plaît",
   "fetching": "Chargement des résultats...",
   "next": "Suivant",
-  "deprecated": "⚠️ Les commandes textuelles (comme `!search`) seront supprimées {{deadline}}, car Discord retire au bot l'accès au texte des messages. Merci de passer aux nouvelles commandes slash — tape `/` et choisis-en une (p. ex. `/search`, `/alt`, `/commands`, `/help`).",
+  "deprecated": "⚠️ Les commandes textuelles (comme `!server`) seront supprimées {{deadline}}, car Discord retire au bot l'accès au texte des messages. Merci de passer aux nouvelles commandes slash — tape `/` et choisis-en une (p. ex. `/help`, `/search`, `/deck`).",
   "commandsButton": "Afficher les commandes",
   "commandsPrompt": "Clique sur le bouton pour voir la liste des commandes personnalisées.",
   "profileButton": "Afficher mon profil",
