@@ -3,7 +3,36 @@
 // No DB/Redis dependency — only discord.js and the translator (local files).
 
 const {PermissionsBitField} = require('discord.js')
-const {canForwardInto, forwardCachedMessage} = require('../src/controller/messageCache')
+const {
+    canForwardInto,
+    forwardCachedMessage,
+    getChannelScope,
+} = require('../src/controller/messageCache')
+
+describe('getChannelScope', () => {
+    test('scopes a guild message to its channel, not just its guild', () => {
+        const inChatChannel = {guildId: 'g1', channelId: 'c1'}
+        const inBotCommands = {guildId: 'g1', channelId: 'c2'}
+
+        // Same guild, different channels -> different namespaces, so a message
+        // cached in one channel is never forwarded into another (which may
+        // render the same query differently, e.g. with/without a Next button).
+        expect(getChannelScope(inChatChannel))
+            .not.toBe(getChannelScope(inBotCommands))
+        expect(getChannelScope(inChatChannel)).toBe('guild:g1:channel:c1:')
+    })
+
+    test('is stable for the same guild+channel', () => {
+        const a = {guildId: 'g1', channelId: 'c1'}
+        const b = {guildId: 'g1', channelId: 'c1'}
+        expect(getChannelScope(a)).toBe(getChannelScope(b))
+    })
+
+    test('scopes a DM by author and channel', () => {
+        const dm = {channelId: 'dm1', author: {id: 'u1'}}
+        expect(getChannelScope(dm)).toBe('user_command:u1:channel:dm1:')
+    })
+})
 
 function makeTargetChannel({hasHistory = true, isDm = false} = {}) {
     return {

@@ -1,6 +1,6 @@
 const {
     cacheKeyPrefix,
-    getGuildPart,
+    getChannelScope,
     forwardCachedMessage,
     cacheSentMessage,
 } = require("../messageCache")
@@ -191,7 +191,7 @@ async function handleSearch(ctx)
 {
     const {message, language, command, limit, user} = ctx
     //check if in the cache
-    const cacheKey = cacheKeyPrefix + getGuildPart(message) +
+    const cacheKey = cacheKeyPrefix + getChannelScope(message) +
         language + ':' + command + limit
     if (await serveSearchCache(ctx, cacheKey)) return true
 
