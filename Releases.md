@@ -1,3 +1,9 @@
+## v5.4.1
+
+### Bug Fixes
+
+- Fixed cached answers being re-served across channels, so a result first shown in a chat channel could be forwarded into a bot-command channel without its "Next" button — leaving the alt-art gallery and other paginated searches stuck on the first page. Answers are now cached per channel, so each channel gets the version built for it (with the button, and honouring that channel's attachment limit) instead of whatever a different channel happened to build first.
+
 ## v5.4.0
 
 ### Features
