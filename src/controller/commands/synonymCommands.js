@@ -6,7 +6,7 @@ const {
 } = require("../../tools/search")
 const {
     cacheKeyPrefix,
-    getGuildPart,
+    getChannelScope,
     forwardCachedMessage,
     cacheSentMessage,
 } = require("../messageCache")
@@ -180,7 +180,7 @@ async function handleJsonSynonym(ctx, m)
 {
     const {message, client, redis, command, user, language} = ctx
     const cacheKey =
-        cacheKeyPrefix + getGuildPart(message) + 'syn:' + command
+        cacheKeyPrefix + getChannelScope(message) + 'syn:' + command
     if (await redis.exists(cacheKey) && !m.content) {
         const cached = await redis.json.get(cacheKey, '$')
         if (await forwardCachedMessage(

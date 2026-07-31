@@ -20,17 +20,31 @@ const recoverableForwardErrors = new Set([
 ])
 
 /**
+ * The cache namespace for a message, scoped to a single channel.
+ *
+ * Cached answers are re-served by forwarding the original message into the
+ * requesting channel, so the scope must be per channel, not per guild: two
+ * channels in the same server can render the same query differently (a
+ * bot-command channel gets a paginated "Next" button, a chat channel does
+ * not, and role rules can cap the attachment count per channel). A guild-wide
+ * key let whichever channel built the entry first win, forwarding its message —
+ * button and all, or missing — into every other channel.
+ *
+ * DMs have exactly one channel per user, so the channel id already identifies
+ * the conversation; the author id is kept in the prefix only to preserve the
+ * existing user_command namespace.
  *
  * @param message
  * @returns {string}
  */
-function getGuildPart(message)
+function getChannelScope(message)
 {
+    const channelPart = 'channel:' + message.channelId.toString() + ':'
     if (message.guildId) {
-        return 'guild:' + message.guildId.toString() + ':'
+        return 'guild:' + message.guildId.toString() + ':' + channelPart
     }
 
-    return 'user_command:' + message.author.id.toString() + ':'
+    return 'user_command:' + message.author.id.toString() + ':' + channelPart
 }
 
 /**
@@ -149,7 +163,7 @@ async function cacheSentMessage(redis, key, sentMessage, ttl, extra = {})
 
 module.exports = {
     cacheKeyPrefix,
-    getGuildPart,
+    getChannelScope,
     canForwardInto,
     forwardCachedMessage,
     cacheSentMessage,

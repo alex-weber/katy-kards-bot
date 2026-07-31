@@ -1,7 +1,7 @@
 const bot = require("../bot")
 const {
     cacheKeyPrefix,
-    getGuildPart,
+    getChannelScope,
     forwardCachedMessage,
     cacheSentMessage,
 } = require("../messageCache")
@@ -33,7 +33,7 @@ async function handleDeck(ctx)
     //command is lowercased, but we need the original deck code
     const command = bot.getDeckCode(message.content)
     //check if in the cache
-    const deckKey = cacheKeyPrefix + getGuildPart(message) +
+    const deckKey = cacheKeyPrefix + getChannelScope(message) +
         'deck:' + language + ':' + command
     if (await redis.exists(deckKey)) {
         const response = await redis.json.get(deckKey, '$')
@@ -93,7 +93,7 @@ async function handleAlt(ctx)
     // This keeps the linked list in one branch: the first "alt" is sent in the
     // user's language, but paged-in pages are forced to the default language by
     // resolveButtonCommand, which would otherwise split the chain across keys.
-    const cacheKey = cacheKeyPrefix + getGuildPart(message) +
+    const cacheKey = cacheKeyPrefix + getChannelScope(message) +
         'alt:' + ctx.command
     if (await redis.exists(cacheKey)) {
         const response = await redis.json.get(cacheKey, '$')
@@ -148,7 +148,7 @@ async function handleAlt(ctx)
     await cacheSentMessage(redis, cacheKey, sent, searchExp, {'next-message': null})
     // Link the previous page to this freshly-built one.
     if (offset > 0) {
-        const prevKey = cacheKeyPrefix + getGuildPart(message) +
+        const prevKey = cacheKeyPrefix + getChannelScope(message) +
             'alt:alt' + (offset - limit || '')
         if (await redis.exists(prevKey))
             await redis.json.set(prevKey, '$["next-message"]', sent.id)
