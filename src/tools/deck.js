@@ -42,7 +42,16 @@ async function createDeckImages(
             return false
         }
     }
-    let sentMessage = await message.channel.send(translate(language, 'screenshot'))
+    //The "capturing screenshot" notice is deleted once the render is ready, so
+    //it must not consume the channel's one "requested by" attribution line —
+    //otherwise the only public trace of who asked vanishes with it. Send it raw
+    //(bypassing attribution). sendRaw exists only on the attributed proxy
+    //(slash/button paths); other paths have no attribution to preserve, so a
+    //plain send is correct there.
+    const sendNotice = message.channel.sendRaw
+        ? message.channel.sendRaw
+        : message.channel.send.bind(message.channel)
+    let sentMessage = await sendNotice(translate(language, 'screenshot'))
     sentMessage.react('🔄')
     const filename = await takeScreenshot(url)
     sentMessage.delete()
@@ -51,6 +60,13 @@ async function createDeckImages(
         return false
     }
     const files = getDeckFiles(filename)
+    //Post "requested by" as its own message, keeping the attribution off the
+    //screenshot message's content. That message is cached and later replayed
+    //via Message#forward, which re-serves the original content verbatim — a
+    //baked-in line would name the first requester on every future replay, on
+    //top of the fresh per-replay notice. sendAttribution exists only on the
+    //attributed proxy; non-slash paths have no attribution to post.
+    if (message.channel.sendAttribution) await message.channel.sendAttribution()
     sentMessage = await message.channel.send({content: deckInfo, files: files})
     console.log('Screenshot captured and sent successfully')
 
