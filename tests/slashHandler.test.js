@@ -9,7 +9,7 @@
 jest.mock('../src/database/db', () => ({
     getUser: jest.fn(),
     updateUser: jest.fn(async () => {}),
-    getProfileStats: jest.fn(async () => ({total: 3, lastMonth: 2, lastDay: 1})),
+    getProfileStats: jest.fn(async () => ({total: 3, currentMonth: 2, allTimePosition: 2, currentMonthPosition: 2, lastDay: 1})),
 }))
 jest.mock('../src/controller/discordHandler', () => ({
     discordHandler: jest.fn(async () => {}),
@@ -175,7 +175,7 @@ describe('/profile', () => {
         expect(interaction.reply).toHaveBeenCalledTimes(1)
         const arg = interaction.reply.mock.calls[0][0]
         expect(arg.flags).toBe(MessageFlags.Ephemeral)
-        expect(typeof arg.content).toBe('string')
+        expect(arg.embeds).toHaveLength(1)
     })
 
     test('shows the blocked message including the moderator note', async () => {

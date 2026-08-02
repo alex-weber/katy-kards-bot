@@ -13,7 +13,7 @@ jest.mock('../src/database/db', () => ({
     updateUser: jest.fn(async () => {}),
     getUsers: jest.fn(async () => ({users: []})),
     createUserAudit: jest.fn(async () => {}),
-    getProfileStats: jest.fn(async () => ({total: 3, lastMonth: 2, lastDay: 1})),
+    getProfileStats: jest.fn(async () => ({total: 3, currentMonth: 2, allTimePosition: 2, currentMonthPosition: 2, lastDay: 1})),
 }))
 jest.mock('../src/controller/redis', () => ({
     redis: {

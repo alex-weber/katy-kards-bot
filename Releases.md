@@ -1,3 +1,11 @@
+## v5.5.0
+
+### Features
+
+- The profile — both the web page and the `/profile` command — now shows how a player ranks and how active they have been: an all-time rank and a rank for the current month (by number of commands used), the all-time and current-month command totals, and the commands run in the last 24 hours. This replaces the previous rolling "last 30 days" count.
+- The web profile groups these into two colour-coded sections, All-Time and This Month, next to the account's avatar and display name.
+- On Discord, `/profile` now replies with a card headed by the user's avatar and the nickname they use on that server, with the stats laid out in the same All-Time and This Month sections — replacing the old plain "Your stats" text. Telegram gets the same all-time and this-month breakdown.
+
 ## v5.4.1
 
 ### Bug Fixes

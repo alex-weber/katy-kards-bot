@@ -1303,10 +1303,48 @@
     overflow-wrap: anywhere;
 }
 
+/* Keep every profile section aligned to the same centered column width as the
+   identity card. */
+.profile-stat-panel,
+.profile-history-panel {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 52rem;
+}
+
+/* Uniform, capped card widths so the All-Time cards in the identity card and
+   the This Month cards share one size instead of stretching to fill. */
 .profile-stat-grid {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 10rem));
+}
+
+/* Panel-hosted grids carry their own padding; the All-Time grid inside the
+   identity card sits within that card's padding, just below the name. */
+.profile-stat-panel .profile-stat-grid {
+    padding: 1rem;
+}
+
+.profile-body .profile-stat-grid {
+    margin-top: 0.25rem;
+}
+
+/* Colored top border per group, matching the users-page stat cards:
+   blue = all-time, green = this month, yellow = last 24 hours. */
+.profile-stat-blue { border-top: 3px solid #0d6efd; }
+.profile-stat-green { border-top: 3px solid #20c997; }
+.profile-stat-yellow { border-top: 3px solid #ffc107; }
+
+/* Reserve two lines for the label so cards with a single-line label keep their
+   value on the same baseline as any that wrap (e.g. "Last 24 hours"). */
+.profile-stat-grid .stat-label {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    line-height: 1.2;
+    min-height: 2.4em;
+    text-align: center;
 }
 
 .auth-panel {

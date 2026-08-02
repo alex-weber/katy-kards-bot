@@ -583,7 +583,10 @@ async function handleProfile(ctx)
 async function buildProfileView(user, includeSettings)
 {
     const stats = await getProfileStats(user.id)
-    const text = renderProfileText(user.language, stats)
+    //Telegram has no embed author line, so the name goes in as the heading;
+    //fall back to the generic title when the stored name is empty.
+    const heading = user.name || translate(user.language, 'profileTitle')
+    const text = renderProfileText(user.language, stats, heading)
 
     //no settings controls outside private chats -> stats only
     if (!includeSettings) return {text, keyboard: undefined}

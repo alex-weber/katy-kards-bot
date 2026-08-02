@@ -87,16 +87,6 @@ async function getUserMessages(userId)
         }
     })
 
-    const monthAgo = new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
-    messages.lastMonthMessagesCount = await prisma.message.count({
-        where: {
-            authorId: userId,
-            createdAt: {
-                gte: monthAgo,
-            },
-        },
-    })
-
     await redis.json.set(cacheKey, '$', messages)
     await redis.expire(cacheKey, expiration)
 
@@ -105,49 +95,45 @@ async function getUserMessages(userId)
 }
 
 /**
- * Lightweight per-user command counts for the profile overview, cached in
- * Redis. Only the three counts are queried and stored (no message rows), so
- * both the DB workload and the cached payload stay small.
+ * Lightweight per-user stats for the profile overview, cached in Redis. Only
+ * the counts and leaderboard positions are queried and stored (no message
+ * rows), so both the DB workload and the cached payload stay small.
  *
  * @param userId User table primary key
- * @returns {Promise<{total: number, lastMonth: number, lastDay: number}>}
+ * @returns {Promise<{total: number, currentMonth: number, lastDay: number, allTimePosition: (number|null), currentMonthPosition: (number|null)}>}
  */
 async function getProfileStats(userId)
 {
     const cacheKey = cachePrefix + 'profile:stats:' + userId
     const cached = normalizeRedisJsonObject(await redis.json.get(cacheKey, '$'))
-    if (cached && cached.allTimePosition !== undefined && cached.allTimePosition !== null) return cached
-    if (cached) {
-        const allTimePositions = await getAllTimeUserMessagePositions([userId])
-        const stats = {
-            ...cached,
-            allTimePosition: allTimePositions[String(userId)] || null,
-        }
-        await redis.json.set(cacheKey, '$', stats)
-        await redis.expire(cacheKey, profileExpiration)
-        return stats
+    if (cached
+        && cached.currentMonth !== undefined
+        && cached.allTimePosition !== undefined
+        && cached.currentMonthPosition !== undefined) {
+        return cached
     }
 
-    const now = Date.now()
-    const dayAgo = new Date(now - 24 * 60 * 60 * 1000)
-    const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000)
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const monthStart = startOfCurrentMonthUtc()
 
-    const [total, lastMonth, lastDay, allTimePositions] = await Promise.all([
+    const [total, currentMonth, lastDay, allTimePositions, currentMonthPositions] = await Promise.all([
         prisma.message.count({where: {authorId: userId}}),
         prisma.message.count({
-            where: {authorId: userId, createdAt: {gte: monthAgo}},
+            where: {authorId: userId, createdAt: {gte: monthStart}},
         }),
         prisma.message.count({
             where: {authorId: userId, createdAt: {gte: dayAgo}},
         }),
         getAllTimeUserMessagePositions([userId]),
+        getCurrentMonthUserMessagePositions([userId]),
     ])
 
     const stats = {
         total,
-        lastMonth,
+        currentMonth,
         lastDay,
         allTimePosition: allTimePositions[String(userId)] || null,
+        currentMonthPosition: currentMonthPositions[String(userId)] || null,
     }
     await redis.json.set(cacheKey, '$', stats)
     await redis.expire(cacheKey, profileExpiration)
@@ -676,30 +662,70 @@ async function computeTopUsers(fromDate, toDate)
     return grouped.map(group => ({ key: group.authorId, count: group._count.content }))
 }
 
-async function getAllTimeUserMessagePositions(authorIds = []) {
+// UTC midnight on the first of the current calendar month — the lower bound
+// for the current-month leaderboard.
+function startOfCurrentMonthUtc()
+{
+    const now = new Date()
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+}
+
+// Shared cache-then-RANK() logic for the two user leaderboards below. `runQuery`
+// gets the still-uncached authorIds and returns their {authorId, position} rows;
+// positions accumulate per authorId under `cacheKey`.
+async function resolveUserMessagePositions(authorIds, cacheKey, runQuery)
+{
     authorIds = [...new Set(authorIds.map(id => parseInt(id, 10)).filter(id => Number.isInteger(id) && id > 0))]
     if (!authorIds.length) return {}
 
-    const cacheKey = cachePrefix + 'stats:all-time:user-message-positions'
     let positions = normalizeRedisJsonObject(await redis.json.get(cacheKey, '$'))
     positions = positions || {}
     const missing = authorIds.filter(authorId => positions[String(authorId)] === undefined)
     if (!missing.length) return positions
 
-    const rows = await prisma.$queryRaw`
-        SELECT ranked."authorId", ranked.position
-        FROM (
-            SELECT "authorId", RANK() OVER (ORDER BY COUNT(*) DESC) AS position
-            FROM "Message"
-            GROUP BY "authorId"
-        ) ranked
-        WHERE ranked."authorId" IN (${Prisma.join(missing)})
-    `
+    const rows = await runQuery(missing)
 
     mergePositionRows(positions, rows, 'authorId')
     await redis.json.set(cacheKey, '$', positions)
     await redis.expire(cacheKey, expiration)
     return positions
+}
+
+async function getAllTimeUserMessagePositions(authorIds = []) {
+    return resolveUserMessagePositions(
+        authorIds,
+        cachePrefix + 'stats:all-time:user-message-positions',
+        missing => prisma.$queryRaw`
+            SELECT ranked."authorId", ranked.position
+            FROM (
+                SELECT "authorId", RANK() OVER (ORDER BY COUNT(*) DESC) AS position
+                FROM "Message"
+                GROUP BY "authorId"
+            ) ranked
+            WHERE ranked."authorId" IN (${Prisma.join(missing)})
+        `,
+    )
+}
+
+async function getCurrentMonthUserMessagePositions(authorIds = []) {
+    const monthStart = startOfCurrentMonthUtc()
+    // Month in the key so a new month starts a fresh ranking rather than
+    // reusing last month's cached positions.
+    const monthKey = `${monthStart.getUTCFullYear()}-${(monthStart.getUTCMonth() + 1).toString().padStart(2, '0')}`
+    return resolveUserMessagePositions(
+        authorIds,
+        cachePrefix + `stats:current-month:user-message-positions:${monthKey}`,
+        missing => prisma.$queryRaw`
+            SELECT ranked."authorId", ranked.position
+            FROM (
+                SELECT "authorId", RANK() OVER (ORDER BY COUNT(*) DESC) AS position
+                FROM "Message"
+                WHERE "createdAt" >= ${monthStart}
+                GROUP BY "authorId"
+            ) ranked
+            WHERE ranked."authorId" IN (${Prisma.join(missing)})
+        `,
+    )
 }
 
 async function getTopUsers({period} = {})

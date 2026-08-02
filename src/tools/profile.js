@@ -1,19 +1,45 @@
 const {translate} = require("./translation/translator")
 
 /**
- * Build the profile overview text from the stats.
+ * Format a leaderboard position as "#N", or "n/a" when the user isn't ranked.
+ *
+ * @param position
+ * @returns {string}
+ */
+function formatPosition(position)
+{
+    return position ? '#' + position : 'n/a'
+}
+
+/**
+ * Build the profile overview text from the stats. Grouped into an all-time and
+ * a this-month section to mirror the web profile. Uses only emoji + plain text
+ * (no markdown), since Telegram sends this reply without a parse mode.
+ *
+ * No title of its own: the Discord embed shows the user's avatar + name in its
+ * author line instead, and Telegram passes the name as `heading`. The language
+ * line drops the code, since the select below already shows the current one.
  *
  * @param language
  * @param stats
+ * @param heading optional first line (e.g. the user's name on Telegram)
  * @returns {string}
  */
-function renderProfileText(language, stats)
+function renderProfileText(language, stats, heading)
 {
-    return translate(language, 'profileTitle') + '\n\n' +
-        translate(language, 'profileTotal') + stats.total + '\n' +
-        translate(language, 'profileMonth') + stats.lastMonth + '\n' +
-        translate(language, 'profileDay') + stats.lastDay + '\n\n' +
-        translate(language, 'profileLanguage') + language + '\n'
+    const bullet = (labelKey, value) => '• ' + translate(language, labelKey) + value
+    // Drop the trailing ": " / "：" so the label reads as a heading for the select.
+    const languageLabel = translate(language, 'profileLanguage').replace(/[:：]\s*$/, '')
+
+    return (heading ? heading + '\n\n' : '') +
+        translate(language, 'profileSectionAllTime') + '\n' +
+        bullet('profileRank', formatPosition(stats.allTimePosition)) + '\n' +
+        bullet('profileCommands', stats.total) + '\n\n' +
+        translate(language, 'profileSectionMonth') + '\n' +
+        bullet('profileRank', formatPosition(stats.currentMonthPosition)) + '\n' +
+        bullet('profileCommands', stats.currentMonth) + '\n' +
+        bullet('profileDay', stats.lastDay) + '\n\n' +
+        '🌐 ' + languageLabel
 }
 
 /**
@@ -30,4 +56,4 @@ function reactionsLabel(language, user)
         : translate(language, 'reactionsOn')
 }
 
-module.exports = {renderProfileText, reactionsLabel}
+module.exports = {renderProfileText, reactionsLabel, formatPosition}

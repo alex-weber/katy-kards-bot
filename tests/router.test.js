@@ -238,7 +238,7 @@ describe('public profile', () => {
     test("another user's profile shows stats only, no history, with avatar for managers", async () => {
         const res = makeRes()
         db.getUserById.mockResolvedValueOnce({ id: 5, name: 'Alice', discordId: '111' })
-        db.getProfileStats.mockResolvedValueOnce({ total: 10, lastMonth: 4, lastDay: 1 })
+        db.getProfileStats.mockResolvedValueOnce({ total: 10, currentMonth: 3, allTimePosition: 2, currentMonthPosition: 4, lastDay: 1 })
 
         await router.renderPublicProfile({ params: { id: '5' }, session: { user: { isManager: true } } }, res, { client: true })
 
@@ -266,12 +266,12 @@ describe('public profile', () => {
         db.getUserById.mockResolvedValueOnce({ id: 5, name: 'Me', discordId: '111' })
         db.getUserMessages.mockResolvedValueOnce({
             totalCount: 20,
-            lastMonthMessagesCount: 8,
             lastDayMessages: [{ content: 'leo', createdAt: 'now' }],
         })
         db.getProfileStats.mockResolvedValueOnce({
             total: 20,
-            lastMonth: 8,
+            currentMonth: 12,
+            currentMonthPosition: 8,
             lastDay: 1,
             allTimePosition: 1,
         })
@@ -295,12 +295,12 @@ describe('own profile (/profile)', () => {
         db.getUser.mockResolvedValueOnce({ id: 5, discordId: '111' })
         db.getUserMessages.mockResolvedValueOnce({
             totalCount: 3,
-            lastMonthMessagesCount: 2,
             lastDayMessages: [{ content: 'is2', createdAt: 'now' }],
         })
         db.getProfileStats.mockResolvedValueOnce({
             total: 3,
-            lastMonth: 2,
+            currentMonth: 2,
+            currentMonthPosition: 2,
             lastDay: 1,
             allTimePosition: 1,
         })

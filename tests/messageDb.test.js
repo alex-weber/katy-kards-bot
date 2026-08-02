@@ -82,58 +82,73 @@ describe('getScreenshotMessages', () => {
 })
 
 describe('getProfileStats', () => {
-    test('returns the three counts and caches them', async () => {
+    // Cache key for the current-month leaderboard, whose key carries the month.
+    const currentMonthPositionsKey = (() => {
+        const now = new Date()
+        const monthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
+        return `test:stats:current-month:user-message-positions:${monthKey}`
+    })()
+
+    test('returns the counts and both leaderboard positions and caches them', async () => {
         mockCount
             .mockResolvedValueOnce(100) // total
-            .mockResolvedValueOnce(30)  // last month
+            .mockResolvedValueOnce(20)  // current month
             .mockResolvedValueOnce(5)   // last day
-        mockQueryRaw.mockResolvedValueOnce([{ authorId: 7, position: 2 }])
+        mockQueryRaw
+            .mockResolvedValueOnce([{ authorId: 7, position: 2 }]) // all-time
+            .mockResolvedValueOnce([{ authorId: 7, position: 3 }]) // current month
         const stats = await getProfileStats(7)
-        expect(stats).toEqual({ total: 100, lastMonth: 30, lastDay: 5, allTimePosition: 2 })
+        expect(stats).toEqual({ total: 100, currentMonth: 20, lastDay: 5, allTimePosition: 2, currentMonthPosition: 3 })
 
         // Second call served from cache → no further DB counts
         mockCount.mockClear()
         const again = await getProfileStats(7)
-        expect(again).toEqual({ total: 100, lastMonth: 30, lastDay: 5, allTimePosition: 2 })
+        expect(again).toEqual({ total: 100, currentMonth: 20, lastDay: 5, allTimePosition: 2, currentMonthPosition: 3 })
         expect(mockCount).not.toHaveBeenCalled()
     })
 
-    test('uses cached RedisJSON all-time position maps with root path wrappers', async () => {
+    test('uses cached RedisJSON position maps with root path wrappers', async () => {
         mockStore.set('test:stats:all-time:user-message-positions', [{ '7': 1 }])
+        mockStore.set(currentMonthPositionsKey, [{ '7': 4 }])
         mockCount
-            .mockResolvedValueOnce(100)
-            .mockResolvedValueOnce(30)
-            .mockResolvedValueOnce(5)
+            .mockResolvedValueOnce(100) // total
+            .mockResolvedValueOnce(20)  // current month
+            .mockResolvedValueOnce(5)   // last day
 
         const stats = await getProfileStats(7)
 
         expect(stats.allTimePosition).toBe(1)
+        expect(stats.currentMonthPosition).toBe(4)
         expect(mockQueryRaw).not.toHaveBeenCalled()
     })
 
-    test('hydrates stale cached profile stats with the all-time position', async () => {
-        mockStore.set('test:profile:stats:7', { total: 100, lastMonth: 30, lastDay: 5 })
-        mockStore.set('test:stats:all-time:user-message-positions', { '7': 1 })
+    test('recomputes cached profile stats that predate the month stats', async () => {
+        mockStore.set('test:profile:stats:7', { total: 100, lastDay: 5, allTimePosition: 1 })
+        mockCount
+            .mockResolvedValueOnce(100) // total
+            .mockResolvedValueOnce(20)  // current month
+            .mockResolvedValueOnce(5)   // last day
+        mockQueryRaw
+            .mockResolvedValueOnce([{ authorId: 7, position: 1 }]) // all-time
+            .mockResolvedValueOnce([{ authorId: 7, position: 6 }]) // current month
 
         const stats = await getProfileStats(7)
 
-        expect(stats).toEqual({ total: 100, lastMonth: 30, lastDay: 5, allTimePosition: 1 })
-        expect(mockCount).not.toHaveBeenCalled()
-        expect(mockStore.get('test:profile:stats:7').allTimePosition).toBe(1)
+        expect(stats).toEqual({ total: 100, currentMonth: 20, lastDay: 5, allTimePosition: 1, currentMonthPosition: 6 })
+        expect(mockCount).toHaveBeenCalled()
+        expect(mockStore.get('test:profile:stats:7').currentMonthPosition).toBe(6)
     })
 })
 
 describe('getUserMessages', () => {
-    test('returns last-day messages plus total and month counts', async () => {
+    test('returns last-day messages plus the total count', async () => {
         mockFindMany.mockResolvedValueOnce([
             { id: 1, content: 'leo', createdAt: new Date('2024-06-01T10:00:00Z') },
         ])
-        mockCount
-            .mockResolvedValueOnce(42) // total
-            .mockResolvedValueOnce(9)  // last month
+        mockCount.mockResolvedValueOnce(42) // total
         const result = await getUserMessages(7)
         expect(result.totalCount).toBe(42)
-        expect(result.lastMonthMessagesCount).toBe(9)
+        expect(result.lastMonthMessagesCount).toBeUndefined()
         expect(result.lastDayMessages).toHaveLength(1)
         expect(typeof result.lastDayMessages[0].createdAt).toBe('string') // formatted
     })

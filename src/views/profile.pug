@@ -40,22 +40,37 @@ block content
         .profile-body
             h3.profile-name #{displayName}
             .profile-stat-grid
-                .stat-card
-                    .stat-label All-Time
+                .stat-card.profile-stat-blue
+                    .stat-label All-time rank
                     .stat-value #{stats.allTimePosition ? '#' + stats.allTimePosition : 'n/a'}
-                .stat-card
-                    .stat-label Total messages
+                .stat-card.profile-stat-blue
+                    .stat-label All-time commands
                     .stat-value #{stats.total}
-                .stat-card
-                    .stat-label Last 30 days
-                    .stat-value #{stats.lastMonth}
-                .stat-card
-                    .stat-label Last 24 hours
-                    .stat-value #{stats.lastDay}
+
+    .content-panel.profile-stat-panel
+        .panel-header
+            .panel-title-group
+                span.panel-icon(aria-hidden="true")
+                    svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+                        rect(x="3" y="4" width="18" height="18" rx="2" ry="2")
+                        line(x1="16" y1="2" x2="16" y2="6")
+                        line(x1="8" y1="2" x2="8" y2="6")
+                        line(x1="3" y1="10" x2="21" y2="10")
+                h3.panel-title This Month
+        .stat-grid.profile-stat-grid
+            .stat-card.profile-stat-green
+                .stat-label Rank
+                .stat-value #{stats.currentMonthPosition ? '#' + stats.currentMonthPosition : 'n/a'}
+            .stat-card.profile-stat-green
+                .stat-label Commands
+                .stat-value #{stats.currentMonth}
+            .stat-card.profile-stat-yellow
+                .stat-label Last 24 hours
+                .stat-value #{stats.lastDay}
 
 
     if isOwn && history
-        .content-panel.mt-4
+        .content-panel.mt-4.profile-history-panel
             .panel-header
                 .panel-title-group
                     span.panel-icon(aria-hidden="true")

@@ -10,7 +10,7 @@ const {getSynonymById, updateSynonym} = require("../database/synonym")
 const {isManager} = require("../tools/search")
 const {buildCommandList} = require("../controller/commands/synonymCommands")
 const {invalidateSynonymCache} = require("../controller/synonymCache")
-const {buildProfileView} = require("../controller/commands/profileView")
+const {buildProfileView, profileIdentity} = require("../controller/commands/profileView")
 const {buildContactModal} = require("../tools/contactModal")
 const {buildTermsView} = require("../controller/commands/termsCommands")
 const {handleSlashCommand, handleSlashModal} = require("../controller/slashHandler")
@@ -129,7 +129,7 @@ async function onInteractionCreate(interaction)
             user.reactions = user.reactions === false
             await updateUser(user)
             await refreshCachedUser(interaction.user.id, '$.reactions', user.reactions)
-            const view = await buildProfileView(user)
+            const view = await buildProfileView(user, profileIdentity(interaction))
 
             return await interaction.update(view)
         }
@@ -142,12 +142,12 @@ async function onInteractionCreate(interaction)
                 await updateUser(user)
                 await refreshCachedUser(interaction.user.id, '$.language', language)
             }
-            const view = await buildProfileView(user)
+            const view = await buildProfileView(user, profileIdentity(interaction))
 
             return await interaction.update(view)
         }
 
-        const view = await buildProfileView(user)
+        const view = await buildProfileView(user, profileIdentity(interaction))
 
         return await interaction.reply({
             ...view,

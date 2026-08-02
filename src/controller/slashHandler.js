@@ -11,7 +11,7 @@ const {getUser} = require('../database/db')
 const {translate} = require('../tools/translation/translator')
 const {buildCommandList} = require('./commands/synonymCommands')
 const {SIMPLE_COMMANDS} = require('../tools/deployCommands')
-const {buildProfileView} = require('./commands/profileView')
+const {buildProfileView, profileIdentity} = require('./commands/profileView')
 const {buildContactModal} = require('../tools/contactModal')
 const {requiresTermsAcceptance, buildTermsView} = require('./commands/termsCommands')
 const {attributeChannel} = require('../tools/attributedChannel')
@@ -291,7 +291,7 @@ async function replyProfile(interaction, redis)
     const user = await loadGatedUser(interaction, redis)
     if (!user) return
 
-    const view = await buildProfileView(user)
+    const view = await buildProfileView(user, profileIdentity(interaction))
     await interaction.reply({...view, flags: MessageFlags.Ephemeral})
 }
 
