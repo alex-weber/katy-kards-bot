@@ -67,6 +67,12 @@ describe('API.run', () => {
         expect(message.getDashboardMessages).not.toHaveBeenCalled()
     })
 
+    test('current-year is an accepted period', async () => {
+        const res = await API.run('messages', {period: 'current-year'})
+        expect(res.success).toBe(true)
+        expect(message.getDashboardMessages).toHaveBeenCalledWith({period: 'current-year'})
+    })
+
     test('cards-by-faction caches forever (no expire)', async () => {
         await API.run('cards-by-faction', {})
         expect(redis.json.set).toHaveBeenCalledTimes(1)
