@@ -201,6 +201,45 @@ describe('profile buttons', () => {
         expect(updateUser).not.toHaveBeenCalled()
         expect(interaction.update).toHaveBeenCalledTimes(1)
     })
+
+    test('profile_share posts the embed publicly when the bot may send there', async () => {
+        const send = jest.fn(async () => {})
+        const interaction = makeInteraction({
+            isButton: () => true,
+            customId: 'profile_share',
+            appPermissions: {has: () => true},
+            channel: {send},
+        })
+        interaction.deferUpdate = jest.fn(async () => {})
+
+        await onInteractionCreate(interaction)
+
+        expect(send).toHaveBeenCalledTimes(1)
+        const posted = send.mock.calls[0][0]
+        expect(posted.embeds).toHaveLength(1)
+        // names who shared it, with every mention disabled
+        expect(posted.content).toContain('alice')
+        expect(posted.allowedMentions).toEqual({parse: []})
+        // acknowledged without a visible reply, and nothing posted to the user
+        expect(interaction.deferUpdate).toHaveBeenCalledTimes(1)
+        expect(interaction.reply).not.toHaveBeenCalled()
+    })
+
+    test('profile_share tells the user when the bot lacks send permission', async () => {
+        const send = jest.fn(async () => {})
+        const interaction = makeInteraction({
+            isButton: () => true,
+            customId: 'profile_share',
+            appPermissions: {has: () => false},
+            channel: {send},
+        })
+
+        await onInteractionCreate(interaction)
+
+        expect(send).not.toHaveBeenCalled()
+        expect(interaction.reply).toHaveBeenCalledTimes(1)
+        expect(typeof interaction.reply.mock.calls[0][0].content).toBe('string')
+    })
 })
 
 describe('next_button pagination attribution', () => {

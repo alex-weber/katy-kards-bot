@@ -1,5 +1,5 @@
 // ================= DISCORD JS ===================
-const { Client, GatewayIntentBits, Partials, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = require('discord.js')
+const { Client, GatewayIntentBits, Partials, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits} = require('discord.js')
 const {getUser, updateUser, getUsers, createUserAudit} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {languages} = require("../tools/language")
@@ -105,6 +105,7 @@ async function onInteractionCreate(interaction)
     if (interaction.customId === 'profile_show' ||
         interaction.customId === 'profile_reactions' ||
         interaction.customId === 'profile_language' ||
+        interaction.customId === 'profile_share' ||
         interaction.customId === 'profile_dm') {
         //this feature is not available for blocked users
         if (user.status !== 'active') {
@@ -112,6 +113,43 @@ async function onInteractionCreate(interaction)
                 content: translate(user.language, 'blocked'),
                 flags: MessageFlags.Ephemeral,
             })
+        }
+
+        //re-post the (ephemeral) profile embed publicly in the same channel.
+        //A normal channel send needs Send Messages + Embed Links there, unlike
+        //the ephemeral interaction reply; if either is missing, say so quietly.
+        if (interaction.customId === 'profile_share') {
+            const perms = interaction.appPermissions
+            const canShare = interaction.channel &&
+                perms?.has(PermissionFlagsBits.SendMessages) &&
+                perms?.has(PermissionFlagsBits.EmbedLinks)
+            if (!canShare) {
+                return await interaction.reply({
+                    content: translate(user.language, 'shareNoPermission'),
+                    flags: MessageFlags.Ephemeral,
+                })
+            }
+            const view = await buildProfileView(user, profileIdentity(interaction))
+            //Name who shared it so a bare embed does not just appear in a busy
+            //channel. attributionName escapes markdown; allowedMentions disables
+            //every mention so a nickname like @everyone stays plain text.
+            const sharedBy = attributionName(interaction.user, interaction.member)
+            try {
+                await interaction.channel.send({
+                    content: translate(user.language, 'profileShared', {name: sharedBy}),
+                    embeds: view.embeds,
+                    allowedMentions: {parse: []},
+                })
+            } catch {
+                //permission revoked between the check and the send, or similar
+                return await interaction.reply({
+                    content: translate(user.language, 'shareNoPermission'),
+                    flags: MessageFlags.Ephemeral,
+                })
+            }
+
+            //acknowledge the click without altering the ephemeral profile
+            return await interaction.deferUpdate()
         }
 
         //open a DM channel with the user (active until the bot restarts)

@@ -1,3 +1,9 @@
+## v5.5.1
+
+### Features
+
+- Added a Share button to the Discord `/profile` view. It re-posts the profile card publicly in the same channel, led by a line naming who shared it (mentions disabled, so a nickname cannot ping the channel). If the bot is not allowed to post in that channel, it tells the user privately instead of failing silently.
+
 ## v5.5.0
 
 ### Features

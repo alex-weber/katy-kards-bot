@@ -117,6 +117,12 @@ async function buildProfileView(user, identity = {})
             translate(lang, 'dmButton'),
             'profile_dm',
             ButtonStyle.Primary),
+        //Re-post this (ephemeral) profile publicly in the channel — handled in
+        //discordClient, which gates it on the bot's send permission there.
+        ...getButtonRow(
+            translate(lang, 'profileShare'),
+            'profile_share',
+            ButtonStyle.Secondary),
     ]
 
     return {embeds: [embed], components}

@@ -88,12 +88,13 @@ describe('buildProfileView', () => {
         expect(label(onView)).not.toBe(label(offView))
     })
 
-    test('includes a language select, a reactions toggle, and a DM button, in that order', async () => {
+    test('includes a language select, a reactions toggle, a DM button and a share button, in that order', async () => {
         const view = await buildProfileView({id: 'u1', language: 'en'})
 
-        expect(view.components).toHaveLength(3)
+        expect(view.components).toHaveLength(4)
         expect(view.components[0].components[0].data.custom_id).toBe('profile_language')
         expect(view.components[1].components[0].data.custom_id).toBe('profile_reactions')
         expect(view.components[2].components[0].data.custom_id).toBe('profile_dm')
+        expect(view.components[3].components[0].data.custom_id).toBe('profile_share')
     })
 })
