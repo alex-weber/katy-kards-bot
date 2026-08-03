@@ -834,6 +834,10 @@ module.exports = {
     getTopUsers,
     getTotalMessageCount,
     getTotalScreenshotCommandCount,
+    // The single source of truth for the valid dashboard periods (and their
+    // default), consumed by the router's validation and the API's allowlist.
+    STATS_PERIODS,
+    normalizeStatsPeriod,
     // Exported for unit testing the chart bucketing.
     buildStatsBuckets,
 }

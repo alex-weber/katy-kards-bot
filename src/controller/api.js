@@ -6,6 +6,8 @@ const {
     getTopUsers,
     getTotalMessageCount,
     getTotalScreenshotCommandCount,
+    STATS_PERIODS,
+    normalizeStatsPeriod,
 } = require("../database/message")
 
 const {redis, cachePrefix} = require('../controller/redis')
@@ -15,9 +17,6 @@ const expiration = parseInt(process.env.CACHE_API_EXPIRE) || 60*10
 // Bump when the shape of any cached API response changes, so stale payloads
 // from a previous deploy are abandoned instead of served verbatim.
 const CACHE_VERSION = 'v3'
-// The dashboard periods plus 'daily' (the rolling 30-day series the
-// mini-counters read); see message.js for how each maps to chart buckets.
-const STATS_PERIODS = ['current-month', 'last-month', 'current-year', 'last-year', 'all-time', 'daily']
 
 const statsMethods = new Set([
     'messages',
@@ -25,10 +24,6 @@ const statsMethods = new Set([
     'top-messages',
     'top-users',
 ])
-
-function normalizeStatsPeriod(period) {
-    return STATS_PERIODS.includes(period) ? period : 'current-month'
-}
 
 async function run(method, { period } = {}) {
     const response = {

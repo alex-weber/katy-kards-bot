@@ -5,6 +5,7 @@ const {
   getMessages,
   getUserMessages,
   getProfileStats,
+  STATS_PERIODS,
 } = require('./message')
 const {
   getUser,
@@ -63,5 +64,6 @@ module.exports = {
   getProfileStats,
   getCardStats,
   getCardStatsMessage,
+  STATS_PERIODS,
   disconnect,
 }

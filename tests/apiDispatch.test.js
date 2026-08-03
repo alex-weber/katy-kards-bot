@@ -13,12 +13,17 @@ jest.mock('../src/controller/redis', () => ({
     },
 }))
 jest.mock('../src/database/card', () => ({ getCardsByFaction: jest.fn(async () => [{ faction: 'usa' }]) }))
-jest.mock('../src/database/message', () => ({
-    getDashboardMessages: jest.fn(async () => [{ label: '01/01', count: 3 }]),
-    getScreenshotMessages: jest.fn(async () => []),
-    getTopMessages: jest.fn(async () => [{ command: 'leo', count: 5 }]),
-    getTopUsers: jest.fn(async () => [{ username: 'Alice', count: 5 }]),
-}))
+jest.mock('../src/database/message', () => {
+    const STATS_PERIODS = ['current-month', 'last-month', 'current-year', 'last-year', 'all-time', 'daily']
+    return {
+        getDashboardMessages: jest.fn(async () => [{ label: '01/01', count: 3 }]),
+        getScreenshotMessages: jest.fn(async () => []),
+        getTopMessages: jest.fn(async () => [{ command: 'leo', count: 5 }]),
+        getTopUsers: jest.fn(async () => [{ username: 'Alice', count: 5 }]),
+        STATS_PERIODS,
+        normalizeStatsPeriod: period => (STATS_PERIODS.includes(period) ? period : 'current-month'),
+    }
+})
 
 const API = require('../src/controller/api')
 const { redis } = require('../src/controller/redis')

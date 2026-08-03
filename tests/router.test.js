@@ -20,6 +20,8 @@ jest.mock('../src/database/db', () => ({
     getProfileStats: jest.fn(),
     updateUserAdminFields: jest.fn(),
     getTopDeckRanking: jest.fn(),
+    // Re-exported from message.js; the router uses it to validate ?period.
+    STATS_PERIODS: ['current-month', 'last-month', 'current-year', 'last-year', 'all-time', 'daily'],
 }))
 jest.mock('../src/controller/synonymCache', () => ({
     invalidateSynonymCache: jest.fn(async () => {}),

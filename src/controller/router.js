@@ -15,6 +15,7 @@ const {
     getProfileStats,
     updateUserAdminFields,
     getTopDeckRanking,
+    STATS_PERIODS,
 } = require('../database/db')
 
 const path = require('path')
@@ -52,6 +53,11 @@ const {
 const axios = require('axios')
 //API
 const API = require('../controller/api')
+// The dropdown labels. The set of valid period values lives in message.js
+// (STATS_PERIODS, imported above via db) — these are the ones shown in the UI;
+// 'daily' is a valid period too but not offered here, as the dashboard's
+// mini-counters read that rolling 30-day series through the same endpoints,
+// independent of the chart.
 const STATS_PERIOD_OPTIONS = [
     {value: 'current-month', label: 'Current month'},
     {value: 'last-month', label: 'Last month'},
@@ -59,10 +65,6 @@ const STATS_PERIOD_OPTIONS = [
     {value: 'last-year', label: 'Last year'},
     {value: 'all-time', label: 'All-time'},
 ]
-// The dropdown offers the periods above; 'daily' is additionally accepted
-// (but not shown) because the dashboard's mini-counters read a rolling 30-day
-// daily series through the same stats endpoints, independent of the chart.
-const STATS_PERIODS = [...STATS_PERIOD_OPTIONS.map(option => option.value), 'daily']
 const DEFAULT_STATS_PERIOD = 'current-month'
 const topDeckPageExpiration = parseInt(process.env.CACHE_TOPDECK_PAGE_EXPIRE, 10) || 60 * 5
 
