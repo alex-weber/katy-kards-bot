@@ -173,6 +173,7 @@ describe('stats period selection', () => {
         expect(locals.periods).toEqual([
             {value: 'current-month', label: 'Current month'},
             {value: 'last-month', label: 'Last month'},
+            {value: 'current-year', label: 'This year'},
             {value: 'last-year', label: 'Last year'},
             {value: 'all-time', label: 'All-time'},
         ])

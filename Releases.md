@@ -4,6 +4,10 @@
 
 - Added a Share button to the Discord `/profile` view. It re-posts the profile card publicly in the same channel, led by a line naming who shared it (mentions disabled, so a nickname cannot ping the channel). If the bot is not allowed to post in that channel, it tells the user privately instead of failing silently.
 
+### Bug Fixes
+
+- Added a "This year" option to the dashboard's statistics period selector. When the periods moved from relative windows (last 30 days, last 12 months) to calendar ones (current month, last month, last year), the current calendar year was left out, so the months of the year so far could not be viewed on their own — only the whole previous year or all-time. "This year" shows January through the current month.
+
 ## v5.5.0
 
 ### Features

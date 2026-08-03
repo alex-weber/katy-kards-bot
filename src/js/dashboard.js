@@ -219,7 +219,7 @@ function renderTopUsers(apiData) {
 }
 
 
-const allowedPeriods = ['current-month', 'last-month', 'last-year', 'all-time']
+const allowedPeriods = ['current-month', 'last-month', 'current-year', 'last-year', 'all-time']
 
 function normalizePeriod(period) {
     return allowedPeriods.includes(period) ? period : 'current-month'

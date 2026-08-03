@@ -8,7 +8,7 @@ const profileExpiration = parseInt(process.env.REDIS_EXP_PROFILE) || 60 * 5
 // Dashboard chart periods, plus 'daily' — the rolling 30-day series the
 // mini-counters read. Each maps to a chart granularity + date window in
 // periodPlan(); 'daily' stays a fixed 30-day window.
-const STATS_PERIODS = ['current-month', 'last-month', 'last-year', 'all-time', 'daily']
+const STATS_PERIODS = ['current-month', 'last-month', 'current-year', 'last-year', 'all-time', 'daily']
 const {languages} = require('../tools/language')
 // A screenshot command is anything that asks for a deck render: a deck code,
 // which bot.js recognises by its %% prefix, or a kards.com deck link (see
@@ -330,6 +330,14 @@ function periodPlan(period, firstDate)
             granularity: 'daily',
             start: new Date(Date.UTC(year, month - 1, 1)),
             end: addUtcDays(thisMonthStart, -1),
+        }
+    }
+    if (period === 'current-year') {
+        // January of this year through the current month, one bucket per month.
+        return {
+            granularity: 'monthly',
+            start: new Date(Date.UTC(year, 0, 1)),
+            end: new Date(Date.UTC(year, month, 1)),
         }
     }
     if (period === 'last-year') {

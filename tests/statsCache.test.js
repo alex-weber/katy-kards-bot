@@ -219,6 +219,17 @@ describe('buildStatsBuckets granularity', () => {
         expect(buckets[0].fromDate.getTime()).toBe(Date.UTC(year, month - 1, 1))
     })
 
+    test('current-year is monthly from January through the current month', () => {
+        const buckets = buildStatsBuckets('current-year')
+        expect(buckets.every(b => b.granularity === 'monthly')).toBe(true)
+        expect(buckets).toHaveLength(month + 1)
+        expect(buckets[0].key).toBe(`${year}-01`)
+        expect(buckets[buckets.length - 1].key)
+            .toBe(`${year}-${String(month + 1).padStart(2, '0')}`)
+        // the current month is still in progress, so its bucket is not completed
+        expect(buckets[buckets.length - 1].completed).toBe(false)
+    })
+
     test('last-year is 12 completed monthly buckets of the previous year', () => {
         const buckets = buildStatsBuckets('last-year')
         expect(buckets).toHaveLength(12)
