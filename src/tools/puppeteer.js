@@ -102,19 +102,27 @@ function createScreenshotTaker({
     }
 
     /**
-     * Pick the Browserless key currently handling the fewest requests. The
+     * Pick a Browserless key currently handling the fewest requests. The
      * queue caps total in-flight work at keys * concurrency, so the
      * least-loaded key is always below the per-key limit.
+     *
+     * Ties are broken at random rather than always favouring the first key.
+     * Screenshots run essentially one at a time, so the load is almost always
+     * tied at zero; a deterministic tie-break would send nearly every request
+     * to a single key and burn through its quota while the others sit idle.
      *
      * @returns {{name: string, value: string}}
      */
     function leastLoadedKey() {
-        let chosen = keySlots[0]
+        let minLoad = Infinity
         for (const key of keySlots) {
-            if (keyLoad.get(key) < keyLoad.get(chosen)) chosen = key
+            const load = keyLoad.get(key)
+            if (load < minLoad) minLoad = load
         }
 
-        return chosen
+        const candidates = keySlots.filter(key => keyLoad.get(key) === minLoad)
+
+        return candidates[Math.floor(Math.random() * candidates.length)]
     }
 
     return {takeScreenshot}

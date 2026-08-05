@@ -117,6 +117,22 @@ describe('createScreenshotTaker dedup + copy', () => {
         await expect(b).resolves.toBe('deck_y')
     })
 
+    test('spreads sequential requests across keys instead of piling onto the first', async () => {
+        const used = []
+        const capture = jest.fn(async (url, key) => { used.push(key); return 'deck_real' })
+        const taker = makeTaker({ keys: ['k1', 'k2'], concurrency: 2, capture })
+
+        // one-at-a-time traffic: every request finds all keys idle (load 0)
+        for (let i = 0; i < 200; i++) await taker.takeScreenshot('deck-' + i)
+
+        const k1 = used.filter(k => k === 'k1').length
+        const k2 = used.filter(k => k === 'k2').length
+        expect(k1 + k2).toBe(200)
+        // random tie-break: both keys should get a healthy share, not ~0
+        expect(k1).toBeGreaterThan(60)
+        expect(k2).toBeGreaterThan(60)
+    })
+
     test('duplicate Browserless key values keep independent slots', async () => {
         const { capture, calls } = deferredCapture()
         const taker = makeTaker({

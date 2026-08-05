@@ -1,3 +1,9 @@
+## v5.5.2
+
+### Bug Fixes
+
+- Fixed Browserless API key rotation so the two keys share the screenshot load evenly. The "least-loaded key" selection broke ties by always taking the first key, and since screenshots run one at a time the keys were almost always tied at zero load — so nearly every request went to the first key and exhausted its quota (returning 401s once the limit was hit) while the second key sat nearly idle. Ties are now broken at random, spreading requests across all configured keys.
+
 ## v5.5.1
 
 ### Features
