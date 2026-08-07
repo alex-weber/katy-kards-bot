@@ -83,6 +83,24 @@ async function loadUser(tgCtx)
 }
 
 /**
+ * Auto-activate a new Telegram user. Every user row is created as 'pending'
+ * for the Discord Terms-of-Service gate, but Telegram has no terms flow, so
+ * pending Telegram users are activated on any interaction (text command or
+ * button tap). Only touches 'pending' users, so admin-set statuses
+ * (inactive/declined) are left alone.
+ *
+ * @param user the loaded user, mutated in place when activated
+ * @returns {Promise<void>}
+ */
+async function activatePendingUser(user)
+{
+    if (user.status !== 'pending') return
+
+    user.status = 'active'
+    await updateUser(user)
+}
+
+/**
  * React and bail for blocked users.
  *
  * @param ctx
@@ -621,6 +639,8 @@ async function telegramCallbackHandler(tgCtx)
     const userId = tgCtx.callbackQuery?.from?.id?.toString() || null
     if (!userId) return
     const user = await getUser(userId)
+    //Telegram has no Terms gate; activate a pending user on any interaction
+    await activatePendingUser(user)
 
     //this feature is not available for blocked users
     if (user.status !== 'active') {
@@ -684,10 +704,7 @@ async function telegramHandler(tgCtx, redis)
     if (!ctx.user) return
     //the Terms of Service accept flow is Discord-only; auto-activate new
     //(pending) Telegram users so their behavior is unchanged
-    if (ctx.user.status === 'pending') {
-        ctx.user.status = 'active'
-        await updateUser(ctx.user)
-    }
+    await activatePendingUser(ctx.user)
     if (checkUserStatus(ctx)) return
 
     //switch language

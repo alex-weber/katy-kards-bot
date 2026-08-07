@@ -1,3 +1,9 @@
+## v5.5.3
+
+### Bug Fixes
+
+- New Telegram users could get stuck in "pending" forever. Every user row is created as "pending" for the Discord Terms-of-Service gate, and Telegram (which has no terms flow) only flipped them to "active" when they sent a text command. Tapping an inline button first — for example the public "Show profile" button in a group — created the user through a different path that blocked them without ever activating them. Pending Telegram users are now activated on any interaction, button taps included.
+
 ## v5.5.2
 
 ### Security
