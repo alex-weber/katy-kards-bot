@@ -1,7 +1,7 @@
 const {getLanguageByInput, deckBuilderLanguages, languages} = require("../tools/language")
 const {getStats} = require("../tools/stats")
 const bot = require("./bot")
-const {getUser, updateUser, getSynonym, createMessage, getProfileStats} = require("../database/db")
+const {getUser, updateUser, getSynonym, createMessage, getProfileStats, createUserAudit} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
 const {getCards, getFiles} = require("../tools/search")
 const {getMediaGroup, Input, Markup} = require("../clients/telegram")
@@ -98,6 +98,16 @@ async function activatePendingUser(user)
 
     user.status = 'active'
     await updateUser(user)
+    //record the change in the users-page log, the same way the Discord Terms
+    //flow does, so an auto-activation shows up as 'pending -> active' instead
+    //of leaving a bare 'registered -> pending' entry that looks stuck.
+    await createUserAudit({
+        userId: user.id,
+        field: 'status',
+        oldValue: 'pending',
+        newValue: 'active',
+        actor: 'self',
+    })
 }
 
 /**

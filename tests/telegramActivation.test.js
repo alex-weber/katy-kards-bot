@@ -12,6 +12,7 @@ jest.mock('../src/database/db', () => ({
     })),
     getSynonym: jest.fn(),
     createMessage: jest.fn(async () => {}),
+    createUserAudit: jest.fn(async () => {}),
 }))
 jest.mock('../src/tools/translation/translator', () => ({
     translate: jest.fn((_lang, key) => key),
@@ -28,7 +29,7 @@ jest.mock('../src/controller/redis', () => ({
 }))
 
 const {telegramCallbackHandler} = require('../src/controller/telegramHandler')
-const {getUser, updateUser} = require('../src/database/db')
+const {getUser, updateUser, createUserAudit} = require('../src/database/db')
 
 function makeCallbackCtx(data = 'profile_show') {
     return {
@@ -52,6 +53,14 @@ test('activates a pending Telegram user on a button tap', async () => {
     // the pending user is flipped to active and persisted
     expect(updateUser).toHaveBeenCalledWith(
         expect.objectContaining({id: 1, status: 'active'}))
+    // the change is recorded in the users-page audit log
+    expect(createUserAudit).toHaveBeenCalledWith({
+        userId: 1,
+        field: 'status',
+        oldValue: 'pending',
+        newValue: 'active',
+        actor: 'self',
+    })
     // and is NOT shown the blocked alert
     expect(ctx.answerCbQuery).not.toHaveBeenCalledWith(
         'blocked', expect.anything())
@@ -66,6 +75,7 @@ test('does not activate an admin-disabled (inactive) user', async () => {
     await telegramCallbackHandler(ctx)
 
     expect(updateUser).not.toHaveBeenCalled()
+    expect(createUserAudit).not.toHaveBeenCalled()
     expect(ctx.answerCbQuery).toHaveBeenCalledWith('blocked', {show_alert: true})
     expect(ctx.editMessageText).not.toHaveBeenCalled()
 })

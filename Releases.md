@@ -2,7 +2,8 @@
 
 ### Bug Fixes
 
-- New Telegram users could get stuck in "pending" forever. Every user row is created as "pending" for the Discord Terms-of-Service gate, and Telegram (which has no terms flow) only flipped them to "active" when they sent a text command. Tapping an inline button first — for example the public "Show profile" button in a group — created the user through a different path that blocked them without ever activating them. Pending Telegram users are now activated on any interaction, button taps included.
+- Telegram auto-activations are now recorded in the Users-page change log. New users are created as "pending" for the Discord Terms-of-Service gate; Telegram has no terms flow, so its users are auto-activated on first interaction. That flip was persisted but never logged, so the change log kept showing only "registered → pending" — making activated Telegram users look permanently stuck. Auto-activations now write a "pending → active" entry, the same way the Discord Terms flow does.
+- Pending Telegram users are also activated on inline-button taps (for example the public "Show profile" button in a group), not just text commands — that path previously created and blocked the user without activating them.
 
 ## v5.5.2
 
