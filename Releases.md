@@ -1,5 +1,9 @@
 ## v5.5.3
 
+### Security
+
+- Pinned the transitive `brace-expansion` dependency (via jest) to patched versions using an `overrides` block, clearing the high-severity DoS advisory (GHSA-mh99-v99m-4gvg / GHSA-rgw5-rvv9-x895). Dev-only tooling; the production runtime was never affected.
+
 ### Bug Fixes
 
 - Telegram auto-activations are now recorded in the Users-page change log. New users are created as "pending" for the Discord Terms-of-Service gate; Telegram has no terms flow, so its users are auto-activated on first interaction. That flip was persisted but never logged, so the change log kept showing only "registered → pending" — making activated Telegram users look permanently stuck. Auto-activations now write a "pending → active" entry, the same way the Discord Terms flow does.
