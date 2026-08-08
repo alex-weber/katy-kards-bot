@@ -2,7 +2,6 @@ const { PermissionsBitField } = require('discord.js')
 const {updateUser} = require("../database/db")
 const {languages} = require("../tools/language")
 const {safeImageUrl} = require("../tools/imageUrl")
-const axios = require("axios")
 
 const deckCodeRegEx =/%%(\d{2,3}|\d{1}a)\|(\w*;){1,3}\w*/
 
@@ -138,10 +137,10 @@ async function getFileSize(url)
         throw new Error('Image host is not allowed')
     }
 
-    const response = await axios.head(safeUrl, { responseType: 'json' })
+    const response = await fetch(safeUrl, { method: 'HEAD' })
     //return 0 if the content-length header is not set
     if (!response.headers.has('content-length')) return 0
-    const fileSize = parseInt(response.headers["content-length"])
+    const fileSize = parseInt(response.headers.get('content-length'))
     // Same reason as above: the URL is not ours, so it cannot be the first
     // argument, where console.* would read it as a format string.
     console.log('image size:', safeUrl, fileSize)

@@ -1,3 +1,9 @@
+## v5.5.5
+
+### Maintenance
+
+- Replaced the `axios` HTTP client with the Node runtime's built-in `fetch`, dropping a production dependency. The handful of call sites (Steam/SteamCharts stats, the kards.com card search, Discord login, and image up/downloads) now share a small `fetchJson` helper that parses the JSON body up front, keeping the `response.data` shape the code already relied on. No behavioural change. The server-side image download keeps its per-redirect host-allowlist check — the SSRF guard that stops an allowlisted host from bouncing a fetch onto an internal address — by following redirects by hand, since `fetch` offers no per-hop hook.
+
 ## v5.5.3
 
 ### Security

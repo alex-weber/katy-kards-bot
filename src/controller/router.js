@@ -50,7 +50,7 @@ const {
     saveNodeMemoryAvailableMb,
     saveRedisMemoryAvailableMb,
 } = require('../tools/systemMetrics')
-const axios = require('axios')
+const {fetchJson} = require('../tools/fetch')
 //API
 const API = require('../controller/api')
 // The dropdown labels. The set of valid period values lives in message.js
@@ -176,7 +176,7 @@ async function handleLogin(req, res, next) {
             return res.status(400).send('Missing login token')
         }
 
-        let user = await axios.get('https://discord.com/api/users/@me', {
+        let user = await fetchJson('https://discord.com/api/users/@me', {
             headers: {
                 authorization: `${tokenType} ${accessToken}`,
             },
