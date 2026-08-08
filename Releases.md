@@ -4,15 +4,24 @@
 
 - Replaced the `axios` HTTP client with the Node runtime's built-in `fetch`, dropping a production dependency. The handful of call sites (Steam/SteamCharts stats, the kards.com card search, Discord login, and image up/downloads) now share a small `fetchJson` helper that parses the JSON body up front, keeping the `response.data` shape the code already relied on. No behavioural change. The server-side image download keeps its per-redirect host-allowlist check — the SSRF guard that stops an allowlisted host from bouncing a fetch onto an internal address — by following redirects by hand, since `fetch` offers no per-hop hook.
 
-## v5.5.3
+## v5.5.4
 
 ### Security
 
 - Pinned the transitive `brace-expansion` dependency (via jest) to patched versions using an `overrides` block, clearing the high-severity DoS advisory (GHSA-mh99-v99m-4gvg / GHSA-rgw5-rvv9-x895). Dev-only tooling; the production runtime was never affected.
 
+### Maintenance
+
+- Raised the declared engines to Node `^24.19.0` and npm `^12.0.2`.
+
 ### Bug Fixes
 
 - Telegram auto-activations are now recorded in the Users-page change log. New users are created as "pending" for the Discord Terms-of-Service gate; Telegram has no terms flow, so its users are auto-activated on first interaction. That flip was persisted but never logged, so the change log kept showing only "registered → pending" — making activated Telegram users look permanently stuck. Auto-activations now write a "pending → active" entry, the same way the Discord Terms flow does.
+
+## v5.5.3
+
+### Bug Fixes
+
 - Pending Telegram users are also activated on inline-button taps (for example the public "Show profile" button in a group), not just text commands — that path previously created and blocked the user without activating them.
 
 ## v5.5.2
