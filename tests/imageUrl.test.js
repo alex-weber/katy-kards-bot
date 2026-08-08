@@ -100,6 +100,46 @@ describe('safeImageUrl', () => {
             expect(safeImageUrl(discordUrl)).toBe(discordUrl)
         })
     })
+
+    // A local-only escape hatch for a dev uploader on http://localhost:3200,
+    // which the production guard (no port, https only) would otherwise refuse.
+    describe('IMAGE_ALLOWED_INSECURE_HOSTS', () => {
+        const originalHosts = process.env.IMAGE_ALLOWED_INSECURE_HOSTS
+        const originalNodeEnv = process.env.NODE_ENV
+        afterEach(() => {
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = originalHosts
+            process.env.NODE_ENV = originalNodeEnv
+        })
+
+        test('passes a listed http host:port through untouched, off production', () => {
+            delete process.env.NODE_ENV
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://localhost:3200/uploads/custom/20260808/x.png'))
+                .toBe('http://localhost:3200/uploads/custom/20260808/x.png')
+        })
+
+        test('is inert in production even when the host is listed', () => {
+            process.env.NODE_ENV = 'production'
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://localhost:3200/uploads/custom/x.png')).toBeNull()
+        })
+
+        test('only the exact host:port is lifted, not the bare host', () => {
+            delete process.env.NODE_ENV
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://localhost:9999/x.png')).toBeNull()
+        })
+
+        test('still refuses smuggled credentials on a listed host', () => {
+            delete process.env.NODE_ENV
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://user:pass@localhost:3200/x.png')).toBeNull()
+        })
+    })
 })
 
 // The Telegram path HEADs a stored command's image before forwarding it, which

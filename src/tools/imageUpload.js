@@ -193,7 +193,9 @@ async function uploadImageFile(filePath, expiration = 0)
     if (!hasImageHost()) return false
 
     try {
-        return await postImageFile(filePath, expiration)
+        // 'custom' files these dashboard uploads under uploads/custom/<date>/
+        // on the host, alongside the Discord-attachment re-hosts.
+        return await postImageFile(filePath, expiration, 'custom')
     } catch (error) {
         console.error('Error uploading image:', error)
 
