@@ -3,16 +3,24 @@
 // the channel, so an unchecked URL here is a request forgery with the response
 // delivered to whoever ran the command.
 
-jest.mock('axios', () => Object.assign(jest.fn(), {head: jest.fn()}))
 jest.mock('discord.js', () => ({PermissionsBitField: {Flags: {}}}))
 jest.mock('../src/database/db', () => ({updateUser: jest.fn()}))
 jest.mock('sharp', () => Object.assign(jest.fn(), {cache: jest.fn(), concurrency: jest.fn()}))
 
-const axios = require('axios')
+global.fetch = jest.fn()
+
 const {safeImageUrl} = require('../src/tools/imageUrl')
 const {downloadImageAsFile, cacheFileName} = require('../src/tools/imageUpload')
 
 const discordUrl = 'https://cdn.discordapp.com/attachments/1/2/card.png'
+
+// A Response standing in for a redirect to `location`, shaped like the one the
+// download's manual redirect loop reads (a status in the 3xx range and a
+// Headers.get('location')).
+const redirectTo = (location) => ({
+    status: 302,
+    headers: {get: (name) => (name.toLowerCase() === 'location' ? location : null)},
+})
 
 describe('safeImageUrl', () => {
     test('passes a Discord attachment through', () => {
@@ -92,6 +100,46 @@ describe('safeImageUrl', () => {
             expect(safeImageUrl(discordUrl)).toBe(discordUrl)
         })
     })
+
+    // A local-only escape hatch for a dev uploader on http://localhost:3200,
+    // which the production guard (no port, https only) would otherwise refuse.
+    describe('IMAGE_ALLOWED_INSECURE_HOSTS', () => {
+        const originalHosts = process.env.IMAGE_ALLOWED_INSECURE_HOSTS
+        const originalNodeEnv = process.env.NODE_ENV
+        afterEach(() => {
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = originalHosts
+            process.env.NODE_ENV = originalNodeEnv
+        })
+
+        test('passes a listed http host:port through untouched, off production', () => {
+            delete process.env.NODE_ENV
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://localhost:3200/uploads/custom/20260808/x.png'))
+                .toBe('http://localhost:3200/uploads/custom/20260808/x.png')
+        })
+
+        test('is inert in production even when the host is listed', () => {
+            process.env.NODE_ENV = 'production'
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://localhost:3200/uploads/custom/x.png')).toBeNull()
+        })
+
+        test('only the exact host:port is lifted, not the bare host', () => {
+            delete process.env.NODE_ENV
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://localhost:9999/x.png')).toBeNull()
+        })
+
+        test('still refuses smuggled credentials on a listed host', () => {
+            delete process.env.NODE_ENV
+            process.env.IMAGE_ALLOWED_INSECURE_HOSTS = 'localhost:3200'
+
+            expect(safeImageUrl('http://user:pass@localhost:3200/x.png')).toBeNull()
+        })
+    })
 })
 
 // The Telegram path HEADs a stored command's image before forwarding it, which
@@ -103,15 +151,15 @@ describe('getFileSize', () => {
 
     test('never issues the request for a refused host', async () => {
         await expect(getFileSize('http://127.0.0.1:9000/')).rejects.toThrow(/not allowed/i)
-        expect(axios.head).not.toHaveBeenCalled()
+        expect(fetch).not.toHaveBeenCalled()
     })
 
     test('checks an allowed host over TLS', async () => {
-        axios.head.mockResolvedValueOnce({headers: {has: () => false}})
+        fetch.mockResolvedValueOnce({headers: {has: () => false}})
 
         await getFileSize(discordUrl)
 
-        expect(axios.head).toHaveBeenCalledWith(discordUrl, expect.anything())
+        expect(fetch).toHaveBeenCalledWith(discordUrl, expect.objectContaining({method: 'HEAD'}))
     })
 })
 
@@ -167,20 +215,30 @@ describe('downloadImageAsFile', () => {
     test('never issues the request for a refused host', async () => {
         await expect(downloadImageAsFile('http://169.254.169.254/latest/meta-data/'))
             .rejects.toThrow(/not allowed/i)
-        expect(axios).not.toHaveBeenCalled()
+        expect(fetch).not.toHaveBeenCalled()
     })
 
     // An allowlisted host answering 302 would otherwise reach anywhere at all.
-    test('re-checks the host on every redirect hop', async () => {
-        axios.mockRejectedValueOnce(new Error('stop here'))
+    test('refuses a redirect to a host off the allowlist', async () => {
+        fetch.mockResolvedValueOnce(redirectTo('https://169.254.169.254/x.png'))
 
-        await expect(downloadImageAsFile(discordUrl)).rejects.toThrow()
+        await expect(downloadImageAsFile(discordUrl)).rejects.toThrow(/not allowed/i)
+    })
 
-        const {beforeRedirect} = axios.mock.calls[0][0]
-        expect(() => beforeRedirect({protocol: 'https:', hostname: 'cdn.discordapp.com'})).not.toThrow()
-        expect(() => beforeRedirect({protocol: 'https:', hostname: '169.254.169.254'}))
-            .toThrow(/not allowed/i)
-        expect(() => beforeRedirect({protocol: 'http:', hostname: 'cdn.discordapp.com'}))
-            .toThrow(/not allowed/i)
+    test('refuses a redirect that drops off TLS', async () => {
+        fetch.mockResolvedValueOnce(redirectTo('http://cdn.discordapp.com/x.png'))
+
+        await expect(downloadImageAsFile(discordUrl)).rejects.toThrow(/not allowed/i)
+    })
+
+    test('follows a redirect that stays on an allowed host', async () => {
+        fetch
+            .mockResolvedValueOnce(redirectTo('https://media.discordapp.net/x.png'))
+            .mockRejectedValueOnce(new Error('stop here'))
+
+        // The second hop is allowed, so the download proceeds to it and only
+        // then fails — not on the allowlist check.
+        await expect(downloadImageAsFile(discordUrl)).rejects.toThrow('stop here')
+        expect(fetch).toHaveBeenCalledTimes(2)
     })
 })

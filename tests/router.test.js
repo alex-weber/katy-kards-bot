@@ -79,13 +79,12 @@ jest.mock('../src/tools/search', () => ({
     isManager: jest.fn(() => false),
     checkSynonymKey: jest.fn(key => /^[\sa-z0-9_-]+$/.test(key)),
 }))
-jest.mock('axios', () => ({ get: jest.fn() }))
+global.fetch = jest.fn()
 
 const path = require('path')
 const db = require('../src/database/db')
 const {getSynonym, createSynonym, updateSynonym, deleteSynonym} = db
 const API = require('../src/controller/api')
-const axios = require('axios')
 const { isManager} = require('../src/tools/search')
 const { resolveAvatarUrl } = require('../src/tools/avatar')
 const { invalidateSynonymCache } = require('../src/controller/synonymCache')
@@ -804,7 +803,7 @@ describe('system metrics', () => {
 
 describe('login / logout', () => {
     test('handleLogin stores the Discord user in a regenerated session', async () => {
-        axios.get.mockResolvedValueOnce({ data: { id: '111', username: 'Me' } })
+        fetch.mockResolvedValueOnce({ json: async () => ({ id: '111', username: 'Me' }) })
         db.getUser.mockResolvedValueOnce({ id: 5, discordId: '111', role: 'GOD' })
         isManager.mockReturnValueOnce(true)
 

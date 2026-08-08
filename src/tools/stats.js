@@ -1,4 +1,4 @@
-const axios = require("axios")
+const {fetchJson} = require("./fetch")
 const {translate} = require("./translation/translator")
 
 /**
@@ -9,7 +9,7 @@ async function formatStats()
 {
     const statsURL = 'https://steamcharts.com/app/544810/chart-data.json'
     let output = ''
-    const response = await axios.get(statsURL)
+    const response = await fetchJson(statsURL)
     const body = response.data
     const divider = parseInt(process.env.STATS_DIVIDER) || 500
     for (let i = 1; i < 25; i++)
@@ -33,7 +33,7 @@ async function formatStats()
 async function getPlayers(language)
 {
     const steamURL = 'https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=544810'
-    const response = await axios.get(steamURL)
+    const response = await fetchJson(steamURL)
     const date = new Date()
     let output = translate(language, 'time') +': '+
         date.getUTCHours().toString().padStart(2, "0") +':'+

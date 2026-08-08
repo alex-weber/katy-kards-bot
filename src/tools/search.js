@@ -1,4 +1,4 @@
-const axios = require("axios")
+const {fetchJson} = require("./fetch")
 const query = require("./query")
 const dictionary = require('./dictionary')
 const {translate, getReservedWords} = require('./translation/translator.js')
@@ -209,15 +209,16 @@ async function getCards(variables, timeout=3000)
     const label = 'getCards_' + Date.now()
     console.time(label)
     //search on kards.com
-    const response = await axios.post(
-        apiURL,
-        {
-            "operationName": "getCards",
-            "variables": variables,
-            "query": query
-        },
-        {timeout: timeout} //wait for the response
-    ).catch(error =>
+    const response = await fetchJson(apiURL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            operationName: 'getCards',
+            variables: variables,
+            query: query
+        }),
+        signal: AbortSignal.timeout(timeout) //wait for the response
+    }).catch(error =>
     {
         console.log('request to kards.com failed ', error?.message)
 

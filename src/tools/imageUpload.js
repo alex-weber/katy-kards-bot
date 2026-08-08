@@ -1,10 +1,11 @@
-const axios = require('axios')
 const fs = require('fs')
 const crypto = require('crypto')
 const sharp = require('sharp')
 const path = require('path')
+const { Readable } = require('stream')
 const { pipeline } = require('stream/promises')
 const { safeImageUrl, isAllowedImageHost } = require('./imageUrl')
+const { fetchJson } = require('./fetch')
 
 // Configure sharp to use less memory
 sharp.cache({ memory: 50 }) // Limit cache to 50MB
@@ -65,26 +66,54 @@ async function downloadImageAsFile(url, language = null) {
         return filePath
     } catch {}
 
-    const response = await axios({
-        url: safeUrl,
+    const response = await fetchAllowingRedirects(safeUrl, {
         method: 'GET',
-        responseType: 'stream',
-        timeout: 10000,
-        // An allowlisted host answering with a redirect would otherwise walk
-        // straight past the check above, so every hop is validated again.
-        beforeRedirect: (options) => {
-            if (options.protocol !== 'https:' || !isAllowedImageHost(String(options.hostname).toLowerCase())) {
-                throw new Error('Image host redirected to a host that is not allowed')
-            }
-        }
+        signal: AbortSignal.timeout(10000),
     })
 
     await pipeline(
-        response.data,
+        Readable.fromWeb(response.body),
         fs.createWriteStream(filePath)
     )
 
     return filePath
+}
+
+/**
+ * A GET that follows redirects by hand so each hop can be re-checked against
+ * the image-host allowlist.
+ *
+ * fetch() follows redirects on its own but gives no hook to vet where they
+ * lead, so they are followed here with `redirect: 'manual'`: an allowlisted
+ * host that answers a 3xx still cannot walk the download off to a host — or off
+ * TLS — that safeImageUrl() would have refused up front.
+ *
+ * @param safeUrl a URL that already passed safeImageUrl()
+ * @param options fetch() options; `redirect` is set here and cannot be overridden
+ * @param maxRedirects
+ * @returns {Promise<Response>}
+ */
+async function fetchAllowingRedirects(safeUrl, options, maxRedirects = 5) {
+    let url = safeUrl
+
+    for (let hop = 0; ; hop++) {
+        const response = await fetch(url, { ...options, redirect: 'manual' })
+
+        // Anything that is not a redirect is the response the caller asked for.
+        const location = response.status >= 300 && response.status < 400
+            ? response.headers.get('location')
+            : null
+        if (!location) return response
+
+        if (hop >= maxRedirects) throw new Error('Image host redirected too many times')
+
+        // Same check safeImageUrl() runs on the first URL, applied to each hop.
+        const next = new URL(location, url)
+        if (next.protocol !== 'https:' || !isAllowedImageHost(next.hostname.toLowerCase())) {
+            throw new Error('Image host redirected to a host that is not allowed')
+        }
+        url = next.href
+    }
 }
 
 /**
@@ -123,13 +152,17 @@ async function postImageFile(filePath, expiration, hostPath = null)
         postData.image = imageBuffer.toString('base64')
         imageBuffer = null // Release immediately after conversion
 
-        const response = await axios.post(process.env.IMG_UPLOAD_API_ENDPOINT, postData)
+        const response = await fetchJson(process.env.IMG_UPLOAD_API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(postData),
+        })
 
         // Clear base64 string from memory after upload
         postData.image = null
 
         if (response.status !== 200) {
-            console.error('Error uploading image:', response.message)
+            console.error('Error uploading image:', response.statusText)
             return false
         }
         console.log('Image uploaded successfully:', response.data.url)
@@ -160,7 +193,9 @@ async function uploadImageFile(filePath, expiration = 0)
     if (!hasImageHost()) return false
 
     try {
-        return await postImageFile(filePath, expiration)
+        // 'custom' files these dashboard uploads under uploads/custom/<date>/
+        // on the host, alongside the Discord-attachment re-hosts.
+        return await postImageFile(filePath, expiration, 'custom')
     } catch (error) {
         console.error('Error uploading image:', error)
 

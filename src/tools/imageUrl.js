@@ -40,6 +40,30 @@ function isAllowedImageHost(hostname) {
 }
 
 /**
+ * Origins allowed over plain http and on a non-default port — a local
+ * development escape hatch, nothing more. The guard below refuses both a port
+ * and http, which is right for the public image host but makes a uploader
+ * running on http://localhost:3200 unreachable. Listing that exact origin
+ * (IMAGE_ALLOWED_INSECURE_HOSTS=localhost:3200) lifts those two requirements
+ * for it alone.
+ *
+ * Double-gated so it cannot soften production: the list is consulted only when
+ * NODE_ENV is not 'production' (Heroku sets that), and only the exact host[:port]
+ * entries named are affected. Left unset, as production leaves it, the guard is
+ * unchanged.
+ *
+ * @returns {string[]} lower-case host[:port] values to pass through as-is
+ */
+function insecureDevHosts() {
+    if (process.env.NODE_ENV === 'production') return []
+
+    return (process.env.IMAGE_ALLOWED_INSECURE_HOSTS || '')
+        .split(',')
+        .map(host => host.trim().toLowerCase())
+        .filter(Boolean)
+}
+
+/**
  * The URL to fetch, or null when this one may not be requested at all.
  *
  * An explicit port is refused as well: the allowlisted hosts all serve images
@@ -57,7 +81,18 @@ function safeImageUrl(value) {
     }
 
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
-    if (parsed.username || parsed.password || parsed.port) return null
+    // Smuggled credentials are refused even for a dev host below.
+    if (parsed.username || parsed.password) return null
+
+    // Local-development escape hatch (see insecureDevHosts): an explicitly
+    // listed origin is returned untouched — its port kept and no TLS upgrade —
+    // so a uploader on http://localhost:3200 is reachable. Never active in
+    // production. `host` is hostname[:port], so the entry must include the port.
+    if (insecureDevHosts().includes(parsed.host.toLowerCase())) {
+        return parsed.toString()
+    }
+
+    if (parsed.port) return null
     if (!isAllowedImageHost(parsed.hostname.toLowerCase())) return null
 
     // Fetch over TLS even if an older stored command still says http://.
