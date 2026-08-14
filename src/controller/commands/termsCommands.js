@@ -99,7 +99,7 @@ async function sendTermsPrompt(ctx)
 }
 
 /**
- * `!terms` — show the "Read Terms" prompt.
+ * `/terms` — show the "Read Terms" prompt.
  *
  * @param ctx
  * @returns {Promise<boolean>}

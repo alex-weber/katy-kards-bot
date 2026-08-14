@@ -1,3 +1,9 @@
+## v5.5.6
+
+### Bug Fixes
+
+- Removed obsolete text-command wording from the Terms of Service copy. The `termsExplain` text still described the bot as only reading messages that start with a command prefix — behaviour from before the migration to slash commands — and the `termsDeclined` message told users to type `!terms` to review. The stale sentence is gone and the reference now points at `/terms`, updated across the `en`, `de`, and `ru` locales (the other languages fall back to English).
+
 ## v5.5.5
 
 ### Maintenance
