@@ -305,6 +305,17 @@ describe('error handling', () => {
             flags: MessageFlags.Ephemeral,
         })
     })
+
+    test('explains a Missing Access (50001) failure instead of the generic note', async () => {
+        const missingAccess = Object.assign(new Error('Missing Access'), {code: 50001})
+        discordHandler.mockRejectedValueOnce(missingAccess)
+        const interaction = makeInteraction({commandName: 'search', options: {query: 'x'}})
+
+        await handleSlashCommand(interaction, client, redis)
+
+        const {content} = interaction.editReply.mock.calls[0][0]
+        expect(content).toMatch(/permission to post in this channel/)
+    })
 })
 
 describe('handleSlashModal', () => {

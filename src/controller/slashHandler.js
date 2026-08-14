@@ -177,7 +177,7 @@ async function handleSlashModal(interaction, client, redis)
         await routeThroughHandler(interaction, client, redis, prefix, value)
     } catch (error) {
         console.error('slash modal error:', interaction.customId, error)
-        await respondError(interaction)
+        await respondError(interaction, error)
     }
 
     return true
@@ -333,16 +333,30 @@ async function replyTerms(interaction, redis)
     })
 }
 
+//Discord API error code for "Missing Access" — raised when the bot tries to
+//post in a channel it can't see or lacks Send Messages in. Common when a slash
+//command is run (or user-installed) in a channel where the bot has no perms.
+const MISSING_ACCESS = 50001
+
 /**
  * Report a failure back to the user without crashing, whatever reply state the
- * interaction is in.
+ * interaction is in. A 50001 (Missing Access) gets a specific, actionable note
+ * instead of the generic message: the command itself worked, we just can't
+ * post the result into that channel, so tell the user how to fix it. The reply
+ * is always ephemeral / on the interaction, which succeeds even when the
+ * channel send that caused the error did not.
  *
  * @param interaction
+ * @param error the caught error, used to tailor the message
  * @returns {Promise<void>}
  */
-async function respondError(interaction)
+async function respondError(interaction, error)
 {
-    const content = 'Oops... Something went wrong...'
+    const content = error?.code === MISSING_ACCESS
+        ? "I don't have permission to post in this channel. Ask a moderator " +
+          "to grant me the \"Send Messages\" permission here, or run the " +
+          "command in a channel where I can post."
+        : 'Oops... Something went wrong...'
     try {
         if (interaction.deferred) return await interaction.editReply({content})
         if (interaction.replied) {
@@ -403,7 +417,7 @@ async function handleSlashCommand(interaction, client, redis)
         }
     } catch (error) {
         console.error('slash command error:', interaction.commandName, error)
-        await respondError(interaction)
+        await respondError(interaction, error)
     }
 }
 
