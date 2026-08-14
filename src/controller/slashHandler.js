@@ -152,9 +152,10 @@ async function showDeckModal(interaction, redis)
     const user = await loadGatedUser(interaction, redis)
     if (!user) return
 
+    const t = key => translate(user.language, key)
     await interaction.showModal(buildTextModal(
-        'slash_deck_modal', 'Deck screenshot', 'code', 'Deck link or import code',
-        TextInputStyle.Paragraph, 'A kards.com deck link or an import code'))
+        'slash_deck_modal', t('deckModalTitle'), 'code', t('deckModalInputLabel'),
+        TextInputStyle.Paragraph, t('deckModalInputPlaceholder')))
 }
 
 /**
@@ -211,8 +212,9 @@ async function replyCommands(interaction)
     const text = interaction.options.getString('text') || ''
     const chunks = await buildCommandList(('commands ' + text).trim())
     if (!chunks) {
+        const user = await getUser(interaction.user.id)
         return await interaction.reply({
-            content: 'No commands found',
+            content: translate(user.language, 'noCommands'),
             flags: MessageFlags.Ephemeral,
         })
     }
