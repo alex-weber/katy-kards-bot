@@ -3,6 +3,7 @@
   "search": "Cards found",
   "stats": "Last 24 hours",
   "error": "Oops... Something went wrong...",
+  "missingAccess": "I don't have permission to post in this channel. Ask a moderator to grant me the \"Send Messages\" permission here, or run the command in a channel where I can post.",
   "limit": ", showing ",
   "noshow": ", refusing to show anything, please make a more precise search request. Do you really want to flood the chat with all the cards?",
   "time": "Time now",

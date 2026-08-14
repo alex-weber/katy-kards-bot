@@ -346,17 +346,25 @@ const MISSING_ACCESS = 50001
  * is always ephemeral / on the interaction, which succeeds even when the
  * channel send that caused the error did not.
  *
+ * Both messages are localised to the invoking user's language. The user is
+ * re-loaded here (defensively — this is the error path) rather than threaded
+ * down from each catch site; on failure we fall back to English.
+ *
  * @param interaction
  * @param error the caught error, used to tailor the message
  * @returns {Promise<void>}
  */
 async function respondError(interaction, error)
 {
+    let language = 'en'
+    try {
+        language = (await getUser(interaction.user.id)).language
+    } catch {
+        //DB unreachable (possibly the cause of the original error) -> English
+    }
     const content = error?.code === MISSING_ACCESS
-        ? "I don't have permission to post in this channel. Ask a moderator " +
-          "to grant me the \"Send Messages\" permission here, or run the " +
-          "command in a channel where I can post."
-        : 'Oops... Something went wrong...'
+        ? translate(language, 'missingAccess')
+        : translate(language, 'error')
     try {
         if (interaction.deferred) return await interaction.editReply({content})
         if (interaction.replied) {
