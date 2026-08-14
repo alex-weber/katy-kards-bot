@@ -1,5 +1,9 @@
 ## v5.5.6
 
+### Security
+
+- Pinned the transitive `js-yaml` dependency (via jest) to `3.15.1` using the `overrides` block, clearing the high-severity quadratic-CPU advisory (GHSA-5p4m-2wfm-xmqj) on the `!!omap` parser. Dev-only tooling; the production runtime was never affected. The remaining `extract-zip` advisory in the puppeteer-core chain is deferred: the fix is a breaking major bump, and the vulnerable browser-download/extract path is never exercised — the bot connects to a remote Browserless instance rather than downloading a browser.
+
 ### Bug Fixes
 
 - Removed obsolete text-command wording from the Terms of Service copy. The `termsExplain` text still described the bot as only reading messages that start with a command prefix — behaviour from before the migration to slash commands — and the `termsDeclined` message told users to type `!terms` to review. The stale sentence is gone and the reference now points at `/terms`, updated across the `en`, `de`, and `ru` locales (the other languages fall back to English).
