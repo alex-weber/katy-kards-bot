@@ -1,3 +1,9 @@
+## v5.5.7
+
+### Bug Fixes
+
+- Fixed the alt-art gallery pagination breaking after certain commands. Any command starting with `alt` (e.g. an alias typo like `alt art` or `alt zhukov` that matched no custom command) was cached verbatim as its own gallery page with a dead `next-message` link, so the "Next" button stopped working. `handleAlt` now normalises the command: only `alt` plus an offset (`alt`, `alt10`, `alt20`…) is treated as valid pagination; anything else collapses to the first page (`alt`), keeping every page on the single `alt → alt10 → alt20` cache chain. Custom aliases are unaffected — they are still resolved before the gallery handler runs. Existing phantom keys were purged from the cache.
+
 ## v5.5.6
 
 ### Security

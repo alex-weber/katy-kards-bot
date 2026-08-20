@@ -89,24 +89,32 @@ async function handleAlt(ctx)
     const {message, client, redis, language, limit, user} = ctx
     if (!ctx.command.startsWith('alt')) return false
 
+    // Custom aliases (e.g. "alt heinz") are resolved upstream by
+    // resolveSynonym, so anything reaching here is a gallery request. Only
+    // "alt" + an offset (alt, alt10, alt20…) is valid pagination; anything
+    // else ("alt art", "alt not_a_key") collapses to the first page. This
+    // keeps the cache key on the alt/alt10/alt20 chain and stops phantom keys
+    // like "alt art" being created with a dead "next-message" link.
+    const command = /^alt\d*$/.test(ctx.command) ? ctx.command : 'alt'
+
     // alt pages are just card images, so the cache key is language-agnostic.
     // This keeps the linked list in one branch: the first "alt" is sent in the
     // user's language, but paged-in pages are forced to the default language by
     // resolveButtonCommand, which would otherwise split the chain across keys.
     const cacheKey = cacheKeyPrefix + getChannelScope(message) +
-        'alt:' + ctx.command
+        'alt:' + command
     if (await redis.exists(cacheKey)) {
         const response = await redis.json.get(cacheKey, '$')
         console.log('serving alt from cache', cacheKey)
         if (await forwardCachedMessage(
-            client, response, message, {language, query: ctx.command})) {
+            client, response, message, {language, query: command})) {
             // forward() drops the page's "Next" button, so re-attach one by
             // following the cached "next-message" link (alt -> alt10 -> ...).
             // It lives on its own message (a forward can't carry components);
             // the zero-width space keeps it non-empty so the click handler can
             // strip the button without emptying the message.
             if (response['next-message'] && isBotCommandChannel(message)) {
-                const offset = parseInt(ctx.command.replace('alt', '')) || 0
+                const offset = parseInt(command.replace('alt', '')) || 0
                 await message.channel.send({
                     content: '​',
                     components: getButtonRow(translate(language, 'next'),
@@ -127,7 +135,7 @@ async function handleAlt(ctx)
         return true
     }
 
-    let offset = parseInt(ctx.command.replace('alt', ''))
+    let offset = parseInt(command.replace('alt', ''))
     if (isNaN(offset) || offset > files.length) offset = 0
     let last = offset + limit
     if (last > files.length) last = files.length
