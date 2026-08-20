@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+const { prisma } = require('./prisma')
 
 const cardStats = {
     created: 0,
@@ -184,9 +183,7 @@ async function getCardsDB(data, skip = 0)
         orderBy: {
             kredits: 'asc',
         },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 async function getCardsByFaction()

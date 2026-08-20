@@ -1,16 +1,14 @@
 const mockFindMany = jest.fn(async () => [])
-const mockDisconnect = jest.fn(async () => {})
 
-jest.mock('@prisma/client', () => ({
-    PrismaClient: jest.fn(() => ({
+jest.mock('../src/database/prisma', () => ({
+    prisma: {
         user: {
             findMany: mockFindMany,
             findUnique: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
         },
-        $disconnect: mockDisconnect,
-    })),
+    },
 }))
 
 const {getUsers} = require('../src/database/user')
@@ -18,7 +16,6 @@ const {getUsers} = require('../src/database/user')
 describe('getUsers', () => {
     beforeEach(() => {
         mockFindMany.mockClear()
-        mockDisconnect.mockClear()
     })
 
     test('inactive status filter matches exact inactive status', async () => {

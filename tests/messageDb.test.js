@@ -21,13 +21,12 @@ jest.mock('../src/controller/redis', () => ({
     },
 }))
 
-jest.mock('@prisma/client', () => ({
-    PrismaClient: jest.fn(() => ({
+jest.mock('../src/database/prisma', () => ({
+    prisma: {
         message: { count: mockCount, findMany: mockFindMany, findFirst: mockFindFirst, groupBy: mockGroupBy, create: mockCreate },
         user: { findMany: mockUserFindMany },
         $queryRaw: mockQueryRaw,
-        $disconnect: jest.fn(),
-    })),
+    },
     Prisma: {
         join: values => values,
     },
