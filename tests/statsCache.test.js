@@ -16,9 +16,9 @@ jest.mock('../src/controller/redis', () => ({
     },
 }))
 
-jest.mock('@prisma/client', () => {
+jest.mock('../src/database/prisma', () => {
     return {
-        PrismaClient: jest.fn().mockImplementation(() => ({
+        prisma: {
             message: {
                 groupBy: jest.fn(async args => {
                     mockGroupByCalls.push(args)
@@ -113,8 +113,7 @@ jest.mock('@prisma/client', () => {
                     {content: 'is2', position: 2},
                 ]
             }),
-            $disconnect: jest.fn(async () => {}),
-        })),
+        },
         Prisma: {
             join: values => values,
         },

@@ -1,3 +1,10 @@
+## v5.6.0
+
+### Maintenance
+
+- Upgraded Prisma from v6 to v7 (`prisma`/`@prisma/client` `7.9.1`). Prisma 7 removes the bundled Rust query engine in favour of driver adapters, so the app now connects through `@prisma/adapter-pg` (node-postgres). Configuration moved out of the schema into a new `prisma.config.ts` (the datasource `url` is no longer read from `schema.prisma`; the CLI reads it there, the running app passes it to the adapter). The six per-file `new PrismaClient()` instances were consolidated into a single shared client (`src/database/prisma.js`) — one connection pool — and the per-query `.finally(() => prisma.$disconnect())` calls were removed, since under a driver adapter `$disconnect()` closes the pool and would break the next query; the pool is now closed once on shutdown (the existing SIGINT/SIGTERM path). The legacy `prisma-client-js` generator is kept (it still emits CommonJS to `@prisma/client`, matching this no-build project); the new `prisma-client` generator was not adopted because it emits TypeScript that would require a compile step. Note: this upgrade does **not** clear the `deepmerge-ts` advisory (GHSA-ggr8-5vv4-36mx) — Prisma 7's `@prisma/config` still pins the vulnerable `deepmerge-ts@7.1.5`, and it remains confined to the build-time CLI (the runtime `@prisma/client` does not include it).
+- Added a `start:local` npm script (`node --env-file=.env src/index.js`) for local development. The runtime app reads `process.env.*` directly and never loaded `.env` on its own — production works because the platform injects config vars, but a plain `npm start` locally left `DISCORD_TOKEN`, `SESSION_SECRET`, etc. undefined (hence the `TokenInvalid` and `express-session deprecated req.secret` noise). `npm run start:local` uses Node's native `--env-file` to load `.env` with no code change and no dotenv dependency at runtime; the production `start` script is unchanged, so the platform still supplies env vars there. Only the Prisma CLI loads `.env` separately, via `import "dotenv/config"` in `prisma.config.ts`.
+
 ## v5.5.7
 
 ### Bug Fixes

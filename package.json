@@ -6,6 +6,8 @@
   "scripts": {
     "test": "jest",
     "start": "node src/index.js",
+    "start:local": "node --env-file=.env src/index.js",
+    "postinstall": "prisma generate",
     "heroku-postbuild": "npx prisma generate"
   },
   "keywords": [
@@ -18,10 +20,12 @@
   "license": "MIT",
   "dependencies": {
     "@napi-rs/canvas": "0.1.95",
-    "@prisma/client": "^6.16.2",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "compression": "^1.8.1",
     "connect-redis": "^7.1.1",
     "discord.js": "^14.26.2",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "express-session": "^1.19.0",
@@ -30,7 +34,7 @@
     "lusca": "^1.7.0",
     "multer": "^2.2.0",
     "pg": "^8.16.3",
-    "prisma": "^6.11.1",
+    "prisma": "^7.9.1",
     "pug": "^3.0.3",
     "puppeteer-core": "^24.12.1",
     "redis": "5.12.1",

@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+const { prisma } = require('./prisma')
 const ROLE_PRIORITY = Object.freeze({
     GOD: 0,
     VIP: 1,
@@ -17,10 +16,7 @@ async function createUser(data)
 {
     const user = await prisma.user.create({
         data: data
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
-
+    })
     // Record the registration in the users-page change log, so a brand-new
     // account shows up there the same way a later status/role change would.
     // Marked self-initiated: a user row is created the first time someone
@@ -47,9 +43,7 @@ async function getUser(discordId)
         where: {
             discordId: discordId,
         },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
     if (!User) {
         User = await createUser({
             discordId: discordId,
@@ -62,9 +56,7 @@ async function getUser(discordId)
             tdWins: 0,
             tdDraws: 0,
             tdLoses: 0,
-        }).
-        catch((e) => { throw e }).
-        finally(async () => { await prisma.$disconnect() })
+        })
     }
 
     return User
@@ -90,9 +82,7 @@ async function getUserById(id)
             role: true,
             mode: true,
         },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 async function getUsers({ page = 1, pageSize = 50, username, discordId, role, status, mode } = {})
@@ -150,10 +140,7 @@ async function getUsers({ page = 1, pageSize = 50, username, discordId, role, st
                 },
             },
         }
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
-
+    })
     const totalCount = allUsers.length
     const users = sortUsersByRolePriority(allUsers).slice((p - 1) * size, p * size)
 
@@ -208,10 +195,7 @@ async function getUserStatusCounts()
         }),
         prisma.user.count(),
         prisma.user.count({ where: { createdAt: { gte: startOfUtcToday() } } }),
-    ]).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
-
+    ])
     const counts = { total, active: 0, pending: 0, declined: 0, banned: 0, newToday }
     for (const row of grouped) {
         const status = (row.status || '').toLowerCase()
@@ -242,9 +226,7 @@ async function createUserAudit({ userId, field, oldValue, newValue, actor })
             newValue: newValue ?? null,
             actor,
         },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 /**
@@ -264,9 +246,7 @@ async function getRecentUserAudits(limit = 20)
                 select: { id: true, name: true, discordId: true },
             },
         },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 async function updateUserAdminFields(id, data)
@@ -283,9 +263,7 @@ async function updateUserAdminFields(id, data)
             role: true,
             mode: true,
         }
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 /**
@@ -299,9 +277,7 @@ async function updateUser(User)
     return await prisma.user.update({
         where: { id: User.id },
         data: User
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 module.exports = {

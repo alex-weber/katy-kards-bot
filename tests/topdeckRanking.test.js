@@ -1,10 +1,9 @@
-jest.mock('@prisma/client', () => ({
-    PrismaClient: jest.fn(() => ({
+jest.mock('../src/database/prisma', () => ({
+    prisma: {
         user: { findMany: jest.fn() },
         topdeck: {},
         card: {},
-        $disconnect: jest.fn(),
-    })),
+    },
 }))
 
 const {buildTopDeckRanking} = require('../src/database/topdeck')

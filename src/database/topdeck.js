@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+const { prisma } = require('./prisma')
 
 /**
  *
@@ -14,9 +13,7 @@ async function getOpenTopDeck(channelID)
             state: 'open',
             channelID: channelID,
         },
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 /**
@@ -29,9 +26,7 @@ async function createTopDeck(data)
 
     return await prisma.topdeck.create({
         data: data
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 /**
@@ -50,9 +45,7 @@ async function updateTopDeck(td)
             loser: td.loser,
             log: td.log,
         }
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
 }
 
 /**
@@ -76,9 +69,7 @@ async function getRandomCard(td)
         }
     let cards = await prisma.card.findMany({
         where: data
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
+    })
     //shuffle the found cards
     let position = Math.floor(Math.random() * cards.length)
 
@@ -147,10 +138,7 @@ async function getTopDeckRanking(limit = 100)
             tdLoses: true,
             tdDraws: true,
         }
-    }).
-    catch((e) => { throw e }).
-    finally(async () => { await prisma.$disconnect() })
-
+    })
     if (!users) return false
 
     return buildTopDeckRanking(users, limit)

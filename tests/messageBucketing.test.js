@@ -14,12 +14,12 @@ jest.mock('../src/controller/redis', () => ({
     },
 }))
 
-jest.mock('@prisma/client', () => ({
-    PrismaClient: jest.fn(() => ({
+jest.mock('../src/database/prisma', () => ({
+    prisma: {
         message: { findMany: mockFindMany, findFirst: mockFindFirst, groupBy: jest.fn(), count: jest.fn() },
         user: { findMany: jest.fn() },
-        $disconnect: jest.fn(),
-    })),
+    },
+    Prisma: { join: values => values },
 }))
 
 const { getDashboardMessages } = require('../src/database/message')
