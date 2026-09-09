@@ -61,7 +61,13 @@ async function hasWritePermissions(client, message, redis)
 
     const permissions = message.channel.permissionsFor(client.user.id)
 
+    //ViewChannel must be checked too: without it Discord rejects a message
+    //POST with error 50001 (Missing Access) rather than 50013 (Missing
+    //Permissions), even when SendMessages is granted at the role level. Since
+    //the channel sends are fire-and-forget, a missed ViewChannel here surfaced
+    //as an unhandledRejection instead of being caught by this gate.
     if (!permissions ||
+        !permissions.has(PermissionsBitField.Flags.ViewChannel) ||
         !permissions.has(PermissionsBitField.Flags.SendMessages) ||
         !permissions.has(PermissionsBitField.Flags.AttachFiles))
     {
