@@ -1,3 +1,9 @@
+## v5.6.1
+
+### Bug Fixes
+
+- Reduced log output that was triggering Heroku `Error L10 (output buffer overflow)`, where the dyno writes to stdout/stderr faster than Logplex can drain it and log lines are dropped. The process-level error handlers in `src/index.js` were amplifying a single recurring failure into a multi-line burst: `unhandledRejection` logged the entire `promise` object as well as the reason (a huge multi-line entry), and both an `uncaughtException` and an `uncaughtExceptionMonitor` listener were registered, so Node logged every uncaught error twice. The redundant `uncaughtExceptionMonitor` listener was removed, and both handlers now log `err.stack`/`reason.stack` rather than the full objects. The Redis `error` handler — which fires repeatedly during a reconnect storm — is now throttled to one line per 10 seconds, appending a count of suppressed errors so a persistent problem is still visible. No behavioural change; logging volume only.
+
 ## v5.6.0
 
 ### Maintenance

@@ -232,19 +232,37 @@ if (telegramClient) startTelegramClient().then()
 client.on('error', error => {
     console.error(error)
 })
-redis.on('error', err => console.error('Redis Client Error', err))
-//prevent the app from crashing
-process.on('unhandledRejection', (reason, promise) =>
+// Redis reconnect storms can emit the same error many times per second, which
+// overflows Heroku's log buffer (L10). Throttle to one line every 10s and count
+// what was suppressed so a persistent problem is still visible.
+let lastRedisErrorAt = 0
+let suppressedRedisErrors = 0
+redis.on('error', err =>
 {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+    const now = Date.now()
+    if (now - lastRedisErrorAt < 10000) {
+        suppressedRedisErrors++
+        return
+    }
+    const suffix = suppressedRedisErrors
+        ? ` (+${suppressedRedisErrors} more suppressed in the last 10s)`
+        : ''
+    console.error('Redis Client Error:', err?.message ?? err, suffix)
+    lastRedisErrorAt = now
+    suppressedRedisErrors = 0
 })
+//prevent the app from crashing
+// Log the reason's stack, not the whole promise object: dumping the promise
+// produces huge multi-line entries that contribute to L10 buffer overflows.
+process.on('unhandledRejection', reason =>
+{
+    console.error('Unhandled Rejection:', reason?.stack ?? reason)
+})
+// Only uncaughtException — Node also fires uncaughtExceptionMonitor for the same
+// error, so a separate monitor listener would double every crash log line.
 process.on('uncaughtException', (err, origin) =>
 {
-    console.error('uncaught Exception:', err, origin)
-})
-process.on('uncaughtExceptionMonitor', (err, origin) =>
-{
-    console.error('uncaught Exception Monitor:', err, origin)
+    console.error('uncaught Exception:', err?.stack ?? err, origin)
 })
 //shutdown
 process.on('SIGINT', async () => {
