@@ -56,21 +56,21 @@ The other servers recognize commands with the default prefix `!` (or `DEFAULT_PR
 
 This applies only to the deprecated text commands — slash commands are always invoked with `/`.
 
-# Install Dependencies
+## Install Dependencies
 `npm install`
 
-# Set up Environment Variables
+## Set up Environment Variables
 
 Rename `.env.example` to `.env` and set the required ones, remove the unused.
 Alternatively, set them directly in your environment.
 
-# Generate Prisma Client
+## Generate Prisma Client
 ``npx prisma generate``
 
-# Create the database
+## Create the database
 `npx prisma db push`
 
-# Test the Application
+## Test the Application
 `npm start`
 
 Navigate to `http://localhost:PORT/`.
