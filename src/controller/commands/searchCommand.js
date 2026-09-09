@@ -22,6 +22,57 @@ const searchExp = process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90 //90 days
 const noShowThreshold = 20
 
 /**
+ * Render a millisecond duration compactly: one decimal under 10ms (sub-ms
+ * lookups stay legible), whole numbers above.
+ *
+ * @param ms
+ * @returns {string}
+ */
+function fmtMs(ms)
+{
+    if (ms == null) return '?'
+
+    return (ms < 10 ? ms.toFixed(1) : Math.round(ms)) + 'ms'
+}
+
+/**
+ * Build one structured, greppable summary line for a search command, folding
+ * in who ran it and where, the query, cache HIT/MISS, the page (and offset for
+ * paginated "Next" pages) and the per-step timings collected on ctx.timings.
+ * Kept pure (returns the string) so the cache-hit and fresh-result call sites
+ * share a single format. Example:
+ *   search · button · rainy@KARDS#general · q="zhukov" · MISS · p2 off5 · 3 found · api 76ms
+ *
+ * @param ctx
+ * @param meta {cache:'HIT'|'MISS', offset, counter, hidden, cacheMs}
+ * @returns {string}
+ */
+function formatSearchLog(ctx, meta)
+{
+    const {message, command, limit, guildName, channelName, timings = {}} = ctx
+    const src = message.isSlash ? 'slash' : message.buttonId ? 'button' : 'text'
+    const who = message.authorName || message.author?.username || 'unknown'
+    const where = guildName ? `${guildName}#${channelName}` : 'DM'
+    const offset = meta.offset || 0
+    const page = 'p' + (Math.floor(offset / limit) + 1) + (offset ? ' off' + offset : '')
+
+    const parts = ['search', src, `${who}@${where}`, `q="${command}"`, meta.cache, page]
+    if (meta.cache === 'HIT') {
+        parts.push('cache ' + fmtMs(meta.cacheMs))
+    } else {
+        parts.push(meta.counter + ' found' + (meta.hidden ? ' (hidden)' : ''))
+        const t = []
+        if (timings.api != null) t.push('api ' + fmtMs(timings.api))
+        if (timings.db != null) t.push('db ' + fmtMs(timings.db))
+        if (timings.usr != null) t.push('usr ' + fmtMs(timings.usr))
+        if (timings.perm != null) t.push('perm ' + fmtMs(timings.perm))
+        if (t.length) parts.push(t.join(' '))
+    }
+
+    return parts.join(' · ')
+}
+
+/**
  * Serve a previously cached search result, if present.
  *
  * @param ctx
@@ -30,20 +81,21 @@ const noShowThreshold = 20
  */
 async function serveSearchCache(ctx, cacheKey)
 {
-    const {message, client, redis, language, command, limit, user} = ctx
+    const {message, client, redis, language, command, user} = ctx
     if (message.buttonId) return false
     if (!(await redis.exists(cacheKey))) return false
 
-    console.time('cache')
-    console.log('serving from cache: ', language, command, limit)
+    const cacheStarted = Date.now()
     const answer = await redis.json.get(cacheKey, '$')
-    console.timeEnd('cache')
+    const cacheMs = Date.now() - cacheStarted
 
     //forward failed (e.g. no Read Message History) -> let handleSearch regenerate
     if (!await forwardCachedMessage(client, answer, message,
         {language, query: command, key: 'cacheForwardNotice'}))
         return false
     react(message, '✅', user)
+    //cache hits are never paginated (buttonId returns above), so always page 1
+    console.log(formatSearchLog(ctx, {cache: 'HIT', offset: 0, cacheMs}))
 
     return true
 }
@@ -157,6 +209,8 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
         const sent = await message.channel.send(
             content + translate(language, 'noshow'))
         react(sent, '👆', user)
+        console.log(formatSearchLog(ctx,
+            {cache: 'MISS', offset, counter, hidden: true}))
 
         return
     }
@@ -171,7 +225,7 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
     try {
         react(message, '✅', user)
         const sent = await message.channel.send(answer)
-        console.log(`Cards found: ${counter}  Limit: ${limit}`)
+        console.log(formatSearchLog(ctx, {cache: 'MISS', offset, counter}))
         //cache only within the limit, so pagination still works
         if (counter <= paginationLimit)
             await cacheSentMessage(redis, cacheKey, sent, searchExp)
@@ -195,9 +249,10 @@ async function handleSearch(ctx)
         language + ':' + command + limit
     if (await serveSearchCache(ctx, cacheKey)) return true
 
-    //first search on KARDS.com, on no result search in the local DB
+    //first search on KARDS.com, on no result search in the local DB.
+    //ctx.timings is filled in with the api/db latencies for the summary line.
     const {variables, offset} = await buildSearchVariables(ctx)
-    const cards = await getCards(variables)
+    const cards = await getCards(variables, 3000, ctx.timings)
     if (!cards) {
         await message.channel.send(translate(language, 'error'))
 
@@ -209,6 +264,7 @@ async function handleSearch(ctx)
         if (user.mode) reply = user.mode + '\n\n' + reply
         react(message, '❓', user)
         await sendPrivately(message, reply)
+        console.log(formatSearchLog(ctx, {cache: 'MISS', offset, counter: 0}))
 
         return true
     }

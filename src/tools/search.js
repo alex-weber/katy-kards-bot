@@ -203,11 +203,13 @@ function getAttribute(word, attributes)
  * @param timeout
  * @returns {Promise<{cards: Set | Set<any>, counter: *}|*>}
  */
-async function getCards(variables, timeout=3000)
+async function getCards(variables, timeout=3000, timings=null)
 {
     const apiURL = process.env.KARDS_API_URL || 'https://herokuapi.kards.com/graphql'
-    const label = 'getCards_' + Date.now()
-    console.time(label)
+    //record the KARDS API latency into the caller's timings sink (if any) so it
+    //can be folded into the command's single summary log line, instead of an
+    //orphaned per-call console.time label with no context.
+    const started = Date.now()
     //search on kards.com
     const response = await fetchJson(apiURL, {
         method: 'POST',
@@ -223,20 +225,20 @@ async function getCards(variables, timeout=3000)
         console.log('request to kards.com failed ', error?.message)
 
     })
-    console.timeEnd(label)
+    if (timings) timings.api = Date.now() - started
     if (response)
     {
         const counter = response.data.data.cards.pageInfo.count
         if (!counter)
         {
 
-            return await advancedSearch(variables)
+            return await advancedSearch(variables, timings)
         }
         const cards = response.data.data.cards.edges
         return {counter: counter, cards: cards}
     }
 
-    return await advancedSearch(variables)
+    return await advancedSearch(variables, timings)
 }
 
 /**
@@ -285,7 +287,7 @@ function getFiles(cards, language, limit) {
  * @param variables
  * @returns {Promise<*>}
  */
-async function advancedSearch(variables)
+async function advancedSearch(variables, timings=null)
 {
     variables = getVariables(variables)
     //delete non DB fields
@@ -336,10 +338,9 @@ async function advancedSearch(variables)
 
         return {counter: 0, cards: []}
     }
-    const label = 'getCardsDB_' + Date.now()
-    console.time(label)
+    const started = Date.now()
     let cards = await getCardsDB(variables, skip)
-    console.timeEnd(label)
+    if (timings) timings.db = Date.now() - started
 
     return {counter: cards.length + skip, cards: cards}
 }

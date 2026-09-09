@@ -502,7 +502,10 @@ async function sendCardPhoto(ctx, file)
     try {
         //already uploaded before -> send by file_id
         if (file.isTelegramFileId) {
-            console.log('Sending image by file_id:', file.attachment)
+            //the file_id is a ~100-char opaque token; a short prefix is enough
+            //to tell "served a cached upload" apart in the logs
+            console.log('sending image by cached file_id:',
+                String(file.attachment).slice(0, 12) + '…')
 
             return tgCtx.replyWithPhoto(file.attachment, {
                 caption: file.description,

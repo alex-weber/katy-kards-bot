@@ -59,19 +59,15 @@ async function loadUser(message, redis)
 {
     let user
     const userId = message.author.id.toString()
-    console.time('getUser_' + userId)
     const userKey = cacheKeyPrefix + 'user:' + userId
     const cachedUser = await redis.json.get(userKey, '$')
     if (!cachedUser || !cachedUser.hasOwnProperty('id')) {
-        console.log('no user in cache, caching')
         user = await getUser(userId)
         await redis.json.set(userKey, '$', user)
         await redis.expire(userKey, userExp)
     } else {
-        console.log('getting user from cache')
         user = cachedUser
     }
-    console.timeEnd('getUser_' + userId)
 
     return user
 }

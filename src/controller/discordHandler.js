@@ -90,20 +90,27 @@ async function warnLegacyCommand(message, redis)
  */
 async function checkWritePermissions(client, message, redis)
 {
-    console.time('permissions')
     const permitted = await bot.hasWritePermissions(client, message, redis)
-    console.timeEnd('permissions')
 
     return !message.guildId || permitted
 }
 
 /**
- * Log the incoming command and capture the guild/channel names.
+ * Resolve the guild/channel names used for context and the command summary
+ * line (DM when not in a guild).
+ *
+ * This no longer prints a generic "<source> received: … -> …" line. Search —
+ * the dominant command, on every entry path (slash / text / "Next" button) —
+ * now emits its own richer summary (source, user, channel, query, cache HIT
+ * /MISS, page, timings), which that line only duplicated: the user's exact
+ * "the first one looks obsolete" case. Other commands reply visibly to the
+ * user, and every command is still recorded in the DB audit (createMessage
+ * below), so nothing is lost by dropping the console echo.
  *
  * @param message
  * @returns {{guildName: string, channelName: string}}
  */
-function logCommand(message)
+function resolveGuildChannel(message)
 {
     let guildName = ''
     let channelName = 'DM'
@@ -111,20 +118,6 @@ function logCommand(message)
         guildName = message.guild.name
         channelName = message.channel.name
     }
-    //slash commands are reconstructed as prefix + query (e.g. "!td"), so the
-    //content alone can't tell them apart from a real "!td" text message — log
-    //the source explicitly. buttonId marks a pagination-button press, which
-    //also arrives without a slash interaction.
-    const source = message.isSlash
-        ? 'slash command'
-        : message.buttonId ? 'button command' : 'text command'
-    //a real text command shows the prefix the user typed; a slash command's
-    //prefix is only an internal reconstruction, so strip it from the log
-    const loggedContent = message.isSlash
-        ? bot.parseCommand(bot.getPrefix(message), message.content)
-        : message.content
-    console.log(source, 'received:', guildName, channelName,
-        message.author.username, '->', loggedContent)
 
     return {guildName, channelName}
 }
@@ -177,11 +170,14 @@ async function discordHandler(message, client, redis)
     const text = resolveCommandText(message, prefix)
     if (text.stop) return message
 
-    //check for WRITE permissions
-    if (!await checkWritePermissions(client, message, redis)) return message
+    //check for WRITE permissions (timed, folded into the command summary line)
+    const permStarted = Date.now()
+    const permitted = await checkWritePermissions(client, message, redis)
+    const permMs = Date.now() - permStarted
+    if (!permitted) return message
 
     //it's a bot command
-    const {guildName, channelName} = logCommand(message)
+    const {guildName, channelName} = resolveGuildChannel(message)
 
     //return if the message is empty
     if (!text.command.length) return message
@@ -205,6 +201,9 @@ async function discordHandler(message, client, redis)
         cmdCacheKey: button.cmdCacheKey,
         limit: globalLimit,
         paginationLimit,
+        //per-step latencies, folded into the single command summary line by
+        //the search handler; getCards() fills in api/db, this handler perm/usr
+        timings: {perm: permMs},
     }
 
     //time commands need no user context
@@ -212,7 +211,9 @@ async function discordHandler(message, client, redis)
     if (await handleUtc(ctx)) return message
 
     //set up the user
+    const userStarted = Date.now()
     ctx.user = await loadUser(message, redis)
+    ctx.timings.usr = Date.now() - userStarted
     if (checkUserStatus(ctx.user, message)) return message
     await ensureUserName(ctx.user, message)
     ctx.language = await resolveLanguage(ctx)

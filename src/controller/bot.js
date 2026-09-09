@@ -78,7 +78,6 @@ async function hasWritePermissions(client, message, redis)
         return false
     }
 
-    console.log('has write permissions. Caching it')
     await redis.set(key, 'yes')
     await redis.expire(key, process.env.REDIS_EXP_PERMISSION || 60 * 60) // 1 hour
 
