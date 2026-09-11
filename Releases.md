@@ -1,3 +1,9 @@
+## v5.6.2
+
+### Maintenance
+
+- Reworked the image-host upload (`postImageFile` in `src/tools/imageUpload.js`) to stream the file straight off disk instead of base64-encoding it into a JSON body. The old path read the whole file into a Buffer, `toString('base64')`'d it (a ~33% larger string) and `JSON.stringify()`'d that into a single in-memory payload — on the 512 MB dyno this spiked Node's `arrayBuffers` and was the wrong shape for the file host. The request now sends the raw bytes as the body (`Readable.toWeb(fs.createReadStream(...))` with `duplex: 'half'` and a `Content-Length` from `fs.stat`), so peak memory stays flat regardless of image size. The two pieces of metadata the JSON body carried travel out-of-band to match the host's streaming endpoint: the API key moves to the `X-Api-Key` header and the folder hint to the `?path=custom` query parameter, and the `Content-Type` is `application/octet-stream` (the host branches on content type — anything that is not `application/json` is streamed to disk in fixed chunks). The now-inert `expiration` argument was dropped from `postImageFile`, `uploadImageFile` and `uploadImageFromUrl` — the host deletes purely by file age and never expires `custom/` uploads (which is all these functions write), and no caller passed a non-default value. Requires the file host's streaming path (already deployed); no behavioural change to the returned URL.
+
 ## v5.6.1
 
 ### Logging
