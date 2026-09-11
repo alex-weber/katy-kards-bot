@@ -129,49 +129,49 @@ function hasImageHost()
 }
 
 /**
- * Send a file that is already on disk to the image host.
+ * Send a file that is already on disk to the image host, streaming the bytes
+ * straight off disk into the request body.
+ *
+ * The old path read the whole file into a Buffer, base64-encoded it (a 33%
+ * larger string) and JSON.stringify()'d that into one in-memory payload. On a
+ * 512 MB dyno that spiked Node's `arrayBuffers` and was the wrong shape for the
+ * host, which now accepts a raw binary body: the file host branches on content
+ * type, so anything that is not application/json is streamed to disk in fixed
+ * chunks. The two pieces of metadata the JSON body used to carry travel
+ * out-of-band instead — the API key in the X-Api-Key header, the folder hint in
+ * the ?path= query parameter.
  *
  * @param filePath file inside our own tmp directory
- * @param expiration
  * @param hostPath optional folder for the host to file the image under
  * @returns {Promise<*|boolean>} the hosted URL, or false
  */
-async function postImageFile(filePath, expiration, hostPath = null)
+async function postImageFile(filePath, hostPath = null)
 {
-    let imageBuffer = null
+    const endpoint = new URL(process.env.IMG_UPLOAD_API_ENDPOINT)
+    if (hostPath) endpoint.searchParams.set('path', hostPath)
 
-    try {
-        const postData = {
-            key: process.env.IMG_UPLOAD_API_KEY,
-        }
-        if (expiration) postData.expiration = expiration
-        if (hostPath) postData.path = hostPath
+    // Content-Length lets the host size the upload up front rather than reading
+    // a chunked body; the read stream keeps peak memory flat regardless of size.
+    const { size } = await fs.promises.stat(filePath)
 
-        // Use async file reading to avoid blocking
-        imageBuffer = await fs.promises.readFile(filePath)
-        postData.image = imageBuffer.toString('base64')
-        imageBuffer = null // Release immediately after conversion
+    const response = await fetchJson(endpoint, {
+        method: 'POST',
+        headers: {
+            'X-Api-Key': process.env.IMG_UPLOAD_API_KEY,
+            'Content-Type': 'application/octet-stream',
+            'Content-Length': String(size),
+        },
+        body: Readable.toWeb(fs.createReadStream(filePath)),
+        duplex: 'half', // required by fetch() whenever the body is a stream
+    })
 
-        const response = await fetchJson(process.env.IMG_UPLOAD_API_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(postData),
-        })
-
-        // Clear base64 string from memory after upload
-        postData.image = null
-
-        if (response.status !== 200) {
-            console.error('Error uploading image:', response.statusText)
-            return false
-        }
-        console.log('Image uploaded successfully:', response.data.url)
-
-        return response.data.url
-    } finally {
-        // Ensure buffers are cleared
-        imageBuffer = null
+    if (response.status !== 200) {
+        console.error('Error uploading image:', response.status, response.data?.message)
+        return false
     }
+    console.log('Image uploaded successfully:', response.data.url)
+
+    return response.data.url
 }
 
 /**
@@ -185,17 +185,16 @@ async function postImageFile(filePath, expiration, hostPath = null)
  * bot fetch a URL, which is a distinction worth having in the signature.
  *
  * @param filePath
- * @param expiration
  * @returns {Promise<*|boolean>}
  */
-async function uploadImageFile(filePath, expiration = 0)
+async function uploadImageFile(filePath)
 {
     if (!hasImageHost()) return false
 
     try {
         // 'custom' files these dashboard uploads under uploads/custom/<date>/
         // on the host, alongside the Discord-attachment re-hosts.
-        return await postImageFile(filePath, expiration, 'custom')
+        return await postImageFile(filePath, 'custom')
     } catch (error) {
         console.error('Error uploading image:', error)
 
@@ -209,10 +208,9 @@ async function uploadImageFile(filePath, expiration = 0)
  * downloadImageAsFile() before anything is fetched.
  *
  * @param url
- * @param expiration
  * @returns {Promise<*|boolean>}
  */
-async function uploadImageFromUrl(url, expiration = 0)
+async function uploadImageFromUrl(url)
 {
     if (!hasImageHost()) return false
 
@@ -227,7 +225,7 @@ async function uploadImageFromUrl(url, expiration = 0)
             downloadedPath = await convertImageToWEBP(downloadedPath)
         }
 
-        return await postImageFile(downloadedPath, expiration, 'custom')
+        return await postImageFile(downloadedPath, 'custom')
     } catch (error) {
         console.error('Error uploading image:', error)
 
