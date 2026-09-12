@@ -1,3 +1,9 @@
+## Unreleased
+
+### Maintenance
+
+- Pinned the Prisma packages (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) to exact `7.10.0`. The CLI had floated to 7.10.0 while the client and adapter stayed at 7.9.1, so `prisma generate` produced a 7.10.0 client against a 7.9.1 runtime; the exact pins keep the CLI and client in lockstep on every install.
+
 ## v5.7.0
 
 ### Features
