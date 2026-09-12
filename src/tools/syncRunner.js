@@ -188,10 +188,8 @@ function startSync({triggeredBy = 'unknown', redisClient = redis} = {}) {
 }
 
 module.exports = {
-    getLastSync,
     getSyncHistory,
     getSyncState,
     isSyncRunning,
-    saveLastSync,
     startSync,
 }

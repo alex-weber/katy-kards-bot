@@ -64,7 +64,8 @@ function buildInteractionMessage(interaction, content, language, state, query)
         //no attachments arrive via these slash commands
         attachments: new Map(),
         buttonId: undefined,
-        //lets discordHandler skip the legacy-command deprecation notice
+        //marks the entry path: drives the pre-forward origin notice
+        //(messageCache) and the command summary source label (searchCommand)
         isSlash: true,
         //escape hatch for replies that shouldn't spam a public channel (e.g.
         //"nothing found"): show `payload` privately to the invoking user by

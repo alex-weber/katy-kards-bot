@@ -2,62 +2,67 @@
 
 ### Features
 
-- Made the per-channel attachment limits configurable per guild from the servers page (`/servers`), GOD-only. They were hardcoded: 5 attachments in a normal channel and 10 in a bot-command channel (a channel whose name contains `bot` or one listed in `dictionary.botwar.channels`), where the higher limit also enables the "Next" pagination button. The two constants that carried these (`globalLimit`/`process.env.LIMIT` and `paginationLimit`) lived in `src/controller/discordHandler.js`; they are replaced by a per-guild lookup. A new `src/tools/guildSettings.js` (mirroring the role-rules pattern) stores `{ [guildId]: { channelAttachmentLimit, botChannelAttachmentLimit } }` in Redis JSON under `guild-settings` and exposes `resolveGuildLimits(guildId)`, which the message handler calls once per command; guilds with no saved override — and all DMs — fall back to the same 5 / 10 defaults, so existing behaviour is unchanged until a limit is edited. The bot-channel limit continues to double as the pagination page size and cache threshold (`ctx.paginationLimit`), so a guild that raises it also gets larger pages and vice versa. On the servers page, each guild row gains two number inputs (min 1) rendered only for GOD users behind a CSRF-protected form that posts to `POST /servers` (`requireGod` → `handleGuildSettingsUpdate`); VIP managers still see the directory with the current values shown read-only. Values are sanitized on save — anything empty, non-numeric or below 1 falls back to the default rather than persisting a 0 that would silently post no attachments, and both limits are capped at 10 (`MAX_ATTACHMENTS`, enforced server-side and via the inputs' `max`) because Discord and Telegram both reject a message carrying more than 10 attachments. `getServerList` (`src/tools/stats.js`) now trails the guild id after the existing display columns so the page can key settings by guild without disturbing the `!servers` command's index-based read.
+- Per-guild attachment limits, configurable on `/servers` (GOD-only); previously hardcoded at 5 (normal channel) / 10 (bot channel). New `src/tools/guildSettings.js` stores them in Redis; DMs and unconfigured guilds keep the 5 / 10 defaults. Values sanitised and capped at 10 (`MAX_ATTACHMENTS`). The bot-channel limit still drives pagination page size.
+
+### Maintenance
+
+- Removed the obsolete legacy `!`-prefix deprecation nudge (bot moved to slash commands 2 Aug 2026). Dropped `warnLegacyCommand`, the `REDIS_EXP_DEPRECATION` / `DEPRECATION_DEADLINE` env vars, the `deprecated` locale key (all 13 locales), and its test. DM `!` commands still work.
+- Trimmed unused module exports in `termsCommands.js`, `syncFormat.js`, and `syncRunner.js`. No behavioural change.
 
 ## v5.6.2
 
 ### Maintenance
 
-- Reworked the image-host upload (`postImageFile` in `src/tools/imageUpload.js`) to stream the file straight off disk instead of base64-encoding it into a JSON body. The old path read the whole file into a Buffer, `toString('base64')`'d it (a ~33% larger string) and `JSON.stringify()`'d that into a single in-memory payload — on the 512 MB dyno this spiked Node's `arrayBuffers` and was the wrong shape for the file host. The request now sends the raw bytes as the body (`Readable.toWeb(fs.createReadStream(...))` with `duplex: 'half'` and a `Content-Length` from `fs.stat`), so peak memory stays flat regardless of image size. The two pieces of metadata the JSON body carried travel out-of-band to match the host's streaming endpoint: the API key moves to the `X-Api-Key` header and the folder hint to the `?path=custom` query parameter, and the `Content-Type` is `application/octet-stream` (the host branches on content type — anything that is not `application/json` is streamed to disk in fixed chunks). The now-inert `expiration` argument was dropped from `postImageFile`, `uploadImageFile` and `uploadImageFromUrl` — the host deletes purely by file age and never expires `custom/` uploads (which is all these functions write), and no caller passed a non-default value. Requires the file host's streaming path (already deployed); no behavioural change to the returned URL.
+- Image-host upload (`postImageFile`) now streams the file off disk instead of base64-encoding it into a JSON body, keeping peak memory flat. API key moved to the `X-Api-Key` header, folder to `?path=custom`; dropped the inert `expiration` arg. No change to the returned URL.
 
 ## v5.6.1
 
 ### Logging
 
-- Reworked search-command logging into a single structured, greppable summary line per request, replacing a scatter of ~8 low-context lines (`getUser_<id>: 0.3ms`, `permissions: 0.9ms`, `getCards_<ts>: 75ms`, `getCardsDB_<ts>: 13ms`, `serving from cache:  en …`, `Cards found: 3  Limit: 5`) that made cached and paginated results indistinguishable. Each search now logs one line, e.g. `search · slash · rainy@KARDS#general · q="zhukov" · MISS · p1 · 3 found · api 75ms usr 0.3ms perm 0.9ms`, a cache hit as `… · HIT · p1 · cache 1ms`, and a "Next"-button page as `… · button · … · MISS · p2 off5 · 42 found · api 76ms`. The per-step `console.time` labels (with unique id/timestamp suffixes) were removed and their durations captured as real numbers on `ctx.timings` — `getCards` (`src/tools/search.js`) now writes its KARDS API and DB-fallback latencies into an optional timings sink; `discordHandler` records the permission-check and user-load latencies; `messageContext.loadUser` no longer logs per-command user-cache hit/miss, and `bot.hasWritePermissions` no longer logs the positive "has write permissions" case (both fired on every command). The Telegram cached-image log no longer dumps the full ~100-char `file_id`, only a short prefix. The generic per-command `slash/text/button command received: … -> …` line (previously logged by `logCommand`, now `resolveGuildChannel`) was removed: it duplicated the new search summary on every entry path (slash, text and the "Next" button), and other commands both reply visibly and are recorded in the DB audit (`createMessage`), so nothing is lost. Also cuts log volume, complementing the L10 fixes below.
+- Search logging collapsed into one structured summary line per request (source, user, channel, query, HIT/MISS, page, timings), e.g. `search · slash · rainy@KARDS#general · q="zhukov" · MISS · p1 · 3 found · api 75ms`, replacing ~8 scattered lines. Per-step `console.time` labels moved to `ctx.timings`; dropped the generic per-command "received" line and trimmed noisy per-command logs. Cuts log volume (see L10 fix below).
 
 ### Bug Fixes
 
-- Reduced log output that was triggering Heroku `Error L10 (output buffer overflow)`, where the dyno writes to stdout/stderr faster than Logplex can drain it and log lines are dropped. The process-level error handlers in `src/index.js` were amplifying a single recurring failure into a multi-line burst: `unhandledRejection` logged the entire `promise` object as well as the reason (a huge multi-line entry), and both an `uncaughtException` and an `uncaughtExceptionMonitor` listener were registered, so Node logged every uncaught error twice. The redundant `uncaughtExceptionMonitor` listener was removed, and both handlers now log `err.stack`/`reason.stack` rather than the full objects. The Redis `error` handler — which fires repeatedly during a reconnect storm — is now throttled to one line per 10 seconds, appending a count of suppressed errors so a persistent problem is still visible. No behavioural change; logging volume only.
-- Fixed an `unhandledRejection` (`DiscordAPIError[50001] Missing Access`) when a command runs in a channel the bot cannot see. Channel replies are intentionally fire-and-forget (not awaited), and a `hasWritePermissions` gate in `src/controller/bot.js` is meant to short-circuit `discordHandler` before any send when the bot lacks write access — so a failed send should never happen. The gate was incomplete: it checked `SendMessages` and `AttachFiles` but not `ViewChannel`. When `ViewChannel` is denied at the channel level while `SendMessages` is granted at the role level, `permissionsFor` still reports `SendMessages`, so the gate passed ("has write permissions") — but the actual message POST was rejected with `50001 Missing Access` (the view-access error, as opposed to `50013 Missing Permissions`), and being fire-and-forget it surfaced as an unhandled rejection (one of the L10 log-flood sources above). The gate now also requires `ViewChannel`, so these channels are short-circuited before any send is attempted; the fire-and-forget sends are unchanged. Note: `hasWritePermissions` caches its verdict in Redis for an hour per guild/channel, so any channel that cached a stale `yes` under the old check will re-evaluate correctly once that entry expires.
+- Cut log output triggering Heroku `Error L10 (output buffer overflow)`: removed the duplicate `uncaughtExceptionMonitor` listener, log `err.stack`/`reason.stack` instead of full objects, and throttle Redis error logs to one line per 10s (with a suppressed count).
+- Fixed an `unhandledRejection` (`50001 Missing Access`) for commands in channels the bot can't see. The `hasWritePermissions` gate checked `SendMessages`/`AttachFiles` but not `ViewChannel`; it now requires `ViewChannel` too. Stale cached verdicts re-evaluate within the hour.
 
 ## v5.6.0
 
 ### Maintenance
 
-- Upgraded Prisma from v6 to v7 (`prisma`/`@prisma/client` `7.9.1`). Prisma 7 removes the bundled Rust query engine in favour of driver adapters, so the app now connects through `@prisma/adapter-pg` (node-postgres). Configuration moved out of the schema into a new `prisma.config.ts` (the datasource `url` is no longer read from `schema.prisma`; the CLI reads it there, the running app passes it to the adapter). The six per-file `new PrismaClient()` instances were consolidated into a single shared client (`src/database/prisma.js`) — one connection pool — and the per-query `.finally(() => prisma.$disconnect())` calls were removed, since under a driver adapter `$disconnect()` closes the pool and would break the next query; the pool is now closed once on shutdown (the existing SIGINT/SIGTERM path). The legacy `prisma-client-js` generator is kept (it still emits CommonJS to `@prisma/client`, matching this no-build project); the new `prisma-client` generator was not adopted because it emits TypeScript that would require a compile step. Note: this upgrade does **not** clear the `deepmerge-ts` advisory (GHSA-ggr8-5vv4-36mx) — Prisma 7's `@prisma/config` still pins the vulnerable `deepmerge-ts@7.1.5`, and it remains confined to the build-time CLI (the runtime `@prisma/client` does not include it).
-- Added a `start:local` npm script (`node --env-file=.env src/index.js`) for local development. The runtime app reads `process.env.*` directly and never loaded `.env` on its own — production works because the platform injects config vars, but a plain `npm start` locally left `DISCORD_TOKEN`, `SESSION_SECRET`, etc. undefined (hence the `TokenInvalid` and `express-session deprecated req.secret` noise). `npm run start:local` uses Node's native `--env-file` to load `.env` with no code change and no dotenv dependency at runtime; the production `start` script is unchanged, so the platform still supplies env vars there. Only the Prisma CLI loads `.env` separately, via `import "dotenv/config"` in `prisma.config.ts`.
+- Upgraded Prisma v6 → v7 (`7.9.1`): now uses the `@prisma/adapter-pg` driver adapter, config moved to `prisma.config.ts`, and the six per-file clients consolidated into one shared pool (`src/database/prisma.js`), closed once on shutdown. The `deepmerge-ts` advisory (GHSA-ggr8-5vv4-36mx) remains, confined to the build-time CLI.
+- Added a `start:local` npm script (`node --env-file=.env src/index.js`) for local development.
 
 ### Bug Fixes
 
-- Fixed the production web dyno failing to connect to Postgres after the Prisma 7 upgrade with `P1010` ("User was denied access on the database"). The message reads like a credentials error but was not: Prisma 6's Rust query engine negotiated SSL with Heroku/RDS automatically, whereas the Prisma 7 driver adapter (`@prisma/adapter-pg`, node-postgres) does not. Heroku Postgres requires SSL and presents a self-signed certificate, so the adapter's unencrypted connection was rejected and Prisma surfaced the `pg_hba`/SSL refusal as `P1010`. The release phase was unaffected because `prisma db push` uses the schema engine, which still negotiates SSL like before — only the runtime adapter was missing it. `src/database/prisma.js` now enables SSL (`rejectUnauthorized: false`, for the self-signed cert) for any non-local database, gated on the connection host rather than `NODE_ENV` (unset on this Heroku app): a `DATABASE_URL` pointing at `localhost`/`127.0.0.1`/`[::1]` connects without SSL, everything else connects with it. Local development and the test suite are unchanged.
+- Fixed the production web dyno failing Postgres with `P1010` after the Prisma 7 upgrade: the pg driver adapter wasn't negotiating SSL with Heroku. `src/database/prisma.js` now enables SSL (`rejectUnauthorized: false`) for any non-local database.
 
 ## v5.5.7
 
 ### Bug Fixes
 
-- Fixed the alt-art gallery pagination breaking after certain commands. Any command starting with `alt` (e.g. an alias typo like `alt art` or `alt zhukov` that matched no custom command) was cached verbatim as its own gallery page with a dead `next-message` link, so the "Next" button stopped working. `handleAlt` now normalises the command: only `alt` plus an offset (`alt`, `alt10`, `alt20`…) is treated as valid pagination; anything else collapses to the first page (`alt`), keeping every page on the single `alt → alt10 → alt20` cache chain. Custom aliases are unaffected — they are still resolved before the gallery handler runs. Existing phantom keys were purged from the cache.
+- Fixed alt-art gallery pagination breaking after any `alt`-prefixed command (e.g. a typo like `alt zhukov`) was cached as its own page with a dead "Next" link. `handleAlt` now treats only `alt` plus an offset (`alt10`, `alt20`…) as pagination; anything else collapses to the first page. Phantom keys purged.
 
 ## v5.5.6
 
 ### Security
 
-- Pinned the transitive `js-yaml` dependency (via jest) to `3.15.1` using the `overrides` block, clearing the high-severity quadratic-CPU advisory (GHSA-5p4m-2wfm-xmqj) on the `!!omap` parser. Dev-only tooling; the production runtime was never affected. The remaining `extract-zip` advisory in the puppeteer-core chain is deferred: the fix is a breaking major bump, and the vulnerable browser-download/extract path is never exercised — the bot connects to a remote Browserless instance rather than downloading a browser.
+- Pinned transitive `js-yaml` (via jest) to `3.15.1`, clearing the high-severity quadratic-CPU advisory (GHSA-5p4m-2wfm-xmqj). Dev-only; production unaffected. The `extract-zip` advisory in the puppeteer-core chain is deferred — that code path is never exercised (the bot uses remote Browserless).
 
 ### Internationalisation
 
-- Localised the remaining hardcoded slash-command strings. The `/deck` modal (title, input label, placeholder) and the `/commands` "no commands found" reply were English-only; they now use translation keys (`deckModalTitle`, `deckModalInputLabel`, `deckModalInputPlaceholder`, `noCommands`) added across all 12 locales, matching the already-translated contact modal.
+- Localised the remaining hardcoded slash-command strings — the `/deck` modal and the `/commands` "no commands found" reply — across all 12 locales.
 
 ### Bug Fixes
 
-- Removed obsolete text-command wording from the Terms of Service copy. The `termsExplain` text still described the bot as only reading messages that start with a command prefix — behaviour from before the migration to slash commands — and the `termsDeclined` message told users to type `!terms` to review. The stale sentence is gone and the reference now points at `/terms`, updated across the `en`, `de`, and `ru` locales (the other languages fall back to English).
-- A slash command run in a channel where the bot can't post no longer fails with a generic error message. The command itself succeeds, but delivering the result via a public channel send raised `DiscordAPIError[50001] Missing Access` (the bot lacks "Send Messages" there, or was user-installed in a server it isn't a member of). Both the `/deck` modal path and the direct-command path now detect the 50001 and reply privately with an actionable note asking the user to grant the permission or run the command in a channel where the bot can post. The slash error reply is now localised to the invoking user's language — the new "missing access" note is added for `en`, `de`, and `ru` (others fall back to English), and the previously hardcoded generic error now uses the existing translated `error` string across all locales.
+- Removed obsolete text-command wording from the Terms of Service copy (`termsExplain`, `termsDeclined`), now pointing at `/terms` (`en`, `de`, `ru`).
+- A slash command in a channel where the bot can't post now replies privately with an actionable note instead of a generic error, and the error reply is localised to the user's language (`en`, `de`, `ru`).
 
 ## v5.5.5
 
 ### Maintenance
 
-- Replaced the `axios` HTTP client with the Node runtime's built-in `fetch`, dropping a production dependency. The handful of call sites (Steam/SteamCharts stats, the kards.com card search, Discord login, and image up/downloads) now share a small `fetchJson` helper that parses the JSON body up front, keeping the `response.data` shape the code already relied on. No behavioural change. The server-side image download keeps its per-redirect host-allowlist check — the SSRF guard that stops an allowlisted host from bouncing a fetch onto an internal address — by following redirects by hand, since `fetch` offers no per-hop hook.
+- Replaced `axios` with the built-in `fetch` (one less prod dependency); call sites share a small `fetchJson` helper. The image download keeps its per-redirect SSRF host-allowlist check by following redirects by hand. No behavioural change.
 
 ## v5.5.4
 
@@ -117,7 +122,7 @@
 
 ### Features
 
-- The bot's messages are now available in every language it can search cards in — Spanish, French, Italian, Polish, Portuguese, Japanese, Korean, Simplified and Traditional Chinese join the existing English, German and Russian. Whatever a user sets as their search language, the bot now answers in it instead of falling back to English. The Terms of Service text stays in English (with the reviewed German and Russian versions), and the new translations are machine-generated pending a native review.
+- Bot messages are now available in every supported search language (added Spanish, French, Italian, Polish, Portuguese, Japanese, Korean, Simplified and Traditional Chinese), answering in the user's search language instead of English. Terms of Service stays English/German/Russian; new translations are machine-generated pending native review.
 
 ### Bug Fixes
 
@@ -159,7 +164,7 @@
 
 ### Security
 
-- The bot now only downloads custom-command images from allowlisted hosts. A command's image URLs were fetched server-side and the response posted back into the channel, so an admin account could point one at an internal address and have the bot read it out. Discord's CDN is always allowed; set `IMAGE_ALLOWED_HOSTS` to the host your image uploader serves from — **images on any other host stop working until it is listed**.
+- Custom-command images now download only from allowlisted hosts (SSRF guard). Discord's CDN is always allowed; set `IMAGE_ALLOWED_HOSTS` to your uploader's host — **images on any other host stop working until it is listed**.
 
 ### Bug Fixes
 
@@ -174,12 +179,12 @@
 - Rewrote the in-bot help text (all languages) to document the slash commands instead of the legacy `!` prefix.
 - Auto-registered slash commands for every connected guild on startup, and whenever the bot joins a new guild, the already-registered commands are checked first, so restarts skip needless re-registration.
 - Added a deprecation notice (rate-limited to once per user per day) that nudges legacy `!` prefix-command users toward the new slash commands.
-- Added full custom-command management (add/edit/delete) to the web dashboard's Custom Commands page, admin-only — previously this required the `^key=value` Discord chat syntax. Supports text replies, image uploads (via the same image host Discord attachments use), and search-alias redirects. The page carries search across keys, reply text and redirect targets, a filter by command type, and pagination at 20 per page; adding and editing happen in a dialog, and each row's edit/delete controls appear on hover.
+- Added full custom-command management (add/edit/delete) to the dashboard's Custom Commands page (admin-only), replacing the `^key=value` chat syntax. Supports text replies, image uploads and search-alias redirects, with search, type filter and pagination.
 - Command attachments are visible in the list as thumbnails, and clicking one opens a full-size preview showing its image URL.
 - Filter dropdowns across the dashboard (user role and status, dashboard period, custom-command type) now apply as soon as they change, instead of also needing the Filter button.
-- Added a Card Database Sync panel to the dashboard's System page (admin-only): a Sync now button that pulls the card list from kards.com, live progress while the sync runs, the created/updated counts and duration of the last run, and a log of the last 20 syncs showing who started each one and what it changed. The panel reads correctly without JavaScript, and the number of syncs kept in the log is configurable via `SYNC_HISTORY_LIMIT`.
-- Removed the `!sync` Discord command — the database sync now runs only from the System page, which shows the progress the command used to post into the channel.
-- Only one sync can be in flight at a time, and a sync that wedges is stopped after `SYNC_TIMEOUT_MS` (15 minutes by default) and recorded as a failure, so a stuck run can no longer block every later one.
+- Added a Card Database Sync panel to the dashboard's System page (admin-only): sync from kards.com with live progress, last-run counts/duration, and a log of the last 20 syncs (`SYNC_HISTORY_LIMIT`). Works without JavaScript.
+- Removed the `!sync` Discord command — sync now runs only from the System page.
+- Only one sync runs at a time; a wedged sync is stopped after `SYNC_TIMEOUT_MS` (default 15 min) and recorded as a failure.
 
 ## v4.14.1
 

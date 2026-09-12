@@ -1,8 +1,6 @@
 const bot = require("./bot")
 const {createMessage} = require("../database/db")
 const {translate} = require("../tools/translation/translator")
-const {defaultLanguage} = require("../tools/language")
-const {cacheKeyPrefix} = require("./messageCache")
 const {isBotCommandChannel} = require("../tools/search")
 const {resolveGuildLimits} = require("../tools/guildSettings")
 const {
@@ -44,41 +42,6 @@ const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 const maxStrLen = parseInt(process.env.MAX_STR_LEN) || 4000
 //attachment limits (normal-channel + bot-channel) are resolved per guild from
 //guildSettings, defaulting to 5 / 10 — see resolveGuildLimits below
-//how often each user is nudged about the legacy-command deprecation (24h)
-const deprecationWarnExp = parseInt(process.env.REDIS_EXP_DEPRECATION) || 60 * 60 * 24
-//when text commands stop working, shown as a Discord relative timestamp in the
-//nag so it counts down (and localises) per viewer. Defaults to 2 Aug 2026, 12:00 UTC
-const deprecationDeadline = process.env.DEPRECATION_DEADLINE || '2026-08-02T12:00:00Z'
-
-/**
- * Nudge users of the legacy `!` prefix commands toward slash commands. Discord
- * is removing the Message Content Intent these depend on, so text commands will
- * stop working soon. Rate-limited to once per user per day so the channel is
- * not flooded. The reminder is skipped for slash-routed commands and for the
- * bot's own pagination button presses.
- *
- * @param message
- * @param redis
- * @returns {Promise<void>}
- */
-async function warnLegacyCommand(message, redis)
-{
-    const key = 'deprecation:warned:' + message.author.id
-    //atomic check-and-set (NX): two commands from the same user racing each
-    //other can't both pass a separate exists-then-set, which would send the
-    //nag twice
-    const firstWarning = await redis.set(key, '1', {NX: true, EX: deprecationWarnExp})
-    if (!firstWarning) return
-
-    //best-effort language from the cached user; default when not cached yet
-    const userKey = cacheKeyPrefix + 'user:' + message.author.id
-    const cached = await redis.json.get(userKey, '$')
-    const language = (cached && cached.language) || defaultLanguage
-    //Discord renders <t:unix:R> as a live, viewer-localised relative time
-    //(e.g. "in 5 days"), replacing the old hard-coded "soon"
-    const deadline = `<t:${Math.floor(new Date(deprecationDeadline).getTime() / 1000)}:R>`
-    await message.channel.send(translate(language, 'deprecated', {deadline})).catch(() => {})
-}
 
 /**
  * Confirm the bot may write in this channel (always true in DMs).
@@ -182,15 +145,6 @@ async function discordHandler(message, client, redis)
     //return if the message is empty
     if (!text.command.length) return message
 
-    //remind legacy prefix-command users to switch to slash commands (skip
-    //slash-routed commands and pagination button presses). Only nag in guilds:
-    //text commands remain a supported fallback in DMs, and with the Guild
-    //Messages/Message Content intents dropped this branch is reached only by the
-    //DM path anyway — so the nag stays dormant until guild text commands return.
-    if (!message.isSlash && !message.buttonId && message.guildId) {
-        await warnLegacyCommand(message, redis)
-    }
-
     //per-guild attachment limits (GOD-configurable on the servers page); falls
     //back to the historical 5 / 10 defaults for DMs and unconfigured guilds. The
     //bot-channel limit doubles as the pagination page size and cache threshold.
@@ -277,4 +231,4 @@ async function discordHandler(message, client, redis)
     return message
 }
 
-module.exports = {discordHandler, warnLegacyCommand}
+module.exports = {discordHandler}

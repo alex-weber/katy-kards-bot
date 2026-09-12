@@ -132,11 +132,7 @@ async function handleTermsGate(ctx)
 }
 
 module.exports = {
-    STATUS_PENDING,
-    STATUS_DECLINED,
-    STATUS_ACTIVE,
     requiresTermsAcceptance,
-    sendTermsPrompt,
     getTermsDecisionRow,
     buildTermsView,
     handleTerms,

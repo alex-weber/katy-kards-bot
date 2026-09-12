@@ -116,11 +116,9 @@ function buildSyncView(state = {}) {
 }
 
 module.exports = {
-    buildSyncEntry,
     buildSyncView,
     formatSyncDuration,
     formatSyncKicker,
     formatSyncOutcome,
     formatSyncStatus,
-    formatSyncTime,
 }
