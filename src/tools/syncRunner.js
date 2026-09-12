@@ -142,7 +142,10 @@ function startSync({triggeredBy = 'unknown', redisClient = redis} = {}) {
     // `progress` carries the child's latest status line to the widget, so a run
     // shows what it is doing rather than just a spinner.
     activeSync = {startedAt, child, progress: 'Starting…'}
-    console.time('db_sync')
+    // Distinct from the child's own 'db_sync' timer: this one brackets the whole
+    // child-process lifetime (spawn → close), so it includes Node startup/teardown
+    // overhead on top of the sync work the child measures.
+    console.time('db_sync_process')
 
     const watchdog = setTimeout(() => {
         errorText = `Sync timed out after ${Math.round(syncTimeoutMs / 1000)}s and was stopped`
@@ -166,7 +169,7 @@ function startSync({triggeredBy = 'unknown', redisClient = redis} = {}) {
     })
 
     child.on('close', async code => {
-        console.timeEnd('db_sync')
+        console.timeEnd('db_sync_process')
         clearTimeout(watchdog)
         activeSync = null
 
