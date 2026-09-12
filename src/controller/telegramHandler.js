@@ -31,6 +31,7 @@ const reactions = {
     blocked: '😡',      //a blocked user tried a command (Discord: 🚫)
     moreResults: '👀',  //more results exist than were shown (Discord: 👆)
     wait: '🙏',         //a render is already running, please wait (Discord: ☕🍩)
+    error: '🤯',        //something went wrong (Discord has no reaction, just replies)
 }
 
 const telegramCachePrefix = 'telegram:card:'
@@ -551,18 +552,25 @@ async function handleSearch(ctx)
         return true
     }
 
+    //react before the slow download/convert step so the emoji appears
+    //immediately, not after the images have been fetched and converted.
+    //flag when more cards exist than fit within the limit
+    react(tgCtx, cards.counter > limit
+        ? reactions.moreResults
+        : reactions.success, user)
+
     const files = getFiles(cards, language, limit)
     await tgCtx.reply(translate(language, 'search') + ': ' + cards.counter)
 
     const downloadedFiles = []
     try {
-        if (!await convertFilesForTelegram(ctx, files, downloadedFiles))
-            return true
+        if (!await convertFilesForTelegram(ctx, files, downloadedFiles)) {
+            //the optimistic success reaction no longer holds: the conversion
+            //failed and an error reply was already sent, so correct the emoji.
+            react(tgCtx, reactions.error, user)
 
-        //flag when more cards exist than fit within the limit
-        react(tgCtx, cards.counter > limit
-            ? reactions.moreResults
-            : reactions.success, user)
+            return true
+        }
 
         if (cards.counter > 1) await sendCardMediaGroup(ctx, files)
         else await sendCardPhoto(ctx, files[0])
