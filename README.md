@@ -6,9 +6,7 @@ This bot provides search results from **kards.com** to Discord and Telegram.
 
 On Discord the bot is driven by **slash commands** (`/search`, `/deck`, `/help`, …), which are
 registered automatically for every guild the bot is in. The legacy `!` prefix commands still work
-and remain the only interface on Telegram, but on Discord they are deprecated: Discord is removing
-the Message Content Intent they depend on, and users invoking them get an occasional notice
-pointing at the slash equivalent.
+in Direct Messages (user needs to activate the DM channel in their profile) and in Telegram.
 
 ## Required Environment Variables
 
@@ -23,7 +21,7 @@ pointing at the slash equivalent.
 
 ## Optional Environment Variables
 - `TELEGRAM_TOKEN`: Token for authenticating for the Telegram API.
-- `PORT`: Port number for the Node.js server.
+- `PORT`: Port number for the Node.js server. Default is 3000.
 - `LIMIT`: Limit for message attachments (maximum 10).
 - `WEB_BASE_URL`: Public base URL of the web app.
 - `KARDS_API_URL`: kards.com GraphQL endpoint (defaults to the public one).
@@ -81,7 +79,7 @@ Send `/help` in a chat and see if the bot answers.
 Slash commands are registered for the guild when the bot starts up or joins, so they may take a
 moment to appear in Discord's command list.
 
-# Sync the database with kards.com
+## Sync the database with kards.com
 GOD and VIP users are able to sync the database.
 It runs from the web dashboard: **System → Card Database Sync → Sync now**.
 The panel shows the progress of a running sync, what the last one changed, and a log of the
