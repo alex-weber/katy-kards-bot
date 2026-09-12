@@ -6,6 +6,11 @@ function toggleSynonymContentType(radio) {
     const isRedirect = radio.value === 'redirect' && radio.checked
     fields.querySelector('.command-field-text').classList.toggle('d-none', isRedirect)
     fields.querySelector('.command-field-redirect').classList.toggle('d-none', !isRedirect)
+    // A redirect just re-runs a search, so attachments don't apply — hide the
+    // whole images section. Any already-uploaded chips stay in the DOM (so
+    // switching back to Text keeps them) but the server ignores files for a
+    // redirect regardless, so nothing stale is persisted.
+    fields.querySelector('.command-field-images').classList.toggle('d-none', isRedirect)
 }
 
 // Built via DOM APIs rather than innerHTML so the uploaded URL never has to
@@ -55,15 +60,15 @@ function buildSynonymFileChip(url, inputName) {
     return chip
 }
 
-// Uploads immediately via fetch (not the surrounding <form>'s own submit) so
-// the image is already hosted, with its URL sitting in a hidden `files`
-// input, by the time the admin fills in the rest of the command and saves.
-// The upload endpoint is multipart, unlike every other admin form in this
-// dashboard, so it needs the CSRF token as a header rather than a body field.
-async function uploadSynonymImage(button) {
-    const wrapper = button.closest('.command-file-upload')
-    const fields = button.closest('.command-fields')
-    const input = wrapper.querySelector('input[type="file"]')
+// Fired from the file input's own change event: the upload starts the moment a
+// file is picked, no separate button. Uploads immediately via fetch (not the
+// surrounding <form>'s own submit) so the image is already hosted, with its URL
+// sitting in a hidden `files` input, by the time the admin fills in the rest of
+// the command and saves. The upload endpoint is multipart, unlike every other
+// admin form in this dashboard, so it needs the CSRF token as a header rather
+// than a body field.
+async function uploadSynonymImage(input) {
+    const fields = input.closest('.command-fields')
     const status = fields.querySelector('.command-upload-status')
     const file = input.files[0]
     if (!file) return
@@ -81,7 +86,7 @@ async function uploadSynonymImage(button) {
     }
 
     setStatus('Uploading...')
-    button.disabled = true
+    input.disabled = true
     try {
         const response = await fetch('/commands/upload', {
             method: 'POST',
@@ -95,12 +100,14 @@ async function uploadSynonymImage(button) {
         }
 
         fields.querySelector('#commandFileList').appendChild(buildSynonymFileChip(data.url, 'files'))
-        input.value = ''
         setStatus('')
     } catch (e) {
         setStatus('Upload failed', true)
     } finally {
-        button.disabled = false
+        // Clearing the value both tidies the "1 file" label and lets the same
+        // file be re-picked later (a change event only fires on a new value).
+        input.disabled = false
+        input.value = ''
     }
 }
 

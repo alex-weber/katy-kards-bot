@@ -292,7 +292,11 @@ function buildSynonymValue({contentType, text, redirectTarget, files}) {
         const body = sanitizeText(text, 2000)
         if (body) value.content = 'text:' + body
     }
-    if (Array.isArray(files) && files.length) value.files = files
+    // Attachments never apply to a redirect (it just re-runs a search), so drop
+    // any files a stale hidden input might still submit when the type is redirect.
+    if (contentType !== 'redirect' && Array.isArray(files) && files.length) {
+        value.files = files
+    }
 
     if (!value.content && !value.files) return null
 

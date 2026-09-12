@@ -480,7 +480,7 @@
 }
 
 .commands-media-col {
-    width: 12rem;
+    width: 15rem;
 }
 
 .commands-actions-col {
@@ -563,27 +563,37 @@
     color: #20c997;
 }
 
-.command-media {
-    align-items: center;
+.command-gallery {
     display: flex;
-    gap: 0.3rem;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.command-gallery-thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
 }
 
 .command-thumb-btn {
     background: #111418;
     border: 1px solid #343a40;
-    border-radius: 6px;
+    border-radius: 8px;
     flex: 0 0 auto;
-    height: 34px;
+    height: 54px;
     overflow: hidden;
     padding: 0;
-    transition: border-color 0.15s ease, transform 0.15s ease;
-    width: 34px;
+    position: relative;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    width: 54px;
 }
 
 .command-thumb-btn:hover {
     border-color: #20c997;
-    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    transform: translateY(-2px) scale(1.04);
+    z-index: 1;
 }
 
 .command-thumb {
@@ -593,6 +603,26 @@
     width: 100%;
 }
 
+/* When there are more than three attachments, the third thumbnail carries a
+   dark "+N" scrim over its image — so the row still shows three previews while
+   signalling how many more are attached. */
+.command-thumb-count {
+    align-items: center;
+    background: rgba(10, 12, 15, 0.62);
+    color: #fff;
+    display: flex;
+    font-size: 0.95rem;
+    font-weight: 700;
+    inset: 0;
+    justify-content: center;
+    letter-spacing: 0.02em;
+    position: absolute;
+}
+
+.command-thumb-overflow:hover .command-thumb-count {
+    background: rgba(10, 12, 15, 0.45);
+}
+
 /* A URL that no longer resolves would otherwise leave an invisible gap — show
    a placeholder so the row still reads as "has an attachment". */
 .command-thumb-broken img {
@@ -600,34 +630,32 @@
 }
 
 .command-thumb-broken::after {
+    align-items: center;
     color: #6c757d;
     content: "?";
-    display: block;
+    display: flex;
+    font-size: 1.2rem;
     font-weight: 700;
-    line-height: 32px;
+    inset: 0;
+    justify-content: center;
+    position: absolute;
 }
 
-.command-media-more {
-    color: #adb5bd;
-    flex: 0 0 auto;
+/* Count summary under the thumbnails — the informative line that replaced the
+   truncated raw URL (still reachable by opening a thumbnail's preview). */
+.command-gallery-meta {
+    align-items: center;
+    color: #8b949e;
+    display: inline-flex;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 600;
+    gap: 0.35rem;
+    letter-spacing: 0.02em;
 }
 
-.command-media-url {
-    color: #6c757d;
-    display: block;
-    font-size: 0.72rem;
-    margin-top: 0.3rem;
-    max-width: 100%;
-    overflow: hidden;
-    text-decoration: none;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.command-media-url:hover {
-    color: #20c997;
+.command-gallery-meta svg {
+    height: 13px;
+    width: 13px;
 }
 
 .command-image-preview {
@@ -760,6 +788,34 @@
 .command-type-toggle .btn {
     align-items: center;
     display: inline-flex;
+}
+
+/* Colour the modal's response-type toggle to match the command overview's
+   per-kind palette (text = blue, redirect = green). Scoped under #commandModal
+   so the id beats Bootstrap's class-only rules, which load after this
+   stylesheet. */
+#commandModal .command-type-btn-text {
+    border-color: rgba(63, 110, 253, 0.4);
+    color: #7ea0ff;
+}
+
+#commandModal .command-type-btn-text:hover,
+#commandModal .btn-check:checked + .command-type-btn-text {
+    background: rgba(63, 110, 253, 0.15);
+    border-color: rgba(63, 110, 253, 0.6);
+    color: #7ea0ff;
+}
+
+#commandModal .command-type-btn-redirect {
+    border-color: rgba(32, 201, 151, 0.4);
+    color: #20c997;
+}
+
+#commandModal .command-type-btn-redirect:hover,
+#commandModal .btn-check:checked + .command-type-btn-redirect {
+    background: rgba(32, 201, 151, 0.15);
+    border-color: rgba(32, 201, 151, 0.6);
+    color: #20c997;
 }
 
 .command-field-images {
