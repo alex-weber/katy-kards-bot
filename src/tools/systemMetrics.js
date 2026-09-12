@@ -28,13 +28,21 @@ function formatMb(bytes) {
 
 function formatDuration(seconds) {
     const totalMinutes = Math.floor((Number(seconds) || 0) / 60)
-    const days = Math.floor(totalMinutes / 1440)
-    const hours = Math.floor((totalMinutes % 1440) / 60)
+    const totalHours = Math.floor(totalMinutes / 60)
+    const totalDays = Math.floor(totalHours / 24)
+    // Years/months are approximated (365-day year, 30-day month) — precise
+    // enough for a human-readable uptime, which is all this feeds.
+    const years = Math.floor(totalDays / 365)
+    const months = Math.floor((totalDays % 365) / 30)
+    const days = (totalDays % 365) % 30
+    const hours = totalHours % 24
     const minutes = totalMinutes % 60
     const parts = []
 
-    if (days) parts.push(`${days}d`)
-    if (hours || days) parts.push(`${hours}h`)
+    if (years) parts.push(`${years}y`)
+    if (months || years) parts.push(`${months}mo`)
+    if (days || months || years) parts.push(`${days}d`)
+    if (hours || days || months || years) parts.push(`${hours}h`)
     parts.push(`${minutes}m`)
 
     return parts.join(' ')

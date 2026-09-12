@@ -1151,6 +1151,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* The Redis cache/server tables hold a fixed, short set of rows, so they
+   should size to their content instead of inheriting the compact wrap's
+   height cap and auto-scroll. */
+.system-redis-tables .data-table-wrap {
+    max-height: none;
+    overflow: visible;
+}
+
 .system-memory-chart-wrapper {
     height: 360px;
     max-height: 360px;
