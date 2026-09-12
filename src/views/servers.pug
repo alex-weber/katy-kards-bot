@@ -7,7 +7,9 @@ block content
       h2.page-title= title
       p.page-subtitle #{servers.length} connected guilds
 
-  .content-panel.data-panel-page
+  form.content-panel.data-panel-page(method="post" action="/servers")
+    if canEdit && _csrf
+      input(type="hidden" name="_csrf" value=_csrf)
     .panel-header
       .panel-title-group
         span.panel-icon(aria-hidden="true")
@@ -16,6 +18,7 @@ block content
             path(d="M9 9h6")
             path(d="M9 15h6")
         h3.panel-title Guild Directory
+      span.panel-kicker Attachment limits default to #{defaults.channelAttachmentLimit} / #{defaults.botChannelAttachmentLimit} (max #{maxAttachments})
     table.data-table(data-sortable)
       thead
         tr
@@ -25,19 +28,44 @@ block content
           th(scope='col' data-sort-type='number') Members
           th(scope='col' data-sort-type='date') Created
           th(scope='col' data-sort-type='date') Bot Joined
+          th(scope='col') Channel limit
+          th(scope='col') Bot-channel limit
       tbody
         each server, index in servers
           tr
             th.rank-col(scope='row' data-sort-value=index + 1)
               span.rank-badge= index+1
             td
-              img.server-icon(src=server[0], alt="No icon")
-            td(data-sort-value=server[1])= server[1]
-            td(data-sort-value=server[2])= server[2]
-            td(data-sort-value=server[3])= server[3]
-            td(data-sort-value=server[4])= server[4]
+              img.server-icon(src=server.icon, alt="No icon")
+            td(data-sort-value=server.name)= server.name
+            td(data-sort-value=server.memberCount)= server.memberCount
+            td(data-sort-value=server.createdAt)= server.createdAt
+            td(data-sort-value=server.joinedAt)= server.joinedAt
+            if canEdit
+              td
+                input.form-control(
+                  type="number"
+                  min="1"
+                  max=maxAttachments
+                  name=`channelAttachmentLimit_${server.id}`
+                  value=server.channelAttachmentLimit
+                )
+              td
+                input.form-control(
+                  type="number"
+                  min="1"
+                  max=maxAttachments
+                  name=`botChannelAttachmentLimit_${server.id}`
+                  value=server.botChannelAttachmentLimit
+                )
+            else
+              td= server.channelAttachmentLimit
+              td= server.botChannelAttachmentLimit
+    if canEdit
+      .d-flex.justify-content-end.p-3
+        button.btn.btn-primary(type="submit") Save
+
   p &nbsp;
   p &nbsp;
 
   script(src="/static/sortable-table.js")
-

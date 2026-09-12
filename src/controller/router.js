@@ -42,6 +42,12 @@ const {
     saveRoleRules,
     normalizeRuleSet,
 } = require("../tools/roles")
+const {
+    MAX_ATTACHMENTS,
+    DEFAULT_GUILD_SETTINGS,
+    getGuildSettings,
+    saveGuildSettings,
+} = require("../tools/guildSettings")
 const {redis, cachePrefix: webCachePrefix} = require('../controller/redis')
 const {cacheKeyPrefix} = require('../controller/messageCache')
 const {
@@ -1210,12 +1216,70 @@ async function handleApi(req, res) {
 
 
 async function renderServers(req, res, servers) {
+    //saved overrides are merged in at render time so a GOD's edit shows on the
+    //next load without waiting for the cached guild list to be rebuilt
+    const savedSettings = await getGuildSettings()
+    const canEdit = isGod(req.session.user)
+
+    const rows = servers.map(server => {
+        const guildId = server[5]
+        const settings = savedSettings[String(guildId)] || DEFAULT_GUILD_SETTINGS
+        return {
+            icon: server[0],
+            name: server[1],
+            memberCount: server[2],
+            createdAt: server[3],
+            joinedAt: server[4],
+            id: guildId,
+            channelAttachmentLimit: settings.channelAttachmentLimit,
+            botChannelAttachmentLimit: settings.botChannelAttachmentLimit,
+        }
+    })
 
     res.render('servers', {
         title: 'Discord servers',
-        servers: servers,
+        servers: rows,
+        canEdit,
+        defaults: DEFAULT_GUILD_SETTINGS,
+        maxAttachments: MAX_ATTACHMENTS,
         user: req.session.user
     })
+}
+
+/**
+ * Persist the per-guild attachment limits from the servers page. GOD-only; the
+ * form posts a `channelAttachmentLimit_<guildId>` and
+ * `botChannelAttachmentLimit_<guildId>` pair for every guild row. Values are
+ * sanitized (and defaulted) by saveGuildSettings.
+ *
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
+async function handleGuildSettingsUpdate(req, res) {
+    if (!req.session.user || !isGod(req.session.user)) {
+        return res.status(403).send('Not permitted')
+    }
+
+    const settingsByGuild = {}
+    for (const [field, value] of Object.entries(req.body)) {
+        const channelMatch = field.match(/^channelAttachmentLimit_(.+)$/)
+        if (channelMatch) {
+            const guildId = channelMatch[1]
+            settingsByGuild[guildId] = settingsByGuild[guildId] || {}
+            settingsByGuild[guildId].channelAttachmentLimit = value
+            continue
+        }
+        const botMatch = field.match(/^botChannelAttachmentLimit_(.+)$/)
+        if (botMatch) {
+            const guildId = botMatch[1]
+            settingsByGuild[guildId] = settingsByGuild[guildId] || {}
+            settingsByGuild[guildId].botChannelAttachmentLimit = value
+        }
+    }
+
+    await saveGuildSettings(settingsByGuild)
+    res.redirect('/servers')
 }
 
 module.exports = {
@@ -1232,6 +1296,7 @@ module.exports = {
     renderTopDeck,
     renderCommands,
     renderServers,
+    handleGuildSettingsUpdate,
     renderLanding,
     renderProfile,
     renderPublicProfile,

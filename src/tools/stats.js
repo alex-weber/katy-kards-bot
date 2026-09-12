@@ -65,6 +65,7 @@ function getServerList(client) {
         .map((g) => {
             let icon = `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.webp?size=48`
             return {
+                id: g.id,
                 icon,
                 name: g.name,
                 memberCount: g.memberCount.toString(),
@@ -74,7 +75,9 @@ function getServerList(client) {
             }
         })
         .sort((a, b) => a.joinedTimestamp - b.joinedTimestamp)
-        .map(g => [g.icon, g.name, g.memberCount, g.createdAt, g.joinedAt])
+        //guild id trails the display columns so existing index-based readers
+        //(the servers page, the !servers command) are unaffected
+        .map(g => [g.icon, g.name, g.memberCount, g.createdAt, g.joinedAt, g.id])
 }
 
 module.exports = { getStats, getServerList}

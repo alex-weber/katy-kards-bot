@@ -584,6 +584,37 @@ describe('manager pages', () => {
         }))
         expect(res.redirect).toHaveBeenCalledWith('/roles')
     })
+
+    test('handleGuildSettingsUpdate is GOD-only and saves per-guild limits', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleGuildSettingsUpdate({
+            session: { user: { id: '111', role: 'GOD' } },
+            body: {
+                channelAttachmentLimit_123: '3',
+                botChannelAttachmentLimit_123: '7',
+                channelAttachmentLimit_456: '8',
+                botChannelAttachmentLimit_456: '0', // invalid -> default 10
+            },
+        }, res)
+
+        expect(redis.json.set).toHaveBeenCalledWith('web:test:guild-settings', '$', {
+            '123': { channelAttachmentLimit: 3, botChannelAttachmentLimit: 7 },
+            '456': { channelAttachmentLimit: 8, botChannelAttachmentLimit: 10 },
+        })
+        expect(res.redirect).toHaveBeenCalledWith('/servers')
+    })
+
+    test('handleGuildSettingsUpdate rejects non-GOD users', async () => {
+        const res = makeRes()
+        await router.handleGuildSettingsUpdate({
+            session: { user: { id: '222', role: 'VIP' } },
+            body: { channelAttachmentLimit_123: '3' },
+        }, res)
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(redis.json.set).not.toHaveBeenCalled()
+    })
 })
 
 describe('simple renders', () => {
@@ -611,12 +642,23 @@ describe('simple renders', () => {
         expect(locals.user).toBeNull()
     })
 
-    test('renderServers passes the servers list', async () => {
+    test('renderServers maps rows and applies default attachment limits', async () => {
         const res = makeRes()
-        await router.renderServers({ session: { user: { id: '1' } } }, res, [{ name: 'guild' }])
+        const server = ['icon.webp', 'guild', '5', '01/01/2020', '02/02/2021', '123']
+        await router.renderServers({ session: { user: { id: '1' } } }, res, [server])
         const [view, locals] = res.render.mock.calls[0]
         expect(view).toBe('servers')
-        expect(locals.servers).toEqual([{ name: 'guild' }])
+        expect(locals.canEdit).toBe(false)
+        expect(locals.servers).toEqual([{
+            icon: 'icon.webp',
+            name: 'guild',
+            memberCount: '5',
+            createdAt: '01/01/2020',
+            joinedAt: '02/02/2021',
+            id: '123',
+            channelAttachmentLimit: 5,
+            botChannelAttachmentLimit: 10,
+        }])
     })
 
     test('renderAuth renders the auth view', () => {
