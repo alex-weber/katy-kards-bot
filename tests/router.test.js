@@ -978,6 +978,14 @@ describe('synonym value helpers', () => {
             expect(JSON.parse(value)).toEqual({files: ['http://x/img.png']})
         })
 
+        test('drops files for a redirect (attachments do not apply)', () => {
+            const value = router.buildSynonymValue({
+                contentType: 'redirect', text: '', redirectTarget: 'lion',
+                files: ['http://x/img.png'],
+            })
+            expect(JSON.parse(value)).toEqual({content: 'lion'})
+        })
+
         test('returns null when there is nothing to store', () => {
             expect(router.buildSynonymValue({
                 contentType: 'text', text: '  ', redirectTarget: '', files: [],

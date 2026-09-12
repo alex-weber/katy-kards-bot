@@ -112,20 +112,25 @@ block content
                     span.data-muted No text
               td.commands-media-col
                 if synonym.parsed.files.length
-                  .command-media
-                    each file, fileIndex in synonym.parsed.files.slice(0, 3)
-                      button.command-thumb-btn(
-                        type="button"
-                        title=file
-                        aria-label=`Preview attachment ${fileIndex + 1} of ${synonym.key}`
-                        data-bs-toggle="modal"
-                        data-bs-target="#commandImageModal"
-                        data-image=file
-                      )
-                        img.command-thumb(src=file alt="" loading="lazy")
-                    if synonym.parsed.files.length > 3
-                      span.command-media-more +#{synonym.parsed.files.length - 3}
-                  a.command-media-url(href=synonym.parsed.files[0] target="_blank" rel="noopener" title=synonym.parsed.files[0])= synonym.parsed.files[0]
+                  - const overflow = synonym.parsed.files.length - 3
+                  .command-gallery
+                    .command-gallery-thumbs
+                      each file, fileIndex in synonym.parsed.files.slice(0, 3)
+                        button.command-thumb-btn(
+                          type="button"
+                          class=(fileIndex === 2 && overflow > 0 ? 'command-thumb-overflow' : '')
+                          title=file
+                          aria-label=`Preview attachment ${fileIndex + 1} of ${synonym.key}`
+                          data-bs-toggle="modal"
+                          data-bs-target="#commandImageModal"
+                          data-image=file
+                        )
+                          img.command-thumb(src=file alt="" loading="lazy")
+                          if fileIndex === 2 && overflow > 0
+                            span.command-thumb-count +#{overflow}
+                    span.command-gallery-meta
+                      +commandIcon('image')
+                      span #{synonym.parsed.files.length} #{synonym.parsed.files.length === 1 ? 'image' : 'images'}
                 else
                   span.data-muted —
               td.commands-actions-col
@@ -228,12 +233,12 @@ block content
               label.form-label Response
               .command-type-toggle
                 input#commandTypeText.btn-check(type="radio" name="contentType" value="text" checked autocomplete="off" onchange="toggleSynonymContentType(this)")
-                label.btn.btn-outline-secondary(for="commandTypeText")
+                label.btn.btn-outline-secondary.command-type-btn-text(for="commandTypeText")
                   span.me-1
                     +commandIcon('text')
                   | Text reply
                 input#commandTypeRedirect.btn-check(type="radio" name="contentType" value="redirect" autocomplete="off" onchange="toggleSynonymContentType(this)")
-                label.btn.btn-outline-secondary(for="commandTypeRedirect")
+                label.btn.btn-outline-secondary.command-type-btn-redirect(for="commandTypeRedirect")
                   span.me-1
                     +commandIcon('redirect')
                   | Redirect
@@ -250,8 +255,7 @@ block content
                 label.form-label.mb-0 Images
                 #commandFileList.command-file-list
                 .command-file-upload
-                  input.form-control.form-control-sm(type="file" accept="image/png,image/jpeg,image/gif,image/webp")
-                  button.btn.btn-sm.btn-outline-secondary(type="button" onclick="uploadSynonymImage(this)") Add image
+                  input.form-control.form-control-sm(type="file" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadSynonymImage(this)")
                   span.command-upload-status.text-muted
           .modal-footer
             button.btn.btn-outline-secondary(type="button" data-bs-dismiss="modal") Cancel
