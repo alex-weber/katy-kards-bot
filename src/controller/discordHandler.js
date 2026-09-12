@@ -4,6 +4,7 @@ const {translate} = require("../tools/translation/translator")
 const {defaultLanguage} = require("../tools/language")
 const {cacheKeyPrefix} = require("./messageCache")
 const {isBotCommandChannel} = require("../tools/search")
+const {resolveGuildLimits} = require("../tools/guildSettings")
 const {
     resolveButtonCommand,
     loadUser,
@@ -38,12 +39,11 @@ const {
 } = require("./commands/termsCommands")
 const {checkRoleCommandLimit} = require("../tools/roles")
 
-const globalLimit = parseInt(process.env.LIMIT) || 5 //attachment limit
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 //buffer overflow protection :)
 const maxStrLen = parseInt(process.env.MAX_STR_LEN) || 4000
-//load more results button limit
-const paginationLimit = 10
+//attachment limits (normal-channel + bot-channel) are resolved per guild from
+//guildSettings, defaulting to 5 / 10 — see resolveGuildLimits below
 //how often each user is nudged about the legacy-command deprecation (24h)
 const deprecationWarnExp = parseInt(process.env.REDIS_EXP_DEPRECATION) || 60 * 60 * 24
 //when text commands stop working, shown as a Discord relative timestamp in the
@@ -191,6 +191,11 @@ async function discordHandler(message, client, redis)
         await warnLegacyCommand(message, redis)
     }
 
+    //per-guild attachment limits (GOD-configurable on the servers page); falls
+    //back to the historical 5 / 10 defaults for DMs and unconfigured guilds. The
+    //bot-channel limit doubles as the pagination page size and cache threshold.
+    const guildLimits = await resolveGuildLimits(message.guildId)
+
     const ctx = {
         message, client, redis, prefix,
         qSearch: text.qSearch,
@@ -199,8 +204,8 @@ async function discordHandler(message, client, redis)
         user: undefined,
         guildName, channelName,
         cmdCacheKey: button.cmdCacheKey,
-        limit: globalLimit,
-        paginationLimit,
+        limit: guildLimits.channelAttachmentLimit,
+        paginationLimit: guildLimits.botChannelAttachmentLimit,
         //per-step latencies, folded into the single command summary line by
         //the search handler; getCards() fills in api/db, this handler perm/usr
         timings: {perm: permMs},
@@ -259,8 +264,8 @@ async function discordHandler(message, client, redis)
     //resolveSynonym may rewrite ctx.command and fall through to search
     if (await resolveSynonym(ctx)) return message
 
-    //set the limit to 10 if it is a bot-commands channel
-    if (isBotCommandChannel(message)) ctx.limit = paginationLimit
+    //raise the limit to the bot-channel limit if it is a bot-commands channel
+    if (isBotCommandChannel(message)) ctx.limit = ctx.paginationLimit
     if (ctx.roleRule && ctx.roleRule.attachmentLimit > 0) {
         ctx.limit = Math.min(ctx.limit, ctx.roleRule.attachmentLimit)
     }
