@@ -1,0 +1,306 @@
+extends layout
+
+mixin panelIcon
+    span.panel-icon(aria-hidden="true")
+        svg(xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
+            path(d="M21 12a9 9 0 1 1-9-9v9z")
+            path(d="M12 3a9 9 0 0 1 9 9h-9z")
+
+mixin chartShell(id)
+    .chart-shell
+        .card-stats-spinner.d-flex.justify-content-center.align-items-center.h-100
+            div.spinner-border.text-primary(role="status")
+        canvas.card-stats-chart(id=id style="display: none;")
+
+block content
+    //- A selected filter is filled with its colour; Reserved keeps the default look.
+    - const scopes = [{value: 'all', label: 'All cards', color: factionColors.france}, {value: 'active', label: 'Active', color: factionColors.usa}, {value: 'reserved', label: 'Reserved'}]
+    div.container
+        .page-hero
+            h2.page-title
+                span.faction-chip.faction-chip-hero(style=`background: ${factionColor}; color: ${factionTextColor}`)= factionLabel
+                | Cards
+                span#factionTotalCardsCount
+            p.page-subtitle Rarities, card types, reserve status and keyword attributes for #{factionLabel}.
+            p#cardStatsError.text-danger(hidden) Card statistics could not be loaded.
+
+        include includes/cardStatusSummary
+
+        .card-stats-toolbar
+            a.card-stats-back(href="/cards") &larr; All factions
+            .command-type-toggle(role="group" aria-label="Cards to count")
+                each option, index in scopes
+                    input.btn-check(type="radio" name="cardScope" id=`cardScope-${option.value}` value=option.value checked=(index === 0) autocomplete="off")
+                    label.btn.btn-outline-secondary(for=`cardScope-${option.value}` class=(option.color ? 'card-scope-colored' : null) style=(option.color ? `--scope-color: ${option.color}` : null))= option.label
+
+        .cards-faction-grid
+            .content-panel
+                .panel-header
+                    .panel-title-group
+                        +panelIcon
+                        h3.panel-title Rarity
+                +chartShell('rarityChart')
+                .faction-table-shell
+                    table.data-table.faction-table
+                        thead
+                            tr
+                                th(scope="col") Rarity
+                                th(scope="col") Cards
+                                th(scope="col") Share
+                        tbody#rarityTable
+
+            .content-panel
+                .panel-header
+                    .panel-title-group
+                        +panelIcon
+                        h3.panel-title Card Types
+                +chartShell('typeChart')
+                .faction-table-shell
+                    table.data-table.faction-table
+                        thead
+                            tr
+                                th(scope="col") Type
+                                th(scope="col") Cards
+                                th(scope="col") Share
+                        tbody#typeTable
+
+            .content-panel
+                .panel-header
+                    .panel-title-group
+                        +panelIcon
+                        h3.panel-title Active / Reserved
+                p.text-secondary.small.px-3.pt-2.mb-0 Always counts all cards, whatever the filter.
+                +chartShell('statusChart')
+                .faction-table-shell
+                    table.data-table.faction-table
+                        thead
+                            tr
+                                th(scope="col") Rarity
+                                th(scope="col") Active
+                                th(scope="col") Reserved
+                        tbody#statusTable
+
+            .content-panel
+                .panel-header
+                    .panel-title-group
+                        +panelIcon
+                        h3.panel-title Attributes
+                +chartShell('attributeChart')
+                p#attributeEmpty.text-secondary.px-3(hidden) No keyword attributes on these cards.
+                .faction-table-shell
+                    table.data-table.faction-table
+                        thead
+                            tr
+                                th(scope="col") Attribute
+                                th(scope="col") Cards
+                                th(scope="col" title="Share of the counted cards that have this attribute") Of cards
+                        tbody#attributeTable
+        p &nbsp;
+        p &nbsp;
+        script(src="/static/vendor/chart.js")
+        script.
+            const faction = !{JSON.stringify(faction)}
+            // Every colour on this page comes from the faction palette of the
+            // overview page. Neutral's near-black is left out: it vanishes on
+            // the dark panels.
+            const factionColors = !{JSON.stringify(factionColors)}
+            const rarityOrder = ['standard', 'limited', 'special', 'elite']
+            const rarityColors = {
+                standard: factionColors.finland,
+                limited: factionColors.france,
+                special: factionColors.soviet,
+                elite: factionColors.japan,
+            }
+            const statusColors = [factionColors.usa, factionColors.japan]
+            // Slice colours for the type and attribute charts, reused in order —
+            // this faction's own colour first.
+            const palette = [
+                ...(faction === 'neutral' ? [] : [factionColors[faction]]),
+                ...Object.entries(factionColors)
+                    .filter(([name]) => name !== faction && name !== 'neutral')
+                    .map(([, color]) => color),
+            ]
+
+            function paletteColors(count) {
+                return Array.from({length: count}, (unused, index) => palette[index % palette.length])
+            }
+            const charts = {}
+            let stats = null
+
+            function capitalize(value) {
+                return value.charAt(0).toUpperCase() + value.slice(1)
+            }
+
+            function formatPercent(count, total) {
+                if (!total) return '0%'
+                return ((count / total) * 100).toFixed(1) + '%'
+            }
+
+            function textColorForBackground(hex) {
+                const clean = hex.replace('#', '')
+                const r = parseInt(clean.substring(0, 2), 16)
+                const g = parseInt(clean.substring(2, 4), 16)
+                const b = parseInt(clean.substring(4, 6), 16)
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+                return luminance > 0.58 ? '#111418' : '#f8f9fa'
+            }
+
+            function chip(label, color) {
+                return `<span class="faction-chip" style="background: ${color}; color: ${textColorForBackground(color)}">${label.toUpperCase()}</span>`
+            }
+
+            function rarityChip(rarity) {
+                return chip(rarity, rarityColors[rarity])
+            }
+
+            // rows: [{label, count, color}]; the share is taken against `total`.
+            function renderShareTable(tableId, rows, total) {
+                document.getElementById(tableId).innerHTML = rows.map(row => `
+                    <tr>
+                        <td>${chip(row.label, row.color)}</td>
+                        <td class="data-strong">${row.count.toLocaleString()}</td>
+                        <td>${formatPercent(row.count, total)}</td>
+                    </tr>
+                `).join('')
+            }
+
+            // Charts are created once and only get new data when the filter changes.
+            function drawChart(id, config) {
+                if (charts[id]) {
+                    charts[id].data = config.data
+                    charts[id].update()
+                    return
+                }
+                charts[id] = new Chart(document.getElementById(id), config)
+            }
+
+            function pieConfig(labels, data, colors) {
+                return {
+                    type: 'doughnut',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data,
+                            backgroundColor: colors,
+                            borderColor: '#171a1f',
+                            borderWidth: 2,
+                            hoverOffset: 10,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'right',
+                                labels: {color: '#dee2e6', boxWidth: 14, boxHeight: 14, padding: 14},
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const total = context.dataset.data.reduce((sum, value) => sum + value, 0)
+                                        return `${context.label}: ${context.raw} cards (${formatPercent(context.raw, total)})`
+                                    }
+                                }
+                            }
+                        },
+                    }
+                }
+            }
+
+            function renderScope(scope) {
+                const bucket = stats[scope]
+                document.getElementById('factionTotalCardsCount').innerText = ' (' + bucket.total + ')'
+
+                drawChart('rarityChart', pieConfig(
+                    rarityOrder.map(capitalize),
+                    rarityOrder.map(rarity => bucket.rarity[rarity] || 0),
+                    rarityOrder.map(rarity => rarityColors[rarity])
+                ))
+                renderShareTable('rarityTable', rarityOrder.map(rarity => ({
+                    label: rarity,
+                    count: bucket.rarity[rarity] || 0,
+                    color: rarityColors[rarity],
+                })), bucket.total)
+
+                const types = Object.keys(bucket.type)
+                const typeColors = paletteColors(types.length)
+                drawChart('typeChart', pieConfig(
+                    types.map(capitalize),
+                    types.map(type => bucket.type[type]),
+                    typeColors
+                ))
+                renderShareTable('typeTable', types.map((type, index) => ({
+                    label: type,
+                    count: bucket.type[type],
+                    color: typeColors[index],
+                })), bucket.total)
+
+                const attributes = Object.entries(bucket.attribute)
+                    .filter(([, count]) => count > 0)
+                    .sort((a, b) => b[1] - a[1])
+                const attributeColors = paletteColors(attributes.length)
+                drawChart('attributeChart', pieConfig(
+                    attributes.map(([attribute]) => capitalize(attribute)),
+                    attributes.map(([, count]) => count),
+                    attributeColors
+                ))
+                // A card can carry several attributes, so the share is "of the
+                // counted cards", not of the chart's slices.
+                renderShareTable('attributeTable', attributes.map(([attribute, count], index) => ({
+                    label: attribute,
+                    count,
+                    color: attributeColors[index],
+                })), bucket.total)
+                document.getElementById('attributeEmpty').hidden = attributes.length > 0
+            }
+
+            function renderStatus() {
+                renderCardStatusSummary({
+                    total: stats.all.total,
+                    active: stats.active.total,
+                    reserved: stats.reserved.total,
+                })
+                drawChart('statusChart', pieConfig(
+                    ['Active', 'Reserved'],
+                    [stats.active.total, stats.reserved.total],
+                    statusColors
+                ))
+                document.getElementById('statusTable').innerHTML = rarityOrder.map(rarity => `
+                    <tr>
+                        <td>${rarityChip(rarity)}</td>
+                        <td class="data-strong">${(stats.active.rarity[rarity] || 0).toLocaleString()}</td>
+                        <td>${(stats.reserved.rarity[rarity] || 0).toLocaleString()}</td>
+                    </tr>
+                `).join('') + `
+                    <tr>
+                        <td>${chip('total', factionColors.britain)}</td>
+                        <td class="data-strong">${stats.active.total.toLocaleString()}</td>
+                        <td>${stats.reserved.total.toLocaleString()}</td>
+                    </tr>
+                `
+            }
+
+            async function render() {
+                try {
+                    const response = await fetch('/api/card-stats?faction=' + encodeURIComponent(faction))
+                    const body = await response.json()
+                    if (!body.success) throw new Error(body.message)
+                    stats = body.data
+                } catch (error) {
+                    document.querySelectorAll('.card-stats-spinner').forEach(el => el.classList.add('d-none'))
+                    document.getElementById('cardStatsError').hidden = false
+                    return
+                }
+
+                document.querySelectorAll('.card-stats-spinner').forEach(el => el.classList.add('d-none'))
+                document.querySelectorAll('.card-stats-chart').forEach(el => { el.style.display = 'block' })
+                renderStatus()
+                renderScope('all')
+                document.querySelectorAll('input[name="cardScope"]').forEach(input => {
+                    input.addEventListener('change', () => renderScope(input.value))
+                })
+            }
+
+            render()

@@ -1,5 +1,12 @@
 ## Unreleased
 
+### Features
+
+- Per-faction card statistics at `/cards/:faction` (e.g. `/cards/usa`), reachable from the faction chips and pie slices on `/cards`. Shows rarity, card types, active / reserved split (with a per-rarity breakdown) and keyword attribute counts (only the keywords in `dictionary.js`), with an All / Active / Reserved filter. Served by the new `/api/card-stats?faction=` method; unknown factions 404 / 400.
+- The faction pages use only the faction palette from `/cards` for charts, chips and info panels (this faction's colour leads the type/attribute slices; neutral's near-black is skipped). The selected All / Active filter is filled with France blue / USA green; Reserved keeps the default grey.
+- Total / Active / Reserved info panels (styled like the users page summary) at the top of `/cards` and every faction page. `cards-by-faction` now also returns per-faction `active` / `reserved` counts.
+- Card stats (`card-stats` and `cards-by-faction`) are now cached for 30 days under their own keys (`api:cards:v2:*`), and a DB sync that creates or updates cards clears them. Previously `cards-by-faction` was cached forever; the old `api:v3:cards-by-faction:` key is removed by the first sync that changes cards.
+
 ### Maintenance
 
 - Pinned the Prisma packages (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) to exact `7.10.0`. The CLI had floated to 7.10.0 while the client and adapter stayed at 7.9.1, so `prisma generate` produced a 7.10.0 client against a 7.9.1 runtime; the exact pins keep the CLI and client in lockstep on every install.

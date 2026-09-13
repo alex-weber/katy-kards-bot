@@ -1,4 +1,4 @@
-const {getCardsByFaction} = require('../database/card')
+const {getCardsByFaction, getFactionCardStats} = require('../database/card')
 const {
     getDashboardMessages,
     getScreenshotMessages,
@@ -11,7 +11,9 @@ const {
 } = require("../database/message")
 
 const {redis, cachePrefix} = require('../controller/redis')
+const {CARD_STATS_TTL, cardStatsCacheKey} = require('../controller/cardStatsCache')
 const {getScreenshotCounters} = require('../tools/screenshotStats')
+const {isFaction} = require('../tools/factions')
 
 const expiration = parseInt(process.env.CACHE_API_EXPIRE) || 60*10
 // Bump when the shape of any cached API response changes, so stale payloads
@@ -25,7 +27,13 @@ const statsMethods = new Set([
     'top-users',
 ])
 
-async function run(method, { period } = {}) {
+// Cached under their own keys so a DB sync can clear them (see cardStatsCache.js).
+const cardStatsMethods = new Set([
+    'cards-by-faction',
+    'card-stats',
+])
+
+async function run(method, { period, faction } = {}) {
     const response = {
         result: 200,
         success: false,
@@ -47,11 +55,19 @@ async function run(method, { period } = {}) {
         return response
     }
 
+    if (method === 'card-stats' && !isFaction(faction)) {
+        response.result = 400
+        response.message = 'Invalid faction'
+        return response
+    }
+
     const statsPeriod = normalizeStatsPeriod(period)
 
     // Build cache key including all relevant params
     const paramKey = statsMethods.has(method) ? statsPeriod : ''
-    const cacheKey = cachePrefix + 'api:' + CACHE_VERSION + ':' + method + ':' + paramKey
+    const cacheKey = cardStatsMethods.has(method)
+        ? cardStatsCacheKey(method, method === 'card-stats' ? faction : '')
+        : cachePrefix + 'api:' + CACHE_VERSION + ':' + method + ':' + paramKey
 
     const cached = await redis.json.get(cacheKey, '$')
 
@@ -64,7 +80,15 @@ async function run(method, { period } = {}) {
         case 'cards-by-faction':
             if (!cached) {
                 response.data = await getCardsByFaction()
-                await saveToCache(response.data, 0)
+                await saveToCache(response.data, CARD_STATS_TTL)
+            } else response.data = cached
+            response.success = true
+            break
+
+        case 'card-stats':
+            if (!cached) {
+                response.data = await getFactionCardStats(faction)
+                await saveToCache(response.data, CARD_STATS_TTL)
             } else response.data = cached
             response.success = true
             break

@@ -7,6 +7,8 @@ block content
                 span#factionsTotalCardsCount
             p.page-subtitle Card distribution across every faction in the database.
 
+        include includes/cardStatusSummary
+
         .cards-faction-grid
             .content-panel.chart-panel
                 .panel-header
@@ -90,19 +92,7 @@ block content
             }
 
             function factionLabel(faction) {
-                const labels = {
-                    germany: 'GERMANY',
-                    usa: 'USA',
-                    britain: 'BRITAIN',
-                    soviet: 'SOVIET UNION',
-                    japan: 'JAPAN',
-                    france: 'FRANCE',
-                    italy: 'ITALY',
-                    poland: 'POLAND',
-                    finland: 'FINLAND',
-                    anzac: 'ANZAC',
-                    neutral: 'NEUTRAL',
-                }
+                const labels = !{JSON.stringify(factionLabels)}
                 return labels[faction] || faction
                     .split(/[\s_-]+/)
                     .map(word => word.toUpperCase())
@@ -116,9 +106,11 @@ block content
                     return `
                         <tr>
                             <td>
-                                <span class="faction-chip" style="background: ${color}; color: ${textColorForBackground(color)}">
-                                    ${escapeHtml(factionLabel(item.faction))}
-                                </span>
+                                <a class="faction-chip-link" href="/cards/${encodeURIComponent(item.faction)}">
+                                    <span class="faction-chip" style="background: ${color}; color: ${textColorForBackground(color)}">
+                                        ${escapeHtml(factionLabel(item.faction))}
+                                    </span>
+                                </a>
                             </td>
                             <td class="data-strong">${Number(item.count || 0).toLocaleString()}</td>
                             <td>${formatPercent(item.count, total)}</td>
@@ -142,26 +134,18 @@ block content
                 const data = sortedData.map(item => item.count)
                 const totalCount = data.reduce((sum, count) => sum + count, 0)
                 totalCardsCountElement.innerText = ' (' + totalCount + ')'
+                renderCardStatusSummary({
+                    total: totalCount,
+                    active: sortedData.reduce((sum, item) => sum + (item.active || 0), 0),
+                    reserved: sortedData.reduce((sum, item) => sum + (item.reserved || 0), 0),
+                })
                 // Hide loading spinner and show canvas
                 loadingSpinner.classList.add('d-none')
                 chartCanvas.style.display = 'block'
 
                 // Define faction colors
-                const baseColors = {
-                    soviet: '#604F3D',
-                    usa: '#63694C',
-                    japan: '#9D7C41',
-                    germany: '#5E6965',
-                    britain: '#928F7C',
-                    france: '#4C566F',
-                    italy: '#626260',
-                    poland: '#645E4B',
-                    finland: '#B8B8A0',
-                    anzac: '#7A5727',
-                    neutral: '#0c0c0c',
-                }
-                const mainNationOrder = ['germany', 'usa', 'britain', 'soviet', 'japan']
-                const mainNations = new Set(mainNationOrder)
+                const baseColors = !{JSON.stringify(factionColors)}
+                const mainNations = new Set(!{JSON.stringify(mainNations)})
 
                 // Generate background gradients
                 const backgroundColors = sortedData.map(faction => {
@@ -200,6 +184,15 @@ block content
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        // A slice opens that faction's stats page.
+                        onClick: function (event) {
+                            const [element] = this.getElementsAtEventForMode(event, 'nearest', {intersect: true}, true)
+                            if (element) window.location.href = '/cards/' + encodeURIComponent(sortedData[element.index].faction)
+                        },
+                        onHover: function (event) {
+                            const elements = this.getElementsAtEventForMode(event, 'nearest', {intersect: true}, true)
+                            chartCanvas.style.cursor = elements.length ? 'pointer' : 'default'
+                        },
                         plugins: {
                             legend: {
                                 display: true,

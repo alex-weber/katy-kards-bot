@@ -1,4 +1,5 @@
 const { prisma } = require('./prisma')
+const dictionary = require('../tools/dictionary')
 
 const cardStats = {
     created: 0,
@@ -188,27 +189,80 @@ async function getCardsDB(data, skip = 0)
 
 async function getCardsByFaction()
 {
+    // Grouped by reserve status too, so the overview can show active/reserved totals.
     const groupedCards = await prisma.card.groupBy({
-        by: ['faction'], // group by faction
-        _count: {
-            faction: true // count the number of records in each faction group
-        },
-        orderBy: {
-            _count: {
-                faction: 'desc' // order by the count of faction in descending order
-            }
-        },
+        by: ['faction', 'reserved'],
+        _count: { _all: true },
     })
 
-    return groupedCards.map(group => ({
-        faction: group.faction,
-        count: group._count.faction
-    }))
+    const byFaction = new Map()
+    for (const group of groupedCards) {
+        const entry = byFaction.get(group.faction) || { faction: group.faction, count: 0, active: 0, reserved: 0 }
+        entry.count += group._count._all
+        entry[group.reserved ? 'reserved' : 'active'] += group._count._all
+        byFaction.set(group.faction, entry)
+    }
 
+    return [...byFaction.values()].sort((a, b) => b.count - a.count)
+}
+
+function zeroCounts(keys) {
+    return Object.fromEntries(keys.map(key => [key, 0]))
+}
+
+function emptyCardStats() {
+    return {
+        total: 0,
+        rarity: zeroCounts(dictionary.rarity),
+        type: zeroCounts(dictionary.type),
+        attribute: zeroCounts(dictionary.attribute),
+    }
+}
+
+function countInto(counts, key) {
+    if (Object.hasOwn(counts, key)) counts[key]++
+}
+
+/**
+ * Rarity, type and attribute counts for one faction, computed for all cards and
+ * again for active and reserved ones, so the page can switch between them
+ * without another request. Only the attribute keywords listed in dictionary.js
+ * are counted — stored values like "veteranof:*" or "heavyarmor1" are ignored.
+ *
+ * @param faction
+ * @returns {Promise<{all: object, active: object, reserved: object}>}
+ */
+async function getFactionCardStats(faction)
+{
+    const cards = await prisma.card.findMany({
+        where: { faction },
+        select: { rarity: true, type: true, attributes: true, reserved: true },
+    })
+
+    const stats = {
+        all: emptyCardStats(),
+        active: emptyCardStats(),
+        reserved: emptyCardStats(),
+    }
+
+    for (const card of cards) {
+        const attributes = new Set((card.attributes || '').split(',').map(attribute => attribute.trim()))
+        const buckets = [stats.all, card.reserved ? stats.reserved : stats.active]
+
+        for (const bucket of buckets) {
+            bucket.total++
+            countInto(bucket.rarity, card.rarity)
+            countInto(bucket.type, card.type)
+            for (const attribute of attributes) countInto(bucket.attribute, attribute)
+        }
+    }
+
+    return stats
 }
 
 module.exports = {
     getCardsByFaction,
+    getFactionCardStats,
     createCard,
     getCardsDB,
     getCardStats,

@@ -622,6 +622,28 @@ describe('simple renders', () => {
         const res = makeRes()
         await router.renderCards({ session: { user: { id: '1' } } }, res)
         expect(res.render.mock.calls[0][0]).toBe('cards')
+        expect(res.render.mock.calls[0][1].factionLabels.usa).toBe('USA')
+    })
+
+    test('renderCardFaction renders a known faction', () => {
+        const res = makeRes()
+        router.renderCardFaction({ session: {}, params: { faction: 'USA' } }, res)
+        const [view, locals] = res.render.mock.calls[0]
+        expect(view).toBe('cardFaction')
+        expect(locals).toMatchObject({ faction: 'usa', factionLabel: 'USA', factionColor: '#63694C' })
+    })
+
+    test('renderCardFaction 404s an unknown faction', () => {
+        const res = makeRes()
+        router.renderCardFaction({ session: {}, params: { faction: 'narnia' } }, res)
+        expect(res.status).toHaveBeenCalledWith(404)
+        expect(res.render).not.toHaveBeenCalled()
+    })
+
+    test('handleApi passes the faction through to the API', async () => {
+        const res = makeRes()
+        await router.handleApi({ session: {}, params: { method: 'card-stats' }, query: { faction: 'Japan' } }, res)
+        expect(API.run).toHaveBeenCalledWith('card-stats', expect.objectContaining({ faction: 'japan' }))
     })
 
     test('renderTerms renders the terms view with an effective date', () => {

@@ -12,6 +12,7 @@
 const path = require('path')
 const {spawn} = require('child_process')
 const {redis, cachePrefix} = require('../controller/redis')
+const {clearCardStatsCache} = require('../controller/cardStatsCache')
 
 const lastSyncKey = `${cachePrefix}system:sync:last`
 const syncHistoryKey = `${cachePrefix}system:sync:history`
@@ -174,6 +175,9 @@ function startSync({triggeredBy = 'unknown', redisClient = redis} = {}) {
         activeSync = null
 
         const ok = Boolean(result) && code === 0
+        // The card stats pages are cached for 30 days; a sync that changed
+        // cards makes them stale.
+        if (ok && (result.created || result.updated)) await clearCardStatsCache(redisClient)
         await saveLastSync({
             finishedAt: new Date().toISOString(),
             startedAt,

@@ -1,0 +1,20 @@
+// Total / Active / Reserved info panels for the card pages, styled like the
+// users page status summary but coloured from the faction palette (needs the
+// `factionColors` local). Filled client-side via renderCardStatusSummary().
+.content-panel.card-status-panel
+    .stat-grid.users-status-grid
+        .stat-card.card-stat(style=`border-top-color: ${factionColors.britain}`)
+            .stat-label Total
+            #cardStatTotal.stat-value &ndash;
+        .stat-card.card-stat(style=`border-top-color: ${factionColors.usa}`)
+            .stat-label Active
+            #cardStatActive.stat-value &ndash;
+        .stat-card.card-stat(style=`border-top-color: ${factionColors.japan}`)
+            .stat-label Reserved
+            #cardStatReserved.stat-value &ndash;
+script.
+    function renderCardStatusSummary({total, active, reserved}) {
+        document.getElementById('cardStatTotal').innerText = Number(total || 0).toLocaleString()
+        document.getElementById('cardStatActive').innerText = Number(active || 0).toLocaleString()
+        document.getElementById('cardStatReserved').innerText = Number(reserved || 0).toLocaleString()
+    }

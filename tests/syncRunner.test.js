@@ -6,6 +6,7 @@ const EventEmitter = require('events')
 jest.mock('child_process', () => ({ spawn: jest.fn() }))
 jest.mock('../src/controller/redis', () => ({
     redis: {
+        del: jest.fn(async () => 1),
         json: {
             get: jest.fn(async () => null),
             set: jest.fn(async () => 'OK'),
@@ -256,6 +257,41 @@ describe('the history log', () => {
         const runner = loadRunner()
 
         await expect(runner.getSyncHistory()).resolves.toEqual([{ triggeredBy: 'wrapped', ok: true }])
+    })
+})
+
+describe('the card stats cache', () => {
+    async function runSync(message, code = 0) {
+        const child = makeChild()
+        spawn.mockReturnValueOnce(child)
+        const runner = loadRunner()
+
+        runner.startSync()
+        if (message) child.emit('message', message)
+        child.emit('close', code)
+        await new Promise(resolve => setImmediate(resolve))
+    }
+
+    test('is cleared when the sync changed cards', async () => {
+        await runSync({ type: 'result', created: 0, updated: 3, totalCards: 900, seconds: 1 })
+
+        expect(redis.del).toHaveBeenCalledTimes(1)
+        expect(redis.del.mock.calls[0][0]).toEqual(expect.arrayContaining([
+            'web:test:api:cards:v2:cards-by-faction:',
+            'web:test:api:cards:v2:card-stats:usa',
+        ]))
+    })
+
+    test('is kept when the sync changed nothing', async () => {
+        await runSync({ type: 'result', created: 0, updated: 0, totalCards: 900, seconds: 1 })
+
+        expect(redis.del).not.toHaveBeenCalled()
+    })
+
+    test('is kept when the sync failed', async () => {
+        await runSync({ type: 'result', created: 5, updated: 0, totalCards: 900, seconds: 1 }, 1)
+
+        expect(redis.del).not.toHaveBeenCalled()
     })
 })
 

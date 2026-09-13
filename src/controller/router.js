@@ -59,6 +59,13 @@ const {
 const {fetchJson} = require('../tools/fetch')
 //API
 const API = require('../controller/api')
+const {
+    FACTION_LABELS,
+    FACTION_COLORS,
+    MAIN_NATIONS,
+    isFaction,
+    textColorForBackground,
+} = require('../tools/factions')
 // The dropdown labels. The set of valid period values lives in message.js
 // (STATS_PERIODS, imported above via db) — these are the ones shown in the UI;
 // 'daily' is a valid period too but not offered here, as the dashboard's
@@ -1173,6 +1180,25 @@ async function renderCards(req, res) {
     res.render('cards', {
         title: 'Cards',
         user: req.session.user,
+        factionLabels: FACTION_LABELS,
+        factionColors: FACTION_COLORS,
+        mainNations: MAIN_NATIONS,
+    })
+}
+
+function renderCardFaction(req, res) {
+    const faction = String(req.params.faction || '').toLowerCase()
+    if (!isFaction(faction)) return res.status(404).send('Faction not found')
+
+    const factionColor = FACTION_COLORS[faction]
+    res.render('cardFaction', {
+        title: `${FACTION_LABELS[faction]} cards`,
+        user: req.session.user,
+        faction,
+        factionLabel: FACTION_LABELS[faction],
+        factionColor,
+        factionTextColor: textColorForBackground(factionColor),
+        factionColors: FACTION_COLORS,
     })
 }
 
@@ -1213,7 +1239,8 @@ async function handleApi(req, res) {
         }
     }
 
-    const apiResponse = await API.run(method, { period })
+    const faction = typeof req.query.faction === 'string' ? req.query.faction.toLowerCase() : undefined
+    const apiResponse = await API.run(method, { period, faction })
 
     res.json(apiResponse)
 }
@@ -1305,6 +1332,7 @@ module.exports = {
     renderProfile,
     renderPublicProfile,
     renderCards,
+    renderCardFaction,
     renderTerms,
     renderPrivacy,
     handleApi,

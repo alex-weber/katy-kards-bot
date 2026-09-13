@@ -12,7 +12,10 @@ jest.mock('../src/controller/redis', () => ({
         expire: jest.fn(async () => {}),
     },
 }))
-jest.mock('../src/database/card', () => ({ getCardsByFaction: jest.fn(async () => [{ faction: 'usa' }]) }))
+jest.mock('../src/database/card', () => ({
+    getCardsByFaction: jest.fn(async () => [{ faction: 'usa' }]),
+    getFactionCardStats: jest.fn(async faction => ({ all: { total: faction.length } })),
+}))
 jest.mock('../src/database/message', () => {
     const STATS_PERIODS = ['current-month', 'last-month', 'current-year', 'last-year', 'all-time', 'daily']
     return {
@@ -28,6 +31,7 @@ jest.mock('../src/database/message', () => {
 const API = require('../src/controller/api')
 const { redis } = require('../src/controller/redis')
 const message = require('../src/database/message')
+const card = require('../src/database/card')
 
 beforeEach(() => {
     mockStore.clear()
@@ -78,10 +82,32 @@ describe('API.run', () => {
         expect(message.getDashboardMessages).toHaveBeenCalledWith({period: 'current-year'})
     })
 
-    test('cards-by-faction caches forever (no expire)', async () => {
+    test('cards-by-faction caches for 30 days', async () => {
         await API.run('cards-by-faction', {})
         expect(redis.json.set).toHaveBeenCalledTimes(1)
-        expect(redis.expire).not.toHaveBeenCalled() // ttl 0 => no expiry
+        expect(redis.expire).toHaveBeenCalledWith('test:api:cards:v2:cards-by-faction:', 60 * 60 * 24 * 30)
+    })
+
+    test('card-stats computes per faction and caches for 30 days', async () => {
+        const res = await API.run('card-stats', { faction: 'usa' })
+        expect(res.success).toBe(true)
+        expect(res.data).toEqual({ all: { total: 3 } })
+        expect(card.getFactionCardStats).toHaveBeenCalledWith('usa')
+        expect(redis.expire).toHaveBeenCalledWith('test:api:cards:v2:card-stats:usa', 60 * 60 * 24 * 30)
+    })
+
+    test('card-stats uses a cache key per faction', async () => {
+        await API.run('card-stats', { faction: 'usa' })
+        await API.run('card-stats', { faction: 'usa' })
+        await API.run('card-stats', { faction: 'japan' })
+        expect(card.getFactionCardStats).toHaveBeenCalledTimes(2)
+    })
+
+    test.each([undefined, 'narnia', 'USA'])('card-stats rejects faction %p with 400', async faction => {
+        const res = await API.run('card-stats', { faction })
+        expect(res.result).toBe(400)
+        expect(res.success).toBe(false)
+        expect(card.getFactionCardStats).not.toHaveBeenCalled()
     })
 
     test.each([

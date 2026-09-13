@@ -924,6 +924,47 @@
     white-space: nowrap;
 }
 
+.faction-chip-link {
+    display: block;
+    text-decoration: none;
+}
+
+.faction-chip-link:hover .faction-chip,
+.faction-chip-link:focus-visible .faction-chip {
+    filter: brightness(1.2);
+}
+
+.faction-chip-hero {
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    vertical-align: middle;
+    width: auto;
+}
+
+.card-stats-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+/* Selected All / Active filter fills with its faction colour (--scope-color is
+   set inline). Scoped under the toolbar to beat Bootstrap's .btn-check rules,
+   which load after this stylesheet. */
+.card-stats-toolbar .btn-check:checked + .btn.card-scope-colored {
+    background-color: var(--scope-color);
+    border-color: var(--scope-color);
+    color: #f8f9fa;
+}
+
+.card-stats-back {
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
 .faction-table thead th,
 .faction-table tbody td {
     padding: 0.55rem 0.65rem;
@@ -1246,6 +1287,12 @@
 .users-stat-declined { border-top: 3px solid #fd7e14; }
 .users-stat-banned { border-top: 3px solid #dc3545; }
 .users-stat-new { border-top: 3px solid #0d6efd; }
+/* The colour is set inline from the faction palette (includes/cardStatusSummary.pug). */
+.card-stat { border-top: 3px solid #6c757d; }
+
+.card-status-panel {
+    margin-bottom: 1.25rem;
+}
 
 .audit-old {
     color: #adb5bd;

@@ -42,6 +42,7 @@ const {
     renderProfile,
     renderPublicProfile,
     renderCards,
+    renderCardFaction,
     renderTerms,
     renderPrivacy,
     handleApi,
@@ -150,6 +151,7 @@ app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, r
 app.get('/servers', webRateLimiter, isAuthenticated, requireManager, (req, res) => renderServers(req, res, servers))
 app.post('/servers', webRateLimiter, isAuthenticated, requireGod, handleGuildSettingsUpdate)
 app.get('/cards', webRateLimiter, renderCards)
+app.get('/cards/:faction', webRateLimiter, renderCardFaction)
 app.get('/topdeck', webRateLimiter, isAuthenticated, requireManager, renderTopDeck)
 app.get('/terms', webRateLimiter, renderTerms)
 app.get('/privacy', webRateLimiter, renderPrivacy)
