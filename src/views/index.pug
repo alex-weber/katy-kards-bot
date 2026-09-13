@@ -63,14 +63,6 @@ block content
 
     include includes/datepicker.pug
 
-    // Chart Section for Messages
-    div
-      // Loading Spinner for Messages Chart
-      div#loadingSpinner.d-flex.justify-content-center.align-items-center(style="height: 300px; display: flex;")
-        div.spinner-border.text-primary(role="status")
-      // Canvas for Messages Chart
-      canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
-
     div.dashboard-leaderboards(style=(user && user.isManager) ? "" : "grid-template-columns: 1fr;")
       section.leaderboard-panel.panel-accent-teal
         div.panel-header

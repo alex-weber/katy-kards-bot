@@ -1,13 +1,18 @@
 // Stats period selector. No submit button — changing the dropdown reloads the
 // dashboard for the chosen period.
 if canFilter
-    form#filterForm.filter-panel(method="get" action="")
+    form#filterForm.filter-panel.panel-accent-blue(method="get" action="")
         .row.mb-3
             .col-md-3
-                label.form-label(for="period") Period:
                 select#period.form-select(name="period" onchange="this.form.submit()")
                     each option in periods
                         option(
                             value=option.value
                             selected=option.value === period
                         ) #{option.label}
+        // Messages chart lives inside the period selector so it reads as one panel.
+        // Loading Spinner for Messages Chart
+        div#loadingSpinner.d-flex.justify-content-center.align-items-center(style="height: 300px; display: flex;")
+            div.spinner-border.text-primary(role="status")
+        // Canvas for Messages Chart
+        canvas#messagesChart(style="height: 300px; width: 100%; display: none;")
