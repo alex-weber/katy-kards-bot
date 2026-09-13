@@ -30,7 +30,7 @@ describe('attributeChannel', () => {
         // a string payload becomes an options object: the tag carries a name
         // its owner chose, so the send has to pin allowedMentions
         expect(channel.sent[0]).toEqual({
-            content: '_Requested by alice_\nhello world',
+            content: 'Requested by alice\nhello world',
             allowedMentions: {parse: []},
         })
     })
@@ -41,7 +41,7 @@ describe('attributeChannel', () => {
         await wrapped.send({content: 'cards found', components: ['btn']})
 
         expect(channel.sent[0]).toEqual({
-            content: '_Requested by alice_\ncards found',
+            content: 'Requested by alice\ncards found',
             components: ['btn'],
             allowedMentions: {parse: []},
         })
@@ -54,7 +54,7 @@ describe('attributeChannel', () => {
 
         expect(channel.sent[0]).toEqual({
             files: ['a.png'],
-            content: '_Requested by alice_',
+            content: 'Requested by alice',
             allowedMentions: {parse: []},
         })
     })
@@ -65,7 +65,7 @@ describe('attributeChannel', () => {
         await wrapped.send('search results')
 
         expect(channel.sent[0]).toEqual({
-            content: '_Requested by alice: soviet infantry 1/8_\nsearch results',
+            content: 'Requested by alice: soviet infantry 1/8\nsearch results',
             allowedMentions: {parse: []},
         })
     })
@@ -76,7 +76,7 @@ describe('attributeChannel', () => {
         await wrapped.send('page 2')
 
         expect(channel.sent[0]).toEqual({
-            content: '_Requested by alice_\npage 2',
+            content: 'Requested by alice\npage 2',
             allowedMentions: {parse: []},
         })
     })
@@ -113,7 +113,7 @@ describe('attributeChannel', () => {
         await wrapped.send('<@42>')
 
         expect(channel.sent[0].content).toBe(
-            '_Requested by alice: td_\ngetting battle results...')
+            'Requested by alice: td\ngetting battle results...')
         expect(channel.sent[1].content).toBe('battle log')
         expect(channel.sent[2].content).toBe('<@42>')
     })
@@ -148,7 +148,7 @@ describe('attributeChannel', () => {
         await wrapped.send('the regenerated result')
 
         expect(channel.sent[1].content).toBe(
-            '_Requested by alice_\nthe regenerated result')
+            'Requested by alice\nthe regenerated result')
     })
 
     test('the cache-forward notice sent via sendRaw does not consume it either', async () => {
@@ -158,7 +158,7 @@ describe('attributeChannel', () => {
         await wrapped.send('the regenerated result')
 
         expect(channel.sent[1].content).toBe(
-            '_Requested by alice_\nthe regenerated result')
+            'Requested by alice\nthe regenerated result')
     })
 
     // The deck screenshot posts the tag as its own message so the screenshot
@@ -170,7 +170,7 @@ describe('attributeChannel', () => {
         await wrapped.sendAttribution()
 
         expect(channel.sent[0]).toEqual({
-            content: '_Requested by alice: soviet infantry_',
+            content: 'Requested by alice: soviet infantry',
             allowedMentions: {parse: []},
         })
     })
