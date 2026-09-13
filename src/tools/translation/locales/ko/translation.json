@@ -65,8 +65,8 @@
   "contactSuccess": "메시지가 봇 관리자에게 전송되었습니다.",
   "contactFailDeliver": "메시지를 전달할 수 없습니다. GitHub에서 이슈를 열어 보세요.",
   "contactFailAdmins": "문의할 관리자를 찾을 수 없습니다.",
-  "requestedBy": "_{{name}} 님의 요청_",
-  "requestedByQuery": "_{{name}} 님의 요청: {{query}}_",
+  "requestedBy": "{{name}} 님의 요청",
+  "requestedByQuery": "{{name}} 님의 요청: {{query}}",
   "cacheForwardNotice": "{{name}} 님의 검색 요청: {{query}}. 캐시된 메시지를 전달합니다.",
   "cacheRequestNotice": "{{name}} 님의 요청: {{query}}. 캐시된 메시지를 전달합니다."
 }

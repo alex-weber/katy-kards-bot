@@ -73,8 +73,8 @@
   "contactSuccess": "Deine Nachricht wurde an die Bot-Administratoren gesendet.",
   "contactFailDeliver": "Die Nachricht konnte nicht zugestellt werden. Bitte versuche, ein Issue auf GitHub zu öffnen.",
   "contactFailAdmins": "Es konnten keine Administratoren zum Kontaktieren gefunden werden.",
-  "requestedBy": "_Angefragt von {{name}}_",
-  "requestedByQuery": "_Angefragt von {{name}}: {{query}}_",
+  "requestedBy": "Angefragt von {{name}}",
+  "requestedByQuery": "Angefragt von {{name}}: {{query}}",
   "cacheForwardNotice": "Suchanfrage von {{name}}: {{query}}. Leite zwischengespeicherte Nachricht weiter.",
   "cacheRequestNotice": "Anfrage von {{name}}: {{query}}. Leite zwischengespeicherte Nachricht weiter."
 }

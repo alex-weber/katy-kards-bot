@@ -73,8 +73,8 @@
   "contactSuccess": "Your message has been sent to the bot administrators.",
   "contactFailDeliver": "Could not deliver the message. Please try opening an issue on GitHub.",
   "contactFailAdmins": "Could not find any administrators to contact.",
-  "requestedBy": "_Requested by {{name}}_",
-  "requestedByQuery": "_Requested by {{name}}: {{query}}_",
+  "requestedBy": "Requested by {{name}}",
+  "requestedByQuery": "Requested by {{name}}: {{query}}",
   "cacheForwardNotice": "Search request from {{name}}: {{query}}. Forwarding cached message.",
   "cacheRequestNotice": "Request from {{name}}: {{query}}. Forwarding cached message."
 }

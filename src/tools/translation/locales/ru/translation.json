@@ -73,8 +73,8 @@
   "contactSuccess": "Ваше сообщение отправлено администраторам бота.",
   "contactFailDeliver": "Не удалось доставить сообщение. Пожалуйста, попробуйте открыть issue на GitHub.",
   "contactFailAdmins": "Не удалось найти администраторов для связи.",
-  "requestedBy": "_Запрос от {{name}}_",
-  "requestedByQuery": "_Запрос от {{name}}: {{query}}_",
+  "requestedBy": "Запрос от {{name}}",
+  "requestedByQuery": "Запрос от {{name}}: {{query}}",
   "cacheForwardNotice": "Запрос поиска от {{name}}: {{query}}. Пересылаю сохранённое сообщение.",
   "cacheRequestNotice": "Запрос от {{name}}: {{query}}. Пересылаю сохранённое сообщение."
 }

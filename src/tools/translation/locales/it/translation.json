@@ -65,8 +65,8 @@
   "contactSuccess": "Il tuo messaggio è stato inviato agli amministratori del bot.",
   "contactFailDeliver": "Impossibile consegnare il messaggio. Prova ad aprire una issue su GitHub.",
   "contactFailAdmins": "Nessun amministratore da contattare trovato.",
-  "requestedBy": "_Richiesto da {{name}}_",
-  "requestedByQuery": "_Richiesto da {{name}}: {{query}}_",
+  "requestedBy": "Richiesto da {{name}}",
+  "requestedByQuery": "Richiesto da {{name}}: {{query}}",
   "cacheForwardNotice": "Richiesta di ricerca da {{name}}: {{query}}. Inoltro il messaggio dalla cache.",
   "cacheRequestNotice": "Richiesta da {{name}}: {{query}}. Inoltro il messaggio dalla cache."
 }

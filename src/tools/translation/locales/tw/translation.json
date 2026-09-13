@@ -65,8 +65,8 @@
   "contactSuccess": "你的訊息已傳送給機器人管理員。",
   "contactFailDeliver": "無法送達訊息。請嘗試在 GitHub 上提交 issue。",
   "contactFailAdmins": "找不到可聯絡的管理員。",
-  "requestedBy": "_由 {{name}} 請求_",
-  "requestedByQuery": "_由 {{name}} 請求：{{query}}_",
+  "requestedBy": "由 {{name}} 請求",
+  "requestedByQuery": "由 {{name}} 請求：{{query}}",
   "cacheForwardNotice": "來自 {{name}} 的搜尋請求：{{query}}。正在轉發快取的訊息。",
   "cacheRequestNotice": "來自 {{name}} 的請求：{{query}}。正在轉發快取的訊息。"
 }

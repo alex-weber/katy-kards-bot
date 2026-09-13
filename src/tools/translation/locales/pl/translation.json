@@ -65,8 +65,8 @@
   "contactSuccess": "Twoja wiadomość została wysłana do administratorów bota.",
   "contactFailDeliver": "Nie udało się dostarczyć wiadomości. Spróbuj otworzyć zgłoszenie (issue) na GitHubie.",
   "contactFailAdmins": "Nie znaleziono żadnych administratorów do kontaktu.",
-  "requestedBy": "_Zapytanie od {{name}}_",
-  "requestedByQuery": "_Zapytanie od {{name}}: {{query}}_",
+  "requestedBy": "Zapytanie od {{name}}",
+  "requestedByQuery": "Zapytanie od {{name}}: {{query}}",
   "cacheForwardNotice": "Zapytanie wyszukiwania od {{name}}: {{query}}. Przekazuję zapisaną wiadomość.",
   "cacheRequestNotice": "Zapytanie od {{name}}: {{query}}. Przekazuję zapisaną wiadomość."
 }

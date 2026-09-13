@@ -65,8 +65,8 @@
   "contactSuccess": "你的消息已发送给机器人管理员。",
   "contactFailDeliver": "无法送达消息。请尝试在 GitHub 上提交 issue。",
   "contactFailAdmins": "找不到可联系的管理员。",
-  "requestedBy": "_由 {{name}} 请求_",
-  "requestedByQuery": "_由 {{name}} 请求：{{query}}_",
+  "requestedBy": "由 {{name}} 请求",
+  "requestedByQuery": "由 {{name}} 请求：{{query}}",
   "cacheForwardNotice": "来自 {{name}} 的搜索请求：{{query}}。正在转发缓存的消息。",
   "cacheRequestNotice": "来自 {{name}} 的请求：{{query}}。正在转发缓存的消息。"
 }

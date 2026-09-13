@@ -65,8 +65,8 @@
   "contactSuccess": "あなたのメッセージはボット管理者に送信されました。",
   "contactFailDeliver": "メッセージを配信できませんでした。GitHubでissueを作成してみてください。",
   "contactFailAdmins": "連絡できる管理者が見つかりませんでした。",
-  "requestedBy": "_{{name}} によるリクエスト_",
-  "requestedByQuery": "_{{name}} によるリクエスト: {{query}}_",
+  "requestedBy": "{{name}} によるリクエスト",
+  "requestedByQuery": "{{name}} によるリクエスト: {{query}}",
   "cacheForwardNotice": "{{name}} からの検索リクエスト: {{query}}。キャッシュされたメッセージを転送します。",
   "cacheRequestNotice": "{{name}} からのリクエスト: {{query}}。キャッシュされたメッセージを転送します。"
 }
