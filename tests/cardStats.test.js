@@ -32,25 +32,47 @@ describe('getFactionCardStats', () => {
             { rarity: 'standard', type: 'infantry', attributes: 'blitz, fury', reserved: true },
             { rarity: 'standard', type: 'order', attributes: '', reserved: false },
             { rarity: 'limited', type: 'infantry', attributes: null, reserved: null },
+            { rarity: 'elite', type: 'tank', attributes: 'heavyarmor2,intel3,onlyspawnable', reserved: true },
+            { rarity: 'special', type: 'infantry', attributes: 'veteranof:the_regulars_vet', reserved: false },
+            { rarity: 'special', type: 'infantry', attributes: 'becomesveteran:the_regulars_vet', reserved: false },
         ])
 
         const stats = await getFactionCardStats('usa')
 
         expect(prisma.card.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { faction: 'usa' } }))
-        expect(stats.all.total).toBe(4)
-        expect(stats.active.total).toBe(3) // reserved: null counts as active
-        expect(stats.reserved.total).toBe(1)
+        expect(stats.all.total).toBe(7)
+        expect(stats.active.total).toBe(5) // reserved: null counts as active
+        expect(stats.reserved.total).toBe(2)
 
-        expect(stats.all.rarity).toEqual({ standard: 2, limited: 1, special: 0, elite: 1 })
+        expect(stats.all.rarity).toEqual({ standard: 2, limited: 1, special: 2, elite: 2 })
         expect(stats.reserved.rarity.standard).toBe(1)
-        expect(stats.all.type.infantry).toBe(2)
+        expect(stats.all.type.infantry).toBe(4)
         expect(stats.active.type.tank).toBe(1)
 
         expect(stats.all.attribute.blitz).toBe(2)
         expect(stats.all.attribute.fury).toBe(1)
         expect(stats.active.attribute.fury).toBe(0)
+        // Every level of a keyword counts as that keyword.
+        expect(stats.all.attribute['heavy armor']).toBe(2)
+        expect(stats.active.attribute['heavy armor']).toBe(1)
+        expect(stats.reserved.attribute['heavy armor']).toBe(1)
+        expect(stats.all.attribute.intel).toBe(1)
+        // "veteranof:<card>" is a veteran; "becomesveteran:<card>" is not.
+        expect(stats.all.attribute.veteran).toBe(1)
         // Only dictionary keywords are counted.
         expect(stats.all.attribute).not.toHaveProperty('heavyarmor1')
+        expect(stats.all.attribute).not.toHaveProperty('onlyspawnable')
+        expect(stats.all.attribute).not.toHaveProperty('becomesveteran:the_regulars_vet')
+    })
+
+    test('counts a keyword once even when a card carries two of its levels', async () => {
+        prisma.card.findMany.mockResolvedValue([
+            { rarity: 'elite', type: 'tank', attributes: 'heavyarmor1,heavyarmor2', reserved: false },
+        ])
+
+        const stats = await getFactionCardStats('germany')
+
+        expect(stats.all.attribute['heavy armor']).toBe(1)
     })
 
     test('returns zeroed buckets for a faction without cards', async () => {

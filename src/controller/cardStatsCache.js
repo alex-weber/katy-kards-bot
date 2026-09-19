@@ -5,7 +5,7 @@ const {FACTIONS} = require('../tools/factions')
 // clears these keys — so the TTL is just a backstop.
 const CARD_STATS_TTL = 60 * 60 * 24 * 30
 // Bump when the shape of a cached card stats payload changes.
-const CARD_STATS_CACHE_VERSION = 'v2'
+const CARD_STATS_CACHE_VERSION = 'v3'
 // cards-by-faction used to be cached without expiry under the generic API key.
 const legacyCardsByFactionKey = cachePrefix + 'api:v3:cards-by-faction:'
 

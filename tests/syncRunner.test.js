@@ -277,8 +277,8 @@ describe('the card stats cache', () => {
 
         expect(redis.del).toHaveBeenCalledTimes(1)
         expect(redis.del.mock.calls[0][0]).toEqual(expect.arrayContaining([
-            'web:test:api:cards:v2:cards-by-faction:',
-            'web:test:api:cards:v2:card-stats:usa',
+            'web:test:api:cards:v3:cards-by-faction:',
+            'web:test:api:cards:v3:card-stats:usa',
         ]))
     })
 
