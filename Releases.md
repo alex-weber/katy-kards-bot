@@ -2,11 +2,17 @@
 
 ### Features
 
+- Every user interaction is now logged with one structured summary line, on both platforms. Telegram commands produced no console line at all before (they were only recorded in the messages table), and on Discord only `search` had one. The line names the platform and how the command arrived, who ran it and where, the query, cache HIT/MISS, the page and every measured step: `search   · dc/button · rainy@KARDS#general · q="zhukov" · MISS · p2 off5 · 3 found · api 76ms`.
+- Deck screenshots are no longer logged as a bare `Screenshot captured and sent successfully`. The line now carries the user, the guild and channel, the deck code and the render time, and a cache hit is logged as such: `deck     · dc/text   · rainy@KARDS#general · q="ussr|1a2b" · MISS · sent · shot 2114ms`.
+- Interactions that used to fail silently are logged too: an expired pagination button, a refused write permission, a blocked user, a role limit and a too-short command.
+- Telegram profile button taps are now recorded in the messages table, the way typed commands on both platforms already were. Per-user message counts on the profile and stats pages include them from now on.
 - Searches written in a language the sync stores in `Card.fullText` (English, Russian, Japanese, Korean, Traditional and Simplified Chinese) are now answered straight from the local DB instead of kards.com — measured at 22-33ms against 131-283ms for the API round trip. The other six languages (`de`, `es`, `fr`, `it`, `pl`, `pt`) only exist on kards.com and still go there, keeping the existing no-result and request-failure fallbacks to the DB. The gate accepts both the API locale Discord passes (`ru-RU`) and the short code Telegram passes (`ru`). The DB sync is unaffected: it searches with an empty `q` and keeps fetching from kards.com.
 - One visible change from this: a query in Latin letters from a Russian user now also matches English titles, because `fullText` holds every stored locale at once. `/ru tiger` returns 6 cards where kards.com returned 4. No search returns fewer cards than before.
 
 ### Maintenance
 
+- The log line moved into the shared `src/tools/commandLog.js`, and both handlers emit it from a single `dispatch()` choke point instead of each command logging itself — so a new command cannot be added without being logged, and no path can log twice. Handlers enrich the line through `setLog()` / `addTiming()`, the way they already filled `ctx.timings`.
+- A cache hit now reports the permission and user-lookup time it actually spent, instead of showing the cache lookup alone.
 - The `fullText` locale list moved out of `buildFullText()` into the exported `FULL_TEXT_LOCALES`, so adding a locale to the sync enables DB routing for it in the same edit.
 
 ## 5.8.0

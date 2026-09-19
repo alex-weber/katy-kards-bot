@@ -36,6 +36,7 @@ const {
     handleTermsGate,
 } = require("./commands/termsCommands")
 const {checkRoleCommandLimit} = require("../tools/roles")
+const {discordActor, logCommand, setLog, addTiming} = require("../tools/commandLog")
 
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 //buffer overflow protection :)
@@ -113,6 +114,32 @@ function resolveCommandText(message, prefix)
 }
 
 /**
+ * Run the handler chain and log the interaction on the handler that claims it.
+ *
+ * Every command ends on exactly one handler, so the summary line is emitted
+ * here instead of inside each one: a command cannot be added without being
+ * logged, and no path can log twice. Handlers that know more about the outcome
+ * (cache state, result counts, render time) enrich ctx.log via setLog(), the
+ * same way they already fill ctx.timings.
+ *
+ * @param ctx
+ * @param handlers [kind, handler] pairs, tried in order
+ * @returns {Promise<boolean>} true when one of them handled the command
+ */
+async function dispatch(ctx, handlers)
+{
+    for (const [kind, handler] of handlers) {
+        if (await handler(ctx)) {
+            logCommand(kind, ctx, discordActor(ctx))
+
+            return true
+        }
+    }
+
+    return false
+}
+
+/**
  *
  * @param message
  * @param client
@@ -124,8 +151,22 @@ async function discordHandler(message, client, redis)
     //get a custom server prefix if set
     const prefix = bot.getPrefix(message)
 
+    //resolved up front so the early exits below can name the guild and channel
+    //they happened in, instead of every one of them looking like a DM
+    const {guildName, channelName} = resolveGuildChannel(message)
+    //the full ctx needs the user and the guild limits, which the exits below
+    //return before loading; this carries just enough to write their log line
+    const ctx0 = {message, guildName, channelName, command: message.content}
+
     const button = await resolveButtonCommand(message, redis, prefix)
-    if (button.stop) return message
+    if (button.stop) {
+        //the pagination key expired, so the click has nothing to page to - a
+        //dead "Next" button used to fail silently
+        setLog(ctx0, {result: 'expired'})
+        logCommand('button', ctx0, discordActor(ctx0))
+
+        return message
+    }
 
     if (message.author.bot || message.content.length > maxStrLen)
         return message
@@ -137,10 +178,13 @@ async function discordHandler(message, client, redis)
     const permStarted = Date.now()
     const permitted = await checkWritePermissions(client, message, redis)
     const permMs = Date.now() - permStarted
-    if (!permitted) return message
+    if (!permitted) {
+        addTiming(ctx0, 'perm', permMs)
+        setLog(ctx0, {q: text.command, result: 'no write permission'})
+        logCommand('blocked', ctx0, discordActor(ctx0))
 
-    //it's a bot command
-    const {guildName, channelName} = resolveGuildChannel(message)
+        return message
+    }
 
     //return if the message is empty
     if (!text.command.length) return message
@@ -166,26 +210,36 @@ async function discordHandler(message, client, redis)
     }
 
     //time commands need no user context
-    if (await handleMidnight(ctx)) return message
-    if (await handleUtc(ctx)) return message
+    if (await dispatch(ctx, [
+        ['midnight', handleMidnight],
+        ['utc', handleUtc],
+    ])) return message
 
     //set up the user
     const userStarted = Date.now()
     ctx.user = await loadUser(message, redis)
     ctx.timings.usr = Date.now() - userStarted
-    if (checkUserStatus(ctx.user, message)) return message
+    if (checkUserStatus(ctx.user, message)) {
+        setLog(ctx, {result: 'user ' + ctx.user.status})
+        logCommand('blocked', ctx, discordActor(ctx))
+
+        return message
+    }
     await ensureUserName(ctx.user, message)
     ctx.language = await resolveLanguage(ctx)
 
     //users who have not accepted the terms only get the terms prompt (except
     //for the privacy/terms commands, which fall through below)
-    if (await handleTermsGate(ctx)) return message
+    if (await dispatch(ctx, [['terms-gate', handleTermsGate]])) return message
 
     const roleLimit = await checkRoleCommandLimit(ctx)
     if (!roleLimit.allowed) {
         if (!roleLimit.silent && roleLimit.message) {
             message.channel.send(roleLimit.message)
         }
+        setLog(ctx, {result: 'limit reached' + (roleLimit.silent ? ' (silent)' : '')})
+        logCommand('limit', ctx, discordActor(ctx))
+
         return message
     }
     if (roleLimit.message) message.channel.send(roleLimit.message)
@@ -196,27 +250,35 @@ async function discordHandler(message, client, redis)
     const fullContent = `${guildName} | ${channelName} -> ${storedCommand}`
     createMessage({authorId: ctx.user.id, content: fullContent}).then()
 
-    if (await handleTerms(ctx)) return message
-    if (await handleDeck(ctx)) return message
-    if (await handleStats(ctx)) return message
-    if (await handleDm(ctx)) return message
-    if (await handleContact(ctx)) return message
-    if (await handleLanguageSwitch(ctx)) return message
-    if (await handleHelp(ctx)) return message
-    if (await handleRanking(ctx)) return message
-    if (await handleMyRank(ctx)) return message
-    if (await handleProfile(ctx)) return message
-    if (await handleTopDeck(ctx)) return message
+    if (await dispatch(ctx, [
+        ['terms', handleTerms],
+        ['deck', handleDeck],
+        ['stats', handleStats],
+        ['dm', handleDm],
+        ['contact', handleContact],
+        ['lang', handleLanguageSwitch],
+        ['help', handleHelp],
+        ['ranking', handleRanking],
+        ['myrank', handleMyRank],
+        ['profile', handleProfile],
+        ['topdeck', handleTopDeck],
+    ])) return message
 
     //check minimums
-    if (ctx.command.length < minStrLen && !ctx.qSearch)
-        return message.channel.send(translate(ctx.language, 'min'))
+    if (ctx.command.length < minStrLen && !ctx.qSearch) {
+        setLog(ctx, {result: 'too short'})
+        logCommand('rejected', ctx, discordActor(ctx))
 
-    if (await handleServers(ctx)) return message
-    if (await handleListCommands(ctx)) return message
-    if (await handleManageSynonym(ctx)) return message
-    //resolveSynonym may rewrite ctx.command and fall through to search
-    if (await resolveSynonym(ctx)) return message
+        return message.channel.send(translate(ctx.language, 'min'))
+    }
+
+    if (await dispatch(ctx, [
+        ['servers', handleServers],
+        ['commands', handleListCommands],
+        ['synonym', handleManageSynonym],
+        //resolveSynonym may rewrite ctx.command and fall through to search
+        ['custom', resolveSynonym],
+    ])) return message
 
     //raise the limit to the bot-channel limit if it is a bot-commands channel
     if (isBotCommandChannel(message)) ctx.limit = ctx.paginationLimit
@@ -224,9 +286,10 @@ async function discordHandler(message, client, redis)
         ctx.limit = Math.min(ctx.limit, ctx.roleRule.attachmentLimit)
     }
 
-    if (await handleAlt(ctx)) return message
-
-    await handleSearch(ctx)
+    if (await dispatch(ctx, [
+        ['alt', handleAlt],
+        ['search', handleSearch],
+    ])) return message
 
     return message
 }

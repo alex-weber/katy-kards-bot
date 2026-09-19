@@ -22,6 +22,7 @@ const {
     checkRoleCommandLimit,
     checkRoleDeckScreenshotLimit,
 } = require("../tools/roles")
+const {telegramActor, logCommand, setLog, addTiming} = require("../tools/commandLog")
 
 //Telegram only allows a fixed set of reaction emojis, so these are the
 //closest equivalents to the Discord reactions used in discordHandler.
@@ -119,11 +120,12 @@ async function activatePendingUser(user)
  */
 function checkUserStatus(ctx)
 {
-    const {tgCtx, user, command} = ctx
+    const {tgCtx, user} = ctx
     if (user.status !== 'active') {
-        console.log('blocked user', user, command)
         react(tgCtx, reactions.blocked)
         if (user.mode) tgCtx.reply(user.mode)
+        setLog(ctx, {result: 'user ' + user.status})
+        logCommand('blocked', ctx, telegramActor(ctx))
 
         return true
     }
@@ -213,12 +215,15 @@ async function handleDeck(ctx)
     //check if the deck is already in the cache
     const deckKey = cacheKeyPrefix + 'deck:' + language + ':' + command
     if (await redis.exists(deckKey)) {
+        const cacheStarted = Date.now()
         const response = await redis.json.get(deckKey, '$')
-        console.log('serving deck from cache', deckKey)
+        const cacheMs = Date.now() - cacheStarted
         react(tgCtx, reactions.success, user)
         await tgCtx.replyWithPhoto(response.files[0])
         await tgCtx.reply(response.content.replaceAll('```', ''))
         await tgCtx.replyWithPhoto(response.files[1])
+        addTiming(ctx, 'cache', cacheMs)
+        setLog(ctx, {q: command, cache: 'HIT'})
 
         return true
     }
@@ -226,12 +231,15 @@ async function handleDeck(ctx)
     const deckLimit = await checkRoleDeckScreenshotLimit(ctx)
     if (!deckLimit.allowed) {
         await tgCtx.reply(deckLimit.message)
+        setLog(ctx, {q: command, cache: 'MISS', result: 'limit reached'})
+
         return true
     }
 
     const deckInfo = await analyseDeck(command, language)
     if (!deckInfo) {
         await tgCtx.reply(translate(language, 'error'))
+        setLog(ctx, {q: command, cache: 'MISS', result: 'unreadable deck code'})
 
         return true
     }
@@ -252,8 +260,9 @@ async function handleDeck(ctx)
 
     let filename
     try {
+        const shotStarted = Date.now()
         filename = await takeScreenshot(url)
-        console.log('createDeckImages finished')
+        const shotMs = Date.now() - shotStarted
 
         if (filename) {
             const files = getDeckFiles(filename)
@@ -264,6 +273,9 @@ async function handleDeck(ctx)
         } else {
             await tgCtx.reply(translate(language, 'error'))
         }
+        addTiming(ctx, 'shot', shotMs)
+        setLog(ctx, {q: command, cache: 'MISS',
+            result: filename ? 'sent' : 'render failed'})
     } finally {
         //delete the "screenshot running" message from the chat
         try {
@@ -543,11 +555,18 @@ async function handleSearch(ctx)
         showSpawnables: true,
         showReserved: true,
     }
-    const cards = await getCards(variables)
-    if (!cards) return true
+    if (!ctx.timings) ctx.timings = {}
+    const cards = await getCards(variables, 3000, ctx.timings)
+    setLog(ctx, {cache: 'MISS'})
+    if (!cards) {
+        setLog(ctx, {result: 'lookup failed'})
+
+        return true
+    }
     if (!cards.counter) {
         react(tgCtx, reactions.noResult, user)
         await tgCtx.reply(translate(language, 'noresult'))
+        setLog(ctx, {result: '0 found'})
 
         return true
     }
@@ -568,12 +587,14 @@ async function handleSearch(ctx)
             //the optimistic success reaction no longer holds: the conversion
             //failed and an error reply was already sent, so correct the emoji.
             react(tgCtx, reactions.error, user)
+            setLog(ctx, {result: cards.counter + ' found (convert failed)'})
 
             return true
         }
 
         if (cards.counter > 1) await sendCardMediaGroup(ctx, files)
         else await sendCardPhoto(ctx, files[0])
+        setLog(ctx, {result: cards.counter + ' found'})
     } finally {
         for (const filePath of downloadedFiles) {
             try {
@@ -645,6 +666,30 @@ async function buildProfileView(user, includeSettings)
 }
 
 /**
+ * Run the handler chain and log the interaction on the handler that claims it.
+ *
+ * Mirrors the Discord dispatcher: every command ends on exactly one handler, so
+ * the summary line is emitted here rather than inside each one. Handlers enrich
+ * ctx.log via setLog() when they know more about the outcome.
+ *
+ * @param ctx
+ * @param handlers [kind, handler] pairs, tried in order
+ * @returns {Promise<boolean>} true when one of them handled the command
+ */
+async function dispatch(ctx, handlers)
+{
+    for (const [kind, handler] of handlers) {
+        if (await handler(ctx)) {
+            logCommand(kind, ctx, telegramActor(ctx))
+
+            return true
+        }
+    }
+
+    return false
+}
+
+/**
  * Handle the profile button / reactions-toggle callbacks. Not available for
  * blocked users.
  *
@@ -663,11 +708,24 @@ async function telegramCallbackHandler(tgCtx)
     //Telegram has no Terms gate; activate a pending user on any interaction
     await activatePendingUser(user)
 
+    //a button tap is an interaction like any other, so it gets the same log
+    //line and the same messages-table row a typed command does
+    const ctx = {
+        tgCtx, user, command: data,
+        chatName: tgCtx.chat?.title || 'private',
+    }
+
     //this feature is not available for blocked users
     if (user.status !== 'active') {
+        setLog(ctx, {result: 'user ' + user.status})
+        logCommand('blocked', ctx, telegramActor(ctx))
+
         return tgCtx.answerCbQuery(
             translate(user.language, 'blocked'), {show_alert: true})
     }
+
+    createMessage({authorId: user.id,
+        content: `Telegram | ${ctx.chatName} | -> ${data}`}).then()
 
     //toggle the reactions opt-out flag and persist it
     if (data === 'profile_reactions') {
@@ -689,10 +747,13 @@ async function telegramCallbackHandler(tgCtx)
     const {text, keyboard} = await buildProfileView(user, isPrivate)
     try {
         await tgCtx.editMessageText(text, keyboard)
+        setLog(ctx, {result: 'shown'})
     } catch (e) {
         //the message may be unchanged or too old to edit; ignore
+        setLog(ctx, {result: 'edit failed'})
         console.error('Failed to edit profile message:', e.message)
     }
+    logCommand('profile', ctx, telegramActor(ctx))
 
     return tgCtx.answerCbQuery()
 }
@@ -729,7 +790,7 @@ async function telegramHandler(tgCtx, redis)
     if (checkUserStatus(ctx)) return
 
     //switch language
-    if (await handleLanguageSwitch(ctx)) return
+    if (await dispatch(ctx, [['lang', handleLanguageSwitch]])) return
     //update user and resolve the language to use
     await persistUser(ctx)
 
@@ -738,6 +799,9 @@ async function telegramHandler(tgCtx, redis)
         if (!roleLimit.silent && roleLimit.message) {
             await tgCtx.reply(roleLimit.message)
         }
+        setLog(ctx, {result: 'limit reached' + (roleLimit.silent ? ' (silent)' : '')})
+        logCommand('limit', ctx, telegramActor(ctx))
+
         return
     }
     if (roleLimit.message) await tgCtx.reply(roleLimit.message)
@@ -749,18 +813,26 @@ async function telegramHandler(tgCtx, redis)
     const commandToSave = `Telegram | ${ctx.chatName} | -> ${storedCommand}`
     createMessage({authorId: ctx.user.id, content: commandToSave}).then()
 
-    if (await handleStats(ctx)) return
-    if (await handleHelp(ctx)) return
-    if (await handleProfile(ctx)) return
+    if (await dispatch(ctx, [
+        ['stats', handleStats],
+        ['help', handleHelp],
+        ['profile', handleProfile],
+    ])) return
 
     if (!ctx.command.length) return //do nothing if it's just the prefix
-    if (ctx.command.length < minStrLen)
+    if (ctx.command.length < minStrLen) {
+        setLog(ctx, {result: 'too short'})
+        logCommand('rejected', ctx, telegramActor(ctx))
+
         return tgCtx.reply(translate(ctx.language, 'min'))
+    }
 
-    if (await handleDeck(ctx)) return
-    if (await resolveSynonym(ctx)) return
-
-    await handleSearch(ctx)
+    await dispatch(ctx, [
+        ['deck', handleDeck],
+        //resolveSynonym may rewrite ctx.command and fall through to search
+        ['custom', resolveSynonym],
+        ['search', handleSearch],
+    ])
 }
 
 module.exports = {telegramHandler, telegramCallbackHandler}

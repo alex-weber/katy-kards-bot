@@ -11,13 +11,16 @@ const {deckBuilderLanguages} = require("../tools/language")
  * @param message
  * @param command
  * @param language
+ * @param timings optional sink for the render latency, folded into the
+ *        caller's single command summary line
  * @returns {Promise<*>}
  */
 async function createDeckImages(
     prefix,
     message,
     command,
-    language)
+    language,
+    timings=null)
 {
     let urlLanguage = ''
     if (deckBuilderLanguages.includes(language)) urlLanguage = language + '/'
@@ -53,7 +56,9 @@ async function createDeckImages(
         : message.channel.send.bind(message.channel)
     let sentMessage = await sendNotice(translate(language, 'screenshot'))
     sentMessage.react('🔄')
+    const shotStarted = Date.now()
     const filename = await takeScreenshot(url)
+    if (timings) timings.shot = Date.now() - shotStarted
     sentMessage.delete()
     if (!filename) {
         await message.channel.send(translate(language, 'error'))
@@ -68,7 +73,6 @@ async function createDeckImages(
     //attributed proxy; non-slash paths have no attribution to post.
     if (message.channel.sendAttribution) await message.channel.sendAttribution()
     sentMessage = await message.channel.send({content: deckInfo, files: files})
-    console.log('Screenshot captured and sent successfully')
 
     deleteDeckFiles(filename)
 

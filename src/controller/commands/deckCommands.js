@@ -13,6 +13,7 @@ const {isBotCommandChannel} = require("../../tools/search")
 const {react} = require("../../tools/reactions")
 const {checkRoleDeckScreenshotLimit} = require("../../tools/roles")
 const {sendPrivately} = require("../../tools/privateReply")
+const {setLog, addTiming, formatPage} = require("../../tools/commandLog")
 
 //cache lifetimes (seconds)
 const deckExp = process.env.REDIS_EXP_DECK || 60 * 60 * 24 * 30 // 30 days
@@ -36,25 +37,35 @@ async function handleDeck(ctx)
     const deckKey = cacheKeyPrefix + getChannelScope(message) +
         'deck:' + language + ':' + command
     if (await redis.exists(deckKey)) {
+        const cacheStarted = Date.now()
         const response = await redis.json.get(deckKey, '$')
-        console.log('serving deck from cache', deckKey)
+        const cacheMs = Date.now() - cacheStarted
         if (await forwardCachedMessage(
-            client, response, message, {language, query: command}))
+            client, response, message, {language, query: command})) {
+            addTiming(ctx, 'cache', cacheMs)
+            setLog(ctx, {q: command, cache: 'HIT'})
+
             return true
+        }
         //forward failed (e.g. no Read Message History) -> rebuild below
     }
 
     const deckLimit = await checkRoleDeckScreenshotLimit(ctx)
     if (!deckLimit.allowed) {
         await message.channel.send(deckLimit.message)
+        setLog(ctx, {q: command, cache: 'MISS', result: 'limit reached'})
+
         return true
     }
 
     //not cached: queue the capture (the queue throttles concurrent renders)
-    const sent = await createDeckImages(prefix, message, command, language)
+    const sent = await createDeckImages(
+        prefix, message, command, language, ctx.timings)
     if (sent) {
         await cacheSentMessage(redis, deckKey, sent, deckExp)
     }
+    setLog(ctx, {q: command, cache: 'MISS',
+        result: sent ? 'sent' : 'render failed'})
 
     return true
 }
@@ -104,8 +115,9 @@ async function handleAlt(ctx)
     const cacheKey = cacheKeyPrefix + getChannelScope(message) +
         'alt:' + command
     if (await redis.exists(cacheKey)) {
+        const cacheStarted = Date.now()
         const response = await redis.json.get(cacheKey, '$')
-        console.log('serving alt from cache', cacheKey)
+        const cacheMs = Date.now() - cacheStarted
         if (await forwardCachedMessage(
             client, response, message, {language, query: command})) {
             // forward() drops the page's "Next" button, so re-attach one by
@@ -113,14 +125,17 @@ async function handleAlt(ctx)
             // It lives on its own message (a forward can't carry components);
             // the zero-width space keeps it non-empty so the click handler can
             // strip the button without emptying the message.
+            const offset = parseInt(command.replace('alt', '')) || 0
             if (response['next-message'] && isBotCommandChannel(message)) {
-                const offset = parseInt(command.replace('alt', '')) || 0
                 await message.channel.send({
                     content: '​',
                     components: getButtonRow(translate(language, 'next'),
                         'next_button_alt' + (offset + limit)),
                 })
             }
+            addTiming(ctx, 'cache', cacheMs)
+            setLog(ctx, {q: command, cache: 'HIT',
+                page: formatPage(offset, limit)})
 
             return true
         }
@@ -131,6 +146,7 @@ async function handleAlt(ctx)
     const files = collectAltFiles(syns)
     if (!files.length) {
         await sendPrivately(message, translate(language, 'noresult'))
+        setLog(ctx, {q: command, cache: 'MISS', result: '0 found'})
 
         return true
     }
@@ -161,6 +177,8 @@ async function handleAlt(ctx)
         if (await redis.exists(prevKey))
             await redis.json.set(prevKey, '$["next-message"]', sent.id)
     }
+    setLog(ctx, {q: command, cache: 'MISS', page: formatPage(offset, limit),
+        result: files.length + ' found'})
 
     return true
 }
