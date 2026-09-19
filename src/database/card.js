@@ -230,10 +230,29 @@ function countInto(counts, key) {
 }
 
 /**
+ * The dictionary keyword a stored attribute belongs to. Most are stored under
+ * their own name, but the levelled ones carry the level ("heavyarmor2",
+ * "intel3") and veteran carries the card it is a veteran of
+ * ("veteranof:panzer_ivh_vet") — all of those count as the one keyword.
+ *
+ * @param attribute
+ * @returns {string}
+ */
+function attributeKey(attribute) {
+    for (const [prefix, key] of Object.entries(dictionary.attributePrefix)) {
+        if (attribute.startsWith(prefix)) return key
+    }
+
+    return attribute
+}
+
+/**
  * Rarity, type and attribute counts for one faction, computed for all cards and
  * again for active and reserved ones, so the page can switch between them
  * without another request. Only the attribute keywords listed in dictionary.js
- * are counted — stored values like "veteranof:*" or "heavyarmor1" are ignored.
+ * are counted — a stored value like "onlyspawnable" or "becomesveteran:*" is
+ * ignored, while the levelled ones ("heavyarmor2", "intel3", "veteranof:*")
+ * count as their one keyword.
  *
  * @param faction
  * @returns {Promise<{all: object, active: object, reserved: object}>}
@@ -252,7 +271,11 @@ async function getFactionCardStats(faction)
     }
 
     for (const card of cards) {
-        const attributes = new Set((card.attributes || '').split(',').map(attribute => attribute.trim()))
+        // Normalized before the Set, so a card carrying two levels of the same
+        // keyword would still be counted once.
+        const attributes = new Set(
+            (card.attributes || '').split(',').map(attribute => attributeKey(attribute.trim()))
+        )
         const buckets = [stats.all, card.reserved ? stats.reserved : stats.active]
 
         for (const bucket of buckets) {

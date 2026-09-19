@@ -1,3 +1,10 @@
+## 5.9.1
+
+### Bug Fixes
+
+- The attribute chart and table on the faction card stats pages (`/cards/:faction`) missed every attribute the game stores with a level or a card reference appended. Heavy armor was counted as two dictionary words (`heavy` and `armor`) that match nothing, so its 51 cards were absent entirely; `intel1` / `intel2` / `intel3` (24 cards) and `veteranof:<card>` (44 cards) were dropped for the same reason. Each is now counted as one keyword: **Heavy armor 51**, **Intel 24**, **Veteran 44**. Levels are merged rather than listed separately, and a card carrying two levels of the same keyword is still counted once. `becomesveteran:<card>` stays uncounted — a card that can become a veteran is not one — as does `onlyspawnable`, which is not a keyword attribute.
+- The card stats cache version moved to `v3`, so the corrected counts appear on the next page load instead of waiting for a DB sync to clear the 30-day keys.
+
 ## 5.9.0
 
 ### Features

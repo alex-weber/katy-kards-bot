@@ -85,7 +85,7 @@ describe('API.run', () => {
     test('cards-by-faction caches for 30 days', async () => {
         await API.run('cards-by-faction', {})
         expect(redis.json.set).toHaveBeenCalledTimes(1)
-        expect(redis.expire).toHaveBeenCalledWith('test:api:cards:v2:cards-by-faction:', 60 * 60 * 24 * 30)
+        expect(redis.expire).toHaveBeenCalledWith('test:api:cards:v3:cards-by-faction:', 60 * 60 * 24 * 30)
     })
 
     test('card-stats computes per faction and caches for 30 days', async () => {
@@ -93,7 +93,7 @@ describe('API.run', () => {
         expect(res.success).toBe(true)
         expect(res.data).toEqual({ all: { total: 3 } })
         expect(card.getFactionCardStats).toHaveBeenCalledWith('usa')
-        expect(redis.expire).toHaveBeenCalledWith('test:api:cards:v2:card-stats:usa', 60 * 60 * 24 * 30)
+        expect(redis.expire).toHaveBeenCalledWith('test:api:cards:v3:card-stats:usa', 60 * 60 * 24 * 30)
     })
 
     test('card-stats uses a cache key per faction', async () => {

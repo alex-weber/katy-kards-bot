@@ -37,8 +37,7 @@ module.exports = {
         'guard',
         'mobilize',
         'pincer',
-        'heavy',
-        'armor',
+        'heavy armor',
         'fury',
         'veteran',
         'salvage',
@@ -47,6 +46,15 @@ module.exports = {
         'bond',
         'forecast',
     ],
+    // Attributes the API stores with a level or a card reference appended:
+    // "heavyarmor2", "intel3", "veteranof:panzer_ivh_vet". Everything sharing a
+    // prefix is counted as the one keyword it maps to. "becomesveteran:*" is a
+    // different keyword and deliberately has no entry here.
+    attributePrefix: {
+        'heavyarmor': 'heavy armor',
+        'intel': 'intel',
+        'veteranof': 'veteran',
+    },
     synonyms: {
 
         milkshake: '34th infantry regiment',
