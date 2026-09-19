@@ -5,21 +5,19 @@
 - Three searches in a row that find nothing now get the `/help` text attached to the "no cards found" reply, in the user's own language. A user who does not know the query syntax used to get the same one-line "No cards found..." however many times they tried, with nothing pointing them at the command list. The lead-in ("Not finding what you are looking for? Here is how the search works:") is translated into all twelve supported languages.
 - On `/search` the help is ephemeral — it edits the private acknowledgement the slash command already replies with, so the channel never sees it. Legacy `!` commands and Telegram have no ephemeral message and post it into the chat, next to the query that prompted it.
 - The streak is counted per user (across both platforms, keyed on the internal user id), expires after an hour of quiet, and is cleared by any search that returns a card — including one answered from the cache — so it only ever fires on three genuine misses in a row. It resets again once the help has been shown, instead of repeating the command list on every further miss. An API or DB failure is not counted: that is not the user getting the query wrong. Both the threshold (`HELP_AFTER_FAILURES`) and the window (`REDIS_EXP_FAIL_STREAK`) are configurable.
-- A search with more than 20 matches outside a bot-command channel is refused with "refusing to show anything, please make a more precise search request" — that refusal is now shown to the user alone on `/search`, instead of being posted into the chat. Too broad a query is theirs to narrow down, and the channel gained nothing from watching them do it; the public refusal was a leftover from the prefix-command era, when there was no private channel to put it in. Legacy `!` commands still post it, since they have no ephemeral reply and the query it answers is sitting right above it. The `👆` reaction only goes on the public one — an ephemeral reply cannot be reacted to, and there is nothing left to point at. Bot-command channels are unaffected: they still get every card.
+- A search with more than 20 matches outside a bot-command channel is refused with "refusing to show anything, please make a more precise search request" — that refusal is now shown to the user alone on `/search`, instead of being posted into the chat. Too broad a query is theirs to narrow down, and the channel gained nothing from watching them do it; the public refusal was a leftover from the prefix-command era, when there was no private channel to put it in. Legacy `!` commands still post it, since they have no ephemeral reply and the query it answers is sitting right above it. Bot-command channels are unaffected: they still get every card.
 - The empty-search log line says whether the help went out: `search   · dc/slash  · rainy@KARDS#general · q="zzz" · MISS · p1 · 0 found (help shown)`.
 - A moderator note (`user.mode`) shown on the same reply is dropped when the two together would exceed Discord's 2000-character limit — the note appears on every empty search anyway, the help only on the third one in a row.
-
-### Maintenance
-
-- The bot no longer reacts to messages on Discord. Discord withdrew the Message Content intent, so the emoji had nothing left to mark: ✅ on an answered search, ❓ on an empty one, 👆 on a hidden result, 🕛 on `/midnight`, 🚫 on a blocked user and 🔄 on a deck render in progress are all gone, along with the shared `src/tools/reactions.js` they went through. Telegram is unaffected and keeps every reaction it had.
-- The "🔔 Reactions: On / Off" toggle is gone from the Discord profile, since there is nothing left for it to switch off. The Telegram profile keeps its own toggle, and the stored `User.reactions` flag still drives it.
-
-## 5.9.1
 
 ### Bug Fixes
 
 - The attribute chart and table on the faction card stats pages (`/cards/:faction`) missed every attribute the game stores with a level or a card reference appended. Heavy armor was counted as two dictionary words (`heavy` and `armor`) that match nothing, so its 51 cards were absent entirely; `intel1` / `intel2` / `intel3` (24 cards) and `veteranof:<card>` (44 cards) were dropped for the same reason. Each is now counted as one keyword: **Heavy armor 51**, **Intel 24**, **Veteran 44**. Levels are merged rather than listed separately, and a card carrying two levels of the same keyword is still counted once. `becomesveteran:<card>` stays uncounted — a card that can become a veteran is not one — as does `onlyspawnable`, which is not a keyword attribute.
 - The card stats cache version moved to `v3`, so the corrected counts appear on the next page load instead of waiting for a DB sync to clear the 30-day keys.
+
+### Maintenance
+
+- The bot no longer reacts to messages on Discord. Discord withdrew the Message Content intent, so the emoji had nothing left to mark: ✅ on an answered search, ❓ on an empty one, 👆 on a hidden result, 🕛 on `/midnight`, 🚫 on a blocked user and 🔄 on a deck render in progress are all gone, along with the shared `src/tools/reactions.js` they went through. Telegram is unaffected and keeps every reaction it had.
+- The "🔔 Reactions: On / Off" toggle is gone from the Discord profile, since there is nothing left for it to switch off. The Telegram profile keeps its own toggle, and the stored `User.reactions` flag still drives it.
 
 ## 5.9.0
 
