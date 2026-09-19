@@ -36,6 +36,10 @@ const reactions = {
 }
 
 const telegramCachePrefix = 'telegram:card:'
+const telegramSearchPrefix = 'telegram:search:'
+//how long a whole search answer stays replayable; matches the Discord search
+//cache and the file_id cache the replay depends on
+const searchExp = process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90 //90 days
 
 /**
  * React to the user's command message, ignoring failures (some chats
@@ -481,6 +485,102 @@ async function cacheSentPhotos(redis, files, sentMessages)
 }
 
 /**
+ * The Telegram file_id of every photo just sent. This is what makes a search
+ * replayable: the whole answer can be re-sent by id, with no DB query, no
+ * download and no upload.
+ *
+ * The ids are read back off the sent messages rather than off the files,
+ * because Telegram answers every successful photo send with the photo it
+ * stored - including one sent by id. A send that failed replies with plain
+ * text instead, which has no photo, so a failed or partial answer is rejected
+ * here and never cached.
+ *
+ * @param files
+ * @param sentMessages parallel array of sent messages (one per file)
+ * @returns {Array|false} false unless every image came back confirmed
+ */
+function collectFileIds(files, sentMessages)
+{
+    if (!files.length || sentMessages?.length !== files.length) return false
+
+    const collected = []
+    for (let i = 0; i < files.length; i++) {
+        const photo = sentMessages[i]?.photo
+        if (!photo?.length) return false
+
+        collected.push({
+            fileId: photo[photo.length - 1].file_id,
+            caption: files[i].description || '',
+        })
+    }
+
+    return collected
+}
+
+/**
+ * The key a search answer is cached under. The attachment limit is part of it
+ * because it decides how many cards the answer holds, and it differs between
+ * private chats and groups.
+ *
+ * @param ctx
+ * @returns {string}
+ */
+function searchCacheKey(ctx)
+{
+    return cacheKeyPrefix + telegramSearchPrefix +
+        ctx.language + ':' + ctx.command + ':' + ctx.limit
+}
+
+/**
+ * Replay a previously cached search answer, skipping the DB lookup and both
+ * the download and the upload of every image.
+ *
+ * A file_id can go stale before the key expires, so a failed replay drops the
+ * key and reports a miss, letting the caller rebuild the answer from scratch
+ * rather than leaving the query broken until the cache expires.
+ *
+ * @param ctx
+ * @param cacheKey
+ * @returns {Promise<boolean>} true when the answer was served from cache
+ */
+async function serveSearchCache(ctx, cacheKey)
+{
+    const {tgCtx, redis, language, limit, user} = ctx
+
+    const cacheStarted = Date.now()
+    const cached = await redis.json.get(cacheKey, '$')
+    const cacheMs = Date.now() - cacheStarted
+    if (!cached || !cached.files?.length) return false
+
+    try {
+        react(tgCtx, cached.counter > limit
+            ? reactions.moreResults
+            : reactions.success, user)
+        await tgCtx.reply(translate(language, 'search') + ': ' + cached.counter)
+
+        if (cached.files.length > 1) {
+            await tgCtx.replyWithMediaGroup(cached.files.map(file => ({
+                type: 'photo', media: file.fileId, caption: file.caption,
+            })))
+        } else {
+            await tgCtx.replyWithPhoto(cached.files[0].fileId,
+                {caption: cached.files[0].caption})
+        }
+    } catch (e) {
+        //most likely an expired file_id - drop the answer and search again
+        console.error('cached search replay failed:', e.message)
+        await redis.del(cacheKey)
+
+        return false
+    }
+
+    addTiming(ctx, 'cache', cacheMs)
+    setLog(ctx, {cache: 'HIT', result: cached.counter + ' found'})
+
+    return true
+}
+
+/**
  * Send several found cards as a media group, caching new uploads.
  *
  * @param ctx
@@ -548,7 +648,11 @@ async function sendCardPhoto(ctx, file)
  */
 async function handleSearch(ctx)
 {
-    const {tgCtx, language, command, limit, user} = ctx
+    const {tgCtx, redis, language, command, limit, user} = ctx
+    //a repeat query is replayed from cache: no DB lookup, no upload
+    const cacheKey = searchCacheKey(ctx)
+    if (await serveSearchCache(ctx, cacheKey)) return true
+
     const variables = {
         language: language,
         q: command,
@@ -592,9 +696,21 @@ async function handleSearch(ctx)
             return true
         }
 
-        if (cards.counter > 1) await sendCardMediaGroup(ctx, files)
-        else await sendCardPhoto(ctx, files[0])
+        const sent = cards.counter > 1
+            ? await sendCardMediaGroup(ctx, files)
+            : await sendCardPhoto(ctx, files[0])
         setLog(ctx, {result: cards.counter + ' found'})
+
+        //cache the answer so the next identical query replays it. A send that
+        //failed returns the error reply instead of photos, and collectFileIds
+        //rejects it, so a broken answer is never stored.
+        const fileIds = collectFileIds(files,
+            Array.isArray(sent) ? sent : [sent])
+        if (fileIds) {
+            await redis.json.set(cacheKey, '$',
+                {counter: cards.counter, files: fileIds})
+            await redis.expire(cacheKey, searchExp)
+        }
     } finally {
         for (const filePath of downloadedFiles) {
             try {
