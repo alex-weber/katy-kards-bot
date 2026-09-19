@@ -23,16 +23,22 @@ const {
     checkRoleDeckScreenshotLimit,
 } = require("../tools/roles")
 const {telegramActor, logCommand, setLog, addTiming} = require("../tools/commandLog")
+const {
+    recordEmptySearch,
+    clearEmptySearches,
+    searchHelp,
+} = require("../tools/failureStreak")
 
 //Telegram only allows a fixed set of reaction emojis, so these are the
-//closest equivalents to the Discord reactions used in discordHandler.
+//closest equivalents for each outcome. Reactions are Telegram-only: Discord
+//took the Message Content intent away, so the bot no longer reacts there.
 const reactions = {
-    success: '👍',      //an answer was delivered (Discord: ✅)
-    noResult: '🤔',     //nothing was found (Discord: ❓)
-    blocked: '😡',      //a blocked user tried a command (Discord: 🚫)
-    moreResults: '👀',  //more results exist than were shown (Discord: 👆)
-    wait: '🙏',         //a render is already running, please wait (Discord: ☕🍩)
-    error: '🤯',        //something went wrong (Discord has no reaction, just replies)
+    success: '👍',      //an answer was delivered
+    noResult: '🤔',     //nothing was found
+    blocked: '😡',      //a blocked user tried a command
+    moreResults: '👀',  //more results exist than were shown
+    wait: '🙏',         //a render is already running, please wait
+    error: '🤯',        //something went wrong
 }
 
 const telegramCachePrefix = 'telegram:card:'
@@ -43,7 +49,7 @@ const searchExp = process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90 //90 days
 
 /**
  * React to the user's command message, ignoring failures (some chats
- * disallow reactions). Fire-and-forget, like Discord's message.react().
+ * disallow reactions). Fire-and-forget: nothing waits on the emoji.
  *
  * @param tgCtx
  * @param emoji
@@ -655,7 +661,11 @@ async function handleSearch(ctx)
     const {tgCtx, redis, language, command, limit, user} = ctx
     //a repeat query is replayed from cache: no DB lookup, no upload
     const cacheKey = searchCacheKey(ctx)
-    if (await serveSearchCache(ctx, cacheKey)) return true
+    if (await serveSearchCache(ctx, cacheKey)) {
+        await clearEmptySearches(redis, user)
+
+        return true
+    }
 
     const variables = {
         language: language,
@@ -672,12 +682,19 @@ async function handleSearch(ctx)
         return true
     }
     if (!cards.counter) {
+        let reply = translate(language, 'noresult')
+        //three empty searches in a row -> show how the search works. Telegram
+        //has no ephemeral message, so this lands in the chat like any reply.
+        const helped = await recordEmptySearch(redis, user)
+        if (helped) reply += '\n\n' + searchHelp(language)
         react(tgCtx, reactions.noResult, user)
-        await tgCtx.reply(translate(language, 'noresult'))
-        setLog(ctx, {result: '0 found'})
+        await tgCtx.reply(reply)
+        setLog(ctx, {result: '0 found' + (helped ? ' (help shown)' : '')})
 
         return true
     }
+
+    await clearEmptySearches(redis, user)
 
     //react before the slow download/convert step so the emoji appears
     //immediately, not after the images have been fetched and converted.

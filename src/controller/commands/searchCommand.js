@@ -12,15 +12,21 @@ const {
     getFiles,
 } = require("../../tools/search")
 const {getButtonRow} = require("../../tools/button")
-const {react} = require("../../tools/reactions")
 const {sendPrivately} = require("../../tools/privateReply")
 const {setLog, addTiming, formatPage} = require("../../tools/commandLog")
+const {
+    recordEmptySearch,
+    clearEmptySearches,
+    searchHelp,
+} = require("../../tools/failureStreak")
 
 //cache lifetimes (seconds)
 const paginationExp = process.env.REDIS_EXP_PAGINATION || 60 * 10 // 10 min
 const searchExp = process.env.REDIS_EXP_SEARCH || 60 * 60 * 24 * 90 //90 days
 //hide the cards (just show the count) above this many results
 const noShowThreshold = 20
+//Discord rejects a message longer than this
+const messageLimit = 2000
 
 /**
  * Serve a previously cached search result, if present.
@@ -31,7 +37,7 @@ const noShowThreshold = 20
  */
 async function serveSearchCache(ctx, cacheKey)
 {
-    const {message, client, redis, language, command, user} = ctx
+    const {message, client, redis, language, command} = ctx
     if (message.buttonId) return false
     //the whole probe is timed, the existence check included, and recorded even
     //when it misses - both round trips are paid for either way, and a miss that
@@ -52,7 +58,6 @@ async function serveSearchCache(ctx, cacheKey)
         {language, query: command, key: 'cacheForwardNotice'}))
         return false
     addTiming(ctx, 'send', Date.now() - sendStarted)
-    react(message, '✅', user)
     //cache hits are never paginated (buttonId returns above), so always page 1
     setLog(ctx, {cache: 'HIT', page: 'p1'})
 
@@ -156,18 +161,21 @@ async function applyPagination(ctx, answer, counter, offset)
  */
 async function sendCardResults(ctx, cacheKey, cards, offset)
 {
-    const {message, redis, language, command, limit, paginationLimit, user} = ctx
+    const {message, redis, language, command, limit, paginationLimit} = ctx
     const counter = cards.counter
     //if any cards are found - attach them
     let content = ''
     //show the search request above the counter on paginated results
     if (message.buttonId) content += '> 🔎 ' + command + '\n'
     content += translate(language, 'search') + ': ' + counter
-    //do not show any cards if there are more than 20 cards
+    //do not show any cards if there are more than 20 cards. The refusal goes
+    //to the user alone wherever there is a private channel for it (the slash
+    //path): too broad a query is theirs to narrow down, and the chat gains
+    //nothing from watching them do it. Legacy `!` commands have no ephemeral
+    //reply, so there it still lands in the channel - the query it answers is
+    //sitting right above it anyway.
     if (counter > noShowThreshold && !isBotCommandChannel(message)) {
-        const sent = await message.channel.send(
-            content + translate(language, 'noshow'))
-        react(sent, '👆', user)
+        await sendPrivately(message, content + translate(language, 'noshow'))
         setLog(ctx, {cache: 'MISS', page: formatPage(offset, ctx.limit),
             result: counter + ' found (hidden)'})
 
@@ -182,7 +190,6 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
     answer.files = getFiles(cards, language, limit)
     //reply to user
     try {
-        react(message, '✅', user)
         const sendStarted = Date.now()
         const sent = await message.channel.send(answer)
         addTiming(ctx, 'send', Date.now() - sendStarted)
@@ -198,6 +205,36 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
 }
 
 /**
+ * The "nothing found" reply, with the help text appended once the user has
+ * come up empty three times in a row.
+ *
+ * On the slash path sendPrivately() shows this to the invoking user alone, so
+ * the help stays out of the channel; a legacy `!` command has no ephemeral
+ * channel and posts it publicly, next to the query that prompted it.
+ *
+ * @param ctx
+ * @returns {Promise<{reply: string, helped: boolean}>}
+ */
+async function buildEmptyReply(ctx)
+{
+    const {redis, language, user} = ctx
+    const notFound = translate(language, 'noresult')
+    let reply = user.mode ? user.mode + '\n\n' + notFound : notFound
+    if (!await recordEmptySearch(redis, user)) return {reply, helped: false}
+
+    const help = '\n\n' + searchHelp(language, true)
+    //the help block alone runs to ~1500 characters, so a long moderator note
+    //(user.mode) can push the reply past Discord's limit. Drop the note rather
+    //than the help: the note is shown on every empty search anyway, the help
+    //only on the third one in a row.
+    reply = reply.length + help.length <= messageLimit
+        ? reply + help
+        : notFound + help
+
+    return {reply, helped: true}
+}
+
+/**
  * Search KARDS.com (with a local DB fallback) and reply with the cards.
  *
  * @param ctx
@@ -205,11 +242,15 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
  */
 async function handleSearch(ctx)
 {
-    const {message, language, command, limit, user} = ctx
+    const {message, redis, language, command, limit, user} = ctx
     //check if in the cache
     const cacheKey = cacheKeyPrefix + getChannelScope(message) +
         language + ':' + command + limit
-    if (await serveSearchCache(ctx, cacheKey)) return true
+    if (await serveSearchCache(ctx, cacheKey)) {
+        await clearEmptySearches(redis, user)
+
+        return true
+    }
 
     //first search on KARDS.com, on no result search in the local DB.
     //ctx.timings is filled in with the api/db latencies for the summary line.
@@ -222,16 +263,15 @@ async function handleSearch(ctx)
     }
 
     if (!cards.counter) {
-        let reply = translate(language, 'noresult')
-        if (user.mode) reply = user.mode + '\n\n' + reply
-        react(message, '❓', user)
+        const {reply, helped} = await buildEmptyReply(ctx)
         await sendPrivately(message, reply)
         setLog(ctx, {cache: 'MISS', page: formatPage(offset, ctx.limit),
-            result: '0 found'})
+            result: '0 found' + (helped ? ' (help shown)' : '')})
 
         return true
     }
 
+    await clearEmptySearches(redis, user)
     await sendCardResults(ctx, cacheKey, cards, offset)
 
     return true

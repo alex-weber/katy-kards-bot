@@ -7,6 +7,7 @@
   "noshow": ", non mostro nulla, per favore fai una ricerca più precisa. Vuoi davvero inondare la chat con tutte le carte?",
   "time": "Ora attuale",
   "noresult": "Lingua di ricerca: {{language}}. Nessuna carta trovata...",
+  "failureHelp": "Non trovi quello che cerchi? Ecco come funziona la ricerca:",
   "langChange": "Lingua di ricerca: ",
   "screenshot": "sto catturando uno screenshot, potrebbe richiedere qualche secondo...",
   "cache": "recupero dalla cache...",

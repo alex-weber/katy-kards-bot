@@ -44,6 +44,7 @@ function renderProfileText(language, stats, heading)
 
 /**
  * Label for the reactions toggle, reflecting the user's current setting.
+ * Telegram-only: Discord has no reactions to switch off any more.
  *
  * @param language
  * @param user

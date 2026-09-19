@@ -103,7 +103,6 @@ async function onInteractionCreate(interaction)
     }
 
     if (interaction.customId === 'profile_show' ||
-        interaction.customId === 'profile_reactions' ||
         interaction.customId === 'profile_language' ||
         interaction.customId === 'profile_share' ||
         interaction.customId === 'profile_dm') {
@@ -160,16 +159,6 @@ async function onInteractionCreate(interaction)
                 content: translate(user.language, 'dm'),
                 flags: MessageFlags.Ephemeral,
             })
-        }
-
-        //flip the reactions opt-out flag and persist it
-        if (interaction.customId === 'profile_reactions') {
-            user.reactions = user.reactions === false
-            await updateUser(user)
-            await refreshCachedUser(interaction.user.id, '$.reactions', user.reactions)
-            const view = await buildProfileView(user, profileIdentity(interaction))
-
-            return await interaction.update(view)
         }
 
         //change the search language and persist it

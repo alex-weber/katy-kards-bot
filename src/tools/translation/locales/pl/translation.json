@@ -7,6 +7,7 @@
   "noshow": ", niczego nie pokażę, proszę o dokładniejsze zapytanie. Naprawdę chcesz zalać czat wszystkimi kartami?",
   "time": "Aktualny czas",
   "noresult": "Język wyszukiwania: {{language}}. Nie znaleziono kart...",
+  "failureHelp": "Nie możesz znaleźć tego, czego szukasz? Oto jak działa wyszukiwanie:",
   "langChange": "Język wyszukiwania: ",
   "screenshot": "robię zrzut ekranu, może to potrwać kilka sekund...",
   "cache": "pobieram z pamięci podręcznej...",

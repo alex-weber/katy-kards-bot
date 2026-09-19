@@ -10,7 +10,6 @@ const {translate} = require("../../tools/translation/translator")
 const {createDeckImages} = require("../../tools/deck")
 const {getButtonRow} = require("../../tools/button")
 const {isBotCommandChannel} = require("../../tools/search")
-const {react} = require("../../tools/reactions")
 const {checkRoleDeckScreenshotLimit} = require("../../tools/roles")
 const {sendPrivately} = require("../../tools/privateReply")
 const {setLog, addTiming, formatPage} = require("../../tools/commandLog")
@@ -103,7 +102,7 @@ function collectAltFiles(syns)
  */
 async function handleAlt(ctx)
 {
-    const {message, client, redis, language, limit, user} = ctx
+    const {message, client, redis, language, limit} = ctx
     if (!ctx.command.startsWith('alt')) return false
 
     // Custom aliases (e.g. "alt heinz") are resolved upstream by
@@ -173,7 +172,6 @@ async function handleAlt(ctx)
         answer.components = getButtonRow(
             translate(language, 'next'), 'next_button_alt' + (offset + limit))
 
-    react(message, '✅', user)
     const sendStarted = Date.now()
     const sent = await message.channel.send(answer)
     addTiming(ctx, 'send', Date.now() - sendStarted)

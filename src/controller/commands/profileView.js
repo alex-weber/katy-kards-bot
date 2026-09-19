@@ -2,7 +2,7 @@ const {ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder, escapeMarkdown} 
 const {translate} = require("../../tools/translation/translator")
 const {languages} = require("../../tools/language")
 const {getButtonRow, ButtonStyle} = require("../../tools/button")
-const {reactionsLabel, formatPosition} = require("../../tools/profile")
+const {formatPosition} = require("../../tools/profile")
 const {getProfileStats} = require("../../database/db")
 
 // Stat labels reuse the slash-text translations, which carry a trailing
@@ -107,10 +107,8 @@ async function buildProfileView(user, identity = {})
 
     const components = [
         getLanguageSelectRow(lang),
-        ...getButtonRow(
-            reactionsLabel(lang, user),
-            'profile_reactions',
-            ButtonStyle.Secondary),
+        //no reactions toggle here: the bot no longer reacts on Discord, so
+        //there is nothing for it to switch off. Telegram still has one.
         //Discord-only: DMs are blocked until the user opens a channel with the
         //bot. Telegram allows them by default, so no equivalent button there.
         ...getButtonRow(

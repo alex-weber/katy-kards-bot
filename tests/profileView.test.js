@@ -80,21 +80,22 @@ describe('buildProfileView', () => {
         expect(selected.value).toBe('de')
     })
 
-    test('the reactions button label reflects the opt-out state', async () => {
-        const onView = await buildProfileView({id: 'u1', language: 'en', reactions: true})
-        const offView = await buildProfileView({id: 'u1', language: 'en', reactions: false})
-
-        const label = view => view.components[1].components[0].data.label
-        expect(label(onView)).not.toBe(label(offView))
-    })
-
-    test('includes a language select, a reactions toggle, a DM button and a share button, in that order', async () => {
+    test('includes a language select, a DM button and a share button, in that order', async () => {
         const view = await buildProfileView({id: 'u1', language: 'en'})
 
-        expect(view.components).toHaveLength(4)
+        expect(view.components).toHaveLength(3)
         expect(view.components[0].components[0].data.custom_id).toBe('profile_language')
-        expect(view.components[1].components[0].data.custom_id).toBe('profile_reactions')
-        expect(view.components[2].components[0].data.custom_id).toBe('profile_dm')
-        expect(view.components[3].components[0].data.custom_id).toBe('profile_share')
+        expect(view.components[1].components[0].data.custom_id).toBe('profile_dm')
+        expect(view.components[2].components[0].data.custom_id).toBe('profile_share')
+    })
+
+    // The bot no longer reacts on Discord, so the toggle would switch off
+    // something that never happens. Telegram keeps its own.
+    test('has no reactions toggle', async () => {
+        const view = await buildProfileView({id: 'u1', language: 'en', reactions: true})
+        const ids = view.components
+            .flatMap(row => row.components.map(c => c.data.custom_id))
+
+        expect(ids).not.toContain('profile_reactions')
     })
 })

@@ -8,6 +8,7 @@
   "noshow": ", refusing to show anything, please make a more precise search request. Do you really want to flood the chat with all the cards?",
   "time": "Time now",
   "noresult": "Search language: {{language}}. No cards found...",
+  "failureHelp": "Not finding what you are looking for? Here is how the search works:",
   "langChange": "Search language: ",
   "screenshot": "capturing a screenshot, this may take some seconds...",
   "cache": "getting from cache...",
