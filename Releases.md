@@ -1,3 +1,14 @@
+## 5.9.0
+
+### Features
+
+- Searches written in a language the sync stores in `Card.fullText` (English, Russian, Japanese, Korean, Traditional and Simplified Chinese) are now answered straight from the local DB instead of kards.com — measured at 22-33ms against 131-283ms for the API round trip. The other six languages (`de`, `es`, `fr`, `it`, `pl`, `pt`) only exist on kards.com and still go there, keeping the existing no-result and request-failure fallbacks to the DB. The gate accepts both the API locale Discord passes (`ru-RU`) and the short code Telegram passes (`ru`). The DB sync is unaffected: it searches with an empty `q` and keeps fetching from kards.com.
+- One visible change from this: a query in Latin letters from a Russian user now also matches English titles, because `fullText` holds every stored locale at once. `/ru tiger` returns 6 cards where kards.com returned 4. No search returns fewer cards than before.
+
+### Maintenance
+
+- The `fullText` locale list moved out of `buildFullText()` into the exported `FULL_TEXT_LOCALES`, so adding a locale to the sync enables DB routing for it in the same edit.
+
 ## 5.8.0
 
 ### Features

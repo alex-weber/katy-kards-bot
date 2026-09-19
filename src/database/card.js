@@ -75,13 +75,19 @@ function buildText(json) {
     return ''
 }
 
+/**
+ * The locales whose title and text the sync concatenates into Card.fullText.
+ * A search written in one of these languages can therefore be answered by the
+ * local DB alone; every other language only exists on kards.com.
+ *
+ * @type {string[]}
+ */
+const FULL_TEXT_LOCALES = ['en-EN', 'ru-RU', 'ja-JP', 'ko-KR', 'zh-Hant', 'zh-Hans']
+
 function buildFullText(json) {
     let fullText = ''
 
-    // deduplicate locale codes
-    const locales = ['en-EN', 'ru-RU', 'ja-JP', 'ko-KR', 'zh-Hant', 'zh-Hans']
-
-    for (const locale of locales) {
+    for (const locale of FULL_TEXT_LOCALES) {
         if (json.title?.[locale]) {
             fullText += json.title[locale] + ' '
         }
@@ -267,4 +273,5 @@ module.exports = {
     getCardsDB,
     getCardStats,
     getCardStatsMessage,
+    FULL_TEXT_LOCALES,
 }

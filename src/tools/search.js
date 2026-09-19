@@ -9,7 +9,8 @@ const {
     createSynonym,
     updateSynonym,
     deleteSynonym,
-    getAllSynonyms
+    getAllSynonyms,
+    FULL_TEXT_LOCALES
 } = require('../database/db')
 const {APILanguages} = require("./language")
 const host = 'https://www.kards.com'
@@ -198,6 +199,25 @@ function getAttribute(word, attributes)
 }
 
 /**
+ * Whether a search written in this language can be answered by the local DB.
+ *
+ * The sync stores the title and text of FULL_TEXT_LOCALES in Card.fullText, so
+ * for those languages the DB holds everything kards.com would match on — and
+ * answers in ~20ms instead of the ~150-200ms round trip. Accepts both the API
+ * locale the Discord handler passes ('ru-RU') and the short code Telegram
+ * passes ('ru'); kards.com treats the two as equivalent.
+ *
+ * @param language
+ * @returns {boolean}
+ */
+function isFullTextLanguage(language)
+{
+    if (typeof language !== 'string') return false
+
+    return FULL_TEXT_LOCALES.includes(APILanguages[language] || language)
+}
+
+/**
  *
  * @param variables
  * @param timeout
@@ -205,6 +225,14 @@ function getAttribute(word, attributes)
  */
 async function getCards(variables, timeout=3000, timings=null)
 {
+    //A query in a language the sync mirrors into fullText never needs the API:
+    //search it locally and skip the round trip. The sync itself searches with an
+    //empty q and has to keep hitting kards.com - it is what fills the DB.
+    if (variables.q && isFullTextLanguage(variables.language))
+    {
+        return await advancedSearch(variables, timings)
+    }
+
     const apiURL = process.env.KARDS_API_URL || 'https://herokuapi.kards.com/graphql'
     //record the KARDS API latency into the caller's timings sink (if any) so it
     //can be folded into the command's single summary log line, instead of an
@@ -507,6 +535,8 @@ function isEnglishOnlyChannel(message)
 
 module.exports = {
     getCards,
+    advancedSearch,
+    isFullTextLanguage,
     getFiles,
     listSynonyms,
     handleSynonym,
