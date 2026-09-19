@@ -18,6 +18,7 @@
 
 - The bot no longer reacts to messages on Discord. Discord withdrew the Message Content intent, so the emoji had nothing left to mark: ✅ on an answered search, ❓ on an empty one, 👆 on a hidden result, 🕛 on `/midnight`, 🚫 on a blocked user and 🔄 on a deck render in progress are all gone, along with the shared `src/tools/reactions.js` they went through. Telegram is unaffected and keeps every reaction it had.
 - The "🔔 Reactions: On / Off" toggle is gone from the Discord profile, since there is nothing left for it to switch off. The Telegram profile keeps its own toggle, and the stored `User.reactions` flag still drives it.
+- `IMAGE_ALLOWED_HOSTS` is documented properly. It was missing from the README entirely, and `.env.example` described it without saying it is required: a deployment that set `IMG_UPLOAD_API_KEY` and `IMG_UPLOAD_API_ENDPOINT` and skipped the allowlist got uploads refused on the way back and downloads throwing `Image host is not allowed`, with nothing in the setup docs to explain why. The three are now documented as one all-or-nothing group, in both files and in the setup steps. `IMAGE_ALLOWED_INSECURE_HOSTS` (development only) and `PORT` were undocumented in `.env.example` and are now listed, as are this release's `HELP_AFTER_FAILURES` and `REDIS_EXP_FAIL_STREAK`. `CACHE_HISTORICAL_EXPIRE` is removed — nothing has read it since the stats caching rework.
 
 ## 5.9.0
 

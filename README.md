@@ -25,9 +25,18 @@ in Direct Messages (user needs to activate the DM channel in their profile) and 
 - `LIMIT`: Limit for message attachments (maximum 10).
 - `WEB_BASE_URL`: Public base URL of the web app.
 - `KARDS_API_URL`: kards.com GraphQL endpoint (defaults to the public one).
-- `IMG_UPLOAD_API_KEY` / `IMG_UPLOAD_API_ENDPOINT`: Image host credentials. Both must be set, or
-  image re-hosting is skipped — this covers Discord attachments and admin-uploaded images for
-  custom commands.
+- `IMG_UPLOAD_API_KEY` / `IMG_UPLOAD_API_ENDPOINT` / `IMAGE_ALLOWED_HOSTS`: image re-hosting, for
+  Discord attachments and admin-uploaded images on custom commands. Either leave all three unset
+  and run without re-hosting, or **set all three** — the first two alone are not enough. With the
+  credentials set but no `IMAGE_ALLOWED_HOSTS`, an upload reaches the image host and is then
+  refused on the way back (`Uploaded, but the bot cannot deliver images from that host`), and
+  every later download from it throws `Image host is not allowed`. Set it to the host your
+  uploader serves *finished images* from — the host in the URLs it returns, which is often not
+  the endpoint's own host. Comma-separated, exact hosts or `*.example.com`. Discord's CDN
+  (`cdn.discordapp.com`, `media.discordapp.net`) is always allowed and needs no entry.
+- `IMAGE_ALLOWED_INSECURE_HOSTS`: development only, ignored when `NODE_ENV=production`. Lets the
+  named `host:port` origins through over plain http and on a non-default port, so an uploader on
+  `http://localhost:3200` is reachable. Leave unset in production.
 - `BROWSERLESS_API_KEY` / `BROWSERLESS_HOST`: Used for deck screenshots.
 - `DEFAULT_PREFIX`: Prefix for the legacy text commands (defaults to `!`).
 
@@ -61,6 +70,10 @@ This applies only to the deprecated text commands — slash commands are always 
 
 Rename `.env.example` to `.env` and set the required ones, remove the unused.
 Alternatively, set them directly in your environment.
+
+Watch out for the grouped ones: `IMG_UPLOAD_API_KEY`, `IMG_UPLOAD_API_ENDPOINT` and
+`IMAGE_ALLOWED_HOSTS` are all-or-nothing. Dropping just the allowlist looks harmless and leaves
+image uploads and downloads broken.
 
 ## Generate Prisma Client
 ``npx prisma generate``
