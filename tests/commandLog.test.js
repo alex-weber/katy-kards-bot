@@ -60,7 +60,7 @@ describe('discordActor', () => {
         })
 
         expect(actor).toEqual({
-            src: 'dc/slash', who: 'rainy', where: 'KARDS#general',
+            src: 'dc/slash', who: 'rainy', where: 'KARDS#general', id: undefined,
         })
     })
 
@@ -76,7 +76,14 @@ describe('discordActor', () => {
     test('a plain message with no guild is a DM', () => {
         const actor = discordActor({message: {author: {username: 'rainy'}}})
 
-        expect(actor).toEqual({src: 'dc/text', who: 'rainy', where: 'DM'})
+        expect(actor).toEqual({
+            src: 'dc/text', who: 'rainy', where: 'DM', id: undefined,
+        })
+    })
+
+    test('carries the Discord message id', () => {
+        expect(discordActor({message: {id: '1284003921730801665'}}).id)
+            .toBe('1284003921730801665')
     })
 
     test('an unknown author does not break the line', () => {
@@ -93,7 +100,7 @@ describe('telegramActor', () => {
         })
 
         expect(actor).toEqual({
-            src: 'tg/text', who: 'alex', where: 'KARDS chat',
+            src: 'tg/text', who: 'alex', where: 'KARDS chat', id: undefined,
         })
     })
 
@@ -107,7 +114,7 @@ describe('telegramActor', () => {
         })
 
         expect(actor).toEqual({
-            src: 'tg/button', who: 'alex', where: 'KARDS chat',
+            src: 'tg/button', who: 'alex', where: 'KARDS chat', id: undefined,
         })
     })
 
@@ -118,6 +125,20 @@ describe('telegramActor', () => {
         expect(telegramActor({
             tgCtx: {update: {message: {from: {id: 12345}}}},
         }).who).toBe('12345')
+    })
+
+    test('carries the update_id of a text command', () => {
+        expect(telegramActor({
+            tgCtx: {update: {update_id: 592011, message: {from: {}}}},
+        }).id).toBe(592011)
+    })
+
+    // The update_id sits on the update, not on the callback query, so a button
+    // tap is correlatable the same way a typed command is.
+    test('carries the update_id of a button tap', () => {
+        expect(telegramActor({
+            tgCtx: {update: {update_id: 592012}, callbackQuery: {from: {}}},
+        }).id).toBe(592012)
     })
 
     test('a chat with no title is a private chat', () => {
@@ -138,6 +159,27 @@ describe('formatCommandLog', () => {
             'search', 'dc/button', 'rainy@KARDS#general',
             'q="zhukov"', 'MISS', 'p2 off5', '3 found', 'api 76ms',
         ])
+    })
+
+    // Two lines with the same id are one interaction logged twice; two lines
+    // with different ids are two deliveries.
+    test('places the id right after who and where', () => {
+        const line = formatCommandLog('search', {...actor, id: 592011},
+            {q: 'чайка', cache: 'MISS'})
+
+        expect(segments(line)).toEqual([
+            'search', 'dc/button', 'rainy@KARDS#general', 'id 592011',
+            'q="чайка"', 'MISS',
+        ])
+    })
+
+    test('omits the id segment when the platform gave none', () => {
+        expect(formatCommandLog('utc', actor, {})).not.toContain('id ')
+    })
+
+    test('does not drop an id of zero', () => {
+        expect(formatCommandLog('search', {...actor, id: 0}, {}))
+            .toContain('id 0')
     })
 
     test('omits every segment it has no value for', () => {

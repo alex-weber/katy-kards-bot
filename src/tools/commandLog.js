@@ -24,7 +24,7 @@ function fmtMs(ms)
  * Describe who acted and where, from a Discord message.
  *
  * @param ctx the Discord command context
- * @returns {{src: string, who: string, where: string}}
+ * @returns {{src: string, who: string, where: string, id: *}}
  */
 function discordActor(ctx)
 {
@@ -36,6 +36,7 @@ function discordActor(ctx)
             : message.buttonId ? 'button' : 'text'),
         who: message.authorName || message.author?.username || 'unknown',
         where: guildName ? `${guildName}#${channelName}` : 'DM',
+        id: message.id,
     }
 }
 
@@ -45,7 +46,7 @@ function discordActor(ctx)
  * message, so both are read here.
  *
  * @param ctx the Telegram command context
- * @returns {{src: string, who: string, where: string}}
+ * @returns {{src: string, who: string, where: string, id: *}}
  */
 function telegramActor(ctx)
 {
@@ -58,6 +59,8 @@ function telegramActor(ctx)
         src: 'tg/' + (tgCtx.callbackQuery ? 'button' : 'text'),
         who,
         where: chatName || tgCtx.chat?.title || 'private',
+        //carried on the update, so a button tap has one too
+        id: tgCtx.update?.update_id,
     }
 }
 
@@ -84,8 +87,13 @@ function formatPage(offset, limit)
  * so every call site and both platforms share a single format. Example:
  *   search · dc/button · rainy@KARDS#general · q="zhukov" · MISS · p2 off5 · 3 found · api 76ms
  *
+ * The id segment is what the platform called this interaction - Telegram's
+ * update_id, Discord's message id. Two lines carrying the same id are one
+ * interaction logged twice (our bug); two lines with different ids are two
+ * deliveries (a duplicate update, or a second instance polling the same token).
+ *
  * @param kind what the user asked for ('search', 'deck', 'alt', …)
- * @param actor {src, who, where}
+ * @param actor {src, who, where, id}
  * @param meta {q, cache, page, result, timings}
  * @returns {string}
  */
@@ -96,6 +104,7 @@ function formatCommandLog(kind, actor, meta = {})
         String(actor.src).padEnd(srcWidth),
         `${actor.who}@${actor.where}`,
     ]
+    if (actor.id != null) parts.push('id ' + actor.id)
     if (meta.q) parts.push(`q="${meta.q}"`)
     if (meta.cache) parts.push(meta.cache)
     if (meta.page) parts.push(meta.page)
