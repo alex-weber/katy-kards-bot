@@ -33,19 +33,27 @@ async function serveSearchCache(ctx, cacheKey)
 {
     const {message, client, redis, language, command, user} = ctx
     if (message.buttonId) return false
-    if (!(await redis.exists(cacheKey))) return false
-
+    //the whole probe is timed, the existence check included, and recorded even
+    //when it misses - both round trips are paid for either way, and a miss that
+    //reports nothing makes the fallback look cheaper than it is
     const cacheStarted = Date.now()
+    if (!(await redis.exists(cacheKey))) {
+        addTiming(ctx, 'cache', Date.now() - cacheStarted)
+
+        return false
+    }
+
     const answer = await redis.json.get(cacheKey, '$')
-    const cacheMs = Date.now() - cacheStarted
+    addTiming(ctx, 'cache', Date.now() - cacheStarted)
 
     //forward failed (e.g. no Read Message History) -> let handleSearch regenerate
+    const sendStarted = Date.now()
     if (!await forwardCachedMessage(client, answer, message,
         {language, query: command, key: 'cacheForwardNotice'}))
         return false
+    addTiming(ctx, 'send', Date.now() - sendStarted)
     react(message, '✅', user)
     //cache hits are never paginated (buttonId returns above), so always page 1
-    addTiming(ctx, 'cache', cacheMs)
     setLog(ctx, {cache: 'HIT', page: 'p1'})
 
     return true
@@ -175,7 +183,9 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
     //reply to user
     try {
         react(message, '✅', user)
+        const sendStarted = Date.now()
         const sent = await message.channel.send(answer)
+        addTiming(ctx, 'send', Date.now() - sendStarted)
         setLog(ctx, {cache: 'MISS', page: formatPage(offset, ctx.limit),
             result: counter + ' found'})
         //cache only within the limit, so pagination still works

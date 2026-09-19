@@ -188,12 +188,24 @@ describe('formatCommandLog', () => {
         ])
     })
 
+    // The order follows the request: cache, lookup, prepare, send, then the
+    // fixed setup costs - so two lines can be compared column by column.
     test('prints timings in a fixed order, so two lines compare', () => {
         const line = formatCommandLog('deck', actor, {
             timings: {perm: 12, shot: 2114, usr: 3, db: 24},
         })
 
         expect(line.endsWith('db 24ms shot 2114ms usr 3.0ms perm 12ms')).toBe(true)
+    })
+
+    test('orders the whole pipeline, miss and hit alike', () => {
+        const line = formatCommandLog('search', actor, {
+            timings: {send: 310, perm: 12, conv: 840, cache: 1, db: 26, usr: 3},
+        })
+
+        expect(line.endsWith(
+            'cache 1.0ms db 26ms conv 840ms send 310ms usr 3.0ms perm 12ms'))
+            .toBe(true)
     })
 
     test('the platform is greppable from the source segment', () => {

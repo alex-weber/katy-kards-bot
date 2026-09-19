@@ -218,19 +218,20 @@ async function handleDeck(ctx)
     const command = bot.getDeckCode(tgCtx.update.message.text)
     //check if the deck is already in the cache
     const deckKey = cacheKeyPrefix + 'deck:' + language + ':' + command
+    const deckCacheStarted = Date.now()
     if (await redis.exists(deckKey)) {
-        const cacheStarted = Date.now()
         const response = await redis.json.get(deckKey, '$')
-        const cacheMs = Date.now() - cacheStarted
+        addTiming(ctx, 'cache', Date.now() - deckCacheStarted)
         react(tgCtx, reactions.success, user)
         await tgCtx.replyWithPhoto(response.files[0])
         await tgCtx.reply(response.content.replaceAll('```', ''))
         await tgCtx.replyWithPhoto(response.files[1])
-        addTiming(ctx, 'cache', cacheMs)
         setLog(ctx, {q: command, cache: 'HIT'})
 
         return true
     }
+
+    addTiming(ctx, 'cache', Date.now() - deckCacheStarted)
 
     const deckLimit = await checkRoleDeckScreenshotLimit(ctx)
     if (!deckLimit.allowed) {
@@ -547,11 +548,14 @@ async function serveSearchCache(ctx, cacheKey)
 {
     const {tgCtx, redis, language, limit, user} = ctx
 
+    //recorded even on a miss: the probe is paid for either way, and a miss
+    //that quietly costs a round trip makes the fallback look cheaper than it is
     const cacheStarted = Date.now()
     const cached = await redis.json.get(cacheKey, '$')
-    const cacheMs = Date.now() - cacheStarted
+    addTiming(ctx, 'cache', Date.now() - cacheStarted)
     if (!cached || !cached.files?.length) return false
 
+    const sendStarted = Date.now()
     try {
         react(tgCtx, cached.counter > limit
             ? reactions.moreResults
@@ -573,8 +577,8 @@ async function serveSearchCache(ctx, cacheKey)
 
         return false
     }
+    addTiming(ctx, 'send', Date.now() - sendStarted)
 
-    addTiming(ctx, 'cache', cacheMs)
     setLog(ctx, {cache: 'HIT', result: cached.counter + ' found'})
 
     return true
@@ -687,7 +691,13 @@ async function handleSearch(ctx)
 
     const downloadedFiles = []
     try {
-        if (!await convertFilesForTelegram(ctx, files, downloadedFiles)) {
+        //the download and webp conversion of every image: on a miss this is
+        //what the cache actually saves, and it dwarfs the DB lookup
+        const convStarted = Date.now()
+        const converted =
+            await convertFilesForTelegram(ctx, files, downloadedFiles)
+        addTiming(ctx, 'conv', Date.now() - convStarted)
+        if (!converted) {
             //the optimistic success reaction no longer holds: the conversion
             //failed and an error reply was already sent, so correct the emoji.
             react(tgCtx, reactions.error, user)
@@ -696,9 +706,11 @@ async function handleSearch(ctx)
             return true
         }
 
+        const sendStarted = Date.now()
         const sent = cards.counter > 1
             ? await sendCardMediaGroup(ctx, files)
             : await sendCardPhoto(ctx, files[0])
+        addTiming(ctx, 'send', Date.now() - sendStarted)
         setLog(ctx, {result: cards.counter + ' found'})
 
         //cache the answer so the next identical query replays it. A send that

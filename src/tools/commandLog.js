@@ -3,8 +3,13 @@
 const kindWidth = 8   // 'midnight'
 const srcWidth = 9    // 'dc/button'
 
-//the order timings are printed in, so two lines are always comparable
-const timingOrder = ['api', 'db', 'shot', 'cache', 'usr', 'perm']
+//the order timings are printed in, so two lines are always comparable. It
+//follows the order a request actually goes through: probe the cache, fall back
+//to the API or the DB, prepare the images, send them - with the two setup
+//costs last, since they are the same whatever the command turns out to be.
+const timingOrder = [
+    'cache', 'api', 'db', 'conv', 'shot', 'send', 'usr', 'perm',
+]
 
 /**
  * Render a millisecond duration compactly: one decimal under 10ms (sub-ms

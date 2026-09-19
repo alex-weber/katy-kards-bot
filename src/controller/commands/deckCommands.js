@@ -36,13 +36,19 @@ async function handleDeck(ctx)
     //check if in the cache
     const deckKey = cacheKeyPrefix + getChannelScope(message) +
         'deck:' + language + ':' + command
-    if (await redis.exists(deckKey)) {
-        const cacheStarted = Date.now()
-        const response = await redis.json.get(deckKey, '$')
-        const cacheMs = Date.now() - cacheStarted
+    //the probe is measured once, before anything is sent, so a forward that
+    //fails and falls through cannot be charged to the cache
+    const cacheStarted = Date.now()
+    const cached = await redis.exists(deckKey)
+        ? await redis.json.get(deckKey, '$')
+        : null
+    addTiming(ctx, 'cache', Date.now() - cacheStarted)
+
+    if (cached) {
+        const sendStarted = Date.now()
         if (await forwardCachedMessage(
-            client, response, message, {language, query: command})) {
-            addTiming(ctx, 'cache', cacheMs)
+            client, cached, message, {language, query: command})) {
+            addTiming(ctx, 'send', Date.now() - sendStarted)
             setLog(ctx, {q: command, cache: 'HIT'})
 
             return true
@@ -114,10 +120,13 @@ async function handleAlt(ctx)
     // resolveButtonCommand, which would otherwise split the chain across keys.
     const cacheKey = cacheKeyPrefix + getChannelScope(message) +
         'alt:' + command
-    if (await redis.exists(cacheKey)) {
-        const cacheStarted = Date.now()
-        const response = await redis.json.get(cacheKey, '$')
-        const cacheMs = Date.now() - cacheStarted
+    const cacheStarted = Date.now()
+    const response = await redis.exists(cacheKey)
+        ? await redis.json.get(cacheKey, '$')
+        : null
+    addTiming(ctx, 'cache', Date.now() - cacheStarted)
+    if (response) {
+        const sendStarted = Date.now()
         if (await forwardCachedMessage(
             client, response, message, {language, query: command})) {
             // forward() drops the page's "Next" button, so re-attach one by
@@ -133,7 +142,7 @@ async function handleAlt(ctx)
                         'next_button_alt' + (offset + limit)),
                 })
             }
-            addTiming(ctx, 'cache', cacheMs)
+            addTiming(ctx, 'send', Date.now() - sendStarted)
             setLog(ctx, {q: command, cache: 'HIT',
                 page: formatPage(offset, limit)})
 
@@ -165,7 +174,9 @@ async function handleAlt(ctx)
             translate(language, 'next'), 'next_button_alt' + (offset + limit))
 
     react(message, '✅', user)
+    const sendStarted = Date.now()
     const sent = await message.channel.send(answer)
+    addTiming(ctx, 'send', Date.now() - sendStarted)
     // Cache every page with a null "next-message" link. Replays go through
     // forward(), which drops the page's button, so on a cache hit we re-attach
     // it by following this chain (alt -> alt10 -> alt20 -> ...).

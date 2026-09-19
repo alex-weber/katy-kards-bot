@@ -84,11 +84,14 @@ function makeTgCtx() {
 
 const {getUser, updateUser} = require('../src/database/db')
 
+let logged
+
 beforeEach(() => {
     jest.clearAllMocks()
+    logged = []
     getUser.mockResolvedValue({id: 7, status: 'active', language: 'en', name: 'alex'})
     updateUser.mockResolvedValue(true)
-    jest.spyOn(console, 'log').mockImplementation(() => {})
+    jest.spyOn(console, 'log').mockImplementation(line => logged.push(String(line)))
     jest.spyOn(console, 'error').mockImplementation(() => {})
 })
 
@@ -250,6 +253,45 @@ describe('replaying a cached answer', () => {
         expect(redis.json.set).toHaveBeenCalledWith(
             singleKey, '$',
             {counter: 1, files: [{fileId: 'FRESH', caption: ''}]})
+    })
+})
+
+describe('what the log line reports', () => {
+    // A miss pays for the probe too. Leaving it out of the line made the
+    // fallback look cheaper than it is.
+    test('a miss still reports the cache probe it paid for', async () => {
+        const redis = makeRedis()
+        const tgCtx = makeTgCtx()
+        getCards.mockResolvedValue({counter: 1, cards: [{}]})
+        getFiles.mockReturnValue([{attachment: 'a.webp', description: ''}])
+
+        await handler.telegramHandler(tgCtx, redis)
+
+        expect(logged.join(' | ')).toMatch(/MISS .*cache \d/)
+    })
+
+    // Without a send time on both, a hit and a miss cannot be compared.
+    test('a hit reports its send, so it compares against a miss', async () => {
+        const redis = makeRedis({
+            [singleKey]: {counter: 1, files: [{fileId: 'FID1', caption: ''}]},
+        })
+        const tgCtx = makeTgCtx()
+
+        await handler.telegramHandler(tgCtx, redis)
+
+        expect(logged.join(' | ')).toMatch(/HIT .*cache \d.*send \d/)
+    })
+
+    test('a miss reports the image conversion and the upload', async () => {
+        const redis = makeRedis()
+        const tgCtx = makeTgCtx()
+        getCards.mockResolvedValue({counter: 1, cards: [{}]})
+        getFiles.mockReturnValue([{attachment: 'a.webp', description: ''}])
+
+        await handler.telegramHandler(tgCtx, redis)
+
+        expect(logged.join(' | ')).toMatch(/conv \d/)
+        expect(logged.join(' | ')).toMatch(/send \d/)
     })
 })
 
