@@ -56,6 +56,12 @@ function makeRedis(store = {}) {
         set: jest.fn(async (key, value) => { store[key] = value }),
         del: jest.fn(async key => { delete store[key] }),
         expire: jest.fn(async () => 1),
+        //the empty-search streak counter (failureStreak.js)
+        incr: jest.fn(async key => {
+            store[key] = (parseInt(store[key]) || 0) + 1
+
+            return store[key]
+        }),
         json: {
             get: jest.fn(async key => store[key] ?? null),
             set: jest.fn(async (key, path, value) => { store[key] = value }),

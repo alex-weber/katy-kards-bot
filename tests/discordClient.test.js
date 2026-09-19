@@ -170,14 +170,16 @@ describe('profile buttons', () => {
         expect(interaction.reply).toHaveBeenCalledTimes(1)
     })
 
-    test('profile_reactions toggles the flag and re-renders the view', async () => {
+    // The button is gone from the profile view, and the click is no longer
+    // handled — the bot does not react on Discord at all.
+    test('profile_reactions is no longer handled', async () => {
         getUser.mockResolvedValue({id: 'u1', language: 'en', status: 'active', reactions: true})
         const interaction = makeInteraction({isButton: () => true, customId: 'profile_reactions'})
 
         await onInteractionCreate(interaction)
 
-        expect(updateUser).toHaveBeenCalledWith(expect.objectContaining({reactions: false}))
-        expect(interaction.update).toHaveBeenCalledTimes(1)
+        expect(updateUser).not.toHaveBeenCalled()
+        expect(interaction.update).not.toHaveBeenCalled()
     })
 
     test('profile_language updates the language when it is a known one', async () => {

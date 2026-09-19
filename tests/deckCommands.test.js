@@ -22,7 +22,6 @@ jest.mock('../src/tools/translation/translator', () => ({
 jest.mock('../src/tools/deck', () => ({createDeckImages: jest.fn()}))
 jest.mock('../src/tools/button', () => ({getButtonRow: jest.fn(() => ['btn'])}))
 jest.mock('../src/tools/search', () => ({isBotCommandChannel: jest.fn(() => true)}))
-jest.mock('../src/tools/reactions', () => ({react: jest.fn()}))
 jest.mock('../src/tools/roles', () => ({checkRoleDeckScreenshotLimit: jest.fn()}))
 jest.mock('../src/tools/privateReply', () => ({sendPrivately: jest.fn()}))
 jest.mock('../src/controller/bot', () => ({}))

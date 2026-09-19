@@ -8,6 +8,7 @@
   "noshow": ", ich zeige gar nichts, bitte die Suche verfeinern. 5 Ergebnisse sind maximal.",
   "time": "Die aktuelle Zeit",
   "noresult": "Suchsprache: DE, nichts gefunden...",
+  "failureHelp": "Du findest nicht, wonach du suchst? So funktioniert die Suche:",
   "langChange": "Suchsprache: ",
   "screenshot": "Mache ein Screenshot, das kann dauern...",
   "cache": "Lade vom Cache...",

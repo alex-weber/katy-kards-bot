@@ -7,6 +7,7 @@
   "noshow": ", não vou mostrar nada, por favor faça uma busca mais precisa. Você realmente quer inundar o chat com todas as cartas?",
   "time": "Hora atual",
   "noresult": "Idioma de busca: {{language}}. Nenhuma carta encontrada...",
+  "failureHelp": "Não está encontrando o que procura? Veja como funciona a busca:",
   "langChange": "Idioma de busca: ",
   "screenshot": "capturando uma imagem, isso pode levar alguns segundos...",
   "cache": "obtendo do cache...",

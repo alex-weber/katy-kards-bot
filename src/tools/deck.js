@@ -55,7 +55,6 @@ async function createDeckImages(
         ? message.channel.sendRaw
         : message.channel.send.bind(message.channel)
     let sentMessage = await sendNotice(translate(language, 'screenshot'))
-    sentMessage.react('🔄')
     const shotStarted = Date.now()
     const filename = await takeScreenshot(url)
     if (timings) timings.shot = Date.now() - shotStarted

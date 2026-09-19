@@ -27,28 +27,31 @@ describe('isUserBlocked', () => {
 
 describe('checkUserStatus', () => {
     function makeMessage() {
-        return {
-            react: jest.fn(async () => {}),
-            channel: {send: jest.fn(async () => {})},
-        }
+        return {channel: {send: jest.fn(async () => {})}}
     }
 
     test('does not gate an active user', () => {
         const message = makeMessage()
         expect(checkUserStatus({status: 'active'}, message)).toBe(false)
-        expect(message.react).not.toHaveBeenCalled()
+        expect(message.channel.send).not.toHaveBeenCalled()
     })
 
     test('does not gate a terms-pending user (terms gate handles them)', () => {
         const message = makeMessage()
         expect(checkUserStatus({status: 'pending'}, message)).toBe(false)
-        expect(message.react).not.toHaveBeenCalled()
+        expect(message.channel.send).not.toHaveBeenCalled()
     })
 
-    test('reacts and stops for a blocked user', () => {
+    test('stops a blocked user', () => {
         const message = makeMessage()
         expect(checkUserStatus({status: 'inactive'}, message)).toBe(true)
-        expect(message.react).toHaveBeenCalledWith('🚫')
+    })
+
+    // The bot no longer reacts on Discord, so a message it is handed does not
+    // need to expose react() at all.
+    test('does not touch the message when it cannot be reacted to', () => {
+        expect(() => checkUserStatus({status: 'inactive'}, makeMessage()))
+            .not.toThrow()
     })
 
     test('shows the moderator-set custom message when present', () => {

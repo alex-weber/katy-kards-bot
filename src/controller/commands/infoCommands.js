@@ -5,7 +5,6 @@ const {translate} = require("../../tools/translation/translator")
 const {getStats, getServerList} = require("../../tools/stats")
 const {myTDRank} = require("../../games/topDeck")
 const {isManager} = require("../../tools/search")
-const {react} = require("../../tools/reactions")
 const {getButtonRow} = require("../../tools/button")
 
 //refresh window for the cached user record
@@ -22,9 +21,7 @@ async function handleMidnight(ctx)
     if (ctx.command !== 'midnight') return false
 
     const midnight = bot.getMidnight().toString()
-    const sentMessage =
-        await ctx.message.channel.send('<t:' + midnight + ':R>')
-    react(sentMessage, '🕛', ctx.user)
+    await ctx.message.channel.send('<t:' + midnight + ':R>')
 
     return true
 }
@@ -148,7 +145,7 @@ async function handleMyRank(ctx)
 
 /**
  * Reply with a button that reveals the user's stats privately on click.
- * The stats and the reactions opt-out toggle are rendered per-click in the
+ * The stats and the language select are rendered per-click in the
  * interaction handler, so they always reflect the current state.
  *
  * @param ctx

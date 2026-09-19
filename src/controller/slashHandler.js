@@ -59,8 +59,6 @@ function buildInteractionMessage(interaction, content, language, state, query)
         channelId: interaction.channelId,
         guildId: interaction.guildId,
         guild: interaction.guild,
-        //no source message to react to for a slash command
-        react: async () => {},
         //no attachments arrive via these slash commands
         attachments: new Map(),
         buttonId: undefined,

@@ -97,7 +97,6 @@ function checkUserStatus(user, message)
 {
     if (!isUserBlocked(user)) return false
 
-    message.react('🚫')
     console.log('blocked user\n', user)
     if (user.mode) message.channel.send(user.mode)
 
