@@ -1,3 +1,9 @@
+## 5.10.1
+
+### Bug Fixes
+
+- A search like "air cover" no longer misses the card titled *Air Cover*. Query parsing rewrote "air" into a plane-type filter and dropped it as searchable text, so the card was excluded unless it happened to be a plane itself. The local DB search now tries a literal full-text match first and only falls back to attribute parsing if that finds nothing.
+
 ## 5.10.0
 
 ### Features

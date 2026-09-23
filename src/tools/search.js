@@ -311,13 +311,15 @@ function getFiles(cards, language, limit) {
 }
 
 /**
+ * Run a fully-prepared DB search: strip the non-DB fields, fold text/exile
+ * into AND/OR conditions, and query.
  *
  * @param variables
+ * @param timings
  * @returns {Promise<*>}
  */
-async function advancedSearch(variables, timings=null)
+async function queryCardsDB(variables, timings=null)
 {
-    variables = getVariables(variables)
     //delete non DB fields
     delete variables.q
     delete variables.language
@@ -371,6 +373,31 @@ async function advancedSearch(variables, timings=null)
     if (timings) timings.db = Date.now() - started
 
     return {counter: cards.length + skip, cards: cards}
+}
+
+/**
+ * Search the local DB, trying a literal match on the raw query before
+ * parsing it into attributes.
+ *
+ * getVariables() rewrites recognized words into structured filters - e.g.
+ * "air" becomes a plane type filter and is dropped as free text - so a
+ * literal title like "Air Cover" can be lost if it isn't itself a plane.
+ * A literal full-text match runs first and, only if it finds nothing, falls
+ * back to the attribute-parsed search.
+ *
+ * @param variables
+ * @returns {Promise<*>}
+ */
+async function advancedSearch(variables, timings=null)
+{
+    const literalWords = variables.q ? variables.q.split(' ').filter(word => word.length) : []
+    if (literalWords.length)
+    {
+        const literal = await queryCardsDB({...variables, text: literalWords}, timings)
+        if (literal.counter) return literal
+    }
+
+    return await queryCardsDB(getVariables(variables), timings)
 }
 
 /**
