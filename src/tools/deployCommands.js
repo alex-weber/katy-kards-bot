@@ -47,6 +47,12 @@ function buildCommands()
             .setDescription('e.g. soviet infantry guard 1/8 3k 1c')
             .setRequired(true))
 
+    // No option — /find opens a private panel with filter dropdowns and a
+    // popup for the search term (see commands/findCommand.js).
+    const find = new SlashCommandBuilder()
+        .setName('find')
+        .setDescription('Find KARDS cards by picking faction, type and cost')
+
     // `text` mirrors the legacy `!commands a` argument (filter by prefix). Kept
     // optional so a bare `/commands` lists everything.
     const commands = new SlashCommandBuilder()
@@ -87,7 +93,7 @@ function buildCommands()
         .setName(entry.name)
         .setDescription(entry.description))
 
-    return [search, commands, deck, help, td, ...simple]
+    return [search, find, commands, deck, help, td, ...simple]
         .map(command => command.toJSON())
 }
 

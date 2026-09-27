@@ -17,6 +17,14 @@ const {requiresTermsAcceptance, buildTermsView} = require('./commands/termsComma
 const {attributeChannel} = require('../tools/attributedChannel')
 const {attributionName} = require('../tools/attributionName')
 const {loadUser, isUserBlocked} = require('./messageContext')
+const {
+    buildFindView,
+    buildTermModal,
+    buildQuery,
+    decodeState,
+    sanitizeState,
+    applyChange,
+} = require('./commands/findCommand')
 
 //map a plain command name -> the legacy command text it maps to
 const simpleLookup = Object.fromEntries(
@@ -334,6 +342,69 @@ async function replyTerms(interaction, redis)
     })
 }
 
+/**
+ * Open the /find panel privately. Gated up front like /profile, so a
+ * blocked/terms-pending user is turned away before picking any filters.
+ *
+ * @param interaction
+ * @param redis
+ * @returns {Promise<void>}
+ */
+async function replyFind(interaction, redis)
+{
+    const user = await loadGatedUser(interaction, redis)
+    if (!user) return
+
+    await interaction.reply({
+        ...buildFindView(user.language),
+        flags: MessageFlags.Ephemeral,
+    })
+}
+
+/**
+ * Handle a click, dropdown change or term popup on a /find panel. Filter
+ * changes redraw the panel in place; "Search" runs the composed query through
+ * the regular search pipeline (results go to the channel, like /search) and
+ * leaves the panel open so the filters can be tweaked and searched again.
+ *
+ * @param interaction
+ * @param client
+ * @param redis
+ * @returns {Promise<boolean>} true when the interaction belonged to /find
+ */
+async function handleFindInteraction(interaction, client, redis)
+{
+    const decoded = decodeState(interaction.customId)
+    if (!decoded) return false
+
+    const {action, state} = decoded
+    try {
+        const user = await loadUser({author: interaction.user}, redis)
+        if (action === 'term') {
+            await interaction.showModal(buildTermModal(user.language, state))
+        } else if (action === 'go') {
+            const query = buildQuery(sanitizeState(state))
+            if (!query) {
+                await interaction.update(buildFindView(user.language, state))
+            } else {
+                await routeThroughHandler(interaction, client, redis,
+                    bot.getPrefix(interaction), query)
+            }
+        } else {
+            const value = action === 'modal'
+                ? interaction.fields.getTextInputValue('term')
+                : (interaction.values?.[0] || '')
+            await interaction.update(buildFindView(user.language,
+                applyChange(action, state, value)))
+        }
+    } catch (error) {
+        console.error('find panel error:', action, error)
+        await respondError(interaction, error)
+    }
+
+    return true
+}
+
 //Discord API error code for "Missing Access" — raised when the bot tries to
 //post in a channel it can't see or lacks Send Messages in. Common when a slash
 //command is run (or user-installed) in a channel where the bot has no perms.
@@ -393,6 +464,8 @@ async function handleSlashCommand(interaction, client, redis)
             case 'search':
                 return await routeThroughHandler(interaction, client, redis,
                     prefix, interaction.options.getString('query'))
+            case 'find':
+                return await replyFind(interaction, redis)
             case 'deck':
                 return await showDeckModal(interaction, redis)
             case 'help':
@@ -430,4 +503,4 @@ async function handleSlashCommand(interaction, client, redis)
     }
 }
 
-module.exports = {handleSlashCommand, handleSlashModal}
+module.exports = {handleSlashCommand, handleSlashModal, handleFindInteraction}

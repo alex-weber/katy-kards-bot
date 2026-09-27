@@ -23,7 +23,8 @@ jest.mock('../src/controller/commands/synonymCommands', () => ({
 }))
 
 const {MessageFlags} = require('discord.js')
-const {handleSlashCommand, handleSlashModal} = require('../src/controller/slashHandler')
+const {handleSlashCommand, handleSlashModal, handleFindInteraction} = require('../src/controller/slashHandler')
+const {encodeState, decodeState, EMPTY_STATE} = require('../src/controller/commands/findCommand')
 const {getUser} = require('../src/database/db')
 const {discordHandler} = require('../src/controller/discordHandler')
 const {loadUser, isUserBlocked} = require('../src/controller/messageContext')
@@ -49,6 +50,7 @@ function makeInteraction({commandName, options = {}, customId} = {}) {
     interaction.reply = jest.fn(async () => { interaction.replied = true })
     interaction.followUp = jest.fn(async () => {})
     interaction.showModal = jest.fn(async () => {})
+    interaction.update = jest.fn(async () => {})
 
     return interaction
 }
@@ -349,5 +351,83 @@ describe('handleSlashModal', () => {
         expect(interaction.editReply).toHaveBeenCalledWith({
             content: 'Oops... Something went wrong...',
         })
+    })
+})
+
+describe('/find', () => {
+    const state = {...EMPTY_STATE, faction: 'soviet', kredits: '3'}
+
+    test('replies with the private panel', async () => {
+        const interaction = makeInteraction({commandName: 'find'})
+
+        await handleSlashCommand(interaction, client, redis)
+
+        const payload = interaction.reply.mock.calls[0][0]
+        expect(payload.flags).toBe(MessageFlags.Ephemeral)
+        expect(payload.components).toHaveLength(5)
+    })
+
+    test('gates a blocked user before showing the panel', async () => {
+        isUserBlocked.mockReturnValue(true)
+        const interaction = makeInteraction({commandName: 'find'})
+
+        await handleSlashCommand(interaction, client, redis)
+
+        expect(interaction.reply.mock.calls[0][0].components).toBeUndefined()
+    })
+
+    test('ignores components that are not part of a /find panel', async () => {
+        const interaction = makeInteraction({customId: 'next_button_x'})
+
+        await expect(handleFindInteraction(interaction, client, redis)).resolves.toBe(false)
+        expect(interaction.update).not.toHaveBeenCalled()
+    })
+
+    test('a dropdown change redraws the panel with the new selection', async () => {
+        const interaction = makeInteraction({customId: encodeState('type', state)})
+        interaction.values = ['infantry']
+
+        await handleFindInteraction(interaction, client, redis)
+
+        const {components} = interaction.update.mock.calls[0][0]
+        const go = components[4].toJSON().components[2]
+        expect(decodeState(go.custom_id).state).toEqual({...state, type: 'infantry'})
+    })
+
+    test('the term button opens the popup', async () => {
+        const interaction = makeInteraction({customId: encodeState('term', state)})
+
+        await handleFindInteraction(interaction, client, redis)
+
+        expect(interaction.showModal).toHaveBeenCalledTimes(1)
+    })
+
+    test('a submitted term is added to the panel', async () => {
+        const interaction = makeInteraction({
+            customId: encodeState('modal', state), options: {field: 'guard'},
+        })
+
+        await handleFindInteraction(interaction, client, redis)
+
+        expect(interaction.update.mock.calls[0][0].content).toContain('`soviet 3k guard`')
+    })
+
+    test('Search runs the composed query through the search pipeline', async () => {
+        const interaction = makeInteraction({customId: encodeState('go', {...state, term: 'guard'})})
+
+        await handleFindInteraction(interaction, client, redis)
+
+        expect(interaction.deferReply).toHaveBeenCalledWith({flags: MessageFlags.Ephemeral})
+        expect(discordHandler.mock.calls[0][0].content).toBe('!soviet 3k guard')
+        expect(interaction.deleteReply).toHaveBeenCalledTimes(1)
+    })
+
+    test('Search with nothing selected just redraws the panel', async () => {
+        const interaction = makeInteraction({customId: encodeState('go', EMPTY_STATE)})
+
+        await handleFindInteraction(interaction, client, redis)
+
+        expect(discordHandler).not.toHaveBeenCalled()
+        expect(interaction.update).toHaveBeenCalledTimes(1)
     })
 })
