@@ -37,6 +37,7 @@ const {
 } = require("./commands/termsCommands")
 const {checkRoleCommandLimit} = require("../tools/roles")
 const {discordActor, logCommand, setLog, addTiming} = require("../tools/commandLog")
+const {sendPrivately} = require("../tools/privateReply")
 
 const minStrLen = parseInt(process.env.MIN_STR_LEN) || 2
 //buffer overflow protection :)
@@ -269,7 +270,10 @@ async function discordHandler(message, client, redis)
         setLog(ctx, {result: 'too short'})
         logCommand('rejected', ctx, discordActor(ctx))
 
-        return message.channel.send(translate(ctx.language, 'min'))
+        //only the user who typed it needs to see this (ephemeral on slash)
+        await sendPrivately(message, translate(ctx.language, 'min'))
+
+        return message
     }
 
     if (await dispatch(ctx, [

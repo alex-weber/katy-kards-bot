@@ -17,7 +17,7 @@ describe('buildCommands', () => {
         const names = commands.map(c => c.name)
         expect(new Set(names).size).toBe(names.length)
         expect(names).toEqual(expect.arrayContaining([
-            'search', 'commands', 'deck', 'help', 'td',
+            'search', 'find', 'commands', 'deck', 'help', 'td',
             ...SIMPLE_COMMANDS.map(entry => entry.name),
         ]))
     })

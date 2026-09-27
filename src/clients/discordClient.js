@@ -13,7 +13,7 @@ const {invalidateSynonymCache} = require("../controller/synonymCache")
 const {buildProfileView, profileIdentity} = require("../controller/commands/profileView")
 const {buildContactModal} = require("../tools/contactModal")
 const {buildTermsView} = require("../controller/commands/termsCommands")
-const {handleSlashCommand, handleSlashModal} = require("../controller/slashHandler")
+const {handleSlashCommand, handleSlashModal, handleFindInteraction} = require("../controller/slashHandler")
 const {attributeChannel} = require("../tools/attributedChannel")
 const {attributionName} = require("../tools/attributionName")
 const client = new Client({
@@ -60,6 +60,11 @@ async function onInteractionCreate(interaction)
     //submitted /deck popups route through the slash handler
     if (interaction.isModalSubmit() &&
         await handleSlashModal(interaction, client, redis)) return
+
+    //dropdowns, buttons and the term popup of a /find panel
+    if ((interaction.isButton() || interaction.isStringSelectMenu() ||
+        interaction.isModalSubmit()) &&
+        await handleFindInteraction(interaction, client, redis)) return
 
     if (!interaction.isButton() && !interaction.isModalSubmit() &&
         !interaction.isStringSelectMenu()) return

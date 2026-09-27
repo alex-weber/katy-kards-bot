@@ -40,6 +40,7 @@ jest.mock('../src/controller/discordHandler', () => ({
 jest.mock('../src/controller/slashHandler', () => ({
     handleSlashCommand: jest.fn(async () => {}),
     handleSlashModal: jest.fn(async () => false),
+    handleFindInteraction: jest.fn(async () => false),
 }))
 
 const {getUser, updateUser, getUsers} = require('../src/database/db')

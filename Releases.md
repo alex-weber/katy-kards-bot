@@ -1,3 +1,20 @@
+## 5.11.0
+
+### Features
+
+- New `/find` command: a private panel for searching cards without knowing the query syntax. Four dropdowns pick the faction, card type, kredits and operation cost (both lists and both costs sorted, costs limited to values cards actually have), and a **✏️ Search term** button opens a popup for free text (2–50 characters). **Search** posts the results to the channel exactly like `/search` — same caching, "Next" paging, "Requested by" line and private "nothing found" — and leaves the panel open so the filters can be tweaked and searched again.
+- The panel previews the query it will run (e.g. `germany tank 5k 1c tiger`), so users pick up the `/search` syntax along the way. Each dropdown has an **Any** option to clear it, submitting the term popup empty removes the term, and **Reset** clears everything; **Search** stays disabled until something is picked.
+- The selection is carried in the panel's own components rather than Redis, so an open panel keeps working across bot restarts. Blocked and terms-pending users are turned away before the panel opens, as with `/deck`.
+- The panel is localised into all twelve supported languages, and `/help` lists `/find`.
+
+### Bug Fixes
+
+- "Minimum 2 characters, please" is now shown only to the user who sent the too-short query (ephemeral on slash commands) instead of being posted into the channel. Legacy `!` commands in DMs have no ephemeral reply and still get it as a normal message.
+
+### Known Issues
+
+- Picking a card type matches the type word as text, the way `/search` always has, so e.g. **Tank** also returns orders whose text mentions tanks. Faction, kredits and operation cost filter exactly.
+
 ## 5.10.1
 
 ### Bug Fixes
