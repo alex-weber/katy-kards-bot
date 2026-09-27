@@ -19,6 +19,42 @@ const {uploadImageFromUrl} = require("../tools/imageUpload")
 const {getButtonRow} = require("./button")
 const {invalidateSynonymCache} = require("../controller/synonymCache")
 
+//Explicit "field:value" filters, as written by the /find panel
+//("faction:neutral type:infantry"). Unlike a bare "neutral" or "infantry" they
+//are never searched for as text: each one is an exact match on the DB column.
+const EXACT_FILTERS = {
+    faction: dictionary.faction,
+    type: dictionary.type,
+}
+
+/**
+ * Parse one explicit filter word.
+ *
+ * @param word
+ * @returns {{field: string, value: string}|null} null if not a valid filter
+ */
+function parseExactFilter(word)
+{
+    const match = /^([a-z]+):([a-z]+)$/.exec(word)
+    if (!match || !EXACT_FILTERS[match[1]]?.includes(match[2])) return null
+
+    return {field: match[1], value: match[2]}
+}
+
+/**
+ * Whether a query carries explicit filters. Such a query is answered from the
+ * local DB only, where the filters are columns, and skips the literal
+ * full-text pass - "faction:neutral" must not be matched against card text
+ * that happens to say "neutral".
+ *
+ * @param q
+ * @returns {boolean}
+ */
+function hasExactFilters(q)
+{
+    return typeof q === 'string' && q.split(' ').some(word => parseExactFilter(word))
+}
+
 /**
  *
  * @param variables
@@ -32,6 +68,12 @@ function getVariables(variables)
     variables.q = ''
     for (const word of words)
     {
+        const filter = parseExactFilter(word)
+        if (filter)
+        {
+            variables[filter.field] = filter.value
+            continue
+        }
         variables = setAttribute(translate('en', word), variables)
     }
     //move attributes to text if it is a non-unit card
@@ -228,7 +270,9 @@ async function getCards(variables, timeout=3000, timings=null)
     //A query in a language the sync mirrors into fullText never needs the API:
     //search it locally and skip the round trip. The sync itself searches with an
     //empty q and has to keep hitting kards.com - it is what fills the DB.
-    if (variables.q && isFullTextLanguage(variables.language))
+    //Explicit filters exist only in the DB schema - kards.com can't apply them.
+    if (variables.q &&
+        (isFullTextLanguage(variables.language) || hasExactFilters(variables.q)))
     {
         return await advancedSearch(variables, timings)
     }
@@ -391,7 +435,7 @@ async function queryCardsDB(variables, timings=null)
 async function advancedSearch(variables, timings=null)
 {
     const literalWords = variables.q ? variables.q.split(' ').filter(word => word.length) : []
-    if (literalWords.length)
+    if (literalWords.length && !hasExactFilters(variables.q))
     {
         const literal = await queryCardsDB({...variables, text: literalWords}, timings)
         if (literal.counter) return literal
@@ -564,6 +608,7 @@ module.exports = {
     getCards,
     advancedSearch,
     isFullTextLanguage,
+    hasExactFilters,
     getFiles,
     listSynonyms,
     handleSynonym,

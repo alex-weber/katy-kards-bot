@@ -17,7 +17,7 @@ jest.mock('../src/tools/fetch', () => ({ fetchJson: jest.fn() }))
 jest.mock('../src/tools/imageUpload', () => ({ uploadImageFromUrl: jest.fn() }))
 jest.mock('../src/controller/synonymCache', () => ({ invalidateSynonymCache: jest.fn() }))
 
-const { getCards, isFullTextLanguage } = require('../src/tools/search')
+const { getCards, isFullTextLanguage, hasExactFilters } = require('../src/tools/search')
 const { getCardsDB } = require('../src/database/db')
 const { fetchJson } = require('../src/tools/fetch')
 
@@ -144,5 +144,22 @@ describe('getCards routing', () => {
 
         expect(timings).toHaveProperty('db')
         expect(timings).not.toHaveProperty('api')
+    })
+})
+
+describe('explicit filters', () => {
+    test('are answered from the DB even in a language kards.com would serve', async () => {
+        await getCards(searchVariables('de-DE', 'faction:germany type:tank'))
+
+        expect(fetchJson).not.toHaveBeenCalled()
+        expect(getCardsDB).toHaveBeenCalled()
+    })
+
+    test('hasExactFilters only accepts known fields and values', () => {
+        expect(hasExactFilters('faction:germany tiger')).toBe(true)
+        expect(hasExactFilters('type:tank')).toBe(true)
+        expect(hasExactFilters('germany tank')).toBe(false)
+        expect(hasExactFilters('type:dragon')).toBe(false)
+        expect(hasExactFilters('rarity:elite')).toBe(false)
     })
 })

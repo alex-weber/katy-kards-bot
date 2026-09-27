@@ -1,8 +1,11 @@
 // The /find panel: a private (ephemeral) message with dropdowns for faction,
 // card type, kredits and operation cost, plus a popup for free-text search
-// terms. Pressing "Search" composes the same query a user would type after
-// /search (e.g. "germany tank 5k 1c tiger") and hands it to the regular search
-// pipeline, so caching, pagination and attribution all behave identically.
+// terms. Pressing "Search" composes a /search query (e.g.
+// "faction:germany type:tank 5k 1c tiger") and hands it to the regular search
+// pipeline, so caching, pagination and attribution all behave identically. The
+// faction and type go in as explicit "field:value" filters, which the search
+// applies as exact matches instead of looking for the words in card text (see
+// hasExactFilters in tools/search.js).
 //
 // The panel is stateless on the server: the current selection is encoded in
 // every component's customId and rebuilt from it on each interaction, so a
@@ -26,9 +29,10 @@ const TYPES = [...type].sort()
 
 const PREFIX = 'find'
 const SEPARATOR = ':'
-//a customId may hold at most 100 characters; the longest state prefix
-//("find:faction:" + the longest faction/type + costs) leaves room for this
-const TERM_MAX_LENGTH = 50
+//a customId may hold at most 100 characters. The tightest fit is the results'
+//"Next" button: "next_button_" + the longest composed query
+//("faction:finland type:countermeasure 12k 6c ") leaves room for this
+const TERM_MAX_LENGTH = 40
 //the search pipeline rejects shorter queries (discordHandler.js)
 const TERM_MIN_LENGTH = parseInt(process.env.MIN_STR_LEN) || 2
 //dropdown value that clears the selection; not a valid choice, so
@@ -120,9 +124,8 @@ function sanitizeState(state)
 }
 
 /**
- * Compose the /search query for a state, in the syntax /search understands:
- * nation and type keywords, "5k" for kredits, "1c" for operation cost, then
- * the free text.
+ * Compose the /search query for a state: "faction:" and "type:" filters,
+ * "5k" for kredits, "1c" for operation cost, then the free text.
  *
  * @param state
  * @returns {string} empty when nothing is selected
@@ -130,8 +133,8 @@ function sanitizeState(state)
 function buildQuery(state)
 {
     return [
-        state.faction,
-        state.type,
+        state.faction && 'faction:' + state.faction,
+        state.type && 'type:' + state.type,
         state.kredits && state.kredits + 'k',
         state.cost && state.cost + 'c',
         state.term,

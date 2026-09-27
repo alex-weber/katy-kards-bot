@@ -63,3 +63,33 @@ test('an empty query skips the literal attempt entirely', async () => {
 
     expect(getCardsDB).toHaveBeenCalledTimes(1)
 })
+
+describe('explicit "field:value" filters (written by /find)', () => {
+    test('skip the literal pass and match the columns exactly', async () => {
+        getCardsDB.mockResolvedValue([{ title: 'Routed Troops', imageURL: '/r.avif' }])
+
+        await advancedSearch(baseVariables('faction:neutral type:infantry'))
+
+        // one query only: card text saying "neutral" must not be matched
+        expect(getCardsDB).toHaveBeenCalledTimes(1)
+        const where = getCardsDB.mock.calls[0][0]
+        expect(where.faction).toBe('neutral')
+        expect(where.type).toBe('infantry')
+        expect(where.AND).toBeUndefined()
+    })
+
+    test('combine with costs and free text', async () => {
+        await advancedSearch(baseVariables('faction:soviet 3k guard'))
+
+        const where = getCardsDB.mock.calls[0][0]
+        expect(where).toMatchObject({ faction: 'soviet', kredits: 3 })
+        expect(where.AND).toEqual([{ fullText: { contains: 'guard', mode: 'insensitive' } }])
+    })
+
+    test('an unknown value is searched as plain text, not as a filter', async () => {
+        await advancedSearch(baseVariables('faction:mars'))
+
+        // not a valid filter -> the literal pass runs as for any other word
+        expect(getCardsDB.mock.calls[0][0].faction).toBeUndefined()
+    })
+})

@@ -40,6 +40,9 @@ describe('state encoding', () => {
         for (const action of ['faction', 'kredits', 'modal', 'reset']) {
             expect(encodeState(action, longest).length).toBeLessThanOrEqual(100)
         }
+        //the results' "Next" button (searchCommand.js) is built from the query
+        const next = 'next_button_' + buildQuery(longest).replace(' ', '_')
+        expect(next.length).toBeLessThanOrEqual(100)
     })
 })
 
@@ -58,7 +61,7 @@ describe('sanitizeState', () => {
 
 describe('buildQuery', () => {
     test('composes the /search syntax', () => {
-        expect(buildQuery(full)).toBe('germany tank 5k 1c tiger')
+        expect(buildQuery(full)).toBe('faction:germany type:tank 5k 1c tiger')
     })
 
     test('keeps zero costs', () => {
@@ -111,7 +114,7 @@ describe('buildFindView', () => {
         expect(faction.options[0]).toMatchObject({value: 'any', label: 'Any', default: false})
         expect(faction.options.find(o => o.default).value).toBe('germany')
         expect(view.components[4].toJSON().components[2].disabled).toBe(false)
-        expect(view.content).toContain('`germany tank 5k 1c tiger`')
+        expect(view.content).toContain('`faction:germany type:tank 5k 1c tiger`')
     })
 
     test('uses the user\'s language', () => {
