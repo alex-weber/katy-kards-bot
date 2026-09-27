@@ -158,6 +158,7 @@ describe('explicit filters', () => {
     test('hasExactFilters only accepts known fields and values', () => {
         expect(hasExactFilters('faction:germany tiger')).toBe(true)
         expect(hasExactFilters('type:tank')).toBe(true)
+        expect(hasExactFilters('term:neutral')).toBe(true)
         expect(hasExactFilters('germany tank')).toBe(false)
         expect(hasExactFilters('type:dragon')).toBe(false)
         expect(hasExactFilters('rarity:elite')).toBe(false)

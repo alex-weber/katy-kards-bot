@@ -409,7 +409,7 @@ describe('/find', () => {
 
         await handleFindInteraction(interaction, client, redis)
 
-        expect(interaction.update.mock.calls[0][0].content).toContain('`faction:soviet 3k guard`')
+        expect(interaction.update.mock.calls[0][0].content).toContain('`faction:soviet 3k term:guard`')
     })
 
     test('Search runs the composed query through the search pipeline', async () => {
@@ -418,7 +418,7 @@ describe('/find', () => {
         await handleFindInteraction(interaction, client, redis)
 
         expect(interaction.deferReply).toHaveBeenCalledWith({flags: MessageFlags.Ephemeral})
-        expect(discordHandler.mock.calls[0][0].content).toBe('!faction:soviet 3k guard')
+        expect(discordHandler.mock.calls[0][0].content).toBe('!faction:soviet 3k term:guard')
         expect(interaction.deleteReply).toHaveBeenCalledTimes(1)
     })
 

@@ -61,7 +61,7 @@ describe('sanitizeState', () => {
 
 describe('buildQuery', () => {
     test('composes the /search syntax', () => {
-        expect(buildQuery(full)).toBe('faction:germany type:tank 5k 1c tiger')
+        expect(buildQuery(full)).toBe('faction:germany type:tank 5k 1c term:tiger')
     })
 
     test('keeps zero costs', () => {
@@ -114,7 +114,7 @@ describe('buildFindView', () => {
         expect(faction.options[0]).toMatchObject({value: 'any', label: 'Any', default: false})
         expect(faction.options.find(o => o.default).value).toBe('germany')
         expect(view.components[4].toJSON().components[2].disabled).toBe(false)
-        expect(view.content).toContain('`faction:germany type:tank 5k 1c tiger`')
+        expect(view.content).toContain('`faction:germany type:tank 5k 1c term:tiger`')
     })
 
     test('uses the user\'s language', () => {

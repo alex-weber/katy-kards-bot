@@ -26,6 +26,9 @@ const EXACT_FILTERS = {
     faction: dictionary.faction,
     type: dictionary.type,
 }
+//"term:" marks the rest of the query as free text, searched for as written:
+//in "faction:britain term:neutral" the "neutral" must not become a faction
+const TERM_PREFIX = 'term:'
 
 /**
  * Parse one explicit filter word.
@@ -52,7 +55,24 @@ function parseExactFilter(word)
  */
 function hasExactFilters(q)
 {
-    return typeof q === 'string' && q.split(' ').some(word => parseExactFilter(word))
+    return typeof q === 'string' && q.split(' ')
+        .some(word => parseExactFilter(word) || word.startsWith(TERM_PREFIX))
+}
+
+/**
+ * Split a query into the words to parse and the free text after "term:".
+ *
+ * @param words
+ * @returns {{parsed: string[], free: string[]}}
+ */
+function splitFreeText(words)
+{
+    const at = words.findIndex(word => word.startsWith(TERM_PREFIX))
+    if (at === -1) return {parsed: words, free: []}
+
+    const free = [words[at].slice(TERM_PREFIX.length), ...words.slice(at + 1)]
+
+    return {parsed: words.slice(0, at), free: free.filter(word => word.length)}
 }
 
 /**
@@ -62,8 +82,7 @@ function hasExactFilters(q)
  */
 function getVariables(variables)
 {
-    const words = variables.q.split(' ')
-    if (!words.length) return false
+    const {parsed: words, free} = splitFreeText(variables.q.split(' '))
     //unset the search string
     variables.q = ''
     for (const word of words)
@@ -83,6 +102,7 @@ function getVariables(variables)
         variables.text.push(variables.attributes)
         delete variables.attributes
     }
+    if (free.length) variables.text = [...(variables.text || []), ...free]
     //return it anyway
     return variables
 }

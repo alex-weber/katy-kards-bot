@@ -86,6 +86,27 @@ describe('explicit "field:value" filters (written by /find)', () => {
         expect(where.AND).toEqual([{ fullText: { contains: 'guard', mode: 'insensitive' } }])
     })
 
+    test('"term:" keeps the rest of the query as plain text', async () => {
+        await advancedSearch(baseVariables('faction:britain type:infantry term:neutral 2k'))
+
+        expect(getCardsDB).toHaveBeenCalledTimes(1)
+        const where = getCardsDB.mock.calls[0][0]
+        // "neutral" must not replace the faction, "2k" is not a kredits filter
+        expect(where).toMatchObject({ faction: 'britain', type: 'infantry' })
+        expect(where.kredits).toBeUndefined()
+        expect(where.AND).toEqual([
+            { fullText: { contains: 'neutral', mode: 'insensitive' } },
+            { fullText: { contains: '2k', mode: 'insensitive' } },
+        ])
+    })
+
+    test('"term:" alone skips the literal pass too', async () => {
+        await advancedSearch(baseVariables('term:air cover'))
+
+        expect(getCardsDB).toHaveBeenCalledTimes(1)
+        expect(getCardsDB.mock.calls[0][0].type).toBeUndefined()
+    })
+
     test('an unknown value is searched as plain text, not as a filter', async () => {
         await advancedSearch(baseVariables('faction:mars'))
 

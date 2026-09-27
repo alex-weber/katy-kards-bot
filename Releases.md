@@ -2,8 +2,9 @@
 
 ### Bug Fixes
 
-- `/find` matches the chosen faction and card type exactly. They were sent as plain words, which the search also looks for in card text: *Neutral* + *Infantry* returned two British infantry cards whose text says "neutral", and *Tank* also returned orders mentioning tanks. The panel now sends them as explicit `faction:` / `type:` filters (e.g. `faction:germany type:tank 5k 1c tiger`), matched against the card's columns.
-- A query with an explicit filter skips the literal full-text pass and is always answered from the local DB, since kards.com has no equivalent filter. A free-text term in German, French, Spanish, Italian, Polish or Portuguese is therefore matched against the English, Russian, Japanese, Korean and Chinese card text. `/search` accepts the same `faction:` / `type:` syntax; queries without it behave as before.
+- `/find` matches the chosen faction and card type exactly. They were sent as plain words, which the search also looks for in card text: *Neutral* + *Infantry* returned two British infantry cards whose text says "neutral", and *Tank* also returned orders mentioning tanks. The panel now sends them as explicit `faction:` / `type:` filters (e.g. `faction:germany type:tank 5k 1c term:tiger`), matched against the card's columns.
+- The search term goes last behind `term:`, and everything after `term:` is plain text that is never read as a filter or a cost. *Britain* + *Infantry* with the term "neutral" used to return the neutral *Routed Troops*: the word was parsed as a faction and replaced *Britain*. It now returns the two British infantry cards whose text says "neutral". The trade-off: stats like `3/3` in the term are searched for as text, so they match nothing.
+- A query with an explicit filter or `term:` skips the literal full-text pass and is always answered from the local DB, since kards.com has no equivalent filter. A free-text term in German, French, Spanish, Italian, Polish or Portuguese is therefore matched against the English, Russian, Japanese, Korean and Chinese card text. `/search` accepts the same `faction:` / `type:` / `term:` syntax; queries without it behave as before.
 - The `/find` search term is limited to 40 characters (was 50), so the longest possible query still fits the results' "Next" button, which Discord caps at 100 characters.
 
 ## 5.11.0

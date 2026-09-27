@@ -1,11 +1,12 @@
 // The /find panel: a private (ephemeral) message with dropdowns for faction,
 // card type, kredits and operation cost, plus a popup for free-text search
 // terms. Pressing "Search" composes a /search query (e.g.
-// "faction:germany type:tank 5k 1c tiger") and hands it to the regular search
+// "faction:germany type:tank 5k 1c term:tiger") and hands it to the regular search
 // pipeline, so caching, pagination and attribution all behave identically. The
 // faction and type go in as explicit "field:value" filters, which the search
-// applies as exact matches instead of looking for the words in card text (see
-// hasExactFilters in tools/search.js).
+// applies as exact matches instead of looking for the words in card text, and
+// the term goes last behind "term:", so none of its words is read as a filter
+// (see hasExactFilters in tools/search.js).
 //
 // The panel is stateless on the server: the current selection is encoded in
 // every component's customId and rebuilt from it on each interaction, so a
@@ -31,7 +32,7 @@ const PREFIX = 'find'
 const SEPARATOR = ':'
 //a customId may hold at most 100 characters. The tightest fit is the results'
 //"Next" button: "next_button_" + the longest composed query
-//("faction:finland type:countermeasure 12k 6c ") leaves room for this
+//("faction:finland type:countermeasure 12k 6c term:") leaves room for this
 const TERM_MAX_LENGTH = 40
 //the search pipeline rejects shorter queries (discordHandler.js)
 const TERM_MIN_LENGTH = parseInt(process.env.MIN_STR_LEN) || 2
@@ -125,7 +126,8 @@ function sanitizeState(state)
 
 /**
  * Compose the /search query for a state: "faction:" and "type:" filters,
- * "5k" for kredits, "1c" for operation cost, then the free text.
+ * "5k" for kredits, "1c" for operation cost, then the free text behind
+ * "term:" (which must come last: everything after it is plain text).
  *
  * @param state
  * @returns {string} empty when nothing is selected
@@ -137,7 +139,7 @@ function buildQuery(state)
         state.type && 'type:' + state.type,
         state.kredits && state.kredits + 'k',
         state.cost && state.cost + 'c',
-        state.term,
+        state.term && 'term:' + state.term,
     ].filter(Boolean).join(' ')
 }
 
@@ -246,7 +248,7 @@ function buildTermModal(language, state)
         .setRequired(false)
         .setMinLength(TERM_MIN_LENGTH)
         .setMaxLength(TERM_MAX_LENGTH)
-        .setPlaceholder('tiger, blitz, 3/3 …')
+        .setPlaceholder('tiger, blitz, heavy armor …')
     if (state.term) input.setValue(state.term)
 
     return new ModalBuilder()
