@@ -10,6 +10,9 @@ const {
     getUserStatusCounts,
     createUserAudit,
     getRecentUserAudits,
+    WEB_AUDIT_AREAS,
+    createWebAudit,
+    getWebAudits,
     getMessages,
     getUserMessages,
     getProfileStats,
@@ -28,6 +31,7 @@ const {safeImageUrl} = require('../tools/imageUrl')
 const {resolveAvatarUrl} = require("../tools/avatar")
 const {getSyncState, startSync} = require('../tools/syncRunner')
 const {buildSyncView} = require('../tools/syncFormat')
+const {summarizeSynonym, diffFields} = require('../tools/webAudit')
 const {
     ROLE,
     ROLE_OPTIONS,
@@ -52,6 +56,9 @@ const {redis, cachePrefix: webCachePrefix} = require('../controller/redis')
 const {cacheKeyPrefix} = require('../controller/messageCache')
 const {
     buildSystemPageData,
+    getMemoryThresholdMb,
+    getNodeMemoryAvailableMb,
+    getRedisMemoryAvailableMb,
     saveMemoryThresholdMb,
     saveNodeMemoryAvailableMb,
     saveRedisMemoryAvailableMb,
@@ -199,6 +206,7 @@ async function handleLogin(req, res, next) {
         let dbUser = await getUser(user.id)
         user.role = dbUser.role
         if (isManager(dbUser)) user.isManager = true
+        await createWebAudit({actor: user, area: 'auth', action: 'login'})
 
         req.session.regenerate(async function onRegenerate(err) {
             if (err) return next(err)
@@ -592,6 +600,13 @@ async function handleSynonymCreate(req, res) {
 
     await createSynonym(key, value)
     await invalidateSynonymCache(key)
+    await createWebAudit({
+        actor: req.session.user,
+        area: 'commands',
+        action: 'create',
+        target: key,
+        newValue: summarizeSynonym(parseSynonymValue(value)),
+    })
     redirectBackToCommands(req, res)
 }
 
@@ -614,7 +629,17 @@ async function handleSynonymUpdate(req, res) {
     if (!value) return redirectBackToCommands(req, res)
 
     await updateSynonym(key, value)
-    if (existing.value !== value) await invalidateSynonymCache(key)
+    if (existing.value !== value) {
+        await invalidateSynonymCache(key)
+        await createWebAudit({
+            actor: req.session.user,
+            area: 'commands',
+            action: 'update',
+            target: key,
+            oldValue: summarizeSynonym(parseSynonymValue(existing.value)),
+            newValue: summarizeSynonym(parseSynonymValue(value)),
+        })
+    }
     redirectBackToCommands(req, res)
 }
 
@@ -624,9 +649,17 @@ async function handleSynonymDelete(req, res) {
     }
 
     const key = sanitizeText(req.params.key, 100).toLowerCase()
-    if (key && await getSynonym(key)) {
+    const existing = key && await getSynonym(key)
+    if (existing) {
         await deleteSynonym(key)
         await invalidateSynonymCache(key)
+        await createWebAudit({
+            actor: req.session.user,
+            area: 'commands',
+            action: 'delete',
+            target: key,
+            oldValue: summarizeSynonym(parseSynonymValue(existing.value)),
+        })
     }
     redirectBackToCommands(req, res)
 }
@@ -809,6 +842,56 @@ function buildUserAuditRows(audits) {
     }))
 }
 
+const WEB_AUDIT_AREA_LABELS = {
+    commands: 'Custom commands',
+    users: 'Users',
+    roles: 'Roles',
+    system: 'System',
+    servers: 'Guilds',
+    sync: 'Card sync',
+    auth: 'Login',
+}
+
+// Shape merged WebAuditLog/UserAuditLog rows for the Activity page. User rows
+// carry the target's id so the page can link to their profile.
+function buildActivityRows(entries) {
+    return entries.map(entry => ({
+        timestamp: formatAuditTimestamp(entry.createdAt),
+        actor: entry.actor,
+        area: entry.area,
+        areaLabel: WEB_AUDIT_AREA_LABELS[entry.area] || entry.area,
+        action: entry.action,
+        target: entry.target || '',
+        targetUserId: entry.targetUserId || null,
+        oldValue: entry.oldValue,
+        newValue: entry.newValue,
+    }))
+}
+
+async function renderActivity(req, res) {
+    let { page = '1', area, actor } = req.query
+
+    const pageNumber = sanitizePage(page)
+    const pageSize = 50
+    area = WEB_AUDIT_AREAS.includes(area) ? area : ''
+    actor = sanitizeText(actor, 40)
+
+    const { entries, totalCount } = await getWebAudits({ page: pageNumber, pageSize, area, actor })
+    const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
+
+    res.render('activity', {
+        title: 'Website Activity',
+        user: req.session.user,
+        rows: buildActivityRows(entries),
+        areas: WEB_AUDIT_AREAS.map(value => ({ value, label: WEB_AUDIT_AREA_LABELS[value] })),
+        area,
+        actor,
+        page: pageNumber,
+        totalPages,
+        totalCount,
+    })
+}
+
 async function renderUsers(req, res) {
     let { page = '1', username, discordId, role, status, mode } = req.query
 
@@ -878,6 +961,31 @@ async function renderRoles(req, res) {
     })
 }
 
+/**
+ * One activity-log entry per field that differs between two settings objects,
+ * e.g. target "Standard · dailyCommandLimit", 100 → 200. Unchanged fields
+ * (a form saved as-is) write nothing.
+ *
+ * @param req
+ * @param area WEB_AUDIT_AREAS value
+ * @param targetPrefix prepended to each field name
+ * @param before settings before the save
+ * @param after settings as saved
+ * @returns {Promise<void>}
+ */
+async function recordSettingChanges(req, area, targetPrefix, before, after) {
+    for (const change of diffFields(before, after)) {
+        await createWebAudit({
+            actor: req.session.user,
+            area,
+            action: 'update',
+            target: targetPrefix + change.field,
+            oldValue: change.oldValue,
+            newValue: change.newValue,
+        })
+    }
+}
+
 async function handleRoleRulesUpdate(req, res) {
     if (!isGod(req.session.user)) {
         return res.status(403).send('Not permitted')
@@ -893,7 +1001,11 @@ async function handleRoleRulesUpdate(req, res) {
         }
     }
 
-    await saveRoleRules(normalizeRuleSet(bodyRules))
+    const before = await getRoleRules()
+    const after = await saveRoleRules(normalizeRuleSet(bodyRules))
+    for (const role of EDITABLE_RULE_ROLES) {
+        await recordSettingChanges(req, 'roles', `${roleLabel(role)} · `, before[role], after[role])
+    }
     res.redirect('/roles')
 }
 
@@ -931,6 +1043,7 @@ async function handleSyncStart(req, res) {
 
     const {started, reason} = startSync({triggeredBy: req.session.user.username || 'web'})
     if (!started) return res.status(409).json({error: reason})
+    await createWebAudit({actor: req.session.user, area: 'sync', action: 'start', target: 'card database'})
 
     res.json(await getSyncView())
 }
@@ -953,9 +1066,17 @@ async function handleSystemSettingsUpdate(req, res) {
         return res.status(403).send('Not permitted')
     }
 
-    await saveMemoryThresholdMb(req.body.memoryThresholdMb, redis)
-    await saveNodeMemoryAvailableMb(req.body.memoryAvailableMb, redis)
-    await saveRedisMemoryAvailableMb(req.body.redisMemoryAvailableMb, redis)
+    const before = {
+        'Memory warning threshold (MB)': await getMemoryThresholdMb(redis),
+        'Node memory available (MB)': await getNodeMemoryAvailableMb(redis),
+        'Redis memory available (MB)': await getRedisMemoryAvailableMb(redis),
+    }
+    const after = {
+        'Memory warning threshold (MB)': await saveMemoryThresholdMb(req.body.memoryThresholdMb, redis),
+        'Node memory available (MB)': await saveNodeMemoryAvailableMb(req.body.memoryAvailableMb, redis),
+        'Redis memory available (MB)': await saveRedisMemoryAvailableMb(req.body.redisMemoryAvailableMb, redis),
+    }
+    await recordSettingChanges(req, 'system', '', before, after)
     res.redirect('/system')
 }
 
@@ -1287,7 +1408,7 @@ async function renderServers(req, res, servers) {
  * @param res
  * @returns {Promise<void>}
  */
-async function handleGuildSettingsUpdate(req, res) {
+async function handleGuildSettingsUpdate(req, res, servers = []) {
     if (!req.session.user || !isGod(req.session.user)) {
         return res.status(403).send('Not permitted')
     }
@@ -1309,7 +1430,15 @@ async function handleGuildSettingsUpdate(req, res) {
         }
     }
 
-    await saveGuildSettings(settingsByGuild)
+    const before = await getGuildSettings()
+    const after = await saveGuildSettings(settingsByGuild)
+    // Name the guild in the log rather than its bare id; servers holds the
+    // bot's current guild list as [icon, name, members, created, joined, id].
+    const guildNames = new Map(servers.map(server => [String(server[5]), server[1]]))
+    for (const guildId of new Set([...Object.keys(before), ...Object.keys(after)])) {
+        const guildName = guildNames.get(guildId) || guildId
+        await recordSettingChanges(req, 'servers', `${guildName} · `, before[guildId], after[guildId])
+    }
     res.redirect('/servers')
 }
 
@@ -1322,6 +1451,7 @@ module.exports = {
     renderDashboard,
     renderMessages,
     renderUsers,
+    renderActivity,
     renderRoles,
     renderSystem,
     renderTopDeck,

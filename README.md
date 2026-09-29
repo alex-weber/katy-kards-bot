@@ -121,4 +121,7 @@ It runs from the web dashboard: **System → Card Database Sync → Sync now**.
 The panel shows the progress of a running sync, what the last one changed, and a log of the
 previous runs. There is no Discord command for it.
 
-
+## Website activity log
+GOD and VIP users can see what logged-in users did on the website under **Activity**: custom
+command changes, role rule, system and guild setting changes, card syncs, logins, and the
+admin-made user status/role changes.

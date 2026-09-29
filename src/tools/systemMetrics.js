@@ -385,6 +385,7 @@ function startMemoryUsageSampler(redisClient = redis) {
 
 module.exports = {
     buildSystemPageData,
+    getMemoryThresholdMb,
     getNodeMemoryAvailableMb,
     getPeakMemoryUsage,
     getRedisMemoryAvailableMb,

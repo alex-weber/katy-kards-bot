@@ -16,6 +16,7 @@ const {
   updateUser,
   updateUserAdminFields,
 } = require('./user')
+const {WEB_AUDIT_AREAS, createWebAudit, getWebAudits} = require('./webAudit')
 const {createSynonym, updateSynonym, deleteSynonym, getAllSynonyms, getSynonym} = require('./synonym')
 const  {createCard, getCardsDB, getCardsByFaction, getCardStats, getCardStatsMessage, FULL_TEXT_LOCALES} = require('./card')
 const {
@@ -41,6 +42,9 @@ module.exports = {
   getUserStatusCounts,
   createUserAudit,
   getRecentUserAudits,
+  WEB_AUDIT_AREAS,
+  createWebAudit,
+  getWebAudits,
   createMessage,
   getMessages,
   updateUser,

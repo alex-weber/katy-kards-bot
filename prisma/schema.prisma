@@ -40,6 +40,27 @@ model UserAuditLog {
   actor     String
 }
 
+// Audit trail for what logged-in users do on the website: custom command,
+// role rule, system and server setting changes, sync starts and logins.
+// `actorId` is the Discord id, `actor` the username at the time. `target` names
+// what was touched (command key, "ROLE · field", guild name); old/newValue are
+// short display strings, null when not applicable (e.g. a create has no old
+// value). The Activity page reads this together with the admin-made entries of
+// UserAuditLog.
+model WebAuditLog {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  actorId   String?
+  actor     String
+  area      String
+  action    String
+  target    String?
+  oldValue  String?
+  newValue  String?
+
+  @@index([createdAt])
+}
+
 model Message {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())

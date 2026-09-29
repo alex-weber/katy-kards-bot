@@ -32,6 +32,7 @@ const {
     renderDashboard,
     renderMessages,
     renderUsers,
+    renderActivity,
     renderRoles,
     renderSystem,
     renderTopDeck,
@@ -149,7 +150,8 @@ app.post('/system/sync', webRateLimiter, isAuthenticated, requireManager, handle
 app.get('/profile', webRateLimiter, isAuthenticated, renderProfile)
 app.get('/profile/:id', webRateLimiter, (req, res) => renderPublicProfile(req, res, client))
 app.get('/servers', webRateLimiter, isAuthenticated, requireManager, (req, res) => renderServers(req, res, servers))
-app.post('/servers', webRateLimiter, isAuthenticated, requireGod, handleGuildSettingsUpdate)
+app.post('/servers', webRateLimiter, isAuthenticated, requireGod, (req, res) => handleGuildSettingsUpdate(req, res, servers))
+app.get('/activity', webRateLimiter, isAuthenticated, requireManager, renderActivity)
 app.get('/cards', webRateLimiter, renderCards)
 app.get('/cards/:faction', webRateLimiter, renderCardFaction)
 app.get('/topdeck', webRateLimiter, isAuthenticated, requireManager, renderTopDeck)

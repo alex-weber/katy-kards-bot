@@ -15,6 +15,9 @@ jest.mock('../src/database/db', () => ({
     })),
     createUserAudit: jest.fn(async () => {}),
     getRecentUserAudits: jest.fn(async () => []),
+    WEB_AUDIT_AREAS: ['commands', 'users', 'roles', 'system', 'servers', 'sync', 'auth'],
+    createWebAudit: jest.fn(async () => {}),
+    getWebAudits: jest.fn(async () => ({ entries: [], totalCount: 0 })),
     getMessages: jest.fn(),
     getUserMessages: jest.fn(),
     getProfileStats: jest.fn(),
@@ -1498,5 +1501,157 @@ describe('handleSynonymImageUpload', () => {
         }, res)
 
         expect(res.json).toHaveBeenCalledWith({url: 'https://img.example.com/x.webp'})
+    })
+})
+
+describe('website activity log', () => {
+    const god = { id: '111', username: 'Katy', role: 'GOD', isManager: true }
+
+    function roleRuleBody(rules) {
+        const body = {}
+        for (const [role, fields] of Object.entries(rules)) {
+            for (const [field, value] of Object.entries(fields)) body[`${role}_${field}`] = String(value)
+        }
+        return body
+    }
+
+    test('handleLogin records the login', async () => {
+        fetch.mockResolvedValueOnce({ json: async () => ({ id: '111', username: 'Me' }) })
+        db.getUser.mockResolvedValueOnce({ id: 5, discordId: '111', role: null })
+        const session = { regenerate: jest.fn(cb => cb()), save: jest.fn(cb => cb()) }
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleLogin({ body: { tokenType: 'Bearer', accessToken: 'tok' }, session }, res, jest.fn())
+
+        expect(db.createWebAudit).toHaveBeenCalledWith({
+            actor: expect.objectContaining({ id: '111', username: 'Me' }),
+            area: 'auth',
+            action: 'login',
+        })
+    })
+
+    test('custom command create, update and delete are recorded with a content summary', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+        const req = (params, body) => ({ session: { user: god }, params, body })
+
+        db.getSynonym.mockResolvedValueOnce(null)
+        await router.handleSynonymCreate(req({}, { key: 'lion', contentType: 'text', text: 'Roar!' }), res)
+        expect(db.createWebAudit).toHaveBeenLastCalledWith({
+            actor: god, area: 'commands', action: 'create', target: 'lion', newValue: 'text: "Roar!"',
+        })
+
+        db.getSynonym.mockResolvedValueOnce({ key: 'lion', value: JSON.stringify({ content: 'text:Roar!' }) })
+        await router.handleSynonymUpdate(req({ key: 'lion' }, { contentType: 'redirect', redirectTarget: 'tiger' }), res)
+        expect(db.createWebAudit).toHaveBeenLastCalledWith({
+            actor: god, area: 'commands', action: 'update', target: 'lion',
+            oldValue: 'text: "Roar!"', newValue: 'redirect → tiger',
+        })
+
+        db.getSynonym.mockResolvedValueOnce({ key: 'lion', value: JSON.stringify({ content: 'tiger' }) })
+        await router.handleSynonymDelete(req({ key: 'lion' }), res)
+        expect(db.createWebAudit).toHaveBeenLastCalledWith({
+            actor: god, area: 'commands', action: 'delete', target: 'lion', oldValue: 'redirect → tiger',
+        })
+    })
+
+    test('an unchanged custom command save records nothing', async () => {
+        db.getSynonym.mockResolvedValueOnce({ key: 'lion', value: JSON.stringify({ content: 'text:same' }) })
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSynonymUpdate(
+            { session: { user: god }, params: { key: 'lion' }, body: { contentType: 'text', text: 'same' } }, res)
+
+        expect(db.createWebAudit).not.toHaveBeenCalled()
+    })
+
+    test('role rule changes are recorded per changed field only', async () => {
+        const saved = {
+            SPECIAL: { dailyCommandLimit: 0, hourlyCommandLimit: 0, dailyDeckScreenshotLimit: 0, attachmentLimit: 10 },
+            STANDARD: { dailyCommandLimit: 100, hourlyCommandLimit: 20, dailyDeckScreenshotLimit: 5, attachmentLimit: 5 },
+            PRISONER: { dailyCommandLimit: 5, hourlyCommandLimit: 5, dailyDeckScreenshotLimit: 1, attachmentLimit: 5 },
+        }
+        redis.json.get.mockResolvedValueOnce(saved)
+        const body = roleRuleBody({ ...saved, STANDARD: { ...saved.STANDARD, dailyCommandLimit: 200 } })
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleRoleRulesUpdate({ session: { user: god }, body }, res)
+
+        expect(db.createWebAudit).toHaveBeenCalledTimes(1)
+        expect(db.createWebAudit).toHaveBeenCalledWith({
+            actor: god, area: 'roles', action: 'update',
+            target: 'Standard · dailyCommandLimit', oldValue: '100', newValue: '200',
+        })
+    })
+
+    test('system setting changes are recorded', async () => {
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleSystemSettingsUpdate({
+            session: { user: god },
+            body: { memoryThresholdMb: '768', memoryAvailableMb: '562', redisMemoryAvailableMb: '30' },
+        }, res)
+
+        expect(db.createWebAudit).toHaveBeenCalledTimes(1)
+        expect(db.createWebAudit).toHaveBeenCalledWith({
+            actor: god, area: 'system', action: 'update',
+            target: 'Memory warning threshold (MB)', oldValue: '512', newValue: '768',
+        })
+    })
+
+    test('guild setting changes are recorded under the guild name', async () => {
+        redis.json.get.mockResolvedValueOnce({ '123': { channelAttachmentLimit: 5, botChannelAttachmentLimit: 10 } })
+        const res = makeRes()
+        res.redirect = jest.fn()
+
+        await router.handleGuildSettingsUpdate({
+            session: { user: god },
+            body: { channelAttachmentLimit_123: '3', botChannelAttachmentLimit_123: '10' },
+        }, res, [['icon', 'KARDS Hub', 100, 'c', 'j', '123']])
+
+        expect(db.createWebAudit).toHaveBeenCalledTimes(1)
+        expect(db.createWebAudit).toHaveBeenCalledWith({
+            actor: god, area: 'servers', action: 'update',
+            target: 'KARDS Hub · channelAttachmentLimit', oldValue: '5', newValue: '3',
+        })
+    })
+
+    test('a started sync is recorded, a refused one is not', async () => {
+        await router.handleSyncStart({ session: { user: god } }, makeRes())
+        expect(db.createWebAudit).toHaveBeenCalledWith({
+            actor: god, area: 'sync', action: 'start', target: 'card database',
+        })
+
+        db.createWebAudit.mockClear()
+        startSync.mockReturnValueOnce({ started: false, reason: 'A sync is already running' })
+        await router.handleSyncStart({ session: { user: god } }, makeRes())
+        expect(db.createWebAudit).not.toHaveBeenCalled()
+    })
+
+    test('renderActivity sanitizes the filters and shapes the rows', async () => {
+        db.getWebAudits.mockResolvedValueOnce({
+            entries: [{
+                createdAt: new Date('2026-09-29T10:00:00Z'), actor: 'Katy', area: 'users', action: 'status',
+                target: 'Bob', targetUserId: 7, oldValue: 'active', newValue: 'banned',
+            }],
+            totalCount: 51,
+        })
+        const res = makeRes()
+
+        await router.renderActivity(
+            { session: { user: god }, query: { area: 'bogus', actor: '  Katy  ', page: '2' } }, res)
+
+        expect(db.getWebAudits).toHaveBeenCalledWith({ page: 2, pageSize: 50, area: '', actor: 'Katy' })
+        const [view, locals] = res.render.mock.calls[0]
+        expect(view).toBe('activity')
+        expect(locals.totalPages).toBe(2)
+        expect(locals.rows[0]).toEqual(expect.objectContaining({
+            actor: 'Katy', areaLabel: 'Users', action: 'status', target: 'Bob', targetUserId: 7,
+            oldValue: 'active', newValue: 'banned',
+        }))
     })
 })
