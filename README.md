@@ -10,7 +10,7 @@ in Direct Messages (user needs to activate the DM channel in their profile) and 
 
 ## Required Environment Variables
 
-- `DATABASE_URL`: URL for an SQL database connection.
+- `DATABASE_URL`: PostgreSQL connection string (the app connects through `@prisma/adapter-pg`).
 - `DISCORD_TOKEN`: Token for authenticating the Discord API.
 - `DISCORD_CLIENT_ID`: Discord Bot ID.
 - `DISCORD_AUTH_URL`: The Auth URL from Discord Dev Portal
@@ -63,26 +63,46 @@ The other servers recognize commands with the default prefix `!` (or `DEFAULT_PR
 
 This applies only to the deprecated text commands — slash commands are always invoked with `/`.
 
+## Prerequisites
+- Node.js `^24.21.0` and npm `^12.1.0` (see `engines` in `package.json`; Heroku installs 24.21.0 / 12.1.0)
+- A PostgreSQL database and a Redis server
+
 ## Install Dependencies
 `npm install`
 
+This also generates the Prisma client (`postinstall` runs `prisma generate`).
+
 ## Set up Environment Variables
 
-Rename `.env.example` to `.env` and set the required ones, remove the unused.
+Copy `.env.example` to `.env` and set the required ones, remove the unused.
 Alternatively, set them directly in your environment.
+
+The running app does **not** load `.env` by itself — it reads `process.env` only. Locally, start
+it with `npm run start:local` (see below), which loads `.env` via Node's `--env-file`. The Prisma
+CLI loads `.env` on its own through `prisma.config.ts`.
 
 Watch out for the grouped ones: `IMG_UPLOAD_API_KEY`, `IMG_UPLOAD_API_ENDPOINT` and
 `IMAGE_ALLOWED_HOSTS` are all-or-nothing. Dropping just the allowlist looks harmless and leaves
 image uploads and downloads broken.
 
 ## Generate Prisma Client
-``npx prisma generate``
+`npx prisma generate`
+
+Only needed after changing `prisma/schema.prisma`; `npm install` already does it.
 
 ## Create the database
 `npx prisma db push`
 
-## Test the Application
-`npm start`
+## Run the Application
+
+Locally, with the variables in `.env`:
+
+`npm run start:local`
+
+`npm start` (plain `node src/index.js`) is for production, where the platform injects the
+environment variables. Run locally without them, it fails with a Discord `TokenInvalid` error and
+an `express-session deprecated req.secret` warning. Use it locally only if you have exported the
+variables in your shell yourself.
 
 Navigate to `http://localhost:PORT/`.
 You should see the bot's home page.
@@ -91,6 +111,9 @@ Add this bot to a server.
 Send `/help` in a chat and see if the bot answers.
 Slash commands are registered for the guild when the bot starts up or joins, so they may take a
 moment to appear in Discord's command list.
+
+## Run the Tests
+`npm test`
 
 ## Sync the database with kards.com
 GOD and VIP users are able to sync the database.
