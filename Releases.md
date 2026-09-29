@@ -1,3 +1,14 @@
+## 5.12.1
+
+### Bug Fixes
+
+- `/commands` could answer "no commands" when the list filled more than one message and only non-listed commands (redirects) came after the last full page. The full pages are now kept.
+- Telegram: a custom-command image over the 5 MB send limit now gets "This image is too large to send here (max 5 MB)" instead of the generic "Something went wrong", in all twelve languages.
+
+### Maintenance
+
+- Removed the obsolete hard-coded "botwar" channel list. Bot channels are recognised by "bot" in the channel name, as before.
+
 ## 5.12.0
 
 ### Features
