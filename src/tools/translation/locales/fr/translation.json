@@ -3,6 +3,7 @@
   "search": "Cartes trouvées",
   "stats": "Dernières 24 heures",
   "error": "Oups... Une erreur est survenue...",
+  "imageTooLarge": "Cette image est trop volumineuse pour être envoyée ici (max {{max}} Mo).",
   "limit": ", affichage de ",
   "noshow": ", je n'affiche rien du tout, merci de préciser ta recherche. Veux-tu vraiment inonder le chat avec toutes les cartes ?",
   "time": "Heure actuelle",

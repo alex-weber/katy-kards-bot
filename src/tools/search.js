@@ -594,9 +594,10 @@ async function listSynonyms(command)
         }
     }
 
-    if (!commands.length) return null
-
-    result.push(commands)
+    //the last page can be empty when the limit was hit on the final listable
+    //command; the pages before it still hold results
+    if (commands.length) result.push(commands)
+    if (!result.length) return null
 
     return result
 }
@@ -613,9 +614,7 @@ function isManager(user)
 
 function isBotCommandChannel(message)
 {
-    if (message.guildId) return (
-        dictionary.botwar.channels.includes(message.channelId.toString()) ||
-        message.channel.name.search('bot') !== -1)
+    if (message.guildId) return message.channel.name.search('bot') !== -1
     else return true
 }
 

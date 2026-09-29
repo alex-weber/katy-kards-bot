@@ -3,6 +3,7 @@
   "search": "Carte trovate",
   "stats": "Ultime 24 ore",
   "error": "Ops... Qualcosa è andato storto...",
+  "imageTooLarge": "Questa immagine è troppo grande per essere inviata qui (max {{max}} MB).",
   "limit": ", mostro ",
   "noshow": ", non mostro nulla, per favore fai una ricerca più precisa. Vuoi davvero inondare la chat con tutte le carte?",
   "time": "Ora attuale",

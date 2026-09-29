@@ -3,6 +3,7 @@
   "search": "Cartas encontradas",
   "stats": "Últimas 24 horas",
   "error": "Ops... Algo deu errado...",
+  "imageTooLarge": "Esta imagem é grande demais para ser enviada aqui (máx. {{max}} MB).",
   "limit": ", mostrando ",
   "noshow": ", não vou mostrar nada, por favor faça uma busca mais precisa. Você realmente quer inundar o chat com todas as cartas?",
   "time": "Hora atual",

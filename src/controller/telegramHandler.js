@@ -338,8 +338,14 @@ async function replySynonymImage(ctx, url)
     const {tgCtx, language, user} = ctx
     try {
         const fileSize = await bot.getFileSize(url)
-        if (!fileSize || fileSize >= maxFileSize) {
+        if (!fileSize) {
             await tgCtx.reply(translate(language, 'error'))
+
+            return true
+        }
+        if (fileSize >= maxFileSize) {
+            await tgCtx.reply(translate(language, 'imageTooLarge',
+                {max: maxFileSize / 1024 / 1024}))
 
             return true
         }

@@ -3,6 +3,7 @@
   "search": "Znalezione karty",
   "stats": "Ostatnie 24 godziny",
   "error": "Ups... Coś poszło nie tak...",
+  "imageTooLarge": "Ten obraz jest za duży, aby go tu wysłać (maks. {{max}} MB).",
   "limit": ", pokazuję ",
   "noshow": ", niczego nie pokażę, proszę o dokładniejsze zapytanie. Naprawdę chcesz zalać czat wszystkimi kartami?",
   "time": "Aktualny czas",
