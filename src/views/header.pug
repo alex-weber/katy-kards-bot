@@ -13,6 +13,35 @@ mixin navGroupIcon(label, icon)
             path(d='M9 12l2 2 4-4')
         span.visually-hidden= label
 
+-
+    // Admin pages grouped by what they are for. A group with more than one
+    // page opens a dropdown in the navbar, and on its pages a row of section
+    // tabs under the navbar switches between them; a single page stays a
+    // plain link.
+    const adminGroups = [
+        { label: 'Content', items: [
+            { href: '/commands', label: 'Custom Commands' },
+            { href: '/topdeck', label: 'Top Deck' },
+        ] },
+        { label: 'Community', items: [
+            { href: '/users', label: 'Users' },
+            { href: '/servers', label: 'Guilds' },
+            { href: '/roles', label: 'Roles', godOnly: true },
+        ] },
+        { label: 'Logs', items: [
+            { href: '/messages', label: 'Commands' },
+            { href: '/activity', label: 'Activity' },
+        ] },
+        { label: 'System', items: [
+            { href: '/system', label: 'System' },
+        ] },
+    ]
+    const isCurrent = href => currentPath.startsWith(href)
+    const visibleItems = group => group.items.filter(item => !item.godOnly || (user && user.role === 'GOD'))
+    const currentGroup = user && user.isManager
+        ? adminGroups.find(group => visibleItems(group).length > 1 && visibleItems(group).some(item => isCurrent(item.href)))
+        : null
+
 header.header-sticky
     nav.navbar.navbar-expand-lg.text-bg-dark.border-bottom.py-2
         div.container
@@ -37,16 +66,30 @@ header.header-sticky
                     if user && user.isManager
                         div.nav-group
                             +navGroupIcon('Admin navigation', 'shield')
-                            ul.navbar-nav.nav-group-items
-                                +navItem('/commands', 'Custom Commands', currentPath.startsWith('/commands'))
-                                +navItem('/messages', 'Log', currentPath.startsWith('/messages'))
-                                +navItem('/activity', 'Activity', currentPath.startsWith('/activity'))
-                                +navItem('/users', 'Users', currentPath.startsWith('/users'))
-                                +navItem('/servers', 'Guilds', currentPath.startsWith('/servers'))
-                                +navItem('/topdeck', 'Top Deck', currentPath.startsWith('/topdeck'))
-                                +navItem('/system', 'System', currentPath.startsWith('/system'))
-                                if user.role === 'GOD'
-                                    +navItem('/roles', 'Roles', currentPath.startsWith('/roles'))
+                            ul.navbar-nav.nav-group-items.nav-admin-groups
+                                each group in adminGroups
+                                    - const items = visibleItems(group)
+                                    if items.length === 1
+                                        +navItem(items[0].href, items[0].label, isCurrent(items[0].href))
+                                    else
+                                        - const groupActive = items.some(item => isCurrent(item.href))
+                                        li.nav-item.dropdown.nav-admin-dropdown
+                                            a.nav-link.text-primary.rounded.px-3.py-2.position-relative.d-flex.align-items-center.transition.dropdown-toggle(
+                                                href='#',
+                                                role='button',
+                                                data-bs-toggle='dropdown',
+                                                aria-expanded='false',
+                                                class=(groupActive ? 'active' : '')
+                                            )
+                                                span.menu-text= group.label
+                                            ul.dropdown-menu
+                                                each item in items
+                                                    li
+                                                        a.dropdown-item(
+                                                            href=item.href,
+                                                            class=(isCurrent(item.href) ? 'active' : ''),
+                                                            aria-current=(isCurrent(item.href) ? 'page' : false)
+                                                        )= item.label
 
                 div.nav-auth.ms-lg-auto.mt-3.mt-lg-0
                     if loginLink
@@ -68,3 +111,15 @@ header.header-sticky
                                         if _csrf
                                             input(type='hidden' name='_csrf' value=_csrf)
                                         button.dropdown-item(type='submit') Logout
+
+    if currentGroup
+        nav.section-tabs(aria-label=`${currentGroup.label} pages`)
+            div.container
+                ul.section-tabs-list
+                    each item in visibleItems(currentGroup)
+                        li
+                            a.section-tab(
+                                href=item.href,
+                                class=(isCurrent(item.href) ? 'active' : ''),
+                                aria-current=(isCurrent(item.href) ? 'page' : false)
+                            )= item.label
