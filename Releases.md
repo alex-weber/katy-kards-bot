@@ -5,6 +5,10 @@
 - New **Activity** page in the admin menu (GOD and VIP): a log of what logged-in users do on the website. It records custom command creates, edits and deletes (with a short summary of the old and new content, e.g. `text: "…" + 2 images` or `redirect → tiger`), role rule changes, system setting changes, guild attachment-limit changes, card sync starts and logins. Settings are logged per changed field (e.g. *Standard · dailyCommandLimit 100 → 200*); saving a form without changes records nothing.
 - The page also shows the admin-made status and role changes from the users-page log, so all website changes are in one place. Self-initiated entries (registration, accepting the terms) stay on the users page only. Filter by area and by who made the change; 50 entries per page, newest first. Entries are kept indefinitely.
 
+### Bug Fixes
+
+- Telegram accepts messages up to 4096 characters (Telegram's own limit), up from 256. Longer messages were silently ignored, so a full deck export pasted with its deck code at the end got no reply.
+
 ### Maintenance
 
 - New `WebAuditLog` table. Heroku's release phase (`npx prisma db push`) creates it on deploy; locally run `npx prisma db push` and then `npx prisma generate`, since Prisma 7's `db push` no longer regenerates the client.
