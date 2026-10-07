@@ -1362,6 +1362,56 @@
     margin-top: 0.1rem;
 }
 
+/* Selected-period total with its change against the previous period. */
+.mini-stat-compare {
+    border-top: 1px solid #343a40;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.8rem 1.1rem 1rem;
+}
+
+.mini-stat-compare[hidden] {
+    display: none;
+}
+
+.mini-stat-compare-head {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.6rem;
+}
+
+.mini-stat-compare-range,
+.mini-stat-compare-prev {
+    color: #6c757d;
+    font-size: 0.75rem;
+}
+
+.mini-stat-compare-main {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+}
+
+.mini-stat-compare-value {
+    color: #f8f9fa;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.mini-stat-delta {
+    font-size: 0.95rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mini-stat-delta-up { color: #20c997; }
+.mini-stat-delta-down { color: #ff6b6b; }
+.mini-stat-delta-flat { color: #adb5bd; }
+
 .profile-panel {
     display: grid;
     gap: 1.25rem;

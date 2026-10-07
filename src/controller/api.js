@@ -2,6 +2,7 @@ const {getCardsByFaction, getFactionCardStats} = require('../database/card')
 const {
     getDashboardMessages,
     getScreenshotMessages,
+    getStatsComparison,
     getTopMessages,
     getTopUsers,
     getTotalMessageCount,
@@ -23,6 +24,7 @@ const CACHE_VERSION = 'v3'
 const statsMethods = new Set([
     'messages',
     'screenshot-messages',
+    'stats-comparison',
     'top-messages',
     'top-users',
 ])
@@ -105,6 +107,14 @@ async function run(method, { period, faction } = {}) {
         case 'screenshot-messages':
             if (!cached) {
                 response.data = await getScreenshotMessages({period: statsPeriod})
+                await saveToCache(response.data)
+            } else response.data = cached
+            response.success = true
+            break
+
+        case 'stats-comparison':
+            if (!cached) {
+                response.data = await getStatsComparison({period: statsPeriod})
                 await saveToCache(response.data)
             } else response.data = cached
             response.success = true

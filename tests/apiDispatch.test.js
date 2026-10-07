@@ -21,6 +21,7 @@ jest.mock('../src/database/message', () => {
     return {
         getDashboardMessages: jest.fn(async () => [{ label: '01/01', count: 3 }]),
         getScreenshotMessages: jest.fn(async () => []),
+        getStatsComparison: jest.fn(async ({period}) => ({period, available: true})),
         getTopMessages: jest.fn(async () => [{ command: 'leo', count: 5 }]),
         getTopUsers: jest.fn(async () => [{ username: 'Alice', count: 5 }]),
         STATS_PERIODS,
@@ -112,6 +113,7 @@ describe('API.run', () => {
 
     test.each([
         ['screenshot-messages', 'getScreenshotMessages'],
+        ['stats-comparison', 'getStatsComparison'],
         ['top-messages', 'getTopMessages'],
         ['top-users', 'getTopUsers'],
     ])('%s dispatches to %s and succeeds', async (method, fn) => {
