@@ -193,6 +193,93 @@ function renderScreenshotCommandCounters(apiData, totalCount) {
     setCounterText('screenshotCmdTotal', totalCount.data)
 }
 
+const periodLabels = {
+    'current-month': 'Current month',
+    'last-month': 'Last month',
+    'current-year': 'This year',
+    'last-year': 'Last year',
+}
+
+// Signed relative change, e.g. "+1.6 %" / "−5 %". Null change means the previous
+// period had nothing to compare against.
+function formatChange(change, current) {
+    if (change === null || change === undefined) return current > 0 ? 'new' : '0 %'
+    if (change === 0) return '0 %'
+    const sign = change > 0 ? '+' : '−'
+    return sign + Number(Math.abs(change).toFixed(1)).toLocaleString('en-US') + ' %'
+}
+
+function changeDirection(change, current) {
+    if (change === null || change === undefined) return current > 0 ? 'up' : 'flat'
+    if (change > 0) return 'up'
+    if (change < 0) return 'down'
+    return 'flat'
+}
+
+// "1–6 Oct", "1 Jan – 6 Oct", "6 Oct"; the year is added once the range is
+// not in the current year ("1–30 Sep 2025").
+function formatDayRange(from, to, currentYear = new Date().getUTCFullYear()) {
+    const start = new Date(from + 'T00:00:00Z')
+    const end = new Date(to + 'T00:00:00Z')
+    const month = date => date.toLocaleDateString('en-US', {month: 'short', timeZone: 'UTC'})
+    const withYear = end.getUTCFullYear() !== currentYear ? ' ' + end.getUTCFullYear() : ''
+
+    if (from === to) return `${start.getUTCDate()} ${month(start)}${withYear}`
+    if (start.getUTCFullYear() === end.getUTCFullYear() && start.getUTCMonth() === end.getUTCMonth()) {
+        return `${start.getUTCDate()}–${end.getUTCDate()} ${month(end)}${withYear}`
+    }
+    return `${start.getUTCDate()} ${month(start)} – ${end.getUTCDate()} ${month(end)}${withYear}`
+}
+
+function setCompareText(id, text) {
+    const el = document.getElementById(id)
+    if (el) el.textContent = text
+}
+
+// One card's "selected period vs previous period" block. `prefix` is the id
+// stem of the markup in index.pug (messages, screenshotCmd).
+function renderPeriodComparison(prefix, comparison, stats, period) {
+    const box = document.getElementById(prefix + 'Compare')
+    if (!box) return
+    // All-time has no previous period, so there is nothing to show.
+    if (!comparison || period === 'all-time') {
+        box.hidden = true
+        return
+    }
+
+    box.hidden = false
+    setCompareText(prefix + 'CompareLabel', periodLabels[period] || 'Selected period')
+    const delta = document.getElementById(prefix + 'CompareDelta')
+
+    if (!comparison.available) {
+        // A running period needs at least one completed day to compare.
+        setCompareText(prefix + 'CompareRange', '')
+        setCompareText(prefix + 'CompareValue', '—')
+        setCompareText(prefix + 'ComparePrev', 'Comparison starts after the first full day')
+        if (delta) delta.textContent = ''
+        return
+    }
+
+    setCompareText(prefix + 'CompareRange', formatDayRange(comparison.current.from, comparison.current.to))
+    setCompareText(prefix + 'CompareValue', formatCount(stats.current))
+    setCompareText(
+        prefix + 'ComparePrev',
+        `vs ${formatDayRange(comparison.previous.from, comparison.previous.to)}: ${formatCount(stats.previous)}`
+    )
+    if (delta) {
+        const direction = changeDirection(stats.change, stats.current)
+        const arrow = {up: '▲ ', down: '▼ ', flat: ''}[direction]
+        delta.textContent = arrow + formatChange(stats.change, stats.current)
+        delta.className = 'mini-stat-delta mini-stat-delta-' + direction
+    }
+}
+
+function renderStatsComparison(apiData, period) {
+    const comparison = apiData && apiData.data
+    renderPeriodComparison('messages', comparison, comparison && comparison.messages, period)
+    renderPeriodComparison('screenshotCmd', comparison, comparison && comparison.screenshotCommands, period)
+}
+
 function renderTopUsers(apiData) {
     const topUsersElement = document.getElementById('topUsers')
     if (!topUsersElement || !apiData.data) return
@@ -246,6 +333,7 @@ async function getDashboardData({ period } = {}) {
         responseTdMessagesDaily,
         responseTotalMessageCount,
         responseTotalScreenshotCommandCount,
+        responseStatsComparison,
     ] = await Promise.all([
         fetch('/api/messages' + qs),
         fetch('/api/screenshot-messages' + qs),
@@ -256,6 +344,7 @@ async function getDashboardData({ period } = {}) {
         fetch('/api/screenshot-messages' + dailyQs),
         fetch('/api/total-message-count'),
         fetch('/api/total-screenshot-command-count'),
+        fetch('/api/stats-comparison' + qs),
     ])
 
     const [
@@ -268,6 +357,7 @@ async function getDashboardData({ period } = {}) {
         dataTdMessagesDaily,
         dataTotalMessageCount,
         dataTotalScreenshotCommandCount,
+        dataStatsComparison,
     ] = await Promise.all([
         responseMessages.json(),
         responseTdMessages.json(),
@@ -278,6 +368,7 @@ async function getDashboardData({ period } = {}) {
         responseTdMessagesDaily.json(),
         responseTotalMessageCount.json(),
         responseTotalScreenshotCommandCount.json(),
+        responseStatsComparison.json(),
     ])
 
     return {
@@ -290,6 +381,7 @@ async function getDashboardData({ period } = {}) {
         dataTdMessagesDaily,
         dataTotalMessageCount,
         dataTotalScreenshotCommandCount,
+        dataStatsComparison,
     }
 }
 
@@ -298,16 +390,23 @@ function getQueryParam(name) {
     return params.get(name)
 }
 
-getDashboardData({
-    period: getQueryParam('period'),
-}).then(data => {
-    renderMessagesChart(
-        data.dataMessages,
-        data.dataTdMessages
-    )
-    renderTopMessages(data.dataTopMessages)
-    renderTopUsers(data.dataTopUsers)
-    renderScreenshotCounters(data.dataScreenshotCounters)
-    renderMessageCounters(data.dataMessagesDaily, data.dataTotalMessageCount)
-    renderScreenshotCommandCounters(data.dataTdMessagesDaily, data.dataTotalScreenshotCommandCount)
-})
+// Browser only: the formatters above are also required by the unit tests.
+if (typeof document !== 'undefined') {
+    const period = normalizePeriod(getQueryParam('period'))
+    getDashboardData({period}).then(data => {
+        renderMessagesChart(
+            data.dataMessages,
+            data.dataTdMessages
+        )
+        renderTopMessages(data.dataTopMessages)
+        renderTopUsers(data.dataTopUsers)
+        renderScreenshotCounters(data.dataScreenshotCounters)
+        renderMessageCounters(data.dataMessagesDaily, data.dataTotalMessageCount)
+        renderScreenshotCommandCounters(data.dataTdMessagesDaily, data.dataTotalScreenshotCommandCount)
+        renderStatsComparison(data.dataStatsComparison, period)
+    })
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = {formatChange, changeDirection, formatDayRange}
+}

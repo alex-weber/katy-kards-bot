@@ -1,5 +1,9 @@
 ## 5.12.1
 
+### Features
+
+- The dashboard's **Messages** and **Screenshot commands** cards now show the selected period next to the equivalent previous period, with the relative change (e.g. `▲ +1.6 %`, `▼ −5 %`). Only completed days count, so on 7 Oct "Current month" is 1–6 Oct against 1–6 Sep rather than a half-finished today against a full day. *Last month* and *Last year* are compared whole against the period before them; *This year* runs to yesterday against the same days last year. *All-time* has no previous period, so the comparison is hidden there; on the 1st of a month or year it waits for the first full day. A previous period with no activity shows "new" instead of a percentage. The *Screenshots taken* card is unchanged: its counters are kept in Redis for about a month only, so there is no history to compare against.
+
 ### Bug Fixes
 
 - `/commands` could answer "no commands" when the list filled more than one message and only non-listed commands (redirects) came after the last full page. The full pages are now kept.

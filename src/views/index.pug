@@ -1,6 +1,17 @@
 extends layout
 
 block content
+  //- Selected-period total next to the previous period (filled in by dashboard.js).
+  mixin periodCompare(id)
+    div.mini-stat-compare(id=id + 'Compare' hidden)
+      div.mini-stat-compare-head
+        span.mini-stat-label(id=id + 'CompareLabel')
+        span.mini-stat-compare-range(id=id + 'CompareRange')
+      div.mini-stat-compare-main
+        span.mini-stat-compare-value(id=id + 'CompareValue') —
+        span.mini-stat-delta(id=id + 'CompareDelta')
+      span.mini-stat-compare-prev(id=id + 'ComparePrev')
+
   div.container
     // Page Title
     h3.text-center.text-primary.mt-4.mb-5 Dashboard
@@ -24,6 +35,7 @@ block content
           div.mini-stat-item
             span.mini-stat-label Total
             span.mini-stat-value#messagesTotal —
+        +periodCompare('messages')
       div.mini-stat-card.panel-accent-amber
         div.panel-header
           div.panel-title-group
@@ -42,6 +54,7 @@ block content
           div.mini-stat-item
             span.mini-stat-label Total
             span.mini-stat-value#screenshotCmdTotal —
+        +periodCompare('screenshotCmd')
       div.mini-stat-card.panel-accent-teal
         div.panel-header
           div.panel-title-group

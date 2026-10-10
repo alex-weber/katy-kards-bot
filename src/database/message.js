@@ -532,6 +532,133 @@ async function getStatsPeriodCountsCached(keyBase, extraWhere, period)
     return results
 }
 
+function daysInUtcMonth(year, month)
+{
+    // Day 0 of the next month is the last day of this one (month may overflow).
+    return new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+}
+
+/**
+ * The windows to compare for a UI period: the selected period against the
+ * equivalent stretch of the period before it. A running period only counts
+ * its completed days (today is still filling up, so it would always look like
+ * a drop), and the previous period is cut to the same number of days — on
+ * Oct 7 "current month" is 1–6 Oct against 1–6 Sep. Finished periods (last
+ * month / last year) are compared whole. All-time and the rolling 'daily'
+ * series have nothing to compare against and return null, as does a running
+ * period with no completed day yet (the 1st of the month or year).
+ *
+ * Windows are inclusive [from, to] UTC midnights.
+ *
+ * @param {string} period
+ * @param {Date} now
+ * @returns {{current: {from: Date, to: Date}, previous: {from: Date, to: Date}}|null}
+ */
+function periodComparisonWindows(period, now = new Date())
+{
+    const year = now.getUTCFullYear()
+    const month = now.getUTCMonth()
+    const utc = (y, m, d) => new Date(Date.UTC(y, m, d))
+    const yesterday = utc(year, month, now.getUTCDate() - 1)
+
+    if (period === 'current-month') {
+        const elapsed = yesterday.getUTCMonth() === month ? yesterday.getUTCDate() : 0
+        if (elapsed < 1) return null
+        const previousMonthStart = utc(year, month - 1, 1)
+        const previousDays = daysInUtcMonth(previousMonthStart.getUTCFullYear(), previousMonthStart.getUTCMonth())
+        return {
+            current: {from: utc(year, month, 1), to: yesterday},
+            previous: {
+                from: previousMonthStart,
+                to: addUtcDays(previousMonthStart, Math.min(elapsed, previousDays) - 1),
+            },
+        }
+    }
+    if (period === 'last-month') {
+        return {
+            current: {from: utc(year, month - 1, 1), to: utc(year, month, 0)},
+            previous: {from: utc(year, month - 2, 1), to: utc(year, month - 1, 0)},
+        }
+    }
+    if (period === 'current-year') {
+        if (yesterday.getUTCFullYear() !== year) return null
+        // Same calendar day a year earlier; 29 Feb falls back to 28 Feb.
+        const lastDay = Math.min(yesterday.getUTCDate(), daysInUtcMonth(year - 1, yesterday.getUTCMonth()))
+        return {
+            current: {from: utc(year, 0, 1), to: yesterday},
+            previous: {from: utc(year - 1, 0, 1), to: utc(year - 1, yesterday.getUTCMonth(), lastDay)},
+        }
+    }
+    if (period === 'last-year') {
+        return {
+            current: {from: utc(year - 1, 0, 1), to: utc(year - 1, 11, 31)},
+            previous: {from: utc(year - 2, 0, 1), to: utc(year - 2, 11, 31)},
+        }
+    }
+    return null
+}
+
+// Sum of the per-day counts that fall inside the inclusive [from, to] window.
+function sumDailyCounts(dailyMap, from, to)
+{
+    const fromKey = dailyCountKey(from)
+    const toKey = dailyCountKey(to)
+    let sum = 0
+    for (const [day, count] of Object.entries(dailyMap)) {
+        if (day.startsWith('__')) continue
+        if (day >= fromKey && day <= toKey) sum += count
+    }
+    return sum
+}
+
+/**
+ * Relative change from `previous` to `current`, in percent rounded to one
+ * decimal. Null when there is no baseline to compare against (previous is 0).
+ *
+ * @param {number} current
+ * @param {number} previous
+ * @returns {number|null}
+ */
+function percentChange(current, previous)
+{
+    if (!previous) return null
+    return Math.round(((current - previous) / previous) * 1000) / 10
+}
+
+/**
+ * Message and screenshot-command totals for the selected period next to the
+ * equivalent previous period, with the relative change. `available` is false
+ * when the period has nothing to compare (see periodComparisonWindows).
+ *
+ * @param {{period?: string}} options
+ * @returns {Promise<object>}
+ */
+async function getStatsComparison({period} = {})
+{
+    period = normalizeStatsPeriod(period)
+    const windows = periodComparisonWindows(period)
+    if (!windows) return {period, available: false}
+
+    const [messageDays, screenshotDays] = await Promise.all([
+        getDailyCountSourceCached('messages', {}),
+        getDailyCountSourceCached(screenshotCommandKeyBase, screenshotCommandWhere),
+    ])
+    const compare = dailyMap => {
+        const current = sumDailyCounts(dailyMap, windows.current.from, windows.current.to)
+        const previous = sumDailyCounts(dailyMap, windows.previous.from, windows.previous.to)
+        return {current, previous, change: percentChange(current, previous)}
+    }
+
+    return {
+        period,
+        available: true,
+        current: {from: dailyCountKey(windows.current.from), to: dailyCountKey(windows.current.to)},
+        previous: {from: dailyCountKey(windows.previous.from), to: dailyCountKey(windows.previous.to)},
+        messages: compare(messageDays),
+        screenshotCommands: compare(screenshotDays),
+    }
+}
+
 async function getStatsPeriodAggregateCached(keyBase, computeFn, period)
 {
     period = normalizeStatsPeriod(period)
@@ -829,6 +956,7 @@ module.exports = {
     getUserMessages,
     getProfileStats,
     getScreenshotMessages,
+    getStatsComparison,
     getTopMessages,
     getTopUsers,
     getTotalMessageCount,
@@ -837,6 +965,8 @@ module.exports = {
     // default), consumed by the router's validation and the API's allowlist.
     STATS_PERIODS,
     normalizeStatsPeriod,
-    // Exported for unit testing the chart bucketing.
+    // Exported for unit testing the chart bucketing and the period comparison.
     buildStatsBuckets,
+    periodComparisonWindows,
+    percentChange,
 }
