@@ -27,6 +27,8 @@ jest.mock('../src/controller/redis', () => ({
     redis: {json: {get: jest.fn(async () => null), set: jest.fn(async () => 'OK')}},
     cachePrefix: 'web:test:',
 }))
+// puppeteer-core is ESM-only, which Jest's CommonJS runtime cannot require
+jest.mock('../src/tools/puppeteer', () => ({takeScreenshot: jest.fn()}))
 
 const {telegramCallbackHandler} = require('../src/controller/telegramHandler')
 const {getUser, updateUser, createUserAudit} = require('../src/database/db')

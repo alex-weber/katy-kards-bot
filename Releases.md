@@ -14,6 +14,8 @@
 ### Maintenance
 
 - Removed the obsolete hard-coded "botwar" channel list. Bot channels are recognised by "bot" in the channel name, as before.
+- Dependency security updates: `npm audit fix` (fixes the critical `proxy-addr` advisory, plus `compression`, `sharp` and `undici`), Prisma 7.10.0 → 7.10.1 (fixes `mysql2` and `deepmerge-ts`), and `puppeteer-core` 24 → 25 (fixes `extract-zip`, `basic-ftp` and the `proxy-agent` chain). Only `brace-expansion` and `minimatch` inside Jest remain, which are dev-only.
+- `puppeteer-core` 25 is ESM-only. The bot still loads it with `require()`, which Node 24 supports, but Jest's CommonJS runtime cannot, so any test that loads the screenshot module must mock `src/tools/puppeteer`.
 
 ## 5.12.0
 
