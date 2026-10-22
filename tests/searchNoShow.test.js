@@ -121,3 +121,50 @@ test('a bot-command channel still gets the cards', async () => {
     expect(ctx.message.channel.send).toHaveBeenCalledWith(
         expect.objectContaining({files: [{attachment: 'a.webp'}]}))
 })
+
+// A cache hit is replayed by forwarding the original message, which drops its
+// "Next" button, and the cache key has no offset. So only a single-page result
+// may be cached: a paginated one (a role capping the limit below the
+// bot-channel one) would come back without a button, and its next page would
+// overwrite the first under the same key.
+describe('caching a result in a bot-command channel', () => {
+    const cachedKeys = ctx => ctx.redis.json.set.mock.calls
+        .map(([key]) => key)
+        .filter(key => key && key.startsWith('discord:'))
+
+    beforeEach(() => isBotCommandChannel.mockReturnValue(true))
+
+    test('a single-page result is cached', async () => {
+        getCards.mockResolvedValue({counter: 4})
+        const ctx = makeCtx()
+
+        await handleSearch(ctx)
+
+        expect(cachedKeys(ctx)).toHaveLength(1)
+    })
+
+    test('a paginated first page is not cached', async () => {
+        getCards.mockResolvedValue({counter: 8})
+        const ctx = makeCtx()
+
+        await handleSearch(ctx)
+
+        expect(ctx.message.channel.send.mock.calls[0][0].components)
+            .toBeDefined()
+        expect(cachedKeys(ctx)).toHaveLength(0)
+    })
+
+    test('a later page is not cached over the first', async () => {
+        getCards.mockResolvedValue({counter: 8})
+        const ctx = makeCtx()
+        ctx.message.buttonId = 'next_button_soviet'
+        ctx.message.language = 'en'
+        ctx.cmdCacheKey = 'command:next_button_soviet'
+        ctx.redis.store[ctx.cmdCacheKey] = {offset: 5}
+
+        await handleSearch(ctx)
+
+        expect(ctx.message.channel.send).toHaveBeenCalled()
+        expect(cachedKeys(ctx)).toHaveLength(0)
+    })
+})

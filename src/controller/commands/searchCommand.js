@@ -195,8 +195,13 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
         addTiming(ctx, 'send', Date.now() - sendStarted)
         setLog(ctx, {cache: 'MISS', page: formatPage(offset, ctx.limit),
             result: counter + ' found'})
-        //cache only within the limit, so pagination still works
-        if (counter <= paginationLimit)
+        //cache only within the limit, so pagination still works. A page that
+        //is part of a pagination is never cached: a forward drops its "Next"
+        //button, and the key has no offset, so a later page would overwrite
+        //the first. That happens when a role caps the limit below the
+        //bot-channel one.
+        if (counter <= paginationLimit && !answer.components &&
+            !message.buttonId)
             await cacheSentMessage(redis, cacheKey, sent, searchExp)
     } catch (e) {
         console.error(e.message)

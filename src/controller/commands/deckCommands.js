@@ -109,14 +109,14 @@ async function handleAlt(ctx)
     // resolveSynonym, so anything reaching here is a gallery request. Only
     // "alt" + an offset (alt, alt10, alt20…) is valid pagination; anything
     // else ("alt art", "alt not_a_key") collapses to the first page. This
-    // keeps the cache key on the alt/alt10/alt20 chain and stops phantom keys
-    // like "alt art" being created with a dead "next-message" link.
+    // keeps the cache key on the alt/alt10/alt20 pages and stops phantom keys
+    // like "alt art" being created.
     const command = /^alt\d*$/.test(ctx.command) ? ctx.command : 'alt'
 
     // alt pages are just card images, so the cache key is language-agnostic.
-    // This keeps the linked list in one branch: the first "alt" is sent in the
+    // This keeps all pages in one namespace: the first "alt" is sent in the
     // user's language, but paged-in pages are forced to the default language by
-    // resolveButtonCommand, which would otherwise split the chain across keys.
+    // resolveButtonCommand, which would otherwise split them across keys.
     const cacheKey = cacheKeyPrefix + getChannelScope(message) +
         'alt:' + command
     const cacheStarted = Date.now()
@@ -124,21 +124,27 @@ async function handleAlt(ctx)
         ? await redis.json.get(cacheKey, '$')
         : null
     addTiming(ctx, 'cache', Date.now() - cacheStarted)
+    // needed on a hit too: whether a "Next" page exists is decided from the
+    // live alt-art count, not from what happens to be cached
+    const files = collectAltFiles(await getAllSynonyms())
     if (response) {
         const sendStarted = Date.now()
         if (await forwardCachedMessage(
             client, response, message, {language, query: command})) {
-            // forward() drops the page's "Next" button, so re-attach one by
-            // following the cached "next-message" link (alt -> alt10 -> ...).
-            // It lives on its own message (a forward can't carry components);
-            // the zero-width space keeps it non-empty so the click handler can
-            // strip the button without emptying the message.
+            // forward() drops the page's "Next" button, so always build a fresh
+            // one. It lives on its own message (a forward can't carry
+            // components); the zero-width space keeps it non-empty so the click
+            // handler can strip the button without emptying the message.
+            // The cached page records where it ended, so the next page lines up
+            // even if it was built under a different limit; entries cached
+            // before that fall back to the current limit.
             const offset = parseInt(command.replace('alt', '')) || 0
-            if (response['next-message'] && isBotCommandChannel(message)) {
+            const next = response.next || offset + limit
+            if (next < files.length && isBotCommandChannel(message)) {
                 await message.channel.send({
                     content: '​',
                     components: getButtonRow(translate(language, 'next'),
-                        'next_button_alt' + (offset + limit)),
+                        'next_button_alt' + next),
                 })
             }
             addTiming(ctx, 'send', Date.now() - sendStarted)
@@ -150,8 +156,6 @@ async function handleAlt(ctx)
         //forward failed (e.g. no Read Message History) -> rebuild below
     }
 
-    const syns = await getAllSynonyms()
-    const files = collectAltFiles(syns)
     if (!files.length) {
         await sendPrivately(message, translate(language, 'noresult'))
         setLog(ctx, {q: command, cache: 'MISS', result: '0 found'})
@@ -175,17 +179,9 @@ async function handleAlt(ctx)
     const sendStarted = Date.now()
     const sent = await message.channel.send(answer)
     addTiming(ctx, 'send', Date.now() - sendStarted)
-    // Cache every page with a null "next-message" link. Replays go through
-    // forward(), which drops the page's button, so on a cache hit we re-attach
-    // it by following this chain (alt -> alt10 -> alt20 -> ...).
-    await cacheSentMessage(redis, cacheKey, sent, searchExp, {'next-message': null})
-    // Link the previous page to this freshly-built one.
-    if (offset > 0) {
-        const prevKey = cacheKeyPrefix + getChannelScope(message) +
-            'alt:alt' + (offset - limit || '')
-        if (await redis.exists(prevKey))
-            await redis.json.set(prevKey, '$["next-message"]', sent.id)
-    }
+    // Replays go through forward(), which drops the page's button, so remember
+    // where this page ends: a cache hit rebuilds the button from it.
+    await cacheSentMessage(redis, cacheKey, sent, searchExp, {next: last})
     setLog(ctx, {q: command, cache: 'MISS', page: formatPage(offset, limit),
         result: files.length + ' found'})
 

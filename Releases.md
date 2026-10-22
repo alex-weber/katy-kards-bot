@@ -8,6 +8,8 @@
 
 - `/commands` could answer "no commands" when the list filled more than one message and only non-listed commands (redirects) came after the last full page. The full pages are now kept.
 - Telegram: a custom-command image over the 5 MB send limit now gets "This image is too large to send here (max 5 MB)" instead of the generic "Something went wrong", in all twelve languages.
+- Discord: a cached `alt` page sometimes came back without its **Next** button. The button was only re-added when the following page had been built right after it, so a page nobody had paged past, or whose next page was already cached, stayed buttonless for the whole cache lifetime. A cached page now always gets a fresh button while more alt art follows, including pages cached before this release.
+- Discord: when a role capped the attachment limit below the bot-channel one, a paginated search result was cached with its **Next** button, so a repeated search came back without it. A later page could also overwrite the first in the cache. Paginated results are no longer cached.
 
 ### Maintenance
 

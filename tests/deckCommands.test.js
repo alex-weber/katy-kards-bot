@@ -27,7 +27,10 @@ jest.mock('../src/tools/privateReply', () => ({sendPrivately: jest.fn()}))
 jest.mock('../src/controller/bot', () => ({}))
 
 const {getAllSynonyms} = require('../src/database/db')
-const {cacheSentMessage} = require('../src/controller/messageCache')
+const {cacheSentMessage, forwardCachedMessage} =
+    require('../src/controller/messageCache')
+const {getButtonRow} = require('../src/tools/button')
+const {isBotCommandChannel} = require('../src/tools/search')
 const {handleAlt} = require('../src/controller/commands/deckCommands')
 
 // 25 alt-art synonyms -> collectAltFiles yields 25 files (3 pages of 10).
@@ -96,5 +99,64 @@ describe('handleAlt command normalisation', () => {
         expect(await handleAlt(ctx)).toBe(true)
         expect(cachedKey()).toBe('PRE:SCOPE:alt:alt10')
         expect(sentAnswer(ctx).content).toContain('showing 11-20')
+    })
+
+    test('a built page records where it ends for the cache hit', async () => {
+        const ctx = makeCtx('alt20')
+        await handleAlt(ctx)
+        // 25 files: the third page ends at the last one
+        expect(cacheSentMessage.mock.calls[0][4]).toEqual({next: 25})
+    })
+})
+
+// A forward drops the page's "Next" button, so a cache hit must always send a
+// fresh one while more pages exist. A prior bug only did so when the next page
+// had been built right after this one (a "next-message" link), so a page that
+// was never paged past - or whose next page was already cached - lost its
+// button for the whole cache lifetime.
+describe('handleAlt cache hit', () => {
+    function hitCtx(command, cached) {
+        const ctx = makeCtx(command)
+        ctx.redis.exists = jest.fn(async () => 1)
+        ctx.redis.json.get = jest.fn(async () => cached)
+        forwardCachedMessage.mockResolvedValue(true)
+        return ctx
+    }
+    const buttonId = () => getButtonRow.mock.calls[0][1]
+
+    test('re-attaches "Next" from the recorded page end', async () => {
+        const ctx = hitCtx('alt', {id: 'm1', next: 10})
+        expect(await handleAlt(ctx)).toBe(true)
+        expect(buttonId()).toBe('next_button_alt10')
+        expect(ctx.message.channel.send).toHaveBeenCalledTimes(1)
+        expect(cacheSentMessage).not.toHaveBeenCalled()
+    })
+
+    test('legacy entry with a null "next-message" still gets a button', async () => {
+        const ctx = hitCtx('alt10', {id: 'm1', 'next-message': null})
+        await handleAlt(ctx)
+        expect(buttonId()).toBe('next_button_alt20')
+    })
+
+    test('the last page gets no button', async () => {
+        const ctx = hitCtx('alt20', {id: 'm1', next: 25})
+        await handleAlt(ctx)
+        expect(getButtonRow).not.toHaveBeenCalled()
+        expect(ctx.message.channel.send).not.toHaveBeenCalled()
+    })
+
+    test('no button outside bot-command channels', async () => {
+        isBotCommandChannel.mockReturnValueOnce(false)
+        const ctx = hitCtx('alt', {id: 'm1', next: 10})
+        await handleAlt(ctx)
+        expect(ctx.message.channel.send).not.toHaveBeenCalled()
+    })
+
+    test('a failed forward rebuilds the page with its own button', async () => {
+        const ctx = hitCtx('alt', {id: 'm1', next: 10})
+        forwardCachedMessage.mockResolvedValue(false)
+        await handleAlt(ctx)
+        expect(sentAnswer(ctx).content).toContain('showing 1-10')
+        expect(sentAnswer(ctx).components).toEqual(['btn'])
     })
 })
