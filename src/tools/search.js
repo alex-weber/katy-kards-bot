@@ -436,7 +436,12 @@ async function queryCardsDB(variables, timings=null)
     let cards = await getCardsDB(variables, skip)
     if (timings) timings.db = Date.now() - started
 
-    return {counter: cards.length + skip, cards: cards}
+    //getCardsDB has no take, so the rows after skip plus skip are the total.
+    //With no rows that would still report `skip` matches: on a "Next" page the
+    //literal pass in advancedSearch then looked like a hit, and the page came
+    //back as "found: 10" with no cards instead of falling back to the parsed
+    //search the first page was built from.
+    return {counter: cards.length ? cards.length + skip : 0, cards: cards}
 }
 
 /**

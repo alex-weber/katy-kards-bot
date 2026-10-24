@@ -56,6 +56,30 @@ test('falls back to attribute parsing when the literal match finds nothing', asy
     expect(parsedWhere.type).toEqual({ in: ['bomber', 'fighter'] })
 })
 
+// On a "Next" page the DB skips the cards already shown. A literal attempt that
+// matched nothing used to report the skip itself as its count, so it looked
+// like a hit and page 2 came back as "found: 10" with no cards at all.
+test('a "Next" page falls back to attribute parsing like the first page', async () => {
+    const rest = Array.from({length: 15}, (_, i) => ({title: 'Card ' + i}))
+    getCardsDB.mockResolvedValueOnce([]) // literal attempt: no match
+        .mockResolvedValueOnce(rest) // parsed attempt: cards 11-25
+
+    const result = await advancedSearch({...baseVariables('japan 1k unit'), offset: 10})
+
+    expect(getCardsDB).toHaveBeenCalledTimes(2)
+    expect(getCardsDB.mock.calls[1][1]).toBe(10)
+    expect(result.counter).toBe(25)
+    expect(result.cards).toBe(rest)
+})
+
+test('a page past the last card reports nothing found, not the skip', async () => {
+    getCardsDB.mockResolvedValue([])
+
+    const result = await advancedSearch({...baseVariables('japan 1k unit'), offset: 30})
+
+    expect(result.counter).toBe(0)
+})
+
 test('an empty query skips the literal attempt entirely', async () => {
     getCardsDB.mockResolvedValue([])
 
