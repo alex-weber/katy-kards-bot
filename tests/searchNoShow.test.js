@@ -123,24 +123,25 @@ test('a bot-command channel still gets the cards', async () => {
 })
 
 // A cache hit is replayed by forwarding the original message, which drops its
-// "Next" button, and the cache key has no offset. So only a single-page result
-// may be cached: a paginated one (a role capping the limit below the
-// bot-channel one) would come back without a button, and its next page would
-// overwrite the first under the same key.
-describe('caching a result in a bot-command channel', () => {
+// "Next" button, and the cache key has no offset. So only a result that fits in
+// one message is cached; anything longer is sent fresh every time, with the
+// pagination state kept apart in cmdCacheKey.
+describe('caching a search result', () => {
+    const cacheKey = 'discord:dev:guild:g1:channel:c1:en:soviet5'
     const cachedKeys = ctx => ctx.redis.json.set.mock.calls
         .map(([key]) => key)
         .filter(key => key && key.startsWith('discord:'))
 
     beforeEach(() => isBotCommandChannel.mockReturnValue(true))
 
-    test('a single-page result is cached', async () => {
+    test('a single-page result is cached as such', async () => {
         getCards.mockResolvedValue({counter: 4})
         const ctx = makeCtx()
 
         await handleSearch(ctx)
 
-        expect(cachedKeys(ctx)).toHaveLength(1)
+        expect(cachedKeys(ctx)).toEqual([cacheKey])
+        expect(ctx.redis.store[cacheKey]).toMatchObject({singlePage: true})
     })
 
     test('a paginated first page is not cached', async () => {
@@ -166,5 +167,47 @@ describe('caching a result in a bot-command channel', () => {
 
         expect(ctx.message.channel.send).toHaveBeenCalled()
         expect(cachedKeys(ctx)).toHaveLength(0)
+    })
+
+    // e.g. the result shrank between pages, or a count came back wrong: the
+    // page must still not replace the first page's entry
+    test('a later page is not cached even if its count fits', async () => {
+        getCards.mockResolvedValue({counter: 4})
+        const ctx = makeCtx()
+        ctx.message.buttonId = 'next_button_soviet'
+        ctx.message.language = 'en'
+        ctx.cmdCacheKey = 'command:next_button_soviet'
+        ctx.redis.store[ctx.cmdCacheKey] = {offset: 5}
+
+        await handleSearch(ctx)
+
+        expect(ctx.message.channel.send).toHaveBeenCalled()
+        expect(cachedKeys(ctx)).toHaveLength(0)
+    })
+
+    // no button here, but the reply still shows only the first `limit` cards
+    test('a cut-off result in a chat channel is not cached', async () => {
+        isBotCommandChannel.mockReturnValue(false)
+        getCards.mockResolvedValue({counter: 8})
+        const ctx = makeCtx()
+
+        await handleSearch(ctx)
+
+        expect(ctx.message.channel.send).toHaveBeenCalled()
+        expect(cachedKeys(ctx)).toHaveLength(0)
+    })
+
+    // entries from before the single-page rule may hold one page of a longer
+    // result; they are dropped and the search runs again
+    test('an old entry without the single-page mark is dropped', async () => {
+        getCards.mockResolvedValue({counter: 8})
+        const ctx = makeCtx()
+        ctx.redis.store[cacheKey] = {id: 'old', channelId: 'c1', guildId: 'g1'}
+
+        await handleSearch(ctx)
+
+        expect(ctx.redis.del).toHaveBeenCalledWith(cacheKey)
+        expect(getCards).toHaveBeenCalled()
+        expect(cacheKey in ctx.redis.store).toBe(false)
     })
 })

@@ -51,6 +51,14 @@ async function serveSearchCache(ctx, cacheKey)
 
     const answer = await redis.json.get(cacheKey, '$')
     addTiming(ctx, 'cache', Date.now() - cacheStarted)
+    //entries cached before only single-page results were kept may hold a page
+    //of a longer result, which a forward replays without its "Next" button.
+    //Drop them so the result is sent fresh and, if it fits, cached again.
+    if (!answer || !answer.singlePage) {
+        await redis.del(cacheKey)
+
+        return false
+    }
 
     //forward failed (e.g. no Read Message History) -> let handleSearch regenerate
     const sendStarted = Date.now()
@@ -161,7 +169,7 @@ async function applyPagination(ctx, answer, counter, offset)
  */
 async function sendCardResults(ctx, cacheKey, cards, offset)
 {
-    const {message, redis, language, command, limit, paginationLimit} = ctx
+    const {message, redis, language, command, limit} = ctx
     const counter = cards.counter
     //if any cards are found - attach them
     let content = ''
@@ -195,14 +203,15 @@ async function sendCardResults(ctx, cacheKey, cards, offset)
         addTiming(ctx, 'send', Date.now() - sendStarted)
         setLog(ctx, {cache: 'MISS', page: formatPage(offset, ctx.limit),
             result: counter + ' found'})
-        //cache only within the limit, so pagination still works. A page that
-        //is part of a pagination is never cached: a forward drops its "Next"
-        //button, and the key has no offset, so a later page would overwrite
-        //the first. That happens when a role caps the limit below the
-        //bot-channel one.
-        if (counter <= paginationLimit && !answer.components &&
-            !message.buttonId)
-            await cacheSentMessage(redis, cacheKey, sent, searchExp)
+        //cache only a result that fits in this one message. Anything longer is
+        //sent fresh every time: a forward drops the "Next" button, and the key
+        //has no offset, so a later page would overwrite the first. The
+        //pagination state itself lives on in cmdCacheKey. A page reached by
+        //"Next" is never cached even if its count fits: it is a later page
+        //of a longer result and would be forwarded as the first one.
+        if (counter <= limit && !message.buttonId)
+            await cacheSentMessage(redis, cacheKey, sent, searchExp,
+                {singlePage: true})
     } catch (e) {
         console.error(e.message)
         message.channel.send(translate(language, 'error'))

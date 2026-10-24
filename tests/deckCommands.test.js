@@ -1,8 +1,7 @@
-// Tests for handleAlt's command normalisation. The alt-art gallery is paged
-// via commands "alt", "alt10", "alt20"… Custom aliases (e.g. "alt heinz") are
-// resolved upstream, so anything reaching handleAlt that isn't "alt" + an
-// offset must collapse to the first page ("alt"). A prior bug cached such
-// commands verbatim (":alt:alt art") with a dead pagination link.
+// Tests for handleAlt. The alt-art gallery is paged via commands "alt",
+// "alt10", "alt20"… Custom aliases (e.g. "alt heinz") are resolved upstream,
+// so anything reaching handleAlt that isn't "alt" + an offset must collapse to
+// the first page ("alt").
 //
 // Every collaborator that transitively connects to Redis at require-time is
 // mocked so this suite exercises only handleAlt.
@@ -48,8 +47,8 @@ function makeCtx(command) {
         message: {channel: {send: jest.fn(async () => ({id: 'sent' + counter++}))}},
         client: {},
         redis: {
-            exists: jest.fn(async () => 0), // always a cache miss -> rebuild
-            json: {get: jest.fn(), set: jest.fn()},
+            exists: jest.fn(async () => 1),
+            json: {get: jest.fn(async () => ({id: 'old'})), set: jest.fn()},
         },
         language: 'en',
         limit: 10,
@@ -62,101 +61,69 @@ beforeEach(() => {
     getAllSynonyms.mockResolvedValue(makeSynonyms())
 })
 
-// the cacheKey is the 2nd arg of cacheSentMessage(redis, cacheKey, sent, …)
-const cachedKey = () => cacheSentMessage.mock.calls[0][1]
 const sentAnswer = ctx => ctx.message.channel.send.mock.calls[0][0]
+const buttonId = () => getButtonRow.mock.calls[0][1]
 
 describe('handleAlt command normalisation', () => {
     test('returns false for a non-alt command', async () => {
         const ctx = makeCtx('foo')
         expect(await handleAlt(ctx)).toBe(false)
-        expect(cacheSentMessage).not.toHaveBeenCalled()
+        expect(ctx.message.channel.send).not.toHaveBeenCalled()
     })
 
-    test('"alt" serves the first page under the alt:alt key', async () => {
+    test('"alt" serves the first page', async () => {
         const ctx = makeCtx('alt')
         expect(await handleAlt(ctx)).toBe(true)
-        expect(cachedKey()).toBe('PRE:SCOPE:alt:alt')
         expect(sentAnswer(ctx).content).toContain('showing 1-10')
+        expect(buttonId()).toBe('next_button_alt10')
     })
 
-    test('"alt art" collapses to the first page, not a phantom key', async () => {
+    test('"alt art" collapses to the first page', async () => {
         const ctx = makeCtx('alt art')
         expect(await handleAlt(ctx)).toBe(true)
-        // must NOT be cached as ":alt:alt art"
-        expect(cachedKey()).toBe('PRE:SCOPE:alt:alt')
         expect(sentAnswer(ctx).content).toContain('showing 1-10')
+        expect(buttonId()).toBe('next_button_alt10')
     })
 
     test('"alt not_a_key" also collapses to the first page', async () => {
         const ctx = makeCtx('alt not_a_key')
         expect(await handleAlt(ctx)).toBe(true)
-        expect(cachedKey()).toBe('PRE:SCOPE:alt:alt')
+        expect(sentAnswer(ctx).content).toContain('showing 1-10')
     })
 
-    test('"alt10" is valid pagination -> second page under alt:alt10', async () => {
+    test('"alt10" is valid pagination -> second page', async () => {
         const ctx = makeCtx('alt10')
         expect(await handleAlt(ctx)).toBe(true)
-        expect(cachedKey()).toBe('PRE:SCOPE:alt:alt10')
         expect(sentAnswer(ctx).content).toContain('showing 11-20')
-    })
-
-    test('a built page records where it ends for the cache hit', async () => {
-        const ctx = makeCtx('alt20')
-        await handleAlt(ctx)
-        // 25 files: the third page ends at the last one
-        expect(cacheSentMessage.mock.calls[0][4]).toEqual({next: 25})
+        expect(buttonId()).toBe('next_button_alt20')
     })
 })
 
-// A forward drops the page's "Next" button, so a cache hit must always send a
-// fresh one while more pages exist. A prior bug only did so when the next page
-// had been built right after this one (a "next-message" link), so a page that
-// was never paged past - or whose next page was already cached - lost its
-// button for the whole cache lifetime.
-describe('handleAlt cache hit', () => {
-    function hitCtx(command, cached) {
-        const ctx = makeCtx(command)
-        ctx.redis.exists = jest.fn(async () => 1)
-        ctx.redis.json.get = jest.fn(async () => cached)
-        forwardCachedMessage.mockResolvedValue(true)
-        return ctx
-    }
-    const buttonId = () => getButtonRow.mock.calls[0][1]
-
-    test('re-attaches "Next" from the recorded page end', async () => {
-        const ctx = hitCtx('alt', {id: 'm1', next: 10})
-        expect(await handleAlt(ctx)).toBe(true)
-        expect(buttonId()).toBe('next_button_alt10')
-        expect(ctx.message.channel.send).toHaveBeenCalledTimes(1)
-        expect(cacheSentMessage).not.toHaveBeenCalled()
-    })
-
-    test('legacy entry with a null "next-message" still gets a button', async () => {
-        const ctx = hitCtx('alt10', {id: 'm1', 'next-message': null})
+// A cached page was replayed by forwarding it, which drops its "Next" button,
+// and rebuilding the button around the forward kept going wrong. The gallery
+// always runs to several pages, so it is not cached at all: every page is a
+// fresh message with its own button.
+describe('handleAlt pages are always sent fresh', () => {
+    test('an old cache entry is neither forwarded nor rewritten', async () => {
+        const ctx = makeCtx('alt')
         await handleAlt(ctx)
-        expect(buttonId()).toBe('next_button_alt20')
+        expect(forwardCachedMessage).not.toHaveBeenCalled()
+        expect(cacheSentMessage).not.toHaveBeenCalled()
+        expect(sentAnswer(ctx).files).toHaveLength(10)
+        expect(sentAnswer(ctx).components).toEqual(['btn'])
     })
 
     test('the last page gets no button', async () => {
-        const ctx = hitCtx('alt20', {id: 'm1', next: 25})
+        const ctx = makeCtx('alt20')
         await handleAlt(ctx)
-        expect(getButtonRow).not.toHaveBeenCalled()
-        expect(ctx.message.channel.send).not.toHaveBeenCalled()
+        expect(sentAnswer(ctx).content).toContain('showing 21-25')
+        expect(sentAnswer(ctx).components).toBeUndefined()
     })
 
     test('no button outside bot-command channels', async () => {
         isBotCommandChannel.mockReturnValueOnce(false)
-        const ctx = hitCtx('alt', {id: 'm1', next: 10})
+        const ctx = makeCtx('alt')
         await handleAlt(ctx)
-        expect(ctx.message.channel.send).not.toHaveBeenCalled()
-    })
-
-    test('a failed forward rebuilds the page with its own button', async () => {
-        const ctx = hitCtx('alt', {id: 'm1', next: 10})
-        forwardCachedMessage.mockResolvedValue(false)
-        await handleAlt(ctx)
-        expect(sentAnswer(ctx).content).toContain('showing 1-10')
-        expect(sentAnswer(ctx).components).toEqual(['btn'])
+        expect(sentAnswer(ctx).components).toBeUndefined()
     })
 })

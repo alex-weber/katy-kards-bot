@@ -1,3 +1,10 @@
+## 5.12.2
+
+### Bug Fixes
+
+- **Next** on a search answered from the local DB could show "found: 10" with no cards (e.g. `japan 1k unit`). The literal full-text pass that runs before the query is parsed into filters reported the skipped cards as matches when it found nothing, so the second page never reached the filter search that built the first one. Pages 2, 3 … now show the right cards and the same total.
+- Discord: results that span more than one page were still sometimes replayed from the cache without their **Next** button. Such results are no longer cached: every page of a search or of the `alt` gallery is sent as a new message with its own button, as before caching was added. Where you paged to is still remembered. Only a search result that fits in a single message is cached and forwarded. Search entries cached under the old rules are dropped the first time they are hit, so a stale page is not forwarded again.
+
 ## 5.12.1
 
 ### Features
