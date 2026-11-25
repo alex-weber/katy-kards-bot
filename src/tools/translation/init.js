@@ -14,7 +14,7 @@ function init() {
             // and fallback languages (en/ru/de) load in time and everything
             // else silently falls back to English.
             preload: languages,
-            initImmediate: false,
+            initAsync: false,
             //debug: true,
             backend: {
                 loadPath: path.resolve(__dirname, 'locales/{{lng}}/{{ns}}.json'),

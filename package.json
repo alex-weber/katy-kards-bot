@@ -42,15 +42,18 @@
     "telegraf": "^4.16.3"
   },
   "engines": {
-    "node": "^24.22.1",
-    "npm": "^12.2.1"
+    "node": "^24.22.3",
+    "npm": "^12.2.3"
   },
   "devDependencies": {
     "jest": "^30.2.0"
   },
   "overrides": {
     "brace-expansion@1": "1.1.18",
-    "brace-expansion@2": "2.1.4",
-    "js-yaml@3": "3.15.2"
+    "brace-expansion@2": "2.1.7",
+    "js-yaml@3": "3.15.2",
+    "effect@3": "3.22.5",
+    "glob@>=9": "14.0.6",
+    "minimatch@>=7": "11.0.9"
   }
 }
