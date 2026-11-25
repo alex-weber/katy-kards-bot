@@ -45,6 +45,11 @@ const NATION_API_IDS = {
     soviet: 1, usa: 2, japan: 3, germany: 4, britain: 5, france: 6,
     italy: 7, poland: 8, finland: 9, anzac: 10, neutral: 11,
 }
+//an unnamed deck is titled main/ally with these, e.g. SOV/JPN
+const NATION_CODES = {
+    germany: 'GER', britain: 'BRIT', japan: 'JPN', soviet: 'SOV', usa: 'USA',
+    france: 'FRA', italy: 'ITA', poland: 'POL', finland: 'FIN', anzac: 'ANZ',
+}
 //a nation's card titles in every language, refreshed after this long
 const TITLES_TTL = 12 * 60 * 60 * 1000
 const DECK_BACKGROUNDS = {
@@ -574,7 +579,7 @@ async function drawDeckCard(ctx, deck, x, y) {
     ctx.textAlign = 'left'
     ctx.font = '600 20px Oswald, "Droid Sans Fallback", NanumSquare'
     ctx.fillStyle = 'rgb(222,219,197)'
-    const name = deck.name || translate(deck.language, 'deck_untitled')
+    const name = deck.name || nationCodes(deck) || translate(deck.language, 'deck_untitled')
     ctx.fillText(ellipsize(ctx, name.toUpperCase(), CARD_WIDTH - 63 - 15), 63, 12)
     ctx.font = '600 12px Oswald, "Droid Sans Fallback", NanumSquare'
     if (deck.user) {
@@ -640,6 +645,19 @@ async function drawDeckCard(ctx, deck, x, y) {
  */
 function nationLabel(deck, nation) {
     return nation ? translate(deck.language, 'nation_' + nation).toUpperCase() : ''
+}
+
+/**
+ * The title of an unnamed deck: its nations' codes, main first ("SOV/JPN").
+ *
+ * @param deck
+ * @returns {string} empty when neither nation has a code
+ */
+function nationCodes(deck) {
+    return [deck.main, deck.ally]
+        .map(nation => NATION_CODES[nation])
+        .filter(Boolean)
+        .join('/')
 }
 
 /**
@@ -921,4 +939,4 @@ function drawCovered(ctx, image, x, y, width, height) {
         x, y, width, height)
 }
 
-module.exports = {renderDeckImages, loadDeck, parseDeckCode, buildDeck, pickFeatured}
+module.exports = {renderDeckImages, nationCodes}
