@@ -31,9 +31,8 @@ function day(daysAgo) {
 }
 
 /**
- * Record one captured screenshot in both the total and today's counter. A
- * screenshot is one Browserless capture, not one image file — a single capture
- * crops several files out of the same page.
+ * Record one deck render in both the total and today's counter. A render
+ * counts once, not once per image file — a single render writes several.
  *
  * @param redis
  * @returns {Promise<void>}

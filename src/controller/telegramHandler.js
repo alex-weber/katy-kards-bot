@@ -1,4 +1,4 @@
-const {getLanguageByInput, deckBuilderLanguages, languages} = require("../tools/language")
+const {getLanguageByInput, languages} = require("../tools/language")
 const {getStats} = require("../tools/stats")
 const bot = require("./bot")
 const {getUser, updateUser, getSynonym, createMessage, getProfileStats, createUserAudit} = require("../database/db")
@@ -12,7 +12,7 @@ const maxStrLen = 4096 // Telegram's max message length
 const maxFileSize = 5*1024*1024 //5MB
 const defaultPrefix = process.env.DEFAULT_PREFIX || '!'
 const {getDeckFiles, deleteDeckFiles} = require("../tools/fileManager")
-const {takeScreenshot} = require("../tools/puppeteer")
+const {renderDeck} = require("../tools/deckRenderer")
 const cacheKeyPrefix = process.env.NODE_ENV === 'production' ? '' : 'dev:'
 const {downloadImageAsFile, convertImageToWEBP} = require("../tools/imageUpload")
 const {analyseDeck} = require("../tools/deck")
@@ -255,16 +255,6 @@ async function handleDeck(ctx)
         return true
     }
 
-    let deckBuilderLang = ''
-    if (deckBuilderLanguages.includes(language)) deckBuilderLang = language + '/'
-    const deckBuilderURL =
-        'https://www.kards.com/' + deckBuilderLang + 'decks/deck-builder?hash='
-
-    const hash = encodeURIComponent(command)
-    const url = bot.isDeckLink(bot.parseCommand(defaultPrefix, command))
-        ? bot.parseCommand(defaultPrefix, command)
-        : deckBuilderURL + hash
-
     //send the message that screenshot is running and store ID
     const runningMsg = await tgCtx.reply(translate(language, 'screenshot'))
     const runningMsgId = runningMsg.message_id
@@ -272,7 +262,7 @@ async function handleDeck(ctx)
     let filename
     try {
         const shotStarted = Date.now()
-        filename = await takeScreenshot(url)
+        filename = await renderDeck(command, language)
         const shotMs = Date.now() - shotStarted
 
         if (filename) {

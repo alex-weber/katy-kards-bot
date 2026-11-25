@@ -1,9 +1,9 @@
 const bot = require("../controller/bot")
 const {translate} = require("./translation/translator")
-const {takeScreenshot} = require("./puppeteer")
+const {renderDeck} = require("./deckRenderer")
 const {getDeckFiles, deleteDeckFiles} = require("./fileManager")
 const {getCardsDB} = require("../database/db")
-const {deckBuilderLanguages} = require("../tools/language")
+const {readDeckCounts} = require("./deckCode")
 
 /**
  *
@@ -22,18 +22,17 @@ async function createDeckImages(
     language,
     timings=null)
 {
-    let urlLanguage = ''
-    if (deckBuilderLanguages.includes(language)) urlLanguage = language + '/'
-    const deckBuilderURL = 'https://www.kards.com/' + urlLanguage + 'decks/deck-builder?hash='
+    //the raw code, before parseCommand lowercases it: import ids are case
+    //sensitive
     const deckCode = command.replace(prefix, '')
-    const hash = encodeURIComponent(deckCode)
     command = bot.parseCommand(prefix, command)
-    let url
+    let input
     let deckInfo = ''
     if (bot.isDeckLink(command)) {
-        url = command
+        //unlowered too: a builder link carries its code in ?hash=
+        input = deckCode.trim()
     } else {
-        url = deckBuilderURL+hash
+        input = deckCode
         deckInfo = '```' +
             translate(language, 'deck_code') +
             deckCode +
@@ -45,7 +44,7 @@ async function createDeckImages(
             return false
         }
     }
-    //The "capturing screenshot" notice is deleted once the render is ready, so
+    //The "creating the deck images" notice is deleted once the render is ready, so
     //it must not consume the channel's one "requested by" attribution line —
     //otherwise the only public trace of who asked vanishes with it. Send it raw
     //(bypassing attribution). sendRaw exists only on the attributed proxy
@@ -56,7 +55,7 @@ async function createDeckImages(
         : message.channel.send.bind(message.channel)
     let sentMessage = await sendNotice(translate(language, 'screenshot'))
     const shotStarted = Date.now()
-    const filename = await takeScreenshot(url)
+    const filename = await renderDeck(input, language)
     if (timings) timings.shot = Date.now() - shotStarted
     sentMessage.delete()
     if (!filename) {
@@ -97,37 +96,6 @@ async function analyseDeck(deckCode, language)
     })
 
     return calculateAverages(dbCards, counts, language)
-}
-
-/**
- * How many copies of each card the deck holds, keyed by importId.
- *
- * A deck code lists its cards in `;`-separated groups, and a card's group says
- * how many copies it runs: the first group one copy each, the second two, and
- * so on. Ids are two characters and are read one group at a time — reading
- * them out of the groups concatenated meant a single odd-length group would
- * shift every id after it by one character. A well-formed code names each card
- * once.
- *
- * @param body the deck code after the '|'
- * @returns {Map<string, number>}
- */
-function readDeckCounts(body) {
-    const counts = new Map()
-
-    body.split(';').forEach((group, index) => {
-        for (const importId of group.match(/.{1,2}/g) || []) {
-            //a leftover single character means the group was not a whole
-            //number of ids; counting it would be inventing a card
-            if (importId.length < 2) {
-                console.error('Ignored a trailing character in a deck code group:', group)
-                continue
-            }
-            counts.set(importId, index + 1)
-        }
-    })
-
-    return counts
 }
 
 function calculateAverages(cards, counts, language) {

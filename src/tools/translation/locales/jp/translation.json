@@ -10,7 +10,7 @@
   "noresult": "検索言語: {{language}}。カードが見つかりませんでした…",
   "failureHelp": "お探しのカードが見つかりませんか？検索の使い方はこちらです：",
   "langChange": "検索言語: ",
-  "screenshot": "スクリーンショットを作成中です。数秒かかる場合があります…",
+  "screenshot": "デッキ画像を作成中です。数秒かかる場合があります…",
   "cache": "キャッシュから取得中…",
   "dm": "DMチャンネルはボットが再起動するまで有効です（24時間ごと）。",
   "screenshotRunning": "別のスクリーンショットを作成中です…数秒後にもう一度お試しください。",
@@ -81,5 +81,18 @@
   "requestedBy": "{{name}} によるリクエスト",
   "requestedByQuery": "{{name}} によるリクエスト: {{query}}",
   "cacheForwardNotice": "{{name}} からの検索リクエスト: {{query}}。キャッシュされたメッセージを転送します。",
-  "cacheRequestNotice": "{{name}} からのリクエスト: {{query}}。キャッシュされたメッセージを転送します。"
+  "cacheRequestNotice": "{{name}} からのリクエスト: {{query}}。キャッシュされたメッセージを転送します。",
+  "nation_germany": "ドイツ",
+  "nation_britain": "イギリス",
+  "nation_japan": "日本",
+  "nation_soviet": "ソ連",
+  "nation_usa": "アメリカ",
+  "nation_france": "フランス",
+  "nation_italy": "イタリア",
+  "nation_poland": "ポーランド",
+  "nation_finland": "フィンランド",
+  "nation_anzac": "ANZAC",
+  "nation_neutral": "中立",
+  "deck_untitled": "無題のデッキ",
+  "deck_wip": "作成中..."
 }

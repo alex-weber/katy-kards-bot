@@ -37,7 +37,6 @@ in Direct Messages (user needs to activate the DM channel in their profile) and 
 - `IMAGE_ALLOWED_INSECURE_HOSTS`: development only, ignored when `NODE_ENV=production`. Lets the
   named `host:port` origins through over plain http and on a non-default port, so an uploader on
   `http://localhost:3200` is reachable. Leave unset in production.
-- `BROWSERLESS_API_KEY` / `BROWSERLESS_HOST`: Used for deck screenshots.
 - `DEFAULT_PREFIX`: Prefix for the legacy text commands (defaults to `!`).
 
 See `.env.example` for the full list, including cache expiration and memory-monitoring settings.

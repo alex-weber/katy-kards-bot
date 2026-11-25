@@ -11,7 +11,7 @@
   "noresult": "Search language: {{language}}. No cards found...",
   "failureHelp": "Not finding what you are looking for? Here is how the search works:",
   "langChange": "Search language: ",
-  "screenshot": "capturing a screenshot, this may take some seconds...",
+  "screenshot": "creating the deck images, this may take a few seconds...",
   "cache": "getting from cache...",
   "dm": "DM channel is active until the bot restarts (every 24 hours).",
   "screenshotRunning": "Another capturing job is running... please try again in a few seconds.",
@@ -89,5 +89,18 @@
   "requestedBy": "Requested by {{name}}",
   "requestedByQuery": "Requested by {{name}}: {{query}}",
   "cacheForwardNotice": "Search request from {{name}}: {{query}}. Forwarding cached message.",
-  "cacheRequestNotice": "Request from {{name}}: {{query}}. Forwarding cached message."
+  "cacheRequestNotice": "Request from {{name}}: {{query}}. Forwarding cached message.",
+  "nation_germany": "Germany",
+  "nation_britain": "Britain",
+  "nation_japan": "Japan",
+  "nation_soviet": "Soviet",
+  "nation_usa": "USA",
+  "nation_france": "France",
+  "nation_italy": "Italy",
+  "nation_poland": "Poland",
+  "nation_finland": "Finland",
+  "nation_anzac": "Anzac",
+  "nation_neutral": "Neutral",
+  "deck_untitled": "Untitled Deck",
+  "deck_wip": "Work in progress..."
 }

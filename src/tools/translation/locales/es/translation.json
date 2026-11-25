@@ -10,7 +10,7 @@
   "noresult": "Idioma de búsqueda: {{language}}. No se encontraron cartas...",
   "failureHelp": "¿No encuentras lo que buscas? Así funciona la búsqueda:",
   "langChange": "Idioma de búsqueda: ",
-  "screenshot": "capturando una imagen, esto puede tardar unos segundos...",
+  "screenshot": "creando las imágenes del mazo, esto puede tardar unos segundos...",
   "cache": "obteniendo de la caché...",
   "dm": "El canal de MD está activo hasta que el bot se reinicie (cada 24 horas).",
   "screenshotRunning": "Ya se está creando otra captura de pantalla... por favor inténtalo de nuevo en unos segundos.",
@@ -81,5 +81,18 @@
   "requestedBy": "Solicitado por {{name}}",
   "requestedByQuery": "Solicitado por {{name}}: {{query}}",
   "cacheForwardNotice": "Solicitud de búsqueda de {{name}}: {{query}}. Reenviando mensaje en caché.",
-  "cacheRequestNotice": "Solicitud de {{name}}: {{query}}. Reenviando mensaje en caché."
+  "cacheRequestNotice": "Solicitud de {{name}}: {{query}}. Reenviando mensaje en caché.",
+  "nation_germany": "Alemania",
+  "nation_britain": "Gran Bretaña",
+  "nation_japan": "Japón",
+  "nation_soviet": "URSS",
+  "nation_usa": "EE. UU.",
+  "nation_france": "Francia",
+  "nation_italy": "Italia",
+  "nation_poland": "Polonia",
+  "nation_finland": "Finlandia",
+  "nation_anzac": "Anzac",
+  "nation_neutral": "Neutral",
+  "deck_untitled": "Mazo sin título",
+  "deck_wip": "En desarrollo..."
 }

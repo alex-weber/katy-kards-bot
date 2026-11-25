@@ -17,7 +17,7 @@ jest.mock('../src/tools/search', () => ({
     isBotCommandChannel: jest.fn(() => false),
     isEnglishOnlyChannel: jest.fn(() => false),
 }))
-jest.mock('../src/tools/puppeteer', () => ({takeScreenshot: jest.fn()}))
+jest.mock('../src/tools/deckRenderer', () => ({renderDeck: jest.fn()}))
 jest.mock('../src/tools/deck', () => ({analyseDeck: jest.fn()}))
 jest.mock('../src/tools/fileManager', () => ({
     getDeckFiles: jest.fn(), deleteDeckFiles: jest.fn(),
