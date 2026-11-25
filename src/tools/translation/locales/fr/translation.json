@@ -10,7 +10,7 @@
   "noresult": "Langue de recherche : {{language}}. Aucune carte trouvée...",
   "failureHelp": "Vous ne trouvez pas ce que vous cherchez ? Voici comment fonctionne la recherche :",
   "langChange": "Langue de recherche : ",
-  "screenshot": "capture d'écran en cours, cela peut prendre quelques secondes...",
+  "screenshot": "création des images du deck, cela peut prendre quelques secondes...",
   "cache": "récupération depuis le cache...",
   "dm": "Le canal de MP est actif jusqu'au redémarrage du bot (toutes les 24 heures).",
   "screenshotRunning": "Une autre capture d'écran est déjà en cours... merci de réessayer dans quelques secondes.",
@@ -81,5 +81,18 @@
   "requestedBy": "Demandé par {{name}}",
   "requestedByQuery": "Demandé par {{name}} : {{query}}",
   "cacheForwardNotice": "Requête de recherche de {{name}} : {{query}}. Transfert du message en cache.",
-  "cacheRequestNotice": "Requête de {{name}} : {{query}}. Transfert du message en cache."
+  "cacheRequestNotice": "Requête de {{name}} : {{query}}. Transfert du message en cache.",
+  "nation_germany": "Allemagne",
+  "nation_britain": "Grande-Bretagne",
+  "nation_japan": "Japon",
+  "nation_soviet": "URSS",
+  "nation_usa": "États-Unis",
+  "nation_france": "France",
+  "nation_italy": "Italie",
+  "nation_poland": "Pologne",
+  "nation_finland": "Finlande",
+  "nation_anzac": "Anzac",
+  "nation_neutral": "Neutre",
+  "deck_untitled": "Deck sans titre",
+  "deck_wip": "En cours..."
 }

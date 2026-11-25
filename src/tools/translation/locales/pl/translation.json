@@ -10,7 +10,7 @@
   "noresult": "Język wyszukiwania: {{language}}. Nie znaleziono kart...",
   "failureHelp": "Nie możesz znaleźć tego, czego szukasz? Oto jak działa wyszukiwanie:",
   "langChange": "Język wyszukiwania: ",
-  "screenshot": "robię zrzut ekranu, może to potrwać kilka sekund...",
+  "screenshot": "tworzę obrazy talii, może to potrwać kilka sekund...",
   "cache": "pobieram z pamięci podręcznej...",
   "dm": "Kanał DM jest aktywny do restartu bota (co 24 godziny).",
   "screenshotRunning": "Trwa już tworzenie innego zrzutu ekranu... spróbuj ponownie za kilka sekund.",
@@ -81,5 +81,18 @@
   "requestedBy": "Zapytanie od {{name}}",
   "requestedByQuery": "Zapytanie od {{name}}: {{query}}",
   "cacheForwardNotice": "Zapytanie wyszukiwania od {{name}}: {{query}}. Przekazuję zapisaną wiadomość.",
-  "cacheRequestNotice": "Zapytanie od {{name}}: {{query}}. Przekazuję zapisaną wiadomość."
+  "cacheRequestNotice": "Zapytanie od {{name}}: {{query}}. Przekazuję zapisaną wiadomość.",
+  "nation_germany": "Niemcy",
+  "nation_britain": "Wielka Brytania",
+  "nation_japan": "Japonia",
+  "nation_soviet": "ZSRR",
+  "nation_usa": "USA",
+  "nation_france": "Francja",
+  "nation_italy": "Włochy",
+  "nation_poland": "Polska",
+  "nation_finland": "Finlandia",
+  "nation_anzac": "Anzac",
+  "nation_neutral": "Neutralne",
+  "deck_untitled": "Talia bez nazwy",
+  "deck_wip": "W trakcie tworzenia..."
 }

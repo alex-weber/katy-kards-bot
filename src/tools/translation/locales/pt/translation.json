@@ -10,7 +10,7 @@
   "noresult": "Idioma de busca: {{language}}. Nenhuma carta encontrada...",
   "failureHelp": "Não está encontrando o que procura? Veja como funciona a busca:",
   "langChange": "Idioma de busca: ",
-  "screenshot": "capturando uma imagem, isso pode levar alguns segundos...",
+  "screenshot": "criando as imagens do baralho, isso pode levar alguns segundos...",
   "cache": "obtendo do cache...",
   "dm": "O canal de DM fica ativo até o bot reiniciar (a cada 24 horas).",
   "screenshotRunning": "Já há outra captura de tela em andamento... tente novamente em alguns segundos.",
@@ -81,5 +81,18 @@
   "requestedBy": "Solicitado por {{name}}",
   "requestedByQuery": "Solicitado por {{name}}: {{query}}",
   "cacheForwardNotice": "Solicitação de busca de {{name}}: {{query}}. Encaminhando mensagem em cache.",
-  "cacheRequestNotice": "Solicitação de {{name}}: {{query}}. Encaminhando mensagem em cache."
+  "cacheRequestNotice": "Solicitação de {{name}}: {{query}}. Encaminhando mensagem em cache.",
+  "nation_germany": "Alemanha",
+  "nation_britain": "Grã-Bretanha",
+  "nation_japan": "Japão",
+  "nation_soviet": "URSS",
+  "nation_usa": "EUA",
+  "nation_france": "França",
+  "nation_italy": "Itália",
+  "nation_poland": "Polônia",
+  "nation_finland": "Finlândia",
+  "nation_anzac": "Anzac",
+  "nation_neutral": "Neutro",
+  "deck_untitled": "Baralho sem título",
+  "deck_wip": "Em andamento..."
 }

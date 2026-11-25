@@ -1,3 +1,13 @@
+## 5.13.0
+
+### Features
+
+- Deck images are drawn by the bot itself instead of being screenshots of kards.com taken through Browserless. Each deck still gets two images: the deck card with its kredit curve, and the card list. Nation flags, card backs, icons and fonts are bundled in `src/assets/deck/`; card art is fetched from kards.com and kept in memory, so popular cards are not downloaded again. No browser service or Browserless key is needed any more. If one card's art fails to load, the deck is still drawn without it. Deck codes, kards.com deck links and deck builder links (`deck-builder?hash=…`) all work, including URL-encoded codes. A deck without a name (every deck code) is titled with its nations' codes, main nation first, e.g. `SOV/JPN` or `USA/ITA`. The whole image follows the requested language: nation names, the work-in-progress label, card titles (for deck codes and links alike) and card art, falling back to English. Cyrillic, Japanese, Korean and Chinese text is drawn with bundled fonts, so it shows on hosts without CJK fonts.
+
+### Maintenance
+
+- Removed `puppeteer-core` and the Browserless settings (`BROWSERLESS_API_KEY`, `BROWSERLESS_HOST`, `SCREENSHOT_CONCURRENCY`). `DECK_RENDER_CONCURRENCY` (default 4) sets how many decks are drawn at once. Two requests for the same deck in the same language at the same time still share one render, and the dashboard's screenshot counters count the new renders.
+
 ## 5.12.2
 
 ### Bug Fixes

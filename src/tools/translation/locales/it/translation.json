@@ -10,7 +10,7 @@
   "noresult": "Lingua di ricerca: {{language}}. Nessuna carta trovata...",
   "failureHelp": "Non trovi quello che cerchi? Ecco come funziona la ricerca:",
   "langChange": "Lingua di ricerca: ",
-  "screenshot": "sto catturando uno screenshot, potrebbe richiedere qualche secondo...",
+  "screenshot": "sto creando le immagini del mazzo, potrebbe richiedere qualche secondo...",
   "cache": "recupero dalla cache...",
   "dm": "Il canale MP è attivo finché il bot non si riavvia (ogni 24 ore).",
   "screenshotRunning": "È già in corso un'altra acquisizione di screenshot... riprova tra qualche secondo.",
@@ -81,5 +81,18 @@
   "requestedBy": "Richiesto da {{name}}",
   "requestedByQuery": "Richiesto da {{name}}: {{query}}",
   "cacheForwardNotice": "Richiesta di ricerca da {{name}}: {{query}}. Inoltro il messaggio dalla cache.",
-  "cacheRequestNotice": "Richiesta da {{name}}: {{query}}. Inoltro il messaggio dalla cache."
+  "cacheRequestNotice": "Richiesta da {{name}}: {{query}}. Inoltro il messaggio dalla cache.",
+  "nation_germany": "Germania",
+  "nation_britain": "Gran Bretagna",
+  "nation_japan": "Giappone",
+  "nation_soviet": "URSS",
+  "nation_usa": "USA",
+  "nation_france": "Francia",
+  "nation_italy": "Italia",
+  "nation_poland": "Polonia",
+  "nation_finland": "Finlandia",
+  "nation_anzac": "Anzac",
+  "nation_neutral": "Neutrale",
+  "deck_untitled": "Mazzo senza titolo",
+  "deck_wip": "Lavori in corso..."
 }

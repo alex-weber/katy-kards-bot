@@ -10,7 +10,7 @@
   "noresult": "搜索语言：{{language}}。未找到卡牌……",
   "failureHelp": "没找到你要的卡牌吗？搜索方式如下：",
   "langChange": "搜索语言：",
-  "screenshot": "正在生成截图，这可能需要几秒钟……",
+  "screenshot": "正在生成卡组图片，这可能需要几秒钟……",
   "cache": "正在从缓存中获取……",
   "dm": "私信频道在机器人重启前保持有效（每 24 小时）。",
   "screenshotRunning": "已有另一个截图任务正在进行……请几秒后再试。",
@@ -81,5 +81,18 @@
   "requestedBy": "由 {{name}} 请求",
   "requestedByQuery": "由 {{name}} 请求：{{query}}",
   "cacheForwardNotice": "来自 {{name}} 的搜索请求：{{query}}。正在转发缓存的消息。",
-  "cacheRequestNotice": "来自 {{name}} 的请求：{{query}}。正在转发缓存的消息。"
+  "cacheRequestNotice": "来自 {{name}} 的请求：{{query}}。正在转发缓存的消息。",
+  "nation_germany": "德国",
+  "nation_britain": "英国",
+  "nation_japan": "日本",
+  "nation_soviet": "苏联",
+  "nation_usa": "美国",
+  "nation_france": "法国",
+  "nation_italy": "意大利",
+  "nation_poland": "波兰",
+  "nation_finland": "芬兰",
+  "nation_anzac": "澳新军团",
+  "nation_neutral": "中立",
+  "deck_untitled": "未命名卡组",
+  "deck_wip": "制作中..."
 }

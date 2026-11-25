@@ -69,7 +69,7 @@ describe('getScreenshotMessages', () => {
         expect(series).toHaveLength(30)
         expect(series.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(1)
         // both screenshot markers are applied to the query: the deck code and
-        // the deck link, since either one triggers a Browserless capture
+        // the deck link, since either one renders deck images
         const where = mockFindMany.mock.calls[0][0].where
         expect(where.OR).toHaveLength(2)
         expect(where.OR[0].content.contains).toBe('%\\%\\%%')

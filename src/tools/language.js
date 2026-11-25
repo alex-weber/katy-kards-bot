@@ -20,11 +20,6 @@ const languages = [
     'it', 'jp', 'ko', 'pl',
     'pt', 'ru', 'tw', 'zh',
 ]
-const deckBuilderLanguages = [
-    'de', 'es', 'fr',
-    'it', 'pl', 'pt',
-    'ru', 'zh',
-]
 const APILanguages = {
     de: 'de-DE',
     en: 'en-EN',
@@ -46,5 +41,4 @@ module.exports = {
     languages,
     APILanguages,
     defaultLanguage,
-    deckBuilderLanguages,
 }

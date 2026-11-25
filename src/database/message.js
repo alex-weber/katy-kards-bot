@@ -11,7 +11,7 @@ const STATS_PERIODS = ['current-month', 'last-month', 'current-year', 'last-year
 const {languages} = require('../tools/language')
 // A screenshot command is anything that asks for a deck render: a deck code,
 // which bot.js recognises by its %% prefix, or a kards.com deck link (see
-// bot.isDeckLink). Both go through Browserless, so both belong in the count.
+// bot.isDeckLink). Both render deck images, so both belong in the count.
 // Prisma passes `contains` values into LIKE untouched, hence the escaped
 // percent signs in the deck-code pattern.
 const screenshotCommandWhere = {

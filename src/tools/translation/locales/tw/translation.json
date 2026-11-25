@@ -10,7 +10,7 @@
   "noresult": "搜尋語言：{{language}}。找不到卡牌……",
   "failureHelp": "找不到你要的卡牌嗎？搜尋方式如下：",
   "langChange": "搜尋語言：",
-  "screenshot": "正在產生截圖，這可能需要幾秒鐘……",
+  "screenshot": "正在產生牌組圖片，這可能需要幾秒鐘……",
   "cache": "正在從快取中取得……",
   "dm": "私訊頻道在機器人重新啟動前保持有效（每 24 小時）。",
   "screenshotRunning": "已有另一個截圖工作正在進行……請幾秒後再試。",
@@ -81,5 +81,18 @@
   "requestedBy": "由 {{name}} 請求",
   "requestedByQuery": "由 {{name}} 請求：{{query}}",
   "cacheForwardNotice": "來自 {{name}} 的搜尋請求：{{query}}。正在轉發快取的訊息。",
-  "cacheRequestNotice": "來自 {{name}} 的請求：{{query}}。正在轉發快取的訊息。"
+  "cacheRequestNotice": "來自 {{name}} 的請求：{{query}}。正在轉發快取的訊息。",
+  "nation_germany": "德國",
+  "nation_britain": "英國",
+  "nation_japan": "日本",
+  "nation_soviet": "蘇聯",
+  "nation_usa": "美國",
+  "nation_france": "法國",
+  "nation_italy": "義大利",
+  "nation_poland": "波蘭",
+  "nation_finland": "芬蘭",
+  "nation_anzac": "澳紐軍團",
+  "nation_neutral": "中立",
+  "deck_untitled": "未命名牌組",
+  "deck_wip": "製作中..."
 }

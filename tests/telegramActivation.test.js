@@ -21,14 +21,14 @@ jest.mock('../src/tools/profile', () => ({
     renderProfileText: jest.fn(() => 'profile'),
     reactionsLabel: jest.fn(() => 'reactions'),
 }))
-// The handler transitively requires redis-backed tools (roles, puppeteer);
+// The handler transitively requires redis-backed tools (roles, deckRenderer);
 // stub the client so requiring it doesn't open a real socket.
 jest.mock('../src/controller/redis', () => ({
     redis: {json: {get: jest.fn(async () => null), set: jest.fn(async () => 'OK')}},
     cachePrefix: 'web:test:',
 }))
-// puppeteer-core is ESM-only, which Jest's CommonJS runtime cannot require
-jest.mock('../src/tools/puppeteer', () => ({takeScreenshot: jest.fn()}))
+// the deck renderer would load canvas and the card art on first render
+jest.mock('../src/tools/deckRenderer', () => ({renderDeck: jest.fn()}))
 
 const {telegramCallbackHandler} = require('../src/controller/telegramHandler')
 const {getUser, updateUser, createUserAudit} = require('../src/database/db')

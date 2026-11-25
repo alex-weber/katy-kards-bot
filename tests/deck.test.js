@@ -2,7 +2,7 @@
 // the card lookup, so the arithmetic under test is the real one.
 
 jest.mock('../src/database/db', () => ({getCardsDB: jest.fn()}))
-jest.mock('../src/tools/puppeteer', () => ({takeScreenshot: jest.fn()}))
+jest.mock('../src/tools/deckRenderer', () => ({renderDeck: jest.fn()}))
 jest.mock('../src/tools/fileManager', () => ({getDeckFiles: jest.fn(), deleteDeckFiles: jest.fn()}))
 
 const {getCardsDB} = require('../src/database/db')
