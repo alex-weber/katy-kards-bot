@@ -887,8 +887,9 @@ function drawRow(ctx, card, x, y, {thumb, icon, dirt}) {
 
     if (thumb) ctx.drawImage(thumb, 240, 2, 38, 34)
 
-    //copies
-    ctx.font = 'bold 18px Oswald, "Droid Sans Fallback", NanumSquare'
+    //copies: the site asks for Gotham Narrow but never loads it, so browsers
+    //show a plain bold sans; Oswald read as stretched here
+    ctx.font = 'bold 18px "Open Sans", "Droid Sans Fallback", NanumSquare'
     ctx.textAlign = 'center'
     ctx.fillStyle = COUNT_COLORS[card.rarity] || 'rgb(127,127,127)'
     ctx.fillText(`${card.count}x`, 292 + 19, 19)
