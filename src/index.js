@@ -64,6 +64,8 @@ const {
 
 const {redis, redisStore, secure} = require('./controller/redis')
 const {startMemoryUsageSampler} = require('./tools/systemMetrics')
+//register the deck image fonts now, so a missing one shows up in the startup log
+require('./tools/deckFonts').ensureDeckFonts()
 const cookieMaxAge = parseInt(process.env.COOKIE_MAX_AGE) || 30 * 24 * 60 * 60 * 1000
 const webRateLimitWindow = parseInt(process.env.WEB_RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000
 const webRateLimitMax = parseInt(process.env.WEB_RATE_LIMIT_MAX, 10) || 300
