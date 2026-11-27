@@ -5,7 +5,8 @@
 const fs = require('fs')
 const path = require('path')
 const sharp = require('sharp')
-const {createCanvas, loadImage, GlobalFonts, Path2D} = require('@napi-rs/canvas')
+const {createCanvas, loadImage, Path2D} = require('@napi-rs/canvas')
+const {registerDeckFonts} = require('./deckFonts')
 const {fetchJson} = require('./fetch')
 const {getDeckFiles} = require('./fileManager')
 const {getCardsDB} = require('../database/db')
@@ -20,20 +21,9 @@ const SCALE = 2
 const IMAGE_TIMEOUT = 10000
 const API_TIMEOUT = 10000
 
-const fonts = path.join(assets, 'fonts')
-GlobalFonts.registerFromPath(path.join(fonts, 'Oswald-Regular.ttf'), 'Oswald')
-GlobalFonts.registerFromPath(path.join(fonts, 'Oswald-SemiBold.ttf'), 'Oswald')
-GlobalFonts.registerFromPath(path.join(fonts, 'Oswald-Bold.ttf'), 'Oswald')
-GlobalFonts.registerFromPath(path.join(fonts, 'SpecialElite-Regular.ttf'), 'Special Elite')
-//kards.com sets its kredit numbers in Gotham Narrow, which it never serves, so
-//browsers fall back to Segoe UI Bold; Open Sans Bold is the free look-alike
-GlobalFonts.registerFromPath(path.join(fonts, 'OpenSans-Bold.ttf'), 'Open Sans')
-//none of the faces above has a single CJK glyph; the canvas falls back glyph
-//by glyph through the family list, so every font string names these two last:
-//Droid for Japanese and both Chinese scripts, NanumSquare for Korean (Droid
-//has no hangul at all, Nanum carries all 11,172 syllables)
-GlobalFonts.registerFromPath(path.join(fonts, 'DroidSansFallbackFull.ttf'), 'Droid Sans Fallback')
-GlobalFonts.registerFromPath(path.join(fonts, 'NanumSquareB.ttf'), 'NanumSquare')
+//normally done at app start already; this covers scripts and tests that load
+//this module directly
+registerDeckFonts()
 
 //the nation keys a deck code and the KARDS API use
 const NATION_KEYS = {
